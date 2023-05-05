@@ -34,6 +34,8 @@ private:
     std::string strDebugMessage;
 public:
     CValidationState() : mode(MODE_VALID), nDoS(0), chRejectCode(0), corruptionPossible(false) {}
+    virtual ~CValidationState() = default;
+    CValidationState& operator=(const CValidationState&) = default;
     virtual bool DoS(int level, bool ret = false,
              unsigned int chRejectCodeIn=0, const std::string &strRejectReasonIn="",
              bool corruptionIn=false,

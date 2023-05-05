@@ -111,7 +111,7 @@ UniValue TxJoinSplitToJSON(const CTransaction& tx) {
 
         {
             UniValue ciphertexts(UniValue::VARR);
-            for (const ZCNoteEncryption::Ciphertext ct : jsdescription.ciphertexts) {
+            for (const ZCNoteEncryption::Ciphertext& ct : jsdescription.ciphertexts) {
                 ciphertexts.push_back(HexStr(ct.begin(), ct.end()));
             }
             joinsplit.pushKV("ciphertexts", ciphertexts);
@@ -179,7 +179,7 @@ UniValue TxActionsToJSON(const rust::Vec<orchard_bundle::Action>& actions)
 }
 
 // See https://zips.z.cash/zip-0225
-UniValue TxOrchardBundleToJSON(const CTransaction& tx, UniValue& entry)
+UniValue TxOrchardBundleToJSON(const CTransaction& tx)
 {
     const auto& bundle = tx.GetOrchardBundle().GetDetails();
 
@@ -299,7 +299,7 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
             }
         }
         if (tx.nVersion >= ZIP225_TX_VERSION) {
-            UniValue orchard = TxOrchardBundleToJSON(tx, entry);
+            UniValue orchard = TxOrchardBundleToJSON(tx);
             entry.pushKV("orchard", orchard);
         }
     }
@@ -592,7 +592,7 @@ UniValue gettxoutproof(const UniValue& params, bool fHelp)
 
     LOCK(cs_main);
 
-    CBlockIndex* pblockindex = NULL;
+    CBlockIndex* pblockindex = nullptr;
 
     uint256 hashBlock;
     if (params.size() > 1)
@@ -607,7 +607,7 @@ UniValue gettxoutproof(const UniValue& params, bool fHelp)
             pblockindex = chainActive[coins.nHeight];
     }
 
-    if (pblockindex == NULL)
+    if (pblockindex == nullptr)
     {
         CTransaction tx;
         if (!GetTransaction(oneTxid, tx, Params().GetConsensus(), hashBlock, false) || hashBlock.IsNull())
@@ -1008,7 +1008,7 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
         );
 
 #ifdef ENABLE_WALLET
-    LOCK2(cs_main, pwalletMain ? &pwalletMain->cs_wallet : NULL);
+    LOCK2(cs_main, pwalletMain ? &pwalletMain->cs_wallet : nullptr);
 #else
     LOCK(cs_main);
 #endif
@@ -1190,7 +1190,7 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
     for (unsigned int i = 0; i < mergedTx.vin.size(); i++) {
         CTxIn& txin = mergedTx.vin[i];
         const CCoins* coins = view.AccessCoins(txin.prevout.hash);
-        if (coins == NULL || !coins->IsAvailable(txin.prevout.n)) {
+        if (coins == nullptr || !coins->IsAvailable(txin.prevout.n)) {
             TxInErrorToJSON(txin, vErrors, "Input not found or already spent");
             continue;
         }
@@ -1317,8 +1317,8 @@ static const CRPCCommand commands[] =
     { "blockchain",         "verifytxoutproof",       &verifytxoutproof,       true  },
 };
 
-void RegisterRawTransactionRPCCommands(CRPCTable &tableRPC)
+void RegisterRawTransactionRPCCommands(CRPCTable &rpcTable)
 {
     for (unsigned int vcidx = 0; vcidx < ARRAYLEN(commands); vcidx++)
-        tableRPC.appendCommand(commands[vcidx].name, &commands[vcidx]);
+        rpcTable.appendCommand(commands[vcidx].name, &commands[vcidx]);
 }

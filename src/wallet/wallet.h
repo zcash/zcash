@@ -113,7 +113,7 @@ public:
     CKeyPool();
     CKeyPool(const CPubKey& vchPubKeyIn);
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
@@ -160,7 +160,7 @@ public:
 typedef std::map<std::string, std::string> mapValue_t;
 
 
-static void ReadOrderPos(int64_t& nOrderPos, mapValue_t& mapValue)
+static inline void ReadOrderPos(int64_t& nOrderPos, mapValue_t& mapValue)
 {
     if (!mapValue.count("n"))
     {
@@ -171,7 +171,7 @@ static void ReadOrderPos(int64_t& nOrderPos, mapValue_t& mapValue)
 }
 
 
-static void WriteOrderPos(const int64_t& nOrderPos, mapValue_t& mapValue)
+static inline void WriteOrderPos(const int64_t& nOrderPos, mapValue_t& mapValue)
 {
     if (nOrderPos == -1)
         return;
@@ -199,7 +199,7 @@ public:
     JSOutPoint() { SetNull(); }
     JSOutPoint(uint256 h, uint64_t js, uint8_t n) : hash {h}, js {js}, n {n} { }
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
@@ -280,7 +280,7 @@ public:
     SproutNoteData(libzcash::SproutPaymentAddress a, uint256 n) :
             address {a}, nullifier {n}, witnessHeight {-1}, spentHeight() { }
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
@@ -312,8 +312,8 @@ public:
      * See the comment in that class for a full description.
      */
     SaplingNoteData() : witnessHeight {-1}, nullifier(), spentHeight() { }
-    SaplingNoteData(libzcash::SaplingIncomingViewingKey ivk) : ivk {ivk}, witnessHeight {-1}, nullifier() { }
-    SaplingNoteData(libzcash::SaplingIncomingViewingKey ivk, uint256 n) : ivk {ivk}, witnessHeight {-1}, nullifier(n) { }
+    SaplingNoteData(libzcash::SaplingIncomingViewingKey ivk) : witnessHeight {-1}, ivk {ivk}, nullifier() { }
+    SaplingNoteData(libzcash::SaplingIncomingViewingKey ivk, uint256 n) : witnessHeight {-1}, ivk {ivk}, nullifier(n) { }
 
     std::list<SaplingWitness> witnesses;
     /**
@@ -339,7 +339,7 @@ public:
      */
     std::optional<int> spentHeight;
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
@@ -415,7 +415,7 @@ public:
         nIndex = -1;
     }
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
@@ -525,7 +525,7 @@ public:
 
     CWalletTx()
     {
-        Init(NULL);
+        Init(nullptr);
     }
 
     CWalletTx(const CWallet* pwalletIn)
@@ -575,12 +575,12 @@ public:
         nOrderPos = -1;
     }
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
         if (ser_action.ForRead())
-            Init(NULL);
+            Init(nullptr);
         char fSpent = false;
 
         if (!ser_action.ForRead())
@@ -796,6 +796,8 @@ public:
     TransactionStrategy() : requestedLevel(PrivacyPolicy::FullPrivacy) {}
     TransactionStrategy(const TransactionStrategy& strategy) : requestedLevel(strategy.requestedLevel) {}
     TransactionStrategy(PrivacyPolicy privacyPolicy) : requestedLevel(privacyPolicy) {}
+
+    TransactionStrategy& operator=(const TransactionStrategy& other) = default;
 
     static std::optional<TransactionStrategy> FromString(std::string privacyPolicy);
     static std::string ToString(PrivacyPolicy policy);
@@ -1043,7 +1045,7 @@ public:
 
     CWalletKey(int64_t nExpires=0);
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
@@ -1148,7 +1150,7 @@ typedef struct WalletDecryptedNotes {
     std::pair<mapSaplingNoteData_t, SaplingIncomingViewingKeyMap> saplingNoteDataAndAddressesToAdd;
 } WalletDecryptedNotes;
 
-class WalletBatchScanner : public BatchScanner {
+class WalletBatchScanner final : public BatchScanner {
 private:
     CWallet* pwallet;
     rust::Box<wallet::BatchScanner> inner;
@@ -1178,14 +1180,14 @@ public:
         const CTransaction &tx,
         const std::vector<unsigned char> &txBytes,
         const uint256 &blockTag,
-        const int nHeight);
+        const int nHeight) override;
 
-    void Flush();
+    void Flush() override;
 
     void SyncTransaction(
         const CTransaction &tx,
         const CBlock *pblock,
-        const int nHeight);
+        const int nHeight) override;
 };
 
 /**
@@ -1203,7 +1205,7 @@ private:
      * all coins from coinControl are selected; Never select unconfirmed coins
      * if they are not ours
      */
-    bool SelectCoins(const CAmount& nTargetValue, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, CAmount& nValueRet, bool& fOnlyCoinbaseCoinsRet, bool& fNeedCoinbaseCoinsRet, const CCoinControl *coinControl = NULL) const;
+    bool SelectCoins(const CAmount& nTargetValue, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, CAmount& nValueRet, bool& fOnlyCoinbaseCoinsRet, bool& fNeedCoinbaseCoinsRet, const CCoinControl *coinControl = nullptr) const;
 
     CWalletDB *pwalletdbEncryption;
 
@@ -1415,10 +1417,10 @@ public:
         fFileBacked = true;
     }
 
-    ~CWallet()
+    ~CWallet() override
     {
         delete pwalletdbEncryption;
-        pwalletdbEncryption = NULL;
+        pwalletdbEncryption = nullptr;
         delete validationInterfaceBatchScanner;
         validationInterfaceBatchScanner = nullptr;
     }
@@ -1429,7 +1431,7 @@ public:
         nWalletMaxVersion = FEATURE_BASE;
         fFileBacked = false;
         nMasterKeyMaxID = 0;
-        pwalletdbEncryption = NULL;
+        pwalletdbEncryption = nullptr;
         nOrderPosNext = 0;
         nNextResend = 0;
         nLastResend = 0;
@@ -1526,7 +1528,7 @@ public:
     void AvailableCoins(std::vector<COutput>& vCoins,
                         const std::optional<int>& asOfHeight,
                         bool fOnlyConfirmed=true,
-                        const CCoinControl *coinControl = NULL,
+                        const CCoinControl *coinControl = nullptr,
                         bool fIncludeZeroValue=false,
                         bool fIncludeCoinBase=true,
                         bool fOnlySpendable=false,
@@ -1563,7 +1565,7 @@ public:
      * wallet holds the spending keys.
      */
     std::optional<ZTXOSelector> ZTXOSelectorForAddress(
-            const libzcash::PaymentAddress& addr,
+            const libzcash::PaymentAddress& paymentAddr,
             bool requireSpendingKey,
             TransparentCoinbasePolicy transparentCoinbasePolicy,
             bool allowAddressLinkability) const;
@@ -1649,7 +1651,7 @@ public:
      */
     CPubKey GenerateNewKey(bool external);
     //! Adds a key to the store, and saves it to disk.
-    bool AddKeyPubKey(const CKey& key, const CPubKey &pubkey);
+    bool AddKeyPubKey(const CKey& key, const CPubKey &pubkey) override;
     //! Adds a key to the store, without saving it to disk (used by LoadWallet)
     bool LoadKey(const CKey& key, const CPubKey &pubkey) { return CCryptoKeyStore::AddKeyPubKey(key, pubkey); }
     //! Load metadata (used by LoadWallet)
@@ -1658,10 +1660,10 @@ public:
     bool LoadMinVersion(int nVersion) { AssertLockHeld(cs_wallet); nWalletVersion = nVersion; nWalletMaxVersion = std::max(nWalletMaxVersion, nVersion); return true; }
 
     //! Adds an encrypted key to the store, and saves it to disk.
-    bool AddCryptedKey(const CPubKey &vchPubKey, const std::vector<unsigned char> &vchCryptedSecret);
+    bool AddCryptedKey(const CPubKey &vchPubKey, const std::vector<unsigned char> &vchCryptedSecret) override;
     //! Adds an encrypted key to the store, without saving it to disk (used by LoadWallet)
     bool LoadCryptedKey(const CPubKey &vchPubKey, const std::vector<unsigned char> &vchCryptedSecret);
-    bool AddCScript(const CScript& redeemScript);
+    bool AddCScript(const CScript& redeemScript) override;
     bool LoadCScript(const CScript& redeemScript);
 
     //! Erases a destination data tuple in the store and on disk
@@ -1672,8 +1674,8 @@ public:
     bool GetDestData(const CTxDestination &dest, const std::string &key, std::string *value) const;
 
     //! Adds a watch-only address to the store, and saves it to disk.
-    bool AddWatchOnly(const CScript &dest);
-    bool RemoveWatchOnly(const CScript &dest);
+    bool AddWatchOnly(const CScript &dest) override;
+    bool RemoveWatchOnly(const CScript &dest) override;
     //! Adds a watch-only address to the store, without saving it to disk (used by LoadWallet)
     bool LoadWatchOnly(const CScript &dest);
 
@@ -1700,11 +1702,11 @@ public:
     bool AddCryptedSproutSpendingKey(
         const libzcash::SproutPaymentAddress &address,
         const libzcash::ReceivingKey &rk,
-        const std::vector<unsigned char> &vchCryptedSecret);
+        const std::vector<unsigned char> &vchCryptedSecret) override;
 
     //! Adds a Sprout viewing key to the store, and saves it to disk.
-    bool AddSproutViewingKey(const libzcash::SproutViewingKey &vk);
-    bool RemoveSproutViewingKey(const libzcash::SproutViewingKey &vk);
+    bool AddSproutViewingKey(const libzcash::SproutViewingKey &vk) override;
+    bool RemoveSproutViewingKey(const libzcash::SproutViewingKey &vk) override;
     //! Adds a Sprout viewing key to the store, without saving it to disk (used by LoadWallet)
     bool LoadSproutViewingKey(const libzcash::SproutViewingKey &dest);
 
@@ -1729,13 +1731,13 @@ public:
     //! CBasicKeyStore::AddSaplingFullViewingKey is called directly when adding a
     //! full viewing key to the keystore, to avoid this override.
     bool AddSaplingFullViewingKey(
-            const libzcash::SaplingExtendedFullViewingKey &extfvk);
+            const libzcash::SaplingExtendedFullViewingKey &extfvk) override;
     bool AddSaplingPaymentAddress(
         const libzcash::SaplingIncomingViewingKey &ivk,
-        const libzcash::SaplingPaymentAddress &addr);
+        const libzcash::SaplingPaymentAddress &addr) override;
     bool AddCryptedSaplingSpendingKey(
         const libzcash::SaplingExtendedFullViewingKey &extfvk,
-        const std::vector<unsigned char> &vchCryptedSecret);
+        const std::vector<unsigned char> &vchCryptedSecret) override;
     //! Adds spending key to the store, without saving it to disk (used by LoadWallet)
     bool LoadSaplingZKey(const libzcash::SaplingExtendedSpendingKey &key);
     //! Load spending key metadata (used by LoadWallet)
@@ -1813,6 +1815,7 @@ public:
         const std::set<libzcash::ReceiverType>& receivers,
         std::optional<libzcash::diversifier_index_t> j = std::nullopt);
 
+    using CBasicKeyStore::AddUnifiedFullViewingKey;
     bool AddUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey &ufvk);
 
     bool LoadUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey &ufvk);
@@ -1857,7 +1860,7 @@ public:
      * Increment the next transaction order id
      * @return next transaction order id
      */
-    int64_t IncOrderPosNext(CWalletDB *pwalletdb = NULL);
+    int64_t IncOrderPosNext(CWalletDB *pwalletdb = nullptr);
 
     DBErrors ReorderTransactions();
 
@@ -1870,7 +1873,7 @@ public:
     void UpdateSaplingNullifierNoteMapForBlock(const CBlock* pblock);
     void LoadWalletTx(const CWalletTx& wtxIn);
     bool AddToWallet(const CWalletTx& wtxIn, CWalletDB* pwalletdb);
-    BatchScanner* GetBatchScanner();
+    BatchScanner* GetBatchScanner() override;
     bool AddToWalletIfInvolvingMe(
             const Consensus::Params& consensus,
             const CTransaction& tx,
@@ -1879,7 +1882,7 @@ public:
             WalletDecryptedNotes decryptedNotes,
             bool fUpdate
             );
-    void EraseFromWallet(const uint256 &hash);
+    void EraseFromWallet(const uint256 &hash) override;
     void WitnessNoteCommitment(
          std::vector<uint256> commitments,
          std::vector<std::optional<SproutWitness>>& witnesses,
@@ -1889,7 +1892,7 @@ public:
         bool fUpdate,
         bool isInitScan);
     void ReacceptWalletTransactions();
-    void ResendWalletTransactions(int64_t nBestBlockTime);
+    void ResendWalletTransactions(int64_t nBestBlockTime) override;
     std::vector<uint256> ResendWalletTransactionsBefore(int64_t nTime);
     CAmount GetBalance(const std::optional<int>& asOfHeight,
                        const isminefilter& filter=ISMINE_SPENDABLE,
@@ -1912,7 +1915,7 @@ public:
      * selected by SelectCoins(); Also create the change output, when needed
      */
     bool CreateTransaction(const std::vector<CRecipient>& vecSend, CWalletTx& wtxNew, CReserveKey& reservekey, CAmount& nFeeRet, int& nChangePosRet,
-                           std::string& strFailReason, const CCoinControl *coinControl = NULL, bool sign = true);
+                           std::string& strFailReason, const CCoinControl *coinControl = nullptr, bool sign = true);
 
     /**
      * Save a set of (txid, RecipientAddress, std::optional<UnifiedAddress>) mappings to the wallet.
@@ -1935,7 +1938,7 @@ public:
                 )) {
                     LogPrintf("SaveRecipientMappings: Failed to write recipient mappings to the wallet database.");
                     return false;
-                };
+                }
             }
         }
 
@@ -1958,9 +1961,9 @@ public:
 
     /**
      * The set of default receiver types used when the wallet generates
-     * unified addresses, as of the specified chain height.
+     * unified addresses.
      */
-    static std::set<libzcash::ReceiverType> DefaultReceiverTypes(int nHeight);
+    static std::set<libzcash::ReceiverType> DefaultReceiverTypes();
 
 private:
     bool NewKeyPool();
@@ -2018,7 +2021,7 @@ public:
     void ChainTip(
         const CBlockIndex *pindex,
         const CBlock *pblock,
-        std::optional<MerkleFrontiers> added);
+        std::optional<MerkleFrontiers> added) override;
     void RunSaplingMigration(int blockHeight);
     void AddPendingSaplingMigrationTx(const CTransaction& tx);
     /** Saves witness caches and best block locator to disk. */
@@ -2056,9 +2059,9 @@ public:
 
     bool DelAddressBook(const CTxDestination& address);
 
-    void UpdatedTransaction(const uint256 &hashTx);
+    void UpdatedTransaction(const uint256 &hashTx) override;
 
-    void GetAddressForMining(std::optional<MinerAddress> &minerAddress);
+    void GetAddressForMining(std::optional<MinerAddress> &minerAddress) override;
 
     unsigned int GetKeyPoolSize()
     {
@@ -2069,7 +2072,7 @@ public:
     bool SetDefaultKey(const CPubKey &vchPubKey);
 
     //! signify that a particular wallet feature is now used. this may change nWalletVersion and nWalletMaxVersion if those are lower
-    bool SetMinVersion(enum WalletFeature, CWalletDB* pwalletdbIn = NULL, bool fExplicit = false);
+    bool SetMinVersion(enum WalletFeature, CWalletDB* pwalletdbIn = nullptr, bool fExplicit = false);
 
     //! change which version we're allowed to upgrade to (note that this does not immediately imply upgrading to that format)
     bool SetMaxVersion(int nVersion);
@@ -2124,8 +2127,8 @@ public:
      * before calling this function). */
     void GenerateNewSeed(Language language = English);
 
-    bool SetMnemonicSeed(const MnemonicSeed& seed);
-    bool SetCryptedMnemonicSeed(const uint256& seedFp, const std::vector<unsigned char> &vchCryptedSecret);
+    bool SetMnemonicSeed(const MnemonicSeed& seed) override;
+    bool SetCryptedMnemonicSeed(const uint256& seedFp, const std::vector<unsigned char> &vchCryptedSecret) override;
     /* Checks the wallet's seed against the specified mnemonic, and marks the
      * wallet's seed as having been backed up if the phrases match. */
     bool VerifyMnemonicSeed(const SecureString& mnemonic);
@@ -2196,7 +2199,7 @@ public:
         pwallet = pwalletIn;
     }
 
-    ~CReserveKey()
+    ~CReserveKey() override
     {
         ReturnKey();
     }
@@ -2204,7 +2207,7 @@ public:
     void ReturnKey();
     virtual bool GetReservedKey(CPubKey &pubkey);
     void KeepKey();
-    void KeepScript() { KeepKey(); }
+    void KeepScript() override { KeepKey(); }
 };
 
 //

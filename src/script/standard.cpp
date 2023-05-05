@@ -32,7 +32,7 @@ const char* GetTxnOutputType(txnouttype t)
     case TX_MULTISIG: return "multisig";
     case TX_NULL_DATA: return "nulldata";
     }
-    return NULL;
+    return nullptr;
 }
 
 static bool MatchPayToPubkey(const CScript& script, valtype& pubkey)
@@ -233,7 +233,7 @@ private:
 public:
     CScriptVisitor(CScript *scriptin) { script = scriptin; }
 
-    bool operator()(const CNoDestination &dest) const {
+    bool operator()(const CNoDestination &) const {
         script->clear();
         return false;
     }

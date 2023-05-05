@@ -140,7 +140,7 @@ public:
         const int nHeight,
         const CAmount nFees) : mtx(mtx), chainparams(chainparams), nHeight(nHeight), nFees(nFees) {}
 
-    const libzcash::Zip212Enabled GetZip212Flag() const {
+    libzcash::Zip212Enabled GetZip212Flag() const {
         if (chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY)) {
             return libzcash::Zip212Enabled::AfterZip212;
         } else {
@@ -368,7 +368,7 @@ CBlockTemplate* BlockAssembler::CreateNewBlock(
     pblocktemplate.reset(new CBlockTemplate());
 
     if(!pblocktemplate.get())
-        return NULL;
+        return nullptr;
     pblock = &pblocktemplate->block; // pointer for convenience
 
     // Add dummy coinbase tx as first transaction
@@ -383,7 +383,6 @@ CBlockTemplate* BlockAssembler::CreateNewBlock(
     LOCK2(cs_main, mempool.cs);
     CBlockIndex* pindexPrev = chainActive.Tip();
     nHeight = pindexPrev->nHeight + 1;
-    uint32_t consensusBranchId = CurrentEpochBranchId(nHeight, chainparams.GetConsensus());
 
     // -regtest only: allow overriding block.nVersion with
     // -blockversion=N to test forking scenarios
@@ -736,7 +735,7 @@ class MinerAddressScript : public CReserveScript
     // important when a block is mined (so it then appears to the user).
     // If -mineraddress is set, the user already knows about and is managing the
     // address, so we don't need to do anything here.
-    void KeepScript() {}
+    void KeepScript() override {}
 };
 
 std::optional<MinerAddress> ExtractMinerAddress::operator()(const CKeyID &keyID) const {
@@ -744,10 +743,10 @@ std::optional<MinerAddress> ExtractMinerAddress::operator()(const CKeyID &keyID)
     mAddr->reserveScript = CScript() << OP_DUP << OP_HASH160 << ToByteVector(keyID) << OP_EQUALVERIFY << OP_CHECKSIG;
     return mAddr;
 }
-std::optional<MinerAddress> ExtractMinerAddress::operator()(const CScriptID &addr) const {
+std::optional<MinerAddress> ExtractMinerAddress::operator()(const CScriptID &) const {
     return std::nullopt;
 }
-std::optional<MinerAddress> ExtractMinerAddress::operator()(const libzcash::SproutPaymentAddress &addr) const {
+std::optional<MinerAddress> ExtractMinerAddress::operator()(const libzcash::SproutPaymentAddress &) const {
     return std::nullopt;
 }
 std::optional<MinerAddress> ExtractMinerAddress::operator()(const libzcash::SaplingPaymentAddress &addr) const {
@@ -757,10 +756,14 @@ std::optional<MinerAddress> ExtractMinerAddress::operator()(const libzcash::Unif
     auto preferred = addr.GetPreferredRecipientAddress(consensus, height);
     if (preferred.has_value()) {
         return examine(preferred.value(), match {
-            [&](const libzcash::OrchardRawAddress addr) -> std::optional<MinerAddress> { return MinerAddress(addr); },
-            [&](const libzcash::SaplingPaymentAddress addr) -> std::optional<MinerAddress> { return MinerAddress(addr); },
+            [&](const libzcash::OrchardRawAddress ora) -> std::optional<MinerAddress> {
+              return MinerAddress(ora);
+            },
+            [&](const libzcash::SaplingPaymentAddress spa) -> std::optional<MinerAddress> {
+              return MinerAddress(spa);
+            },
             [&](const CKeyID keyID) -> std::optional<MinerAddress> { return operator()(keyID); },
-            [&](const auto other) -> std::optional<MinerAddress> { return std::nullopt; }
+            [&](const auto) -> std::optional<MinerAddress> { return std::nullopt; }
         });
     } else {
         return std::nullopt;
@@ -834,7 +837,7 @@ static bool ProcessBlockFound(const CBlock* pblock, const CChainParams& chainpar
 
     // Process this block the same as if we had received it from another node
     CValidationState state;
-    if (!ProcessNewBlock(state, chainparams, NULL, pblock, true, NULL))
+    if (!ProcessNewBlock(state, chainparams, nullptr, pblock, true, nullptr))
         return error("ZcashMiner: ProcessNewBlock, block not accepted");
 
     TrackMinedBlock(pblock->GetHash());
@@ -988,7 +991,7 @@ void static BitcoinMiner(const CChainParams& chainparams)
 
                     return true;
                 };
-                std::function<bool(EhSolverCancelCheck)> cancelled = [&m_cs, &cancelSolver](EhSolverCancelCheck pos) {
+                std::function<bool(EhSolverCancelCheck)> cancelled = [&m_cs, &cancelSolver](EhSolverCancelCheck) {
                     std::lock_guard<std::mutex> lock{m_cs};
                     return cancelSolver;
                 };
@@ -1055,23 +1058,21 @@ void static BitcoinMiner(const CChainParams& chainparams)
         LogPrintf("ZcashMiner runtime error: %s\n", e.what());
         return;
     }
-    miningTimer.stop();
-    c.disconnect();
 }
 
 void GenerateBitcoins(bool fGenerate, int nThreads, const CChainParams& chainparams)
 {
-    static boost::thread_group* minerThreads = NULL;
+    static boost::thread_group* minerThreads = nullptr;
 
     if (nThreads < 0)
         nThreads = GetNumCores();
 
-    if (minerThreads != NULL)
+    if (minerThreads != nullptr)
     {
         minerThreads->interrupt_all();
         minerThreads->join_all();
         delete minerThreads;
-        minerThreads = NULL;
+        minerThreads = nullptr;
     }
 
     if (nThreads == 0 || !fGenerate)

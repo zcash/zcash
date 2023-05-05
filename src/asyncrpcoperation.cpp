@@ -31,15 +31,14 @@ AsyncRPCOperation::AsyncRPCOperation() : error_code_(0), error_message_() {
     // Set a unique reference for each operation
     boost::uuids::uuid uuid = uuidgen();
     id_ = "opid-" + boost::uuids::to_string(uuid);
-    creation_time_ = (int64_t)time(NULL);
+    creation_time_ = (int64_t)time(nullptr);
     set_state(OperationStatus::READY);
 }
 
 AsyncRPCOperation::AsyncRPCOperation(const AsyncRPCOperation& o) :
-        id_(o.id_), creation_time_(o.creation_time_), state_(o.state_.load()),
-        start_time_(o.start_time_), end_time_(o.end_time_),
-        error_code_(o.error_code_), error_message_(o.error_message_),
-        result_(o.result_)
+        result_(o.result_), error_code_(o.error_code_), error_message_(o.error_message_),
+        state_(o.state_.load()), start_time_(o.start_time_), end_time_(o.end_time_),
+        id_(o.id_), creation_time_(o.creation_time_)
 {
 }
 
@@ -91,7 +90,7 @@ void AsyncRPCOperation::main() {
     if (isCancelled()) {
         return;
     }
-    
+
     set_state(OperationStatus::EXECUTING);
 
     start_execution_clock();

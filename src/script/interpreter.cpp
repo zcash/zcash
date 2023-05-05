@@ -302,12 +302,16 @@ bool EvalScript(
                 opcode == OP_CODESEPARATOR)
                 return set_error(serror, SCRIPT_ERR_DISABLED_OPCODE); // Disabled opcodes.
 
-            if (fExec && 0 <= opcode && opcode <= OP_PUSHDATA4) {
+            if (fExec && opcode <= OP_PUSHDATA4) {
                 if (fRequireMinimal && !CheckMinimalPush(vchPushValue, opcode)) {
                     return set_error(serror, SCRIPT_ERR_MINIMALDATA);
                 }
                 stack.push_back(vchPushValue);
             } else if (fExec || (OP_IF <= opcode && opcode <= OP_ENDIF))
+            _Pragma("GCC diagnostic push")
+            // Allow the use of `default` in these `switch` statements. There are >100 ops, so
+            // enumerating the unsupported ones in various cases isn’t helpful.
+            _Pragma("GCC diagnostic ignored \"-Wswitch-enum\"")
             switch (opcode)
             {
                 //
@@ -449,8 +453,6 @@ bool EvalScript(
                 {
                     return set_error(serror, SCRIPT_ERR_OP_RETURN);
                 }
-                break;
-
 
                 //
                 // Stack ops
@@ -945,6 +947,7 @@ bool EvalScript(
                 default:
                     return set_error(serror, SCRIPT_ERR_BAD_OPCODE);
             }
+            _Pragma("GCC diagnostic pop")
 
             // Size limits
             if (stack.size() + altstack.size() > 1000)
@@ -989,7 +992,7 @@ public:
     void SerializeScriptCode(S &s) const {
         auto size = scriptCode.size();
         ::WriteCompactSize(s, size);
-        s.write((char*)&scriptCode.begin()[0], size);
+        s.write((const char*)&scriptCode.begin()[0], size);
     }
 
     /** Serialize an input of txTo */
@@ -1248,6 +1251,7 @@ uint256 SignatureHash(
                     throw std::logic_error(
                         "ZIP 244: Used SIGHASH_SINGLE without a corresponding output");
                 }
+                [[fallthrough]];
             case SIGHASH_ALL:
             case SIGHASH_NONE:
             case SIGHASH_ANYONECANPAY | SIGHASH_ALL:

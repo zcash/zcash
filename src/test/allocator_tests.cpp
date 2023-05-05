@@ -98,13 +98,13 @@ BOOST_AUTO_TEST_CASE(arena_tests)
     // Go entirely wild: free and alloc interleaved,
     // generate targets and sizes using pseudo-randomness.
     for (int x=0; x<2048; ++x)
-        addr.push_back(0);
+        addr.push_back(nullptr);
     uint32_t s = 0x12345678;
     for (int x=0; x<5000; ++x) {
         int idx = s & (addr.size()-1);
         if (s & 0x80000000) {
             b.free(addr[idx]);
-            addr[idx] = 0;
+            addr[idx] = nullptr;
         } else if(!addr[idx]) {
             addr[idx] = b.alloc((s >> 16) & 2047);
         }
@@ -129,7 +129,7 @@ class TestLockedPageAllocator: public LockedPageAllocator
 {
 public:
     TestLockedPageAllocator(int count_in, int lockedcount_in): count(count_in), lockedcount(lockedcount_in) {}
-    void* AllocateLocked(size_t len, bool *lockingSuccess)
+    void* AllocateLocked(size_t, bool *lockingSuccess) override
     {
         *lockingSuccess = false;
         if (count > 0) {
@@ -142,12 +142,12 @@ public:
 
             return reinterpret_cast<void*>(0x08000000 + (count<<24)); // Fake address, do not actually use this memory
         }
-        return 0;
+        return nullptr;
     }
-    void FreeLocked(void* addr, size_t len)
+    void FreeLocked(void*, size_t) override
     {
     }
-    size_t GetLimit()
+    size_t GetLimit() override
     {
         return std::numeric_limits<size_t>::max();
     }

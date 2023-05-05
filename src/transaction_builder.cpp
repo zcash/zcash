@@ -279,7 +279,7 @@ struct JSDescException : public std::exception
 {
     JSDescException (const std::string msg_) : msg(msg_) {}
 
-    const char* what() { return msg.c_str(); }
+    const char* what() const noexcept override { return msg.c_str(); }
 
 private:
     std::string msg;
@@ -443,9 +443,9 @@ void TransactionBuilder::AddTransparentOutput(const CTxDestination& to, CAmount 
     mtx.vout.push_back(out);
 }
 
-void TransactionBuilder::SetFee(CAmount fee)
+void TransactionBuilder::SetFee(CAmount newFee)
 {
-    this->fee = fee;
+    this->fee = newFee;
 }
 
 // TODO: remove support for transparent change?
@@ -874,7 +874,7 @@ void TransactionBuilder::CreateJSDescriptions()
 
                 LogPrint("zrpcunsafe", "spending change (amount=%s)\n", FormatMoney(plaintext.value()));
 
-            } catch (const std::exception& e) {
+            } catch (const std::exception&) {
                 throw JSDescException("Error decrypting output note of previous JoinSplit");
             }
         }

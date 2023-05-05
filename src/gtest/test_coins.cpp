@@ -110,8 +110,6 @@ public:
             case ORCHARD:
                 mapToUse = &mapOrchardNullifiers_;
                 break;
-            default:
-                throw std::runtime_error("Unknown shielded type");
         }
         std::map<uint256, bool>::const_iterator it = mapToUse->find(nf);
         if (it == mapToUse->end()) {
@@ -134,8 +132,6 @@ public:
             case ORCHARD:
                 return hashBestOrchardAnchor_;
                 break;
-            default:
-                throw std::runtime_error("Unknown shielded type");
         }
     }
 
@@ -161,11 +157,11 @@ public:
 
     uint256 GetBestBlock() const { return hashBestBlock_; }
 
-    HistoryIndex GetHistoryLength(uint32_t epochId) const { return 0; }
-    HistoryNode GetHistoryAt(uint32_t epochId, HistoryIndex index) const {
+    HistoryIndex GetHistoryLength(uint32_t) const { return 0; }
+    HistoryNode GetHistoryAt(uint32_t, HistoryIndex) const {
         throw std::runtime_error("`GetHistoryAt` unimplemented for mock CCoinsViewTest");
     }
-    uint256 GetHistoryRoot(uint32_t epochId) const {
+    uint256 GetHistoryRoot(uint32_t) const {
         throw std::runtime_error("`GetHistoryRoot` unimplemented for mock CCoinsViewTest");
     }
 
@@ -214,7 +210,7 @@ public:
                     CNullifiersMap& mapSproutNullifiers,
                     CNullifiersMap& mapSaplingNullifiers,
                     CNullifiersMap& mapOrchardNullifiers,
-                    CHistoryCacheMap &historyCacheMap)
+                    CHistoryCacheMap &)
     {
         for (CCoinsMap::iterator it = mapCoins.begin(); it != mapCoins.end(); ) {
             if (it->second.flags & CCoinsCacheEntry::DIRTY) {
@@ -247,31 +243,13 @@ public:
         return true;
     }
 
-    bool GetStats(CCoinsStats& stats) const { return false; }
+    bool GetStats(CCoinsStats&) const { return false; }
 };
 
 class CCoinsViewCacheTest : public CCoinsViewCache
 {
 public:
     CCoinsViewCacheTest(CCoinsView* base) : CCoinsViewCache(base) {}
-
-    void SelfTest() const
-    {
-        // Manually recompute the dynamic usage of the whole data, and compare it.
-        size_t ret = memusage::DynamicUsage(cacheCoins) +
-                     memusage::DynamicUsage(cacheSproutAnchors) +
-                     memusage::DynamicUsage(cacheSaplingAnchors) +
-                     memusage::DynamicUsage(cacheOrchardAnchors) +
-                     memusage::DynamicUsage(cacheSproutNullifiers) +
-                     memusage::DynamicUsage(cacheSaplingNullifiers) +
-                     memusage::DynamicUsage(cacheOrchardNullifiers) +
-                     memusage::DynamicUsage(historyCacheMap);
-        for (CCoinsMap::iterator it = cacheCoins.begin(); it != cacheCoins.end(); it++) {
-            ret += it->second.coins.DynamicMemoryUsage();
-        }
-        EXPECT_EQ(DynamicMemoryUsage(), ret);
-    }
-
 };
 
 class TxWithNullifiers

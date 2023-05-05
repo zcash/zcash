@@ -88,7 +88,7 @@ public:
     {
         int len = pend == pbegin ? 0 : GetLen(pbegin[0]);
         if (len && len == (pend - pbegin))
-            memcpy(vch, (unsigned char*)&pbegin[0], len);
+            memcpy(vch, (const unsigned char*)&pbegin[0], len);
         else
             Invalidate();
     }
@@ -106,8 +106,9 @@ public:
         Set(_vch.begin(), _vch.end());
     }
 
-    //! Simple read-only vector-like interface to the pubkey data.
+    //! Simple vector-like interface to the pubkey data.
     unsigned int size() const { return GetLen(vch[0]); }
+    unsigned char* begin() { return vch; }
     const unsigned char* begin() const { return vch; }
     const unsigned char* end() const { return vch + size(); }
     const unsigned char& operator[](unsigned int pos) const { return vch[pos]; }
@@ -134,7 +135,7 @@ public:
     {
         unsigned int len = size();
         ::WriteCompactSize(s, len);
-        s.write((char*)vch, len);
+        s.write((const char*)vch, len);
     }
     template <typename Stream>
     void Unserialize(Stream& s)
@@ -223,7 +224,7 @@ public:
 
     std::optional<CChainablePubKey> Derive(unsigned int nChild) const;
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
@@ -236,7 +237,7 @@ public:
         } else {
             assert(pubkey.size() == CPubKey::COMPRESSED_PUBLIC_KEY_SIZE);
             std::array<uint8_t, CPubKey::COMPRESSED_PUBLIC_KEY_SIZE> pubkeyBytes;
-            std::copy(pubkey.begin(), pubkey.end(), pubkeyBytes.begin());
+            std::copy<const unsigned char*>(pubkey.begin(), pubkey.end(), pubkeyBytes.begin());
             READWRITE(pubkeyBytes);
         }
     }

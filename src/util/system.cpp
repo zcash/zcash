@@ -27,16 +27,6 @@
 #endif
 
 #ifndef WIN32
-// for posix_fallocate
-#ifdef __linux__
-
-#ifdef _POSIX_C_SOURCE
-#undef _POSIX_C_SOURCE
-#endif
-
-#define _POSIX_C_SOURCE 200112L
-
-#endif // __linux__
 
 #include <algorithm>
 #include <fcntl.h>
@@ -76,11 +66,10 @@ using namespace std;
 const char * const BITCOIN_CONF_FILENAME = "zcash.conf";
 const char * const BITCOIN_PID_FILENAME = "zcashd.pid";
 
-CCriticalSection cs_args;
+static CCriticalSection cs_args;
 map<string, string> mapArgs;
 map<string, vector<string>> mapMultiArgs;
 bool fDebug = false;
-bool fDaemon = false;
 bool fServer = false;
 
 /** Interpret string as boolean, for argument parsing */
@@ -236,7 +225,7 @@ fs::path GetDefaultDataDir()
 #else
     fs::path pathRet;
     char* pszHome = getenv("HOME");
-    if (pszHome == NULL || strlen(pszHome) == 0)
+    if (pszHome == nullptr || strlen(pszHome) == 0)
         pathRet = fs::path("/");
     else
         pathRet = fs::path(pszHome);
@@ -271,7 +260,7 @@ static fs::path ZC_GetDefaultBaseParamsDir()
 #else
     fs::path pathRet;
     char* pszHome = getenv("HOME");
-    if (pszHome == NULL || strlen(pszHome) == 0)
+    if (pszHome == nullptr || strlen(pszHome) == 0)
         pathRet = fs::path("/");
     else
         pathRet = fs::path(pszHome);

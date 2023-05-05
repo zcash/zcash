@@ -49,7 +49,7 @@ public:
         req(std::move(req)), path(path), func(func)
     {
     }
-    void operator()()
+    void operator()() override
     {
         func(req.get(), path);
     }
@@ -137,17 +137,17 @@ struct HTTPPathHandler
 /** HTTP module state */
 
 //! libevent event loop
-static struct event_base* eventBase = 0;
+static struct event_base* eventBase = nullptr;
 //! HTTP server
-struct evhttp* eventHTTP = 0;
+static struct evhttp* eventHTTP = nullptr;
 //! List of subnets to allow RPC connections from
 static std::vector<CSubNet> rpc_allow_subnets;
 //! Work queue for handling longer requests off the event loop thread
-static WorkQueue<HTTPClosure>* workQueue = 0;
+static WorkQueue<HTTPClosure>* workQueue = nullptr;
 //! Handlers for (sub)paths
-std::vector<HTTPPathHandler> pathHandlers;
+static std::vector<HTTPPathHandler> pathHandlers;
 //! Bound listening sockets
-std::vector<evhttp_bound_socket *> boundSockets;
+static std::vector<evhttp_bound_socket *> boundSockets;
 
 /** Check if a network address is allowed to access the HTTP server */
 static bool ClientAllowed(const CNetAddr& netaddr)
@@ -194,23 +194,19 @@ static std::string RequestMethodString(HTTPRequest::RequestMethod m)
     switch (m) {
     case HTTPRequest::GET:
         return "GET";
-        break;
     case HTTPRequest::POST:
         return "POST";
-        break;
     case HTTPRequest::HEAD:
         return "HEAD";
-        break;
     case HTTPRequest::PUT:
         return "PUT";
-        break;
-    default:
+    case HTTPRequest::UNKNOWN:
         return "unknown";
     }
 }
 
 /** HTTP request callback */
-static void http_request_cb(struct evhttp_request* req, void* arg)
+static void http_request_cb(struct evhttp_request* req, void*)
 {
     // Disable reading to work around a libevent bug, fixed in 2.2.0.
     if (event_get_version_number() >= 0x02010600 && event_get_version_number() < 0x02020001) {
@@ -276,11 +272,11 @@ static void http_request_cb(struct evhttp_request* req, void* arg)
 static void http_reject_request_cb(struct evhttp_request* req, void*)
 {
     LogPrint("http", "Rejecting request while shutting down\n");
-    evhttp_send_error(req, HTTP_SERVUNAVAIL, NULL);
+    evhttp_send_error(req, HTTP_SERVUNAVAIL, nullptr);
 }
 
 /** Event dispatcher thread */
-static bool ThreadHTTP(struct event_base* base, struct evhttp* http)
+static bool ThreadHTTP(struct event_base* base, struct evhttp*)
 {
     RenameThread("zc-http-server");
     LogPrint("http", "Entering http event loop\n");
@@ -319,7 +315,7 @@ static bool HTTPBindAddresses(struct evhttp* http)
     // Bind addresses
     for (std::vector<std::pair<std::string, uint16_t> >::iterator i = endpoints.begin(); i != endpoints.end(); ++i) {
         LogPrint("http", "Binding RPC on address %s port %i\n", i->first, i->second);
-        evhttp_bound_socket *bind_handle = evhttp_bind_socket_with_handle(http, i->first.empty() ? NULL : i->first.c_str(), i->second);
+        evhttp_bound_socket *bind_handle = evhttp_bind_socket_with_handle(http, i->first.empty() ? nullptr : i->first.c_str(), i->second);
         if (bind_handle) {
             boundSockets.push_back(bind_handle);
         } else {
@@ -351,8 +347,8 @@ static void libevent_log_cb(int severity, const char *msg)
 
 bool InitHTTPServer()
 {
-    struct evhttp* http = 0;
-    struct event_base* base = 0;
+    struct evhttp* http = nullptr;
+    struct event_base* base = nullptr;
 
     if (!InitHTTPAllowList())
         return false;
@@ -397,7 +393,7 @@ bool InitHTTPServer()
     evhttp_set_timeout(http, GetArg("-rpcservertimeout", DEFAULT_HTTP_SERVER_TIMEOUT));
     evhttp_set_max_headers_size(http, MAX_HEADERS_SIZE);
     evhttp_set_max_body_size(http, MAX_SIZE);
-    evhttp_set_gencb(http, http_request_cb, NULL);
+    evhttp_set_gencb(http, http_request_cb, nullptr);
 
     if (!HTTPBindAddresses(http)) {
         LogPrintf("Unable to bind any endpoint for RPC server\n");
@@ -416,8 +412,8 @@ bool InitHTTPServer()
     return true;
 }
 
-std::thread threadHTTP;
-std::future<bool> threadResult;
+static std::thread threadHTTP;
+static std::future<bool> threadResult;
 static std::vector<std::thread> g_thread_http_workers;
 
 bool StartHTTPServer()
@@ -444,7 +440,7 @@ void InterruptHTTPServer()
             evhttp_del_accept_socket(eventHTTP, socket);
         }
         // Reject requests on current connections
-        evhttp_set_gencb(eventHTTP, http_reject_request_cb, NULL);
+        evhttp_set_gencb(eventHTTP, http_reject_request_cb, nullptr);
     }
     if (workQueue)
         workQueue->Interrupt();
@@ -479,11 +475,11 @@ void StopHTTPServer()
     }
     if (eventHTTP) {
         evhttp_free(eventHTTP);
-        eventHTTP = 0;
+        eventHTTP = nullptr;
     }
     if (eventBase) {
         event_base_free(eventBase);
-        eventBase = 0;
+        eventBase = nullptr;
     }
     LogPrint("http", "Stopped HTTP server\n");
 }
@@ -514,7 +510,7 @@ HTTPEvent::~HTTPEvent()
 }
 void HTTPEvent::trigger(struct timeval* tv)
 {
-    if (tv == NULL)
+    if (tv == nullptr)
         event_active(ev, 0, 0); // immediately trigger event in main thread
     else
         evtimer_add(ev, tv); // trigger after timeval passed
@@ -598,9 +594,9 @@ void HTTPRequest::WriteReply(int nStatus, const std::string& strReply)
             }
         }
     });
-    ev->trigger(0);
+    ev->trigger(nullptr);
     replySent = true;
-    req = 0; // transferred back to main thread
+    req = nullptr; // transferred back to main thread
 }
 
 CService HTTPRequest::GetPeer()
@@ -609,7 +605,7 @@ CService HTTPRequest::GetPeer()
     CService peer;
     if (con) {
         // evhttp retains ownership over returned address string
-        const char* address = "";
+        char* address{};
         uint16_t port = 0;
         evhttp_connection_get_peer(con, (char**)&address, &port);
         peer = CService(address, port);
@@ -627,19 +623,18 @@ HTTPRequest::RequestMethod HTTPRequest::GetRequestMethod()
     switch (evhttp_request_get_command(req)) {
     case EVHTTP_REQ_GET:
         return GET;
-        break;
     case EVHTTP_REQ_POST:
         return POST;
-        break;
     case EVHTTP_REQ_HEAD:
         return HEAD;
-        break;
     case EVHTTP_REQ_PUT:
         return PUT;
-        break;
-    default:
+    case EVHTTP_REQ_CONNECT:
+    case EVHTTP_REQ_DELETE:
+    case EVHTTP_REQ_OPTIONS:
+    case EVHTTP_REQ_PATCH:
+    case EVHTTP_REQ_TRACE:
         return UNKNOWN;
-        break;
     }
 }
 

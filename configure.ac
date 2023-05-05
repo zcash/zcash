@@ -28,6 +28,12 @@ AC_CANONICAL_HOST
 
 AH_TOP([#ifndef BITCOIN_CONFIG_H])
 AH_TOP([#define BITCOIN_CONFIG_H])
+AH_TOP([_Pragma("GCC diagnostic push")])
+# NB: This is `-Wreserved-id-macro` instead of `-Wreserved-macro-identifier` because even though
+#     they are synonyms in Clang 15, but on the macOS build (Clang 13), the former flag is the one
+#     that warns.
+AH_TOP([_Pragma("GCC diagnostic ignored \"-Wreserved-id-macro\"")])
+AH_BOTTOM([_Pragma("GCC diagnostic pop")])
 AH_BOTTOM([#endif //BITCOIN_CONFIG_H])
 
 dnl faketime breaks configure and is only needed for make. Disable it here.
@@ -355,56 +361,26 @@ DESIRED_WARNING_CXXFLAGS="\
 # • `-Wno-string-conversion`: currently abused to `assert` on strings
 # • `-Wno-tautological-type-limit-compare`: I think isn’t portable because of numeric type sizing
 DISABLED_WARNING_CXXFLAGS="\
-  -Wno-c++20-compat -Wno-cast-align -Wno-cast-qual -Wno-comma -Wno-conditional-uninitialized \
-  -Wno-covered-switch-default -Wno-ctad-maybe-unsupported \
-  -Wno-delete-non-abstract-non-virtual-dtor -Wno-deprecated-copy -Wno-deprecated-copy-dtor \
-  -Wno-deprecated-dynamic-exception-spec -Wno-disabled-macro-expansion -Wno-documentation \
-  -Wno-documentation-unknown-command -Wno-double-promotion -Wno-exit-time-destructors \
-  -Wno-extra-semi -Wno-extra-semi-stmt -Wno-float-conversion -Wno-float-equal \
-  -Wno-format-nonliteral -Wno-global-constructors -Wno-header-hygiene -Wno-ignored-qualifiers \
-  -Wno-implicit-fallthrough -Wno-implicit-int-conversion -Wno-implicit-int-float-conversion \
-  -Wno-inconsistent-missing-destructor-override -Wno-logical-op-parentheses \
-  -Wno-misleading-indentation -Wno-mismatched-tags -Wno-missing-noreturn -Wno-missing-prototypes \
-  -Wno-missing-variable-declarations -Wno-newline-eof -Wno-non-virtual-dtor -Wno-old-style-cast \
-  -Wno-overloaded-virtual -Wno-padded -Wno-pedantic -Wno-range-loop-construct \
-  -Wno-redundant-parens -Wno-reorder-ctor -Wno-reserved-id-macro -Wno-reserved-identifier \
-  -Wno-return-type -Wno-shadow -Wno-shadow-field -Wno-shadow-field-in-constructor \
-  -Wno-shift-sign-overflow -Wno-shorten-64-to-32 -Wno-sign-compare -Wno-sign-conversion \
-  -Wno-string-conversion -Wno-suggest-destructor-override -Wno-suggest-override -Wno-switch-enum \
-  -Wno-tautological-type-limit-compare -Wno-tautological-unsigned-enum-zero-compare \
-  -Wno-tautological-unsigned-zero-compare -Wno-thread-safety-attributes \
-  -Wno-thread-safety-negative -Wno-undef -Wno-undefined-func-template -Wno-uninitialized \
-  -Wno-unreachable-code -Wno-unreachable-code-break -Wno-unreachable-code-return \
-  -Wno-unused-but-set-variable -Wno-unused-exception-parameter -Wno-unused-function \
-  -Wno-unused-macros -Wno-unused-member-function -Wno-unused-parameter -Wno-unused-private-field \
-  -Wno-unused-template -Wno-unused-variable -Wno-used-but-marked-unused -Wno-weak-vtables \
-  -Wno-zero-as-null-pointer-constant"
+  -Wno-cast-align -Wno-ctad-maybe-unsupported -Wno-disabled-macro-expansion \
+  -Wno-exit-time-destructors -Wno-float-conversion -Wno-float-equal -Wno-format-nonliteral \
+  -Wno-global-constructors -Wno-gnu-zero-variadic-macro-arguments -Wno-implicit-int-conversion \
+  -Wno-implicit-int-float-conversion -Wno-missing-prototypes -Wno-old-style-cast -Wno-padded \
+  -Wno-shadow-field -Wno-shadow-field-in-constructor -Wno-shift-sign-overflow \
+  -Wno-shorten-64-to-32 -Wno-sign-compare -Wno-sign-conversion -Wno-string-conversion \
+  -Wno-tautological-type-limit-compare -Wno-thread-safety-attributes -Wno-thread-safety-negative \
+  -Wno-undefined-func-template -Wno-used-but-marked-unused -Wno-weak-vtables -Wno-zero-length-array"
 
 # These are sub-flags of those in `DISABLED_WARNING_CXXFLAGS` that allow us to temporarily
 # re-enable pieces until the disabling flags are removed.
+#
+# Each flag here should be removed when its parent flag is enabled.
+# • `-Wfloat-overflow-conversion`: `-Wfloat-conversion`
+# • `-Wfloat-zero-conversion`: `-Wfloat-conversion`
+# • `-Wimplicit-const-int-float-conversion`: `-Wimplicit-int-float-conversion`
+# • `-Wobjc-signed-char-bool-implicit-int-conversion`: `-Wimplicit-int-conversion`
 REENABLED_WARNING_CXXFLAGS="\
-  -Wbit-int-extension -Wc++11-extra-semi -Wc++11-long-long -Wc++14-attribute-extensions \
-  -Wc++14-binary-literal -Wc++17-attribute-extensions -Wc++20-attribute-extensions \
-  -Wc11-extensions -Wcomplex-component-init -Wdelimited-escape-sequence-extension \
-  -Wdocumentation-deprecated-sync -Wdocumentation-html -Wembedded-directive -Wempty-init-stmt \
-  -Wempty-translation-unit -Wfixed-enum-extension -Wflexible-array-extensions \
-  -Wfloat-overflow-conversion -Wfloat-zero-conversion -Wfuture-attribute-extensions \
-  -Wgnu-auto-type -Wgnu-binary-literal -Wgnu-case-range -Wgnu-complex-integer \
-  -Wgnu-compound-literal-initializer -Wgnu-conditional-omitted-operand -Wgnu-empty-initializer \
-  -Wgnu-empty-struct -Wgnu-flexible-array-initializer -Wgnu-flexible-array-union-member \
-  -Wgnu-imaginary-constant -Wgnu-include-next -Wgnu-label-as-value -Wgnu-line-marker \
-  -Wgnu-null-pointer-arithmetic -Wgnu-pointer-arith -Wgnu-redeclared-enum \
-  -Wgnu-statement-expression -Wgnu-union-cast -Wgnu-zero-line-directive \
-  -Wignored-reference-qualifiers -Wimplicit-const-int-float-conversion \
-  -Wimplicit-fallthrough-per-function -Wimport-preprocessor-directive-pedantic -Winvalid-utf8 \
-  -Wkeyword-macro -Wlanguage-extension-token -Wlong-long -Wmicrosoft-charize \
-  -Wmicrosoft-comment-paste -Wmicrosoft-cpp-macro -Wmicrosoft-end-of-file -Wmicrosoft-enum-value \
-  -Wmicrosoft-fixed-enum -Wmicrosoft-flexible-array -Wmicrosoft-redeclare-static \
-  -Wnested-anon-types -Wnullability-extension -Wobjc-signed-char-bool-implicit-int-conversion \
-  -Woverlength-strings -Wpre-c++2b-compat -Wretained-language-linkage \
-  -Wshadow-field-in-constructor-modified -Wshadow-ivar -Wsometimes-uninitialized \
-  -Wstatic-self-init -Wundefined-internal-type -Wunneeded-member-function \
-  -Wunreachable-code-fallthrough -Wunreachable-code-generic-assoc -Wunreachable-code-loop-increment"
+  -Wfloat-overflow-conversion -Wfloat-zero-conversion -Wimplicit-const-int-float-conversion \
+  -Wobjc-signed-char-bool-implicit-int-conversion"
 
 WARNING_CXXFLAGS="$DESIRED_WARNING_CXXFLAGS $DISABLED_WARNING_CXXFLAGS $REENABLED_WARNING_CXXFLAGS"
 

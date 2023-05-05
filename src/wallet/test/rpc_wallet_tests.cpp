@@ -67,30 +67,6 @@ public:
 private:
     fs::path old_cwd;
 };
-
-CWalletTx FakeWalletTx() {
-    CMutableTransaction mtx;
-    mtx.vout.resize(1);
-    mtx.vout[0].nValue = 1;
-    return CWalletTx(nullptr, mtx);
-}
-
-}
-
-static UniValue ValueFromString(const std::string &str)
-{
-    UniValue value;
-    BOOST_CHECK(value.setNumStr(str));
-    return value;
-}
-
-static SaplingPaymentAddress DefaultSaplingAddress(CWallet* pwallet) {
-    auto usk = pwallet->GenerateUnifiedSpendingKeyForAccount(0);
-
-    return usk.value()
-        .ToFullViewingKey()
-        .GetSaplingKey().value()
-        .FindAddress(libzcash::diversifier_index_t(0)).first;
 }
 
 BOOST_FIXTURE_TEST_SUITE(rpc_wallet_tests, WalletTestingSetup)
@@ -151,9 +127,6 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
         CWalletDB walletdb(pwalletMain->strWalletFile);
         pwalletMain->SetAddressBook(demoPubkey.GetID(), "", strPurpose);
     });
-
-    CPubKey setaccountDemoPubkey = pwalletMain->GenerateNewKey(true);
-    CTxDestination setaccountDemoAddress(CTxDestination(setaccountDemoPubkey.GetID()));
 
     /*********************************
      *          getbalance
@@ -299,10 +272,10 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 1.25);
     BOOST_CHECK(!obj.exists("fundingstreams"));
 
-    auto check_funding_streams = [](UniValue obj, std::vector<std::string> recipients, std::vector<double> amounts, std::vector<std::string> addresses) {
+    auto check_funding_streams = [](UniValue obj2, std::vector<std::string> recipients, std::vector<double> amounts, std::vector<std::string> addresses) {
         size_t n = recipients.size();
         BOOST_REQUIRE_EQUAL(amounts.size(), n);
-        UniValue fundingstreams = find_value(obj, "fundingstreams");
+        UniValue fundingstreams = find_value(obj2, "fundingstreams");
         BOOST_CHECK_EQUAL(fundingstreams.size(), n);
         if (fundingstreams.size() != n) return;
 
@@ -556,7 +529,6 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_exportwallet)
     file.open(exportfilepath.string().c_str(), std::ios::in | std::ios::ate);
     BOOST_CHECK(file.is_open());
     bool fVerified = false;
-    int64_t nFilesize = std::max((int64_t)1, (int64_t)file.tellg());
     file.seekg(0, file.beg);
     while (file.good()) {
         std::string line;
@@ -892,9 +864,9 @@ public:
     MockSleepOperation(int t=1000) {
         this->naptime = std::chrono::milliseconds(t);
     }
-    virtual ~MockSleepOperation() {
+    virtual ~MockSleepOperation() override {
     }
-    virtual void main() {
+    virtual void main() override {
         set_state(OperationStatus::EXECUTING);
         start_execution_clock();
         std::this_thread::sleep_for(std::chrono::milliseconds(naptime));
@@ -989,13 +961,13 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_async_operations)
 
 
 // The CountOperation will increment this global
-std::atomic<int64_t> gCounter(0);
+static std::atomic<int64_t> gCounter(0);
 
 class CountOperation : public AsyncRPCOperation {
 public:
     CountOperation() {}
-    virtual ~CountOperation() {}
-    virtual void main() {
+    virtual ~CountOperation() override {}
+    virtual void main() override {
         set_state(OperationStatus::EXECUTING);
         gCounter++;
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
@@ -1223,18 +1195,12 @@ BOOST_AUTO_TEST_CASE(asyncrpcoperation_sign_send_raw_transaction) {
 BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
 {
     SelectParams(CBaseChainParams::TESTNET);
-    const Consensus::Params& consensusParams = Params().GetConsensus();
     KeyIO keyIO(Params());
     WalletTxBuilder builder(Params(), minRelayTxFee);
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     UniValue retValue;
-
-    // Mutable tx containing contextual information we need to build tx
-    // We removed the ability to create pre-Sapling Sprout proofs, so we can
-    // only create Sapling-onwards transactions.
-    int nHeight = consensusParams.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight;
 
     // add keys manually
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getnewaddress"));
@@ -1712,7 +1678,7 @@ void TestWTxStatus(const Consensus::Params consensusParams, const int delta) {
     BOOST_CHECK_EQUAL(find_value(retObj, "status").get_str(), "mined");
 
     // Cleanup
-    chainActive.SetTip(NULL);
+    chainActive.SetTip(nullptr);
     for (auto hash : hashes)
         mapBlockIndex.erase(hash);
 }

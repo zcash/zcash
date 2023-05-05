@@ -214,7 +214,7 @@ TestChain100Setup::CreateAndProcessBlock(const std::vector<CMutableTransaction>&
     } while (!found);
 
     CValidationState state;
-    ProcessNewBlock(state, chainparams, NULL, &block, true, NULL);
+    ProcessNewBlock(state, chainparams, nullptr, &block, true, nullptr);
 
     CBlock result = block;
     delete pblocktemplate;
@@ -233,19 +233,4 @@ CTxMemPoolEntry TestMemPoolEntryHelper::FromTx(CMutableTransaction &tx, CTxMemPo
 
     return CTxMemPoolEntry(txn, nFee, nTime, nHeight,
                            hasNoDependencies, spendsCoinbase, sigOpCount, nBranchId);
-}
-
-void Shutdown(void* parg)
-{
-  exit(0);
-}
-
-void StartShutdown()
-{
-  exit(0);
-}
-
-bool ShutdownRequested()
-{
-  return false;
 }

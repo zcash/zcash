@@ -63,12 +63,12 @@ public:
                 return "Portuguese";
             case Spanish:
                 return "Spanish";
-            default:
+            case SIZE_HACK:
                 return "INVALID";
         }
     }
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
@@ -96,7 +96,7 @@ public:
         return seed;
     }
 
-    const Language GetLanguage() const {
+    Language GetLanguage() const {
         return language;
     }
 
@@ -116,4 +116,3 @@ public:
 };
 
 #endif // ZCASH_ZCASH_ADDRESS_MNEMONIC_H
-

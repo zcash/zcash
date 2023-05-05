@@ -21,8 +21,8 @@ class thread_group;
 
 extern TracingHandle* pTracingHandle;
 
-void StartShutdown();
-bool ShutdownRequested();
+extern void StartShutdown();
+extern bool ShutdownRequested();
 /** Interrupt threads */
 void Interrupt(boost::thread_group& threadGroup);
 void Shutdown();

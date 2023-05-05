@@ -143,9 +143,6 @@ const char* GetOpName(opcodetype opcode)
     case OP_NOP10                  : return "OP_NOP10";
 
     case OP_INVALIDOPCODE          : return "OP_INVALIDOPCODE";
-
-    default:
-        return "OP_UNKNOWN";
     }
 }
 

@@ -10,9 +10,9 @@ static std::atomic<size_t> workerCounter(0);
 /**
  * Static method to return the shared/default queue.
  */
-shared_ptr<AsyncRPCQueue> AsyncRPCQueue::sharedInstance() {
+std::shared_ptr<AsyncRPCQueue> AsyncRPCQueue::sharedInstance() {
     // Thread-safe in C+11 and gcc 4.3
-    static shared_ptr<AsyncRPCQueue> q = std::make_shared<AsyncRPCQueue>();
+    static std::shared_ptr<AsyncRPCQueue> q = std::make_shared<AsyncRPCQueue>();
     return q;
 }
 
@@ -227,7 +227,7 @@ void AsyncRPCQueue::wait_for_worker_threads() {
         std::lock_guard<std::mutex> guard(lock_);
         this->condition_.notify_all();
     }
-        
+
     for (std::thread & t : this->workers_) {
         if (t.joinable()) {
             t.join();

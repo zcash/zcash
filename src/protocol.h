@@ -46,15 +46,15 @@ public:
     std::string GetCommand() const;
     bool IsValid(const MessageStartChars& messageStart) const;
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action)
     {
-        READWRITE(FLATDATA(pchMessageStart));
-        READWRITE(FLATDATA(pchCommand));
+        READWRITE(UNFLATDATA(pchMessageStart));
+        READWRITE(UNFLATDATA(pchCommand));
         READWRITE(nMessageSize);
-        READWRITE(FLATDATA(pchChecksum));
+        READWRITE(UNFLATDATA(pchChecksum));
     }
 
     char pchMessageStart[MESSAGE_START_SIZE];
@@ -92,7 +92,7 @@ public:
 
     void Init();
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action)
@@ -139,7 +139,7 @@ public:
     CInv(int typeIn, const uint256& hashIn);
     CInv(int typeIn, const uint256& hashIn, const uint256& hashAuxIn);
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action)

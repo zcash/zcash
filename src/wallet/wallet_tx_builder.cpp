@@ -322,11 +322,11 @@ WalletTxBuilder::GetChangeAddress(
         if (sendFromAccount == ZCASH_LEGACY_ACCOUNT) {
             return addr;
         } else {
-            auto addr = wallet.GenerateChangeAddressForAccount(
+            auto changeAddr = wallet.GenerateChangeAddressForAccount(
                     sendFromAccount,
                     getAllowedChangePools({ReceiverType::Sapling}));
-            assert(addr.has_value());
-            return addr.value();
+            assert(changeAddr.has_value());
+            return changeAddr.value();
         }
     };
 
@@ -390,7 +390,7 @@ WalletTxBuilder::PrepareTransaction(
         CWallet& wallet,
         const ZTXOSelector& selector,
         const SpendableInputs& spendable,
-        const Recipients& payments,
+        const Recipients& recipients,
         const CChain& chain,
         const TransactionStrategy& strategy,
         const std::optional<CAmount>& fee,
@@ -407,14 +407,13 @@ WalletTxBuilder::PrepareTransaction(
 
     int anchorHeight = GetAnchorHeight(chain, anchorConfirmations);
     bool afterNU5 = params.GetConsensus().NetworkUpgradeActive(anchorHeight, Consensus::UPGRADE_NU5);
-    auto selected = examine(payments, match {
+    auto selected = examine(recipients, match {
             [&](const std::vector<Payment>& payments) {
                 return ResolveInputsAndPayments(
                         wallet,
                         selector,
                         spendable,
                         payments,
-                        chain,
                         strategy,
                         fee,
                         afterNU5);
@@ -626,7 +625,6 @@ WalletTxBuilder::ResolveInputsAndPayments(
         const ZTXOSelector& selector,
         const SpendableInputs& spendable,
         const std::vector<Payment>& payments,
-        const CChain& chain,
         const TransactionStrategy& strategy,
         const std::optional<CAmount>& fee,
         bool afterNU5) const
@@ -646,7 +644,6 @@ WalletTxBuilder::ResolveInputsAndPayments(
     // version where both Sprout and Orchard are valid.
     bool canResolveOrchard = afterNU5 && !selector.SelectsSprout();
     std::vector<ResolvedPayment> resolvedPayments;
-    std::optional<AddressResolutionError> resolutionError;
     for (const auto& payment : payments) {
         auto res = ResolvePayment(payment, canResolveOrchard, strategy, maxSaplingAvailable, maxOrchardAvailable, orchardOutputs);
         res.map([&](const ResolvedPayment& rpayment) { resolvedPayments.emplace_back(rpayment); });
@@ -795,10 +792,10 @@ std::pair<uint256, uint256> WalletTxBuilder::SelectOVKs(
         const SpendableInputs& spendable) const
 {
     return examine(selector.GetPattern(), match {
-        [&](const CKeyID& keyId) {
+        [&](const CKeyID&) {
             return wallet.GetLegacyAccountKey().ToAccountPubKey().GetOVKsForShielding();
         },
-        [&](const CScriptID& keyId) {
+        [&](const CScriptID&) {
             return wallet.GetLegacyAccountKey().ToAccountPubKey().GetOVKsForShielding();
         },
         [&](const libzcash::SproutPaymentAddress&) {
@@ -849,9 +846,9 @@ PrivacyPolicy TransactionEffects::GetRequiredPrivacyPolicy() const
         }
     } else if (payments.HasTransparentRecipient()) {
         return PrivacyPolicy::AllowRevealedRecipients;
-    } else if (!spendable.orchardNoteMetadata.empty() && payments.HasSaplingRecipient()
-               || !spendable.saplingNoteEntries.empty() && payments.HasOrchardRecipient()
-               || !spendable.sproutNoteEntries.empty() && payments.HasSaplingRecipient()) {
+    } else if ((!spendable.orchardNoteMetadata.empty() && payments.HasSaplingRecipient())
+               || (!spendable.saplingNoteEntries.empty() && payments.HasOrchardRecipient())
+               || (!spendable.sproutNoteEntries.empty() && payments.HasSaplingRecipient())) {
         // TODO: This should only trigger when there is a non-zero valueBalance.
         return PrivacyPolicy::AllowRevealedAmounts;
     } else {

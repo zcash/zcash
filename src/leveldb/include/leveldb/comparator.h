@@ -19,6 +19,8 @@ class Slice;
 // from multiple threads.
 class LEVELDB_EXPORT Comparator {
  public:
+  Comparator() = default;
+  Comparator(const Comparator&) = default;
   virtual ~Comparator();
 
   // Three-way comparison.  Returns value:

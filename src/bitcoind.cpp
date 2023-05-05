@@ -104,7 +104,7 @@ bool AppInit(int argc, char* argv[])
         try
         {
             ReadConfigFile(GetArg("-conf", BITCOIN_CONF_FILENAME), mapArgs, mapMultiArgs);
-        } catch (const missing_zcash_conf& e) {
+        } catch (const missing_zcash_conf&) {
             auto confFilename = GetArg("-conf", BITCOIN_CONF_FILENAME);
             fprintf(stderr,
                 (_("Before starting zcashd, you need to create a configuration file:\n"
@@ -193,7 +193,7 @@ bool AppInit(int argc, char* argv[])
     catch (const std::exception& e) {
         PrintExceptionContinue(&e, "AppInit()");
     } catch (...) {
-        PrintExceptionContinue(NULL, "AppInit()");
+        PrintExceptionContinue(nullptr, "AppInit()");
     }
 
     if (!fRet)

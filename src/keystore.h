@@ -210,16 +210,16 @@ protected:
 
     friend class FindUFVKId;
 public:
-    bool SetMnemonicSeed(const MnemonicSeed& seed);
-    bool HaveMnemonicSeed() const;
-    std::optional<MnemonicSeed> GetMnemonicSeed() const;
+    bool SetMnemonicSeed(const MnemonicSeed& seed) override;
+    bool HaveMnemonicSeed() const override;
+    std::optional<MnemonicSeed> GetMnemonicSeed() const override;
 
-    bool SetLegacyHDSeed(const HDSeed& seed);
-    std::optional<HDSeed> GetLegacyHDSeed() const;
+    bool SetLegacyHDSeed(const HDSeed& seed) override;
+    std::optional<HDSeed> GetLegacyHDSeed() const override;
 
-    bool AddKeyPubKey(const CKey& key, const CPubKey &pubkey);
-    bool GetPubKey(const CKeyID &address, CPubKey& vchPubKeyOut) const;
-    bool HaveKey(const CKeyID &address) const
+    bool AddKeyPubKey(const CKey& key, const CPubKey &pubkey) override;
+    bool GetPubKey(const CKeyID &address, CPubKey& vchPubKeyOut) const override;
+    bool HaveKey(const CKeyID &address) const override
     {
         bool result;
         {
@@ -228,7 +228,7 @@ public:
         }
         return result;
     }
-    std::set<CKeyID> GetKeys() const
+    std::set<CKeyID> GetKeys() const override
     {
         std::set<CKeyID> set_address;
         LOCK(cs_KeyStore);
@@ -237,7 +237,7 @@ public:
         }
         return set_address;
     }
-    bool GetKey(const CKeyID &address, CKey &keyOut) const
+    bool GetKey(const CKeyID &address, CKey &keyOut) const override
     {
         {
             LOCK(cs_KeyStore);
@@ -250,17 +250,17 @@ public:
         }
         return false;
     }
-    virtual bool AddCScript(const CScript& redeemScript);
-    virtual bool HaveCScript(const CScriptID &hash) const;
-    virtual bool GetCScript(const CScriptID &hash, CScript& redeemScriptOut) const;
+    virtual bool AddCScript(const CScript& redeemScript) override;
+    virtual bool HaveCScript(const CScriptID &hash) const override;
+    virtual bool GetCScript(const CScriptID &hash, CScript& redeemScriptOut) const override;
 
-    virtual bool AddWatchOnly(const CScript &dest);
-    virtual bool RemoveWatchOnly(const CScript &dest);
-    virtual bool HaveWatchOnly(const CScript &dest) const;
-    virtual bool HaveWatchOnly() const;
+    virtual bool AddWatchOnly(const CScript &dest) override;
+    virtual bool RemoveWatchOnly(const CScript &dest) override;
+    virtual bool HaveWatchOnly(const CScript &dest) const override;
+    virtual bool HaveWatchOnly() const override;
 
-    bool AddSproutSpendingKey(const libzcash::SproutSpendingKey &sk);
-    bool HaveSproutSpendingKey(const libzcash::SproutPaymentAddress &address) const
+    bool AddSproutSpendingKey(const libzcash::SproutSpendingKey &sk) override;
+    bool HaveSproutSpendingKey(const libzcash::SproutPaymentAddress &address) const override
     {
         bool result;
         {
@@ -269,7 +269,7 @@ public:
         }
         return result;
     }
-    bool GetSproutSpendingKey(const libzcash::SproutPaymentAddress &address, libzcash::SproutSpendingKey &skOut) const
+    bool GetSproutSpendingKey(const libzcash::SproutPaymentAddress &address, libzcash::SproutSpendingKey &skOut) const override
     {
         {
             LOCK(cs_KeyStore);
@@ -295,7 +295,7 @@ public:
         }
         return false;
     }
-    void GetSproutPaymentAddresses(std::set<libzcash::SproutPaymentAddress> &setAddress) const
+    void GetSproutPaymentAddresses(std::set<libzcash::SproutPaymentAddress> &setAddress) const override
     {
         setAddress.clear();
         {
@@ -316,8 +316,8 @@ public:
     }
 
     //! Sapling
-    bool AddSaplingSpendingKey(const libzcash::SaplingExtendedSpendingKey &sk);
-    bool HaveSaplingSpendingKey(const libzcash::SaplingExtendedFullViewingKey &extfvk) const
+    bool AddSaplingSpendingKey(const libzcash::SaplingExtendedSpendingKey &sk) override;
+    bool HaveSaplingSpendingKey(const libzcash::SaplingExtendedFullViewingKey &extfvk) const override
     {
         bool result;
         {
@@ -326,10 +326,10 @@ public:
         }
         return result;
     }
-    bool HaveSaplingSpendingKeyForAddress(const libzcash::SaplingPaymentAddress &addr) const;
+    bool HaveSaplingSpendingKeyForAddress(const libzcash::SaplingPaymentAddress &addr) const override;
     bool GetSaplingSpendingKey(
         const libzcash::SaplingExtendedFullViewingKey &extfvk,
-        libzcash::SaplingExtendedSpendingKey &skOut) const
+        libzcash::SaplingExtendedSpendingKey &skOut) const override
     {
         {
             LOCK(cs_KeyStore);
@@ -344,25 +344,25 @@ public:
         return false;
     }
 
-    virtual bool AddSaplingFullViewingKey(const libzcash::SaplingExtendedFullViewingKey &extfvk);
-    virtual bool HaveSaplingFullViewingKey(const libzcash::SaplingIncomingViewingKey &ivk) const;
+    virtual bool AddSaplingFullViewingKey(const libzcash::SaplingExtendedFullViewingKey &extfvk) override;
+    virtual bool HaveSaplingFullViewingKey(const libzcash::SaplingIncomingViewingKey &ivk) const override;
     virtual bool GetSaplingFullViewingKey(
         const libzcash::SaplingIncomingViewingKey &ivk,
-        libzcash::SaplingExtendedFullViewingKey& extfvkOut) const;
+        libzcash::SaplingExtendedFullViewingKey& extfvkOut) const override;
 
     virtual bool AddSaplingPaymentAddress(
         const libzcash::SaplingIncomingViewingKey &ivk,
-        const libzcash::SaplingPaymentAddress &addr);
-    virtual bool HaveSaplingIncomingViewingKey(const libzcash::SaplingPaymentAddress &addr) const;
+        const libzcash::SaplingPaymentAddress &addr) override;
+    virtual bool HaveSaplingIncomingViewingKey(const libzcash::SaplingPaymentAddress &addr) const override;
     virtual bool GetSaplingIncomingViewingKey(
         const libzcash::SaplingPaymentAddress &addr,
-        libzcash::SaplingIncomingViewingKey& ivkOut) const;
+        libzcash::SaplingIncomingViewingKey& ivkOut) const override;
 
     bool GetSaplingExtendedSpendingKey(
         const libzcash::SaplingPaymentAddress &addr,
         libzcash::SaplingExtendedSpendingKey &extskOut) const;
 
-    void GetSaplingPaymentAddresses(std::set<libzcash::SaplingPaymentAddress> &setAddress) const
+    void GetSaplingPaymentAddresses(std::set<libzcash::SaplingPaymentAddress> &setAddress) const override
     {
         setAddress.clear();
         {
@@ -376,26 +376,26 @@ public:
         }
     }
 
-    virtual bool AddSproutViewingKey(const libzcash::SproutViewingKey &vk);
-    virtual bool RemoveSproutViewingKey(const libzcash::SproutViewingKey &vk);
-    virtual bool HaveSproutViewingKey(const libzcash::SproutPaymentAddress &address) const;
+    virtual bool AddSproutViewingKey(const libzcash::SproutViewingKey &vk) override;
+    virtual bool RemoveSproutViewingKey(const libzcash::SproutViewingKey &vk) override;
+    virtual bool HaveSproutViewingKey(const libzcash::SproutPaymentAddress &address) const override;
     virtual bool GetSproutViewingKey(
         const libzcash::SproutPaymentAddress &address,
-        libzcash::SproutViewingKey& vkOut) const;
+        libzcash::SproutViewingKey& vkOut) const override;
 
     virtual bool AddUnifiedFullViewingKey(
-            const libzcash::ZcashdUnifiedFullViewingKey &ufvk);
+            const libzcash::ZcashdUnifiedFullViewingKey &ufvk) override;
 
     virtual bool AddTransparentReceiverForUnifiedAddress(
         const libzcash::UFVKId& keyId,
         const libzcash::diversifier_index_t& diversifierIndex,
-        const libzcash::UnifiedAddress& ua);
+        const libzcash::UnifiedAddress& ua) override;
 
     virtual std::optional<libzcash::ZcashdUnifiedFullViewingKey> GetUnifiedFullViewingKey(
-            const libzcash::UFVKId& keyId) const;
+            const libzcash::UFVKId& keyId) const override;
 
     virtual std::optional<AddressUFVKMetadata> GetUFVKMetadataForReceiver(
-            const libzcash::Receiver& receiver) const;
+            const libzcash::Receiver& receiver) const override;
 
     std::optional<libzcash::ZcashdUnifiedFullViewingKey> GetUFVKForReceiver(
             const libzcash::Receiver& receiver) const {
@@ -408,7 +408,7 @@ public:
     }
 
     virtual std::optional<libzcash::UFVKId> GetUFVKIdForAddress(
-            const libzcash::UnifiedAddress& addr) const;
+            const libzcash::UnifiedAddress& addr) const override;
 
     std::optional<libzcash::ZcashdUnifiedFullViewingKey> GetUFVKForAddress(
             const libzcash::UnifiedAddress& addr) const {
@@ -421,7 +421,7 @@ public:
     }
 
     virtual std::optional<libzcash::UFVKId> GetUFVKIdForViewingKey(
-            const libzcash::ViewingKey& vk) const;
+            const libzcash::ViewingKey& vk) const override;
 };
 
 typedef std::vector<unsigned char, secure_allocator<unsigned char> > CKeyingMaterial;

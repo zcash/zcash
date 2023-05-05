@@ -136,15 +136,15 @@ class BaseSignatureChecker
 {
 public:
     virtual bool CheckSig(
-        const std::vector<unsigned char>& scriptSig,
-        const std::vector<unsigned char>& vchPubKey,
-        const CScript& scriptCode,
-        uint32_t consensusBranchId) const
+        const std::vector<unsigned char>&,
+        const std::vector<unsigned char>&,
+        const CScript&,
+        uint32_t) const
     {
         return false;
     }
 
-    virtual bool CheckLockTime(const CScriptNum& nLockTime) const
+    virtual bool CheckLockTime(const CScriptNum&) const
     {
          return false;
     }
@@ -165,8 +165,8 @@ protected:
 
 public:
     TransactionSignatureChecker(const CTransaction* txToIn, const PrecomputedTransactionData& txdataIn, unsigned int nInIn, const CAmount& amountIn) : txTo(txToIn), nIn(nInIn), amount(amountIn), txdata(txdataIn) {}
-    bool CheckSig(const std::vector<unsigned char>& scriptSig, const std::vector<unsigned char>& vchPubKey, const CScript& scriptCode, uint32_t consensusBranchId) const;
-    bool CheckLockTime(const CScriptNum& nLockTime) const;
+    bool CheckSig(const std::vector<unsigned char>& scriptSig, const std::vector<unsigned char>& vchPubKey, const CScript& scriptCode, uint32_t consensusBranchId) const override;
+    bool CheckLockTime(const CScriptNum& nLockTime) const override;
 };
 
 class MutableTransactionSignatureChecker : public TransactionSignatureChecker
@@ -184,13 +184,13 @@ bool EvalScript(
     unsigned int flags,
     const BaseSignatureChecker& checker,
     uint32_t consensusBranchId,
-    ScriptError* error = NULL);
+    ScriptError* error = nullptr);
 bool VerifyScript(
     const CScript& scriptSig,
     const CScript& scriptPubKey,
     unsigned int flags,
     const BaseSignatureChecker& checker,
     uint32_t consensusBranchId,
-    ScriptError* serror = NULL);
+    ScriptError* serror = nullptr);
 
 #endif // BITCOIN_SCRIPT_INTERPRETER_H

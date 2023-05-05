@@ -11,23 +11,23 @@
 class CRPCTable;
 
 /** Register block chain RPC commands */
-void RegisterBlockchainRPCCommands(CRPCTable &tableRPC);
+void RegisterBlockchainRPCCommands(CRPCTable &rpcTable);
 /** Register P2P networking RPC commands */
-void RegisterNetRPCCommands(CRPCTable &tableRPC);
+void RegisterNetRPCCommands(CRPCTable &rpcTable);
 /** Register miscellaneous RPC commands */
-void RegisterMiscRPCCommands(CRPCTable &tableRPC);
+void RegisterMiscRPCCommands(CRPCTable &rpcTable);
 /** Register mining RPC commands */
-void RegisterMiningRPCCommands(CRPCTable &tableRPC);
+void RegisterMiningRPCCommands(CRPCTable &rpcTable);
 /** Register raw transaction RPC commands */
-void RegisterRawTransactionRPCCommands(CRPCTable &tableRPC);
+void RegisterRawTransactionRPCCommands(CRPCTable &rpcTable);
 
-static inline void RegisterAllCoreRPCCommands(CRPCTable &tableRPC)
+static inline void RegisterAllCoreRPCCommands(CRPCTable &rpcTable)
 {
-    RegisterBlockchainRPCCommands(tableRPC);
-    RegisterNetRPCCommands(tableRPC);
-    RegisterMiscRPCCommands(tableRPC);
-    RegisterMiningRPCCommands(tableRPC);
-    RegisterRawTransactionRPCCommands(tableRPC);
+    RegisterBlockchainRPCCommands(rpcTable);
+    RegisterNetRPCCommands(rpcTable);
+    RegisterMiscRPCCommands(rpcTable);
+    RegisterMiningRPCCommands(rpcTable);
+    RegisterRawTransactionRPCCommands(rpcTable);
 }
 
 #endif // BITCOIN_RPC_REGISTER_H

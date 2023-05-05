@@ -27,8 +27,6 @@
 
 using namespace std;
 
-static uint64_t nAccountingEntryNumber = 0;
-
 static std::atomic<unsigned int> nWalletDBUpdateCounter;
 
 //
@@ -539,7 +537,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
                 // hash pubkey/privkey to accelerate wallet load
                 std::vector<unsigned char> vchKey;
                 vchKey.reserve(vchPubKey.size() + pkey.size());
-                vchKey.insert(vchKey.end(), vchPubKey.begin(), vchPubKey.end());
+                vchKey.insert<const unsigned char*>(vchKey.end(), vchPubKey.begin(), vchPubKey.end());
                 vchKey.insert(vchKey.end(), pkey.begin(), pkey.end());
 
                 if (Hash(vchKey.begin(), vchKey.end()) != hash)
@@ -723,7 +721,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             if (!pwallet->LoadUnifiedAccountMetadata(acct)) {
                 strErr = "Error reading wallet database: account ID mismatch for unified spending key.";
                 return false;
-            };
+            }
         }
         else if (strType == "unifiedaddrmeta")
         {
@@ -1175,8 +1173,8 @@ void ThreadFlushWalletDB(const string& strFile)
                 if (nRefCount == 0)
                 {
                     boost::this_thread::interruption_point();
-                    map<string, int>::iterator mi = bitdb.mapFileUseCount.find(strFile);
-                    if (mi != bitdb.mapFileUseCount.end())
+                    map<string, int>::iterator mapIt = bitdb.mapFileUseCount.find(strFile);
+                    if (mapIt != bitdb.mapFileUseCount.end())
                     {
                         LogPrint("db", "Flushing %s\n", strFile);
                         nLastFlushed = CWalletDB::GetUpdateCounter();
@@ -1186,7 +1184,7 @@ void ThreadFlushWalletDB(const string& strFile)
                         bitdb.CloseDb(strFile);
                         bitdb.CheckpointLSN(strFile);
 
-                        bitdb.mapFileUseCount.erase(mi);
+                        bitdb.mapFileUseCount.erase(mapIt);
                         LogPrint("db", "Flushed %s %dms\n", strFile, GetTimeMillis() - nStart);
                     }
                 }
@@ -1228,7 +1226,6 @@ bool BackupWallet(const CWallet& wallet, const string& strDest)
         }
         MilliSleep(100);
     }
-    return false;
 }
 
 //
@@ -1246,7 +1243,7 @@ bool CWalletDB::Recover(CDBEnv& dbenv, const std::string& filename, bool fOnlyKe
     int64_t now = GetTime();
     std::string newFilename = strprintf("wallet.%d.bak", now);
 
-    int result = dbenv.dbenv->dbrename(NULL, filename.c_str(), NULL,
+    int result = dbenv.dbenv->dbrename(nullptr, filename.c_str(), nullptr,
                                        newFilename.c_str(), DB_AUTO_COMMIT);
     if (result == 0)
         LogPrintf("Renamed %s to %s\n", filename, newFilename);
@@ -1266,7 +1263,7 @@ bool CWalletDB::Recover(CDBEnv& dbenv, const std::string& filename, bool fOnlyKe
     LogPrintf("Salvage(aggressive) found %u records\n", salvagedData.size());
 
     boost::scoped_ptr<Db> pdbCopy(new Db(dbenv.dbenv, 0));
-    int ret = pdbCopy->open(NULL,               // Txn pointer
+    int ret = pdbCopy->open(nullptr,               // Txn pointer
                             filename.c_str(),   // Filename
                             "main",             // Logical db name
                             DB_BTREE,           // Database type

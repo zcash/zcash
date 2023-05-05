@@ -123,7 +123,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
 class DescribeAddressVisitor
 {
 public:
-    UniValue operator()(const CNoDestination &dest) const { return UniValue(UniValue::VOBJ); }
+    UniValue operator()(const CNoDestination &) const { return UniValue(UniValue::VOBJ); }
 
     UniValue operator()(const CKeyID &keyID) const {
         UniValue obj(UniValue::VOBJ);
@@ -277,7 +277,7 @@ public:
         return obj;
     }
 
-    UniValue operator()(const libzcash::UnifiedAddress &uaddr) const {
+    UniValue operator()(const libzcash::UnifiedAddress &) const {
         UniValue obj(UniValue::VOBJ);
         pushAddressType(obj, "unified");
         // TODO: More information.
@@ -338,7 +338,7 @@ UniValue z_validateaddress(const UniValue& params, bool fHelp)
 /**
  * Used by addmultisigaddress / createmultisig:
  */
-CScript _createmultisig_redeemScript(const UniValue& params)
+CScript createmultisig_redeemScript(const UniValue& params)
 {
     int nRequired = params[0].get_int();
     const UniValue& keys = params[1].get_array();
@@ -433,7 +433,7 @@ UniValue createmultisig(const UniValue& params, bool fHelp)
     }
 
     // Construct using pay-to-script-hash:
-    CScript inner = _createmultisig_redeemScript(params);
+    CScript inner = createmultisig_redeemScript(params);
     CScriptID innerID(inner);
 
     KeyIO keyIO(Params());
@@ -1251,8 +1251,8 @@ static const CRPCCommand commands[] =
     { "hidden",             "setmocktime",            &setmocktime,            true  },
 };
 
-void RegisterMiscRPCCommands(CRPCTable &tableRPC)
+void RegisterMiscRPCCommands(CRPCTable &rpcTable)
 {
     for (unsigned int vcidx = 0; vcidx < ARRAYLEN(commands); vcidx++)
-        tableRPC.appendCommand(commands[vcidx].name, &commands[vcidx]);
+        rpcTable.appendCommand(commands[vcidx].name, &commands[vcidx]);
 }

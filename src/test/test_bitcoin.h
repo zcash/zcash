@@ -11,6 +11,7 @@
 
 #include <boost/thread.hpp>
 
+extern TracingHandle* pTracingHandle;
 extern uint256 insecure_rand_seed;
 extern FastRandomContext insecure_rand_ctx;
 
@@ -97,7 +98,7 @@ struct TestMemPoolEntryHelper
         hadNoDependencies(false), spendsCoinbase(false), sigOpCount(1),
         nBranchId(SPROUT_BRANCH_ID) { }
 
-    CTxMemPoolEntry FromTx(CMutableTransaction &tx, CTxMemPool *pool = NULL);
+    CTxMemPoolEntry FromTx(CMutableTransaction &tx, CTxMemPool *pool = nullptr);
 
     // Change the default value
     TestMemPoolEntryHelper &Fee(CAmount _fee) { nFee = _fee; return *this; }

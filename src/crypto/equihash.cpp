@@ -559,7 +559,6 @@ bool Equihash<N,K>::OptimisedSolve(const eh_HashState& base_state,
                 }
 
                 // 2c) Calculate tuples (X_i ^ X_j, (i, j))
-                bool checking_for_zero = (i == 0 && Xt[0].IsZero(hashLen));
                 for (int l = 0; l < j - 1; l++) {
                     for (int m = l + 1; m < j; m++) {
                         // We truncated, so don't check for distinct indices here
@@ -644,8 +643,8 @@ bool Equihash<N,K>::OptimisedSolve(const eh_HashState& base_state,
     LogPrint("pow", "Culling solutions\n");
     for (std::shared_ptr<eh_trunc> partialSoln : partialSolns) {
         std::set<std::vector<unsigned char>> solns;
-        size_t hashLen;
-        size_t lenIndices;
+        size_t hashLen{};
+        size_t lenIndices{};
         unsigned char tmpHash[HashOutput];
         std::vector<std::optional<std::vector<FullStepRow<FinalFullWidth>>>> X;
         X.reserve(K+1);

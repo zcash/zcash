@@ -15,33 +15,33 @@ TxVersionInfo CurrentTxVersionInfo(
 {
     if (consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_ZFUTURE)) {
         return {
-            .fOverwintered =   true,
-            .nVersionGroupId = ZFUTURE_VERSION_GROUP_ID,
-            .nVersion =        ZFUTURE_TX_VERSION
+            true,
+            ZFUTURE_VERSION_GROUP_ID,
+            ZFUTURE_TX_VERSION
         };
     } else if (consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU5) && !requireV4) {
         return {
-            .fOverwintered =   true,
-            .nVersionGroupId = ZIP225_VERSION_GROUP_ID,
-            .nVersion =        ZIP225_TX_VERSION
+            true,
+            ZIP225_VERSION_GROUP_ID,
+            ZIP225_TX_VERSION
         };
     } else if (consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_SAPLING)) {
         return {
-            .fOverwintered =   true,
-            .nVersionGroupId = SAPLING_VERSION_GROUP_ID,
-            .nVersion =        SAPLING_TX_VERSION
+            true,
+            SAPLING_VERSION_GROUP_ID,
+            SAPLING_TX_VERSION
         };
     } else if (consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_OVERWINTER)) {
         return {
-            .fOverwintered =   true,
-            .nVersionGroupId = OVERWINTER_VERSION_GROUP_ID,
-            .nVersion =        OVERWINTER_TX_VERSION
+            true,
+            OVERWINTER_VERSION_GROUP_ID,
+            OVERWINTER_TX_VERSION
         };
     } else {
         return {
-            .fOverwintered =   false,
-            .nVersionGroupId = 0,
-            .nVersion =        CTransaction::SPROUT_MIN_CURRENT_VERSION
+            false,
+            0,
+            CTransaction::SPROUT_MIN_CURRENT_VERSION
         };
     }
 }

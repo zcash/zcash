@@ -86,7 +86,7 @@ std::string DisplayHashRate(double value);
 void TriggerRefresh();
 
 void ConnectMetricsScreen();
-void ThreadShowMetricsScreen();
+[[noreturn]] void ThreadShowMetricsScreen();
 
 /**
  * Heart image: https://commons.wikimedia.org/wiki/File:Heart_coraz%C3%B3n.svg

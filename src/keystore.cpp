@@ -429,7 +429,7 @@ std::optional<libzcash::UFVKId> CBasicKeyStore::GetUFVKIdForViewingKey(const lib
 {
     std::optional<libzcash::UFVKId> result;
     examine(vk, match {
-        [&](const libzcash::SproutViewingKey& vk) {},
+        [](const libzcash::SproutViewingKey&) {},
         [&](const libzcash::SaplingExtendedFullViewingKey& extfvk) {
             const auto saplingIvk = extfvk.ToIncomingViewingKey();
             const auto ufvkId = mapSaplingKeyUnified.find(saplingIvk);
@@ -535,6 +535,6 @@ std::optional<AddressUFVKMetadata> FindUFVKId::operator()(const CKeyID& keyId) c
         return std::nullopt;
     }
 }
-std::optional<AddressUFVKMetadata> FindUFVKId::operator()(const libzcash::UnknownReceiver& receiver) const {
+std::optional<AddressUFVKMetadata> FindUFVKId::operator()(const libzcash::UnknownReceiver&) const {
     return std::nullopt;
 }

@@ -83,6 +83,8 @@ public:
                     unsigned int nSigOps, uint32_t nBranchId);
     CTxMemPoolEntry(const CTxMemPoolEntry& other);
 
+    CTxMemPoolEntry& operator=(const CTxMemPoolEntry& other) = default;
+
     const CTransaction& GetTx() const { return *this->tx; }
     std::shared_ptr<const CTransaction> GetSharedTx() const { return this->tx; }
     const CAmount& GetFee() const { return nFee; }
@@ -243,8 +245,8 @@ public:
 
     CInPoint() { SetNull(); }
     CInPoint(const CTransaction* ptxIn, uint32_t nIn) { ptx = ptxIn; n = nIn; }
-    void SetNull() { ptx = NULL; n = (uint32_t) -1; }
-    bool IsNull() const { return (ptx == NULL && n == (uint32_t) -1); }
+    void SetNull() { ptx = nullptr; n = (uint32_t) -1; }
+    bool IsNull() const { return (ptx == nullptr && n == (uint32_t) -1); }
     size_t DynamicMemoryUsage() const { return 0; }
 };
 
@@ -500,8 +502,7 @@ public:
     void removeForReorg(const CCoinsViewCache *pcoins, unsigned int nMemPoolHeight, int flags);
     void removeConflicts(const CTransaction &tx, std::list<CTransaction>& removed);
     std::vector<uint256> removeExpired(unsigned int nBlockHeight);
-    void removeForBlock(const std::vector<CTransaction>& vtx, unsigned int nBlockHeight,
-                        std::list<CTransaction>& conflicts);
+    void removeForBlock(const std::vector<CTransaction>& vtx, std::list<CTransaction>& conflicts);
     void removeWithoutBranchId(uint32_t nMemPoolBranchId);
     void clear();
     void _clear(); // unlocked
@@ -645,11 +646,11 @@ protected:
 
 public:
     CCoinsViewMemPool(CCoinsView *baseIn, CTxMemPool &mempoolIn);
-    ~CCoinsViewMemPool() {}
+    ~CCoinsViewMemPool() override {}
 
-    bool GetNullifier(const uint256 &txid, ShieldedType type) const;
-    bool GetCoins(const uint256 &txid, CCoins &coins) const;
-    bool HaveCoins(const uint256 &txid) const;
+    bool GetNullifier(const uint256 &txid, ShieldedType type) const override;
+    bool GetCoins(const uint256 &txid, CCoins &coins) const override;
+    bool HaveCoins(const uint256 &txid) const override;
 };
 
 #endif // BITCOIN_TXMEMPOOL_H

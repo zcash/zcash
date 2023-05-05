@@ -57,7 +57,7 @@ void pre_wallet_load()
 
     UnregisterValidationInterface(pwalletMain);
     delete pwalletMain;
-    pwalletMain = NULL;
+    pwalletMain = nullptr;
     bitdb.Reset();
     RegisterNodeSignals(GetNodeSignals());
     LogPrintf("%s: done\n", __func__);
@@ -75,14 +75,14 @@ void post_wallet_load(){
 
 void timer_start(timeval &tv_start)
 {
-    gettimeofday(&tv_start, 0);
+    gettimeofday(&tv_start, nullptr);
 }
 
 double timer_stop(timeval &tv_start)
 {
     double elapsed;
     struct timeval tv_end;
-    gettimeofday(&tv_end, 0);
+    gettimeofday(&tv_end, nullptr);
     elapsed = double(tv_end.tv_sec-tv_start.tv_sec) +
         (tv_end.tv_usec-tv_start.tv_usec)/double(1000000);
     return elapsed;
@@ -130,7 +130,6 @@ std::vector<double> benchmark_create_joinsplit_threaded(int nThreads)
         tasks.emplace_back(task.get_future());
         threads.emplace_back(std::move(task));
     }
-    std::future_status status;
     for (auto it = tasks.begin(); it != tasks.end(); it++) {
         it->wait();
         ret.push_back(it->get());
@@ -172,7 +171,7 @@ double benchmark_solve_equihash()
     timer_start(tv_start);
     std::set<std::vector<unsigned int>> solns;
     EhOptimisedSolveUncancellable(n, k, eh_state,
-                                  [](std::vector<unsigned char> soln) { return false; });
+                                  [](std::vector<unsigned char>) { return false; });
     return timer_stop(tv_start);
 }
 
@@ -186,7 +185,6 @@ std::vector<double> benchmark_solve_equihash_threaded(int nThreads)
         tasks.emplace_back(task.get_future());
         threads.emplace_back(std::move(task));
     }
-    std::future_status status;
     for (auto it = tasks.begin(); it != tasks.end(); it++) {
         it->wait();
         ret.push_back(it->get());
@@ -332,8 +330,6 @@ CWalletTx CreateSproutTxWithNoteData(const libzcash::SproutSpendingKey& sk) {
 
 double benchmark_increment_sprout_note_witnesses(size_t nTxs)
 {
-    const Consensus::Params& consensusParams = Params().GetConsensus();
-
     CWallet wallet(Params());
     MerkleFrontiers frontiers;
 
@@ -458,7 +454,7 @@ public:
         OrchardMerkleFrontier emptyOrchardTree;
         orchardTrees.push_back(emptyOrchardTree);
     }
-    ~FakeCoinsViewDB() {}
+    ~FakeCoinsViewDB() override {}
 
     void SetSaplingTrees(std::vector<std::string> trees) {
         saplingTrees.clear();
@@ -490,7 +486,7 @@ public:
         orchardTrees.push_back(emptyTree);
     }
 
-    bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const {
+    bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const override {
         if (rt == sproutTree.root()) {
             tree = sproutTree;
             return true;
@@ -498,7 +494,7 @@ public:
         return false;
     }
 
-    bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const {
+    bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const override {
         for (const auto& saplingTree : saplingTrees) {
             if (rt == saplingTree.root()) {
                 tree = saplingTree;
@@ -508,7 +504,7 @@ public:
         return false;
     }
 
-    bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const {
+    bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const override {
         for (const auto& orchardTree : orchardTrees) {
             if (rt == orchardTree.root()) {
                 tree = orchardTree;
@@ -518,23 +514,23 @@ public:
         return false;
     }
 
-    bool GetNullifier(const uint256 &nf, ShieldedType type) const {
+    bool GetNullifier(const uint256 &, ShieldedType) const override {
         return false;
     }
 
-    bool GetCoins(const uint256 &txid, CCoins &coins) const {
+    bool GetCoins(const uint256 &txid, CCoins &coins) const override {
         return db.Read(std::make_pair(DB_COINS, txid), coins);
     }
 
-    bool HaveCoins(const uint256 &txid) const {
+    bool HaveCoins(const uint256 &txid) const override {
         return db.Exists(std::make_pair(DB_COINS, txid));
     }
 
-    uint256 GetBestBlock() const {
+    uint256 GetBestBlock() const override {
         return hash;
     }
 
-    uint256 GetBestAnchor(ShieldedType type) const {
+    uint256 GetBestAnchor(ShieldedType type) const override {
         switch (type) {
             case SPROUT:
                 return sproutTree.root();
@@ -542,31 +538,29 @@ public:
                 return saplingTrees[0].root();
             case ORCHARD:
                 return orchardTrees[0].root();
-            default:
-                throw new std::runtime_error("Unknown shielded type");
         }
     }
 
-    HistoryIndex GetHistoryLength(uint32_t epochId) const { return 0; }
-    HistoryNode GetHistoryAt(uint32_t epochId, HistoryIndex index) const { return HistoryNode(); }
-    uint256 GetHistoryRoot(uint32_t epochId) const { return uint256(); }
+    HistoryIndex GetHistoryLength(uint32_t) const override { return 0; }
+    HistoryNode GetHistoryAt(uint32_t, HistoryIndex) const override { return HistoryNode(); }
+    uint256 GetHistoryRoot(uint32_t) const override { return uint256(); }
 
-    bool BatchWrite(CCoinsMap &mapCoins,
-                    const uint256 &hashBlock,
-                    const uint256 &hashSproutAnchor,
-                    const uint256 &hashSaplingAnchor,
-                    const uint256 &hashOrchardAnchor,
-                    CAnchorsSproutMap &mapSproutAnchors,
-                    CAnchorsSaplingMap &mapSaplingAnchors,
-                    CAnchorsOrchardMap &mapOrchardAnchors,
-                    CNullifiersMap &mapSproutNullifiers,
-                    CNullifiersMap &mapSaplingNullifiers,
-                    CNullifiersMap &mapOrchardNullifiers,
-                    CHistoryCacheMap &historyCacheMap) {
+    bool BatchWrite(CCoinsMap &,
+                    const uint256 &,
+                    const uint256 &,
+                    const uint256 &,
+                    const uint256 &,
+                    CAnchorsSproutMap &,
+                    CAnchorsSaplingMap &,
+                    CAnchorsOrchardMap &,
+                    CNullifiersMap &,
+                    CNullifiersMap &,
+                    CNullifiersMap &,
+                    CHistoryCacheMap &) override {
         return false;
     }
 
-    bool GetStats(CCoinsStats &stats) const {
+    bool GetStats(CCoinsStats &) const override {
         return false;
     }
 };
@@ -730,7 +724,7 @@ double benchmark_loadwallet()
     bool fFirstRunRet=true;
     timer_start(tv_start);
     pwalletMain = new CWallet(Params(), "wallet.dat");
-    DBErrors nLoadWalletRet = pwalletMain->LoadWallet(fFirstRunRet);
+    pwalletMain->LoadWallet(fFirstRunRet);
     auto res = timer_stop(tv_start);
     post_wallet_load();
     return res;
@@ -904,5 +898,5 @@ double benchmark_verify_sapling_output()
     if (!result) {
         throw JSONRPCError(RPC_INTERNAL_ERROR, "librustzcash_sapling_check_output() should return true");
     }
-    return timer_stop(tv_start);
+    return t;
 }

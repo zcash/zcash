@@ -89,7 +89,7 @@ BOOST_AUTO_TEST_CASE(bloom_create_insert_key)
     KeyIO keyIO(Params());
     std::string strSecret = std::string("5Kg1gnAjaLfKiwhhPpGS3QfRg2m6awQvaj98JCZBZQ5SuS2F15C");
     CKey key = keyIO.DecodeSecret(strSecret);
-    CPubKey pubkey = key.GetPubKey();
+    const CPubKey pubkey = key.GetPubKey();
     vector<unsigned char> vchPubKey(pubkey.begin(), pubkey.end());
 
     CBloomFilter filter(2, 0.001, 0, BLOOM_UPDATE_ALL);

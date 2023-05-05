@@ -50,7 +50,7 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
         std::optional<CAmount> fee,
         UniValue contextInfo) :
         builder_(std::move(builder)), ztxoSelector_(ztxoSelector), recipients_(recipients),
-        mindepth_(minDepth), anchordepth_(anchorDepth), strategy_(strategy), fee_(fee),
+        strategy_(strategy), mindepth_(minDepth), anchordepth_(anchorDepth), fee_(fee),
         contextinfo_(contextInfo)
 {
     assert(!fee_.has_value() || fee_.value() >= 0);
@@ -92,15 +92,15 @@ void AsyncRPCOperation_sendmany::main() {
         std::string message = find_value(objError, "message").get_str();
         set_error_code(code);
         set_error_message(message);
-    } catch (const runtime_error& e) {
+    } catch (const std::runtime_error& e) {
         set_error_code(-1);
-        set_error_message("runtime error: " + string(e.what()));
-    } catch (const logic_error& e) {
+        set_error_message("runtime error: " + std::string(e.what()));
+    } catch (const std::logic_error& e) {
         set_error_code(-1);
-        set_error_message("logic error: " + string(e.what()));
-    } catch (const exception& e) {
+        set_error_message("logic error: " + std::string(e.what()));
+    } catch (const std::exception& e) {
         set_error_code(-1);
-        set_error_message("general exception: " + string(e.what()));
+        set_error_message("general exception: " + std::string(e.what()));
     } catch (...) {
         set_error_code(-2);
         set_error_message("unknown error");
@@ -141,12 +141,12 @@ void AsyncRPCOperation_sendmany::main() {
 // At least #4 differs from the Rust transaction builder.
 tl::expected<uint256, InputSelectionError>
 AsyncRPCOperation_sendmany::main_impl(CWallet& wallet) {
-    auto spendable = builder_.FindAllSpendableInputs(wallet, ztxoSelector_, mindepth_);
+    auto allSpendable = builder_.FindAllSpendableInputs(wallet, ztxoSelector_, mindepth_);
 
     auto preparedTx = builder_.PrepareTransaction(
             wallet,
             ztxoSelector_,
-            spendable,
+            allSpendable,
             recipients_,
             chainActive,
             strategy_,

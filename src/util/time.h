@@ -13,6 +13,8 @@
 
 class CClock {
 public:
+    virtual ~CClock() = default;
+
     /** Returns the current time in seconds since the POSIX epoch. */
     virtual int64_t GetTime() const = 0;
     /** Returns the current time in milliseconds since the POSIX epoch. */
@@ -24,7 +26,7 @@ public:
 class SystemClock: public CClock {
 private:
     SystemClock() {}
-    ~SystemClock() {}
+    ~SystemClock() override {}
     SystemClock(SystemClock const&) = delete;
     SystemClock& operator=(const SystemClock&) = delete;
 public:
@@ -39,9 +41,9 @@ public:
      */
     static void SetGlobal();
 
-    int64_t GetTime() const;
-    int64_t GetTimeMillis() const;
-    int64_t GetTimeMicros() const;
+    int64_t GetTime() const override;
+    int64_t GetTimeMillis() const override;
+    int64_t GetTimeMicros() const override;
 };
 
 class FixedClock: public CClock {
@@ -63,9 +65,9 @@ public:
     static void SetGlobal();
 
     void Set(std::chrono::seconds fixedSeconds);
-    int64_t GetTime() const;
-    int64_t GetTimeMillis() const;
-    int64_t GetTimeMicros() const;
+    int64_t GetTime() const override;
+    int64_t GetTimeMillis() const override;
+    int64_t GetTimeMicros() const override;
 };
 
 class OffsetClock: public CClock {
@@ -88,9 +90,9 @@ public:
     static void SetGlobal();
 
     void Set(std::chrono::seconds offsetSeconds);
-    int64_t GetTime() const;
-    int64_t GetTimeMillis() const;
-    int64_t GetTimeMicros() const;
+    int64_t GetTime() const override;
+    int64_t GetTimeMillis() const override;
+    int64_t GetTimeMicros() const override;
 };
 
 const CClock* GetNodeClock();

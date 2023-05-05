@@ -156,7 +156,7 @@ public:
         auto addr = Address(j);
         while (!addr.has_value()) {
             if (!j.increment())
-                throw std::runtime_error(std::string(__func__) + ": diversifier index overflow.");;
+                throw std::runtime_error(std::string(__func__) + ": diversifier index overflow.");
             addr = Address(j);
         }
         return std::make_pair(addr.value(), j);
@@ -210,7 +210,7 @@ public:
         return std::nullopt;
     }
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
@@ -238,7 +238,7 @@ public:
     uint32_t childIndex;
     uint256 chaincode;
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
@@ -276,7 +276,7 @@ struct SaplingExtendedSpendingKey {
     libzcash::SaplingExpandedSpendingKey expsk;
     uint256 dk;
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {

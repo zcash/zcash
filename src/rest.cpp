@@ -47,7 +47,7 @@ struct CCoin {
     uint32_t nHeight;
     CTxOut out;
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action)
@@ -130,7 +130,7 @@ static bool rest_headers(HTTPRequest* req,
     if (path.size() != 2)
         return RESTERR(req, HTTP_BAD_REQUEST, "No header count specified. Use /rest/headers/<count>/<hash>.<ext>.");
 
-    long count = strtol(path[0].c_str(), NULL, 10);
+    long count = strtol(path[0].c_str(), nullptr, 10);
     if (count < 1 || count > 2000)
         return RESTERR(req, HTTP_BAD_REQUEST, "Header count out of range: " + path[0]);
 
@@ -145,8 +145,8 @@ static bool rest_headers(HTTPRequest* req,
     {
         LOCK(cs_main);
         BlockMap::const_iterator it = mapBlockIndex.find(hash);
-        const CBlockIndex *pindex = (it != mapBlockIndex.end()) ? it->second : NULL;
-        while (pindex != NULL && chainActive.Contains(pindex)) {
+        const CBlockIndex *pindex = (it != mapBlockIndex.end()) ? it->second : nullptr;
+        while (pindex != nullptr && chainActive.Contains(pindex)) {
             headers.push_back(pindex);
             if (headers.size() == (unsigned long)count)
                 break;
@@ -155,8 +155,8 @@ static bool rest_headers(HTTPRequest* req,
 
         if (rf == RF_BINARY || rf == RF_HEX) {
             try {
-                for (const CBlockIndex *pindex : headers) {
-                    ssHeader << pindex->GetBlockHeader();
+                for (const CBlockIndex *pidx : headers) {
+                    ssHeader << pidx->GetBlockHeader();
                 }
             } catch (const std::runtime_error&) {
                 return RESTERR(req, HTTP_INTERNAL_SERVER_ERROR, "Failed to read index entry");
@@ -191,7 +191,7 @@ static bool rest_headers(HTTPRequest* req,
         req->WriteReply(HTTP_OK, strJSON);
         return true;
     }
-    default: {
+    case RF_UNDEF: {
         return RESTERR(req, HTTP_NOT_FOUND, "output format not found (available: .bin, .hex)");
     }
     }
@@ -215,7 +215,7 @@ static bool rest_block(HTTPRequest* req,
         return RESTERR(req, HTTP_BAD_REQUEST, "Invalid hash: " + hashStr);
 
     CBlock block;
-    CBlockIndex* pblockindex = NULL;
+    CBlockIndex* pblockindex = nullptr;
     {
         LOCK(cs_main);
         if (mapBlockIndex.count(hash) == 0)
@@ -259,7 +259,7 @@ static bool rest_block(HTTPRequest* req,
         return true;
     }
 
-    default: {
+    case RF_UNDEF: {
         return RESTERR(req, HTTP_NOT_FOUND, "output format not found (available: " + AvailableDataFormatsString() + ")");
     }
     }
@@ -297,7 +297,9 @@ static bool rest_chaininfo(HTTPRequest* req, const std::string& strURIPart)
         req->WriteReply(HTTP_OK, strJSON);
         return true;
     }
-    default: {
+    case RF_BINARY:
+    case RF_HEX:
+    case RF_UNDEF: {
         return RESTERR(req, HTTP_NOT_FOUND, "output format not found (available: json)");
     }
     }
@@ -322,7 +324,9 @@ static bool rest_mempool_info(HTTPRequest* req, const std::string& strURIPart)
         req->WriteReply(HTTP_OK, strJSON);
         return true;
     }
-    default: {
+    case RF_BINARY:
+    case RF_HEX:
+    case RF_UNDEF: {
         return RESTERR(req, HTTP_NOT_FOUND, "output format not found (available: json)");
     }
     }
@@ -347,7 +351,9 @@ static bool rest_mempool_contents(HTTPRequest* req, const std::string& strURIPar
         req->WriteReply(HTTP_OK, strJSON);
         return true;
     }
-    default: {
+    case RF_BINARY:
+    case RF_HEX:
+    case RF_UNDEF: {
         return RESTERR(req, HTTP_NOT_FOUND, "output format not found (available: json)");
     }
     }
@@ -400,7 +406,7 @@ static bool rest_tx(HTTPRequest* req, const std::string& strURIPart)
         return true;
     }
 
-    default: {
+    case RF_UNDEF: {
         return RESTERR(req, HTTP_NOT_FOUND, "output format not found (available: " + AvailableDataFormatsString() + ")");
     }
     }
@@ -467,6 +473,7 @@ static bool rest_getutxos(HTTPRequest* req, const std::string& strURIPart)
         // convert hex to bin, continue then with bin part
         std::vector<unsigned char> strRequestV = ParseHex(strRequestMutable);
         strRequestMutable.assign(strRequestV.begin(), strRequestV.end());
+        [[fallthrough]];
     }
 
     case RF_BINARY: {
@@ -482,7 +489,7 @@ static bool rest_getutxos(HTTPRequest* req, const std::string& strURIPart)
                 oss >> fCheckMemPool;
                 oss >> vOutPoints;
             }
-        } catch (const std::ios_base::failure& e) {
+        } catch (const std::ios_base::failure&) {
             // abort in case of unreadable binary data
             return RESTERR(req, HTTP_INTERNAL_SERVER_ERROR, "Parse error");
         }
@@ -494,7 +501,7 @@ static bool rest_getutxos(HTTPRequest* req, const std::string& strURIPart)
             return RESTERR(req, HTTP_INTERNAL_SERVER_ERROR, "Error: empty request");
         break;
     }
-    default: {
+    case RF_UNDEF: {
         return RESTERR(req, HTTP_NOT_FOUND, "output format not found (available: " + AvailableDataFormatsString() + ")");
     }
     }
@@ -596,7 +603,7 @@ static bool rest_getutxos(HTTPRequest* req, const std::string& strURIPart)
         req->WriteReply(HTTP_OK, strJSON);
         return true;
     }
-    default: {
+    case RF_UNDEF: {
         return RESTERR(req, HTTP_NOT_FOUND, "output format not found (available: " + AvailableDataFormatsString() + ")");
     }
     }

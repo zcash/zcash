@@ -35,9 +35,9 @@ double GetDifficultyINTERNAL(const CBlockIndex* blockindex, bool networkDifficul
 {
     // Floating point number that is a multiple of the minimum difficulty,
     // minimum difficulty = 1.0.
-    if (blockindex == NULL)
+    if (blockindex == nullptr)
     {
-        if (chainActive.Tip() == NULL)
+        if (chainActive.Tip() == nullptr)
             return 1.0;
         else
             blockindex = chainActive.Tip();
@@ -616,7 +616,7 @@ int parseHeightArg(const std::string& strHeight, int currentHeight)
     try {
         nHeight = std::stoi(strHeight);
     }
-    catch (const std::exception &e) {
+    catch (const std::exception &) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid block height parameter");
     }
     return interpretHeightArg(nHeight, currentHeight);
@@ -974,7 +974,7 @@ static UniValue SoftForkMajorityDesc(int minVersion, CBlockIndex* pindex, int nR
 {
     int nFound = 0;
     CBlockIndex* pstart = pindex;
-    for (int i = 0; i < consensusParams.nMajorityWindow && pstart != NULL; i++)
+    for (int i = 0; i < consensusParams.nMajorityWindow && pstart != nullptr; i++)
     {
         if (pstart->nVersion >= minVersion)
             ++nFound;
@@ -1367,7 +1367,6 @@ UniValue z_gettreestate(const UniValue& params, bool fHelp)
         UniValue sapling_result(UniValue::VOBJ);
         UniValue sapling_commitments(UniValue::VOBJ);
         sapling_commitments.pushKV("finalRoot", pindex->hashFinalSaplingRoot.GetHex());
-        bool need_skiphash = false;
         SaplingMerkleTree tree;
         if (pcoinsTip->GetSaplingAnchorAt(pindex->hashFinalSaplingRoot, tree)) {
             CDataStream s(SER_NETWORK, PROTOCOL_VERSION);
@@ -1397,7 +1396,6 @@ UniValue z_gettreestate(const UniValue& params, bool fHelp)
         UniValue orchard_commitments(UniValue::VOBJ);
         auto finalOrchardRootBytes = pindex->hashFinalOrchardRoot;
         orchard_commitments.pushKV("finalRoot", HexStr(finalOrchardRootBytes.begin(), finalOrchardRootBytes.end()));
-        bool need_skiphash = false;
         OrchardMerkleFrontier tree;
         if (pcoinsTip->GetOrchardAnchorAt(pindex->hashFinalOrchardRoot, tree)) {
             CDataStream s(SER_NETWORK, PROTOCOL_VERSION);
@@ -1520,12 +1518,10 @@ UniValue reconsiderblock(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block not found");
 
         CBlockIndex* pblockindex = mapBlockIndex[hash];
-        ReconsiderBlock(state, pblockindex);
+        ReconsiderBlock(pblockindex);
     }
 
-    if (state.IsValid()) {
-        ActivateBestChain(state, Params());
-    }
+    ActivateBestChain(state, Params());
 
     if (!state.IsValid()) {
         throw JSONRPCError(RPC_DATABASE_ERROR, state.GetRejectReason());
@@ -1561,8 +1557,8 @@ static const CRPCCommand commands[] =
     { "hidden",             "reconsiderblock",        &reconsiderblock,        true  },
 };
 
-void RegisterBlockchainRPCCommands(CRPCTable &tableRPC)
+void RegisterBlockchainRPCCommands(CRPCTable &rpcTable)
 {
     for (unsigned int vcidx = 0; vcidx < ARRAYLEN(commands); vcidx++)
-        tableRPC.appendCommand(commands[vcidx].name, &commands[vcidx]);
+        rpcTable.appendCommand(commands[vcidx].name, &commands[vcidx]);
 }

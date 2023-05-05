@@ -12,18 +12,16 @@
 
 class SproutProofVerifier
 {
-    ProofVerifier& verifier;
     const ed25519::VerificationKey& joinSplitPubKey;
     const JSDescription& jsdesc;
 
 public:
     SproutProofVerifier(
-        ProofVerifier& verifier,
         const ed25519::VerificationKey& joinSplitPubKey,
         const JSDescription& jsdesc
-        ) : jsdesc(jsdesc), verifier(verifier), joinSplitPubKey(joinSplitPubKey) {}
+        ) : joinSplitPubKey(joinSplitPubKey), jsdesc(jsdesc) {}
 
-    bool operator()(const libzcash::PHGRProof& proof) const
+    bool operator()(const libzcash::PHGRProof&) const
     {
         // We checkpoint after Sapling activation, so we can skip verification
         // for all Sprout proofs.
@@ -66,6 +64,6 @@ bool ProofVerifier::VerifySprout(
         return true;
     }
 
-    auto pv = SproutProofVerifier(*this, joinSplitPubKey, jsdesc);
+    auto pv = SproutProofVerifier(joinSplitPubKey, jsdesc);
     return std::visit(pv, jsdesc.proof);
 }

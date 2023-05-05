@@ -45,9 +45,9 @@ public:
         hashBestSaplingAnchor_ = SaplingMerkleTree::empty_root();
         hashBestOrchardAnchor_ = OrchardMerkleFrontier::empty_root();
     }
-    ~CCoinsViewTest() {}
+    ~CCoinsViewTest() override {}
 
-    bool GetSproutAnchorAt(const uint256& rt, SproutMerkleTree &tree) const {
+    bool GetSproutAnchorAt(const uint256& rt, SproutMerkleTree &tree) const override {
         if (rt == SproutMerkleTree::empty_root()) {
             SproutMerkleTree new_tree;
             tree = new_tree;
@@ -63,7 +63,7 @@ public:
         }
     }
 
-    bool GetSaplingAnchorAt(const uint256& rt, SaplingMerkleTree &tree) const {
+    bool GetSaplingAnchorAt(const uint256& rt, SaplingMerkleTree &tree) const override {
         if (rt == SaplingMerkleTree::empty_root()) {
             SaplingMerkleTree new_tree;
             tree = new_tree;
@@ -79,7 +79,7 @@ public:
         }
     }
 
-    bool GetOrchardAnchorAt(const uint256& rt, OrchardMerkleFrontier &tree) const {
+    bool GetOrchardAnchorAt(const uint256& rt, OrchardMerkleFrontier &tree) const override {
         if (rt == OrchardMerkleFrontier::empty_root()) {
             OrchardMerkleFrontier new_tree;
             tree = new_tree;
@@ -95,7 +95,7 @@ public:
         }
     }
 
-    bool GetNullifier(const uint256 &nf, ShieldedType type) const
+    bool GetNullifier(const uint256 &nf, ShieldedType type) const override
     {
         const std::map<uint256, bool>* mapToUse;
         switch (type) {
@@ -108,8 +108,6 @@ public:
             case ORCHARD:
                 mapToUse = &mapOrchardNullifiers_;
                 break;
-            default:
-                throw std::runtime_error("Unknown shielded type");
         }
         std::map<uint256, bool>::const_iterator it = mapToUse->find(nf);
         if (it == mapToUse->end()) {
@@ -121,23 +119,18 @@ public:
         }
     }
 
-    uint256 GetBestAnchor(ShieldedType type) const {
+    uint256 GetBestAnchor(ShieldedType type) const override {
         switch (type) {
             case SPROUT:
                 return hashBestSproutAnchor_;
-                break;
             case SAPLING:
                 return hashBestSaplingAnchor_;
-                break;
             case ORCHARD:
                 return hashBestOrchardAnchor_;
-                break;
-            default:
-                throw std::runtime_error("Unknown shielded type");
         }
     }
 
-    bool GetCoins(const uint256& txid, CCoins& coins) const
+    bool GetCoins(const uint256& txid, CCoins& coins) const override
     {
         std::map<uint256, CCoins>::const_iterator it = map_.find(txid);
         if (it == map_.end()) {
@@ -151,13 +144,13 @@ public:
         return true;
     }
 
-    bool HaveCoins(const uint256& txid) const
+    bool HaveCoins(const uint256& txid) const override
     {
         CCoins coins;
         return GetCoins(txid, coins);
     }
 
-    uint256 GetBestBlock() const { return hashBestBlock_; }
+    uint256 GetBestBlock() const override { return hashBestBlock_; }
 
     void BatchWriteNullifiers(CNullifiersMap& mapNullifiers, std::map<uint256, bool>& cacheNullifiers)
     {
@@ -193,9 +186,9 @@ public:
         }
     }
 
-    HistoryIndex GetHistoryLength(uint32_t epochId) const { return 0; }
-    HistoryNode GetHistoryAt(uint32_t epochId, HistoryIndex index) const { return HistoryNode(); }
-    uint256 GetHistoryRoot(uint32_t epochId) const { return uint256(); }
+    HistoryIndex GetHistoryLength(uint32_t) const override { return 0; }
+    HistoryNode GetHistoryAt(uint32_t, HistoryIndex) const override { return HistoryNode(); }
+    uint256 GetHistoryRoot(uint32_t) const override { return uint256(); }
 
     bool BatchWrite(CCoinsMap& mapCoins,
                     const uint256& hashBlock,
@@ -208,7 +201,7 @@ public:
                     CNullifiersMap& mapSproutNullifiers,
                     CNullifiersMap& mapSaplingNullifiers,
                     CNullifiersMap& mapOrchardNullifiers,
-                    CHistoryCacheMap &historyCacheMap)
+                    CHistoryCacheMap &) override
     {
         for (CCoinsMap::iterator it = mapCoins.begin(); it != mapCoins.end(); ) {
             if (it->second.flags & CCoinsCacheEntry::DIRTY) {
@@ -241,14 +234,14 @@ public:
         return true;
     }
 
-    bool GetStats(CCoinsStats& stats) const { return false; }
+    bool GetStats(CCoinsStats&) const override { return false; }
 };
 
 class CCoinsViewCacheTest : public CCoinsViewCache
 {
 public:
     CCoinsViewCacheTest(CCoinsView* base) : CCoinsViewCache(base) {}
-    ~CCoinsViewCacheTest() {}
+    ~CCoinsViewCacheTest() override {}
 
     void SelfTest() const
     {
@@ -276,31 +269,6 @@ public:
     uint256 sproutNullifier;
     uint256 saplingNullifier;
     uint256 orchardNullifier;
-
-    TxWithNullifiers()
-    {
-        CMutableTransaction mutableTx;
-
-        sproutNullifier = InsecureRand256();
-        JSDescription jsd;
-        jsd.nullifiers[0] = sproutNullifier;
-        mutableTx.vJoinSplit.emplace_back(jsd);
-
-        saplingNullifier = InsecureRand256();
-        SpendDescription sd;
-        sd.nullifier = saplingNullifier;
-        mutableTx.vShieldedSpend.push_back(sd);
-
-        // The Orchard bundle builder always pads to two Actions, so we can just
-        // use an empty builder to create a dummy Orchard bundle.
-        uint256 orchardAnchor;
-        uint256 dataToBeSigned;
-        auto builder = orchard::Builder(true, true, orchardAnchor);
-        mutableTx.orchardBundle = builder.Build().value().ProveAndSign({}, dataToBeSigned).value();
-        orchardNullifier = mutableTx.orchardBundle.GetNullifiers()[0];
-
-        tx = CTransaction(mutableTx);
-    }
 };
 
 }
@@ -332,29 +300,7 @@ template<> void AppendRandomLeaf(OrchardMerkleFrontier &tree) {
     tree.AppendBundle(bundle);
 }
 
-template<typename Tree> bool GetAnchorAt(const CCoinsViewCacheTest &cache, const uint256 &rt, Tree &tree);
-template<> bool GetAnchorAt(const CCoinsViewCacheTest &cache, const uint256 &rt, SproutMerkleTree &tree) { return cache.GetSproutAnchorAt(rt, tree); }
-template<> bool GetAnchorAt(const CCoinsViewCacheTest &cache, const uint256 &rt, SaplingMerkleTree &tree) { return cache.GetSaplingAnchorAt(rt, tree); }
-template<> bool GetAnchorAt(const CCoinsViewCacheTest &cache, const uint256 &rt, OrchardMerkleFrontier &tree) { return cache.GetOrchardAnchorAt(rt, tree); }
-
 BOOST_FIXTURE_TEST_SUITE(coins_tests, BasicTestingSetup)
-
-void checkNullifierCache(const CCoinsViewCacheTest &cache, const TxWithNullifiers &txWithNullifiers, bool shouldBeInCache) {
-    // Make sure the nullifiers have not gotten mixed up
-    BOOST_CHECK(!cache.GetNullifier(txWithNullifiers.sproutNullifier, SAPLING));
-    BOOST_CHECK(!cache.GetNullifier(txWithNullifiers.sproutNullifier, ORCHARD));
-    BOOST_CHECK(!cache.GetNullifier(txWithNullifiers.saplingNullifier, SPROUT));
-    BOOST_CHECK(!cache.GetNullifier(txWithNullifiers.saplingNullifier, ORCHARD));
-    BOOST_CHECK(!cache.GetNullifier(txWithNullifiers.orchardNullifier, SPROUT));
-    BOOST_CHECK(!cache.GetNullifier(txWithNullifiers.orchardNullifier, SAPLING));
-    // Check if the nullifiers either are or are not in the cache
-    bool containsSproutNullifier = cache.GetNullifier(txWithNullifiers.sproutNullifier, SPROUT);
-    bool containsSaplingNullifier = cache.GetNullifier(txWithNullifiers.saplingNullifier, SAPLING);
-    bool containsOrchardNullifier = cache.GetNullifier(txWithNullifiers.orchardNullifier, ORCHARD);
-    BOOST_CHECK(containsSproutNullifier == shouldBeInCache);
-    BOOST_CHECK(containsSaplingNullifier == shouldBeInCache);
-    BOOST_CHECK(containsOrchardNullifier == shouldBeInCache);
-}
 
 BOOST_AUTO_TEST_CASE(chained_joinsplits)
 {
@@ -745,7 +691,7 @@ BOOST_AUTO_TEST_CASE(ccoins_serialization)
         CCoins cc4;
         ss4 >> cc4;
         BOOST_CHECK_MESSAGE(false, "We should have thrown");
-    } catch (const std::ios_base::failure& e) {
+    } catch (const std::ios_base::failure&) {
     }
 
     // Very large scriptPubKey (3*10^9 bytes) past the end of the stream
@@ -758,7 +704,7 @@ BOOST_AUTO_TEST_CASE(ccoins_serialization)
         CCoins cc5;
         ss5 >> cc5;
         BOOST_CHECK_MESSAGE(false, "We should have thrown");
-    } catch (const std::ios_base::failure& e) {
+    } catch (const std::ios_base::failure&) {
     }
 }
 

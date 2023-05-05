@@ -28,7 +28,7 @@ static void CCheckQueueSpeed(benchmark::State& state)
         {
             return true;
         }
-        void swap(FakeJobNoWork& x){};
+        void swap(FakeJobNoWork&){}
     };
     CCheckQueue<FakeJobNoWork> queue {QUEUE_BATCH_SIZE};
     boost::thread_group tg;
@@ -75,7 +75,7 @@ static void CCheckQueueSpeedPrevectorJob(benchmark::State& state)
         {
             return true;
         }
-        void swap(PrevectorJob& x){p.swap(x.p);};
+        void swap(PrevectorJob& x){p.swap(x.p);}
     };
     CCheckQueue<PrevectorJob> queue {QUEUE_BATCH_SIZE};
     boost::thread_group tg;

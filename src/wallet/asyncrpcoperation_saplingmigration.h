@@ -10,7 +10,7 @@ class AsyncRPCOperation_saplingmigration : public AsyncRPCOperation
 {
 public:
     AsyncRPCOperation_saplingmigration(int targetHeight);
-    virtual ~AsyncRPCOperation_saplingmigration();
+    virtual ~AsyncRPCOperation_saplingmigration() override;
 
     // We don't want to be copied or moved around
     AsyncRPCOperation_saplingmigration(AsyncRPCOperation_saplingmigration const&) = delete;            // Copy construct
@@ -18,13 +18,13 @@ public:
     AsyncRPCOperation_saplingmigration& operator=(AsyncRPCOperation_saplingmigration const&) = delete; // Copy assign
     AsyncRPCOperation_saplingmigration& operator=(AsyncRPCOperation_saplingmigration&&) = delete;      // Move assign
 
-    static libzcash::SaplingPaymentAddress getMigrationDestAddress(const HDSeed& seed);
+    static libzcash::SaplingPaymentAddress getMigrationDestAddress();
 
-    virtual void main();
+    virtual void main() override;
 
     virtual void cancel();
 
-    virtual UniValue getStatus() const;
+    virtual UniValue getStatus() const override;
 
 private:
     int targetHeight_;

@@ -23,21 +23,24 @@ struct zero_after_free_allocator : public std::allocator<T> {
     typedef typename base::reference reference;
     typedef typename base::const_reference const_reference;
     typedef typename base::value_type value_type;
-    zero_after_free_allocator() throw() {}
-    zero_after_free_allocator(const zero_after_free_allocator& a) throw() : base(a) {}
+    zero_after_free_allocator() noexcept {}
+    zero_after_free_allocator(const zero_after_free_allocator& a) noexcept : base(a) {}
     template <typename U>
-    zero_after_free_allocator(const zero_after_free_allocator<U>& a) throw() : base(a)
+    zero_after_free_allocator(const zero_after_free_allocator<U>& a) noexcept : base(a)
     {
     }
-    ~zero_after_free_allocator() throw() {}
-    template <typename _Other>
+    ~zero_after_free_allocator() noexcept {}
+
+    zero_after_free_allocator& operator=(const zero_after_free_allocator&) = default;
+
+    template <typename Other>
     struct rebind {
-        typedef zero_after_free_allocator<_Other> other;
+        typedef zero_after_free_allocator<Other> other;
     };
 
     void deallocate(T* p, std::size_t n)
     {
-        if (p != NULL)
+        if (p != nullptr)
             memory_cleanse(p, sizeof(T) * n);
         std::allocator<T>::deallocate(p, n);
     }

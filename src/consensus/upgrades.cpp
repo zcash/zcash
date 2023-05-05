@@ -10,49 +10,49 @@
  */
 const struct NUInfo NetworkUpgradeInfo[Consensus::MAX_NETWORK_UPGRADES] = {
     {
-        .nBranchId = 0,
-        .strName = "Sprout",
-        .strInfo = "The Zcash network at launch",
+        0,
+        "Sprout",
+        "The Zcash network at launch",
     },
     {
-        .nBranchId = 0x74736554,
-        .strName = "Test dummy",
-        .strInfo = "Test dummy info",
+        0x74736554,
+        "Test dummy",
+        "Test dummy info",
     },
     {
-        .nBranchId = 0x5ba81b19,
-        .strName = "Overwinter",
-        .strInfo = "See https://z.cash/upgrade/overwinter/ for details.",
+        0x5ba81b19,
+        "Overwinter",
+        "See https://z.cash/upgrade/overwinter/ for details.",
     },
     {
-        .nBranchId = 0x76b809bb,
-        .strName = "Sapling",
-        .strInfo = "See https://z.cash/upgrade/sapling/ for details.",
+        0x76b809bb,
+        "Sapling",
+        "See https://z.cash/upgrade/sapling/ for details.",
     },
     {
-        .nBranchId = 0x2bb40e60,
-        .strName = "Blossom",
-        .strInfo = "See https://z.cash/upgrade/blossom/ for details.",
+        0x2bb40e60,
+        "Blossom",
+        "See https://z.cash/upgrade/blossom/ for details.",
     },
     {
-        .nBranchId = 0xf5b9230b,
-        .strName = "Heartwood",
-        .strInfo = "See https://z.cash/upgrade/heartwood/ for details.",
+        0xf5b9230b,
+        "Heartwood",
+        "See https://z.cash/upgrade/heartwood/ for details.",
     },
     {
-        .nBranchId = 0xe9ff75a6,
-        .strName = "Canopy",
-        .strInfo = "See https://z.cash/upgrade/canopy/ for details.",
+        0xe9ff75a6,
+        "Canopy",
+        "See https://z.cash/upgrade/canopy/ for details.",
     },
     {
-        .nBranchId = 0xc2d6d0b4,
-        .strName = "NU5",
-        .strInfo = "See https://z.cash/upgrade/nu5/ for details.",
+        0xc2d6d0b4,
+        "NU5",
+        "See https://z.cash/upgrade/nu5/ for details.",
     },
     {
-        .nBranchId = 0xffffffff,
-        .strName = "ZFUTURE",
-        .strInfo = "Future network upgrade (integration testing only)",
+        0xffffffff,
+        "ZFUTURE",
+        "Future network upgrade (integration testing only)",
     }
 };
 
@@ -99,7 +99,7 @@ uint32_t CurrentEpochBranchId(int nHeight, const Consensus::Params& params) {
     return NetworkUpgradeInfo[CurrentEpoch(nHeight, params)].nBranchId;
 }
 
-uint32_t PrevEpochBranchId(uint32_t currentBranchId, const Consensus::Params& params) {
+uint32_t PrevEpochBranchId(uint32_t currentBranchId) {
     for (int idx = Consensus::BASE_SPROUT + 1; idx < Consensus::MAX_NETWORK_UPGRADES; idx++) {
         if (currentBranchId == NetworkUpgradeInfo[idx].nBranchId) {
             return NetworkUpgradeInfo[idx - 1].nBranchId;

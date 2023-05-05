@@ -13,7 +13,7 @@
 
 class UnknownRPCMethod {
  public:
-    UnknownRPCMethod() {};
+    UnknownRPCMethod() {}
 };
 
 class WrongNumberOfParams {

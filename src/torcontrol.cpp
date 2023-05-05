@@ -27,8 +27,6 @@
 #include <event2/event.h>
 #include <event2/thread.h>
 
-using namespace boost::placeholders;
-
 /** Default control port */
 const std::string DEFAULT_TOR_CONTROL = "127.0.0.1:9051";
 /** Tor cookie size (from control-spec.txt) */
@@ -40,9 +38,9 @@ static const std::string TOR_SAFE_SERVERKEY = "Tor safe cookie authentication se
 /** For computing clientHash in SAFECOOKIE */
 static const std::string TOR_SAFE_CLIENTKEY = "Tor safe cookie authentication controller-to-server hash";
 /** Exponential backoff configuration - initial timeout in seconds */
-static const float RECONNECT_TIMEOUT_START = 1.0;
+static const double RECONNECT_TIMEOUT_START = 1.0;
 /** Exponential backoff configuration - growth factor */
-static const float RECONNECT_TIMEOUT_EXP = 1.5;
+static const double RECONNECT_TIMEOUT_EXP = 1.5;
 /** Maximum length for lines received on TorControlConnection.
  * tor-control-spec.txt mentions that there is explicitly no limit defined to line length,
  * this is belt-and-suspenders sanity limit to prevent memory exhaustion.
@@ -123,7 +121,7 @@ private:
 };
 
 TorControlConnection::TorControlConnection(struct event_base *_base):
-    base(_base), b_conn(0)
+    base(_base), b_conn(nullptr)
 {
 }
 
@@ -140,8 +138,8 @@ void TorControlConnection::readcb(struct bufferevent *bev, void *ctx)
     size_t n_read_out = 0;
     char *line;
     assert(input);
-    //  If there is not a whole line to read, evbuffer_readln returns NULL
-    while((line = evbuffer_readln(input, &n_read_out, EVBUFFER_EOL_CRLF)) != NULL)
+    //  If there is not a whole line to read, evbuffer_readln returns `nullptr`
+    while((line = evbuffer_readln(input, &n_read_out, EVBUFFER_EOL_CRLF)) != nullptr)
     {
         std::string s(line, n_read_out);
         free(line);
@@ -178,7 +176,7 @@ void TorControlConnection::readcb(struct bufferevent *bev, void *ctx)
     }
 }
 
-void TorControlConnection::eventcb(struct bufferevent *bev, short what, void *ctx)
+void TorControlConnection::eventcb(struct bufferevent *, short what, void *ctx)
 {
     TorControlConnection *self = (TorControlConnection*)ctx;
     if (what & BEV_EVENT_CONNECTED) {
@@ -211,7 +209,7 @@ bool TorControlConnection::Connect(const std::string &target, const ConnectionCB
     b_conn = bufferevent_socket_new(base, -1, BEV_OPT_CLOSE_ON_FREE);
     if (!b_conn)
         return false;
-    bufferevent_setcb(b_conn, TorControlConnection::readcb, NULL, TorControlConnection::eventcb, this);
+    bufferevent_setcb(b_conn, TorControlConnection::readcb, nullptr, TorControlConnection::eventcb, this);
     bufferevent_enable(b_conn, EV_READ|EV_WRITE);
     this->connected = _connected;
     this->disconnected = _disconnected;
@@ -228,7 +226,7 @@ bool TorControlConnection::Disconnect()
 {
     if (b_conn)
         bufferevent_free(b_conn);
-    b_conn = 0;
+    b_conn = nullptr;
     return true;
 }
 
@@ -305,7 +303,7 @@ static std::map<std::string,std::string> ParseTorReplyMapping(const std::string 
              *   rules to be compatible with buggy Tor implementations and with
              *   future ones that implement the spec as intended:
              *
-             *     Read \n \t \r and \0 ... \377 as C escapes.
+             *     Read \\n \\t \\r and \\0 ... \\377 as C escapes.
              *     Treat a backslash followed by any other character as that character.
              */
             std::string escaped_value;
@@ -334,7 +332,7 @@ static std::map<std::string,std::string> ParseTorReplyMapping(const std::string 
                         if (j == 3 && value[i] > '3') {
                             j--;
                         }
-                        escaped_value.push_back(strtol(value.substr(i, j).c_str(), NULL, 8));
+                        escaped_value.push_back(strtol(value.substr(i, j).c_str(), nullptr, 8));
                         // Account for automatic incrementing at loop end
                         i += j - 1;
                     } else {
@@ -368,7 +366,7 @@ static std::map<std::string,std::string> ParseTorReplyMapping(const std::string 
 static std::pair<bool,std::string> ReadBinaryFile(const fs::path &filename, size_t maxsize=std::numeric_limits<size_t>::max())
 {
     FILE *f = fsbridge::fopen(filename, "rb");
-    if (f == NULL)
+    if (f == nullptr)
         return std::make_pair(false,"");
     std::string retval;
     char buffer[128];
@@ -394,7 +392,7 @@ static std::pair<bool,std::string> ReadBinaryFile(const fs::path &filename, size
 static bool WriteBinaryFile(const fs::path &filename, const std::string &data)
 {
     FILE *f = fsbridge::fopen(filename, "wb");
-    if (f == NULL)
+    if (f == nullptr)
         return false;
     if (fwrite(data.data(), 1, data.size(), f) != data.size()) {
         fclose(f);
@@ -428,7 +426,7 @@ private:
     std::string service_id;
     bool reconnect;
     struct event *reconnect_ev;
-    float reconnect_timeout;
+    double reconnect_timeout;
     CService service;
     /** Cooie for SAFECOOKIE auth */
     std::vector<uint8_t> cookie;
@@ -454,9 +452,11 @@ private:
 
 TorController::TorController(struct event_base* _base, const std::string& _target):
     base(_base),
-    target(_target), conn(base), reconnect(true), reconnect_ev(0),
+    target(_target), conn(base), reconnect(true), reconnect_ev(nullptr),
     reconnect_timeout(RECONNECT_TIMEOUT_START)
 {
+    using namespace boost::placeholders;
+
     reconnect_ev = event_new(base, -1, 0, reconnect_cb, this);
     if (!reconnect_ev)
         LogPrintf("tor: Failed to create event for reconnection: out of memory?\n");
@@ -477,14 +477,14 @@ TorController::~TorController()
 {
     if (reconnect_ev) {
         event_free(reconnect_ev);
-        reconnect_ev = 0;
+        reconnect_ev = nullptr;
     }
     if (service.IsValid()) {
         RemoveLocal(service);
     }
 }
 
-void TorController::add_onion_cb(TorControlConnection& _conn, const TorControlReply& reply)
+void TorController::add_onion_cb(TorControlConnection&, const TorControlReply& reply)
 {
     if (reply.code == 250) {
         LogPrint("tor", "tor: ADD_ONION successful\n");
@@ -522,6 +522,8 @@ void TorController::add_onion_cb(TorControlConnection& _conn, const TorControlRe
 
 void TorController::auth_cb(TorControlConnection& _conn, const TorControlReply& reply)
 {
+    using namespace boost::placeholders;
+
     if (reply.code == 250) {
         LogPrint("tor", "tor: Authentication successful\n");
 
@@ -575,6 +577,8 @@ static std::vector<uint8_t> ComputeResponse(const std::string &key, const std::v
 
 void TorController::authchallenge_cb(TorControlConnection& _conn, const TorControlReply& reply)
 {
+    using namespace boost::placeholders;
+
     if (reply.code == 250) {
         LogPrint("tor", "tor: SAFECOOKIE authentication challenge successful\n");
         std::pair<std::string,std::string> l = SplitTorReplyLine(reply.lines[0]);
@@ -610,6 +614,8 @@ void TorController::authchallenge_cb(TorControlConnection& _conn, const TorContr
 
 void TorController::protocolinfo_cb(TorControlConnection& _conn, const TorControlReply& reply)
 {
+    using namespace boost::placeholders;
+
     if (reply.code == 250) {
         std::set<std::string> methods;
         std::string cookiefile;
@@ -684,13 +690,15 @@ void TorController::protocolinfo_cb(TorControlConnection& _conn, const TorContro
 
 void TorController::connected_cb(TorControlConnection& _conn)
 {
+    using namespace boost::placeholders;
+
     reconnect_timeout = RECONNECT_TIMEOUT_START;
     // First send a PROTOCOLINFO command to figure out what authentication is expected
     if (!_conn.Command("PROTOCOLINFO 1", boost::bind(&TorController::protocolinfo_cb, this, _1, _2)))
         LogPrintf("tor: Error sending initial protocolinfo command\n");
 }
 
-void TorController::disconnected_cb(TorControlConnection& _conn)
+void TorController::disconnected_cb(TorControlConnection&)
 {
     // Stop advertizing service when disconnected
     if (service.IsValid())
@@ -710,6 +718,8 @@ void TorController::disconnected_cb(TorControlConnection& _conn)
 
 void TorController::Reconnect()
 {
+    using namespace boost::placeholders;
+
     /* Try to reconnect and reestablish if we get booted - for example, Tor
      * may be restarting.
      */
@@ -724,7 +734,7 @@ fs::path TorController::GetPrivateKeyFile()
     return GetDataDir() / "onion_private_key";
 }
 
-void TorController::reconnect_cb(evutil_socket_t fd, short what, void *arg)
+void TorController::reconnect_cb(evutil_socket_t, short, void *arg)
 {
     TorController *self = (TorController*)arg;
     self->Reconnect();
@@ -741,7 +751,7 @@ static void TorControlThread()
     event_base_dispatch(gBase);
 }
 
-void StartTorControl(boost::thread_group& threadGroup, CScheduler& scheduler)
+void StartTorControl(boost::thread_group&, CScheduler&)
 {
     assert(!gBase);
 #ifdef WIN32
@@ -771,7 +781,6 @@ void StopTorControl()
     if (gBase) {
         torControlThread.join();
         event_base_free(gBase);
-        gBase = 0;
+        gBase = nullptr;
     }
 }
-

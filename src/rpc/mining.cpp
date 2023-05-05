@@ -51,7 +51,7 @@ int64_t GetNetworkHashPS(int lookup, int height) {
     if (height >= 0 && height < chainActive.Height())
         pb = chainActive[height];
 
-    if (pb == NULL || !pb->nHeight)
+    if (pb == nullptr || !pb->nHeight)
         return 0;
 
     // If lookup is nonpositive, then use difficulty averaging window.
@@ -82,7 +82,7 @@ int64_t GetNetworkHashPS(int lookup, int height) {
     return (int64_t)(workDiff.getdouble() / timeDiff);
 }
 
-UniValue getlocalsolps(const UniValue& params, bool fHelp)
+UniValue getlocalsolps(const UniValue&, bool fHelp)
 {
     if (fHelp)
         throw runtime_error(
@@ -265,7 +265,7 @@ UniValue generate(const UniValue& params, bool fHelp)
         }
 endloop:
         CValidationState state;
-        if (!ProcessNewBlock(state, Params(), NULL, pblock, true, NULL))
+        if (!ProcessNewBlock(state, Params(), nullptr, pblock, true, nullptr))
             throw JSONRPCError(RPC_INTERNAL_ERROR, "ProcessNewBlock, block not accepted");
         ++nHeight;
         blockHashes.push_back(pblock->GetHash().GetHex());
@@ -624,7 +624,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
 
         // Release the main lock while waiting
         // Don't call chainActive->Tip() without holding cs_main
-        LEAVE_CRITICAL_SECTION(cs_main);
+        LEAVE_CRITICAL_SECTION(cs_main)
         {
             checktxtime = std::chrono::steady_clock::now() + std::chrono::seconds(10);
 
@@ -662,7 +662,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
                 next_cb_mtx = nullopt;
             }
         }
-        ENTER_CRITICAL_SECTION(cs_main);
+        ENTER_CRITICAL_SECTION(cs_main)
 
         if (!IsRPCRunning())
             throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "Shutting down");
@@ -832,15 +832,15 @@ public:
     bool found;
     CValidationState state;
 
-    submitblock_StateCatcher(const uint256 &hashIn) : hash(hashIn), found(false), state() {};
+    submitblock_StateCatcher(const uint256 &hashIn) : hash(hashIn), found(false), state() {}
 
 protected:
-    virtual void BlockChecked(const CBlock& block, const CValidationState& stateIn) {
+    virtual void BlockChecked(const CBlock& block, const CValidationState& stateIn) override {
         if (block.GetHash() != hash)
             return;
         found = true;
         state = stateIn;
-    };
+    }
 };
 
 UniValue submitblock(const UniValue& params, bool fHelp)
@@ -893,7 +893,7 @@ UniValue submitblock(const UniValue& params, bool fHelp)
     CValidationState state;
     submitblock_StateCatcher sc(block.GetHash());
     RegisterValidationInterface(&sc);
-    bool fAccepted = ProcessNewBlock(state, Params(), NULL, &block, true, NULL);
+    bool fAccepted = ProcessNewBlock(state, Params(), nullptr, &block, true, nullptr);
     UnregisterValidationInterface(&sc);
     if (fBlockPresent)
     {
@@ -1016,8 +1016,8 @@ static const CRPCCommand commands[] =
 #endif
 };
 
-void RegisterMiningRPCCommands(CRPCTable &tableRPC)
+void RegisterMiningRPCCommands(CRPCTable &rpcTable)
 {
     for (unsigned int vcidx = 0; vcidx < ARRAYLEN(commands); vcidx++)
-        tableRPC.appendCommand(commands[vcidx].name, &commands[vcidx]);
+        rpcTable.appendCommand(commands[vcidx].name, &commands[vcidx]);
 }

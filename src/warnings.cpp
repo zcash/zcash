@@ -11,11 +11,11 @@
 #include "alert.h"
 #include "uint256.h"
 
-CCriticalSection cs_warnings;
-std::string strMiscWarning;
-int64_t timestampWarning;
-bool fLargeWorkForkFound = false;
-bool fLargeWorkInvalidChainFound = false;
+static CCriticalSection cs_warnings;
+static std::string strMiscWarning;
+static int64_t timestampWarning;
+static bool fLargeWorkForkFound = false;
+static bool fLargeWorkInvalidChainFound = false;
 
 void SetMiscWarning(const std::string& strWarning, int64_t timestamp)
 {
@@ -93,7 +93,7 @@ std::pair<std::string, int64_t> GetWarnings(const std::string& strFor)
     // Alerts
     {
         LOCK(cs_mapAlerts);
-        for (const std::pair<uint256, CAlert>& item : mapAlerts)
+        for (const std::pair<const uint256, CAlert>& item : mapAlerts)
         {
             const CAlert& alert = item.second;
             if (alert.AppliesToMe() && alert.nPriority > nPriority)

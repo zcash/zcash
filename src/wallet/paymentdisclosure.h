@@ -48,7 +48,7 @@ struct PaymentDisclosureInfo {
 
     PaymentDisclosureInfo(uint8_t v, uint256 esk, ed25519::SigningKey key, libzcash::SproutPaymentAddress zaddr) : version(v), esk(esk), joinSplitPrivKey(key), zaddr(zaddr) { }
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
@@ -85,7 +85,7 @@ struct PaymentDisclosurePayload {
     libzcash::SproutPaymentAddress zaddr; // zcash/Address.hpp
     std::string message;     // parameter to RPC call
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
@@ -123,15 +123,15 @@ struct PaymentDisclosure {
     ed25519::Signature payloadSig;
     // We use boost array because serialize doesn't like char buffer, otherwise we could do: unsigned char payloadSig[64];
 
-    PaymentDisclosure() {};
-    PaymentDisclosure(const PaymentDisclosurePayload payload, const ed25519::Signature sig) : payload(payload), payloadSig(sig) {};
+    PaymentDisclosure() {}
+    PaymentDisclosure(const PaymentDisclosurePayload payload, const ed25519::Signature sig) : payload(payload), payloadSig(sig) {}
     PaymentDisclosure(
         const ed25519::VerificationKey& joinSplitPubKey,
         const PaymentDisclosureKey& key,
         const PaymentDisclosureInfo& info,
         const std::string& message);
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {

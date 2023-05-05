@@ -52,7 +52,7 @@ struct CDiskTxPos : public CDiskBlockPos
 {
     unsigned int nTxOffset; // after header
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
@@ -81,19 +81,19 @@ protected:
     CCoinsViewDB(std::string dbName, size_t nCacheSize, bool fMemory = false, bool fWipe = false);
 public:
     CCoinsViewDB(size_t nCacheSize, bool fMemory = false, bool fWipe = false);
-    ~CCoinsViewDB() {}
+    ~CCoinsViewDB() override {}
 
-    bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const;
-    bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const;
-    bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const;
-    bool GetNullifier(const uint256 &nf, ShieldedType type) const;
-    bool GetCoins(const uint256 &txid, CCoins &coins) const;
-    bool HaveCoins(const uint256 &txid) const;
-    uint256 GetBestBlock() const;
-    uint256 GetBestAnchor(ShieldedType type) const;
-    HistoryIndex GetHistoryLength(uint32_t epochId) const;
-    HistoryNode GetHistoryAt(uint32_t epochId, HistoryIndex index) const;
-    uint256 GetHistoryRoot(uint32_t epochId) const;
+    bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const override;
+    bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const override;
+    bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const override;
+    bool GetNullifier(const uint256 &nf, ShieldedType type) const override;
+    bool GetCoins(const uint256 &txid, CCoins &coins) const override;
+    bool HaveCoins(const uint256 &txid) const override;
+    uint256 GetBestBlock() const override;
+    uint256 GetBestAnchor(ShieldedType type) const override;
+    HistoryIndex GetHistoryLength(uint32_t epochId) const override;
+    HistoryNode GetHistoryAt(uint32_t epochId, HistoryIndex index) const override;
+    uint256 GetHistoryRoot(uint32_t epochId) const override;
     bool BatchWrite(CCoinsMap &mapCoins,
                     const uint256 &hashBlock,
                     const uint256 &hashSproutAnchor,
@@ -105,8 +105,8 @@ public:
                     CNullifiersMap &mapSproutNullifiers,
                     CNullifiersMap &mapSaplingNullifiers,
                     CNullifiersMap &mapOrchardNullifiers,
-                    CHistoryCacheMap &historyCacheMap);
-    bool GetStats(CCoinsStats &stats) const;
+                    CHistoryCacheMap &historyCacheMap) override;
+    bool GetStats(CCoinsStats &stats) const override;
 };
 
 /** Access to the block database (blocks/index/) */

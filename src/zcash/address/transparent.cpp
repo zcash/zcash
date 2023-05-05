@@ -65,7 +65,6 @@ std::optional<std::pair<CKeyID, diversifier_index_t>> AccountPubKey::FindChangeA
             j.increment();
         }
     }
-    return std::nullopt;
 }
 
 std::optional<AccountKey> AccountKey::ForAccount(

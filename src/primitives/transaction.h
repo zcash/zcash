@@ -108,7 +108,7 @@ public:
     SpendDescriptionV5(uint256 cv, uint256 nullifier, uint256 rk)
         : cv(cv), nullifier(nullifier), rk(rk) { }
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
@@ -141,7 +141,7 @@ public:
         spend_auth_sig_t spendAuthSig)
         : SpendDescriptionV5(cv, nullifier, rk), anchor(anchor), zkproof(zkproof), spendAuthSig(spendAuthSig) { }
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
@@ -193,7 +193,7 @@ public:
         libzcash::SaplingOutCiphertext outCiphertext)
         : cv(cv), cmu(cmu), ephemeralKey(ephemeralKey), encCiphertext(encCiphertext), outCiphertext(outCiphertext) { }
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
@@ -224,7 +224,7 @@ public:
         libzcash::GrothProof zkproof)
         : OutputDescriptionV5(cv, cmu, ephemeralKey, encCiphertext, outCiphertext), zkproof(zkproof) { }
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
@@ -277,7 +277,7 @@ public:
         const CAmount& valueBalance,
         const binding_sig_t& bindingSig);
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
@@ -293,17 +293,17 @@ public:
             READWRITE(anchorSapling);
         }
         if (ser_action.ForRead()) {
-            for (auto &spend : vSpendsSapling) {
+            for ([[maybe_unused]] auto &spend : vSpendsSapling) {
                 libzcash::GrothProof zkproof;
                 READWRITE(zkproof);
                 vSpendProofsSapling.push_back(zkproof);
             }
-            for (auto &spend : vSpendsSapling) {
+            for ([[maybe_unused]] auto &spend : vSpendsSapling) {
                 SpendDescription::spend_auth_sig_t spendAuthSig;
                 READWRITE(spendAuthSig);
                 vSpendAuthSigSapling.push_back(spendAuthSig);
             }
-            for (auto &output : vOutputsSapling) {
+            for ([[maybe_unused]] auto &output : vOutputsSapling) {
                 libzcash::GrothProof zkproof;
                 READWRITE(zkproof);
                 vOutputProofsSapling.push_back(zkproof);
@@ -355,14 +355,14 @@ public:
 };
 
 template<typename Stream, typename T>
-inline void SerReadWriteSproutProof(Stream& s, const T& proof, bool useGroth, CSerActionSerialize ser_action)
+inline void SerReadWriteSproutProof(Stream& s, const T& proof, bool useGroth, CSerActionSerialize)
 {
     auto ps = SproutProofSerializer<Stream>(s, useGroth);
     std::visit(ps, proof);
 }
 
 template<typename Stream, typename T>
-inline void SerReadWriteSproutProof(Stream& s, T& proof, bool useGroth, CSerActionUnserialize ser_action)
+inline void SerReadWriteSproutProof(Stream& s, T& proof, bool useGroth, CSerActionUnserialize)
 {
     if (useGroth) {
         libzcash::GrothProof grothProof;
@@ -425,7 +425,7 @@ public:
 
     JSDescription(): vpub_old(0), vpub_new(0) { }
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
@@ -478,7 +478,7 @@ public:
     BaseOutPoint() { SetNull(); }
     BaseOutPoint(uint256 hashIn, uint32_t nIn) { hash = hashIn; n = nIn; }
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
@@ -509,8 +509,8 @@ public:
 class COutPoint : public BaseOutPoint
 {
 public:
-    COutPoint() : BaseOutPoint() {};
-    COutPoint(uint256 hashIn, uint32_t nIn) : BaseOutPoint(hashIn, nIn) {};
+    COutPoint() : BaseOutPoint() {}
+    COutPoint(uint256 hashIn, uint32_t nIn) : BaseOutPoint(hashIn, nIn) {}
     std::string ToString() const;
 };
 
@@ -519,8 +519,8 @@ public:
 class SaplingOutPoint : public BaseOutPoint
 {
 public:
-    SaplingOutPoint() : BaseOutPoint() {};
-    SaplingOutPoint(uint256 hashIn, uint32_t nIn) : BaseOutPoint(hashIn, nIn) {};
+    SaplingOutPoint() : BaseOutPoint() {}
+    SaplingOutPoint(uint256 hashIn, uint32_t nIn) : BaseOutPoint(hashIn, nIn) {}
     std::string ToString() const;
 };
 
@@ -529,8 +529,8 @@ public:
 class OrchardOutPoint : public BaseOutPoint
 {
 public:
-    OrchardOutPoint() : BaseOutPoint() {};
-    OrchardOutPoint(uint256 hashIn, uint32_t nIn) : BaseOutPoint(hashIn, nIn) {};
+    OrchardOutPoint() : BaseOutPoint() {}
+    OrchardOutPoint(uint256 hashIn, uint32_t nIn) : BaseOutPoint(hashIn, nIn) {}
     std::string ToString() const;
 };
 
@@ -555,7 +555,7 @@ public:
     explicit CTxIn(COutPoint prevoutIn, CScript scriptSigIn=CScript(), uint32_t nSequenceIn=std::numeric_limits<unsigned int>::max());
     CTxIn(uint256 hashPrevTx, uint32_t nOut, CScript scriptSigIn=CScript(), uint32_t nSequenceIn=std::numeric_limits<uint32_t>::max());
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
@@ -604,7 +604,7 @@ public:
 
     CTxOut(const CAmount& nValueIn, CScript scriptPubKeyIn);
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
@@ -768,9 +768,11 @@ public:
     CTransaction(const CMutableTransaction &tx);
     CTransaction(CMutableTransaction &&tx);
 
+    CTransaction(const CTransaction&) = default;
+
     CTransaction& operator=(const CTransaction& tx);
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
@@ -1007,7 +1009,7 @@ struct CMutableTransaction
     CMutableTransaction();
     CMutableTransaction(const CTransaction& tx);
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {

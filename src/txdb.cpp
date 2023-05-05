@@ -109,8 +109,6 @@ bool CCoinsViewDB::GetNullifier(const uint256 &nf, ShieldedType type) const {
         case ORCHARD:
             dbChar = DB_ORCHARD_NULLIFIER;
             break;
-        default:
-            throw runtime_error("Unknown shielded type");
     }
     return db.Read(make_pair(dbChar, nf), spent);
 }
@@ -146,8 +144,6 @@ uint256 CCoinsViewDB::GetBestAnchor(ShieldedType type) const {
             if (!db.Read(DB_BEST_ORCHARD_ANCHOR, hashBestAnchor))
                 return OrchardMerkleFrontier::empty_root();
             break;
-        default:
-            throw runtime_error("Unknown shielded type");
     }
 
     return hashBestAnchor;
@@ -277,7 +273,7 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
                               CNullifiersMap &mapSaplingNullifiers,
                               CNullifiersMap &mapOrchardNullifiers,
                               CHistoryCacheMap &historyCacheMap) {
-    CDBBatch batch(db);
+    CDBBatch batch;
     size_t count = 0;
     size_t changed = 0;
     for (CCoinsMap::iterator it = mapCoins.begin(); it != mapCoins.end();) {
@@ -386,7 +382,7 @@ bool CCoinsViewDB::GetStats(CCoinsStats &stats) const {
 
 bool CBlockTreeDB::WriteBatchSync(const std::vector<std::pair<int, const CBlockFileInfo*> >& fileInfo, int nLastFile, const std::vector<CBlockIndex*>& blockinfo) {
     MetricsIncrementCounter("zcashd.debug.blocktree.write_batch");
-    CDBBatch batch(*this);
+    CDBBatch batch;
     for (const auto& it : fileInfo) {
         batch.Write(make_pair(DB_BLOCK_FILES, it.first), *it.second);
     }
@@ -414,7 +410,7 @@ bool CBlockTreeDB::WriteBatchSync(const std::vector<std::pair<int, const CBlockF
 }
 
 bool CBlockTreeDB::EraseBatchSync(const std::vector<const CBlockIndex*>& blockinfo) {
-    CDBBatch batch(*this);
+    CDBBatch batch;
     for (std::vector<const CBlockIndex*>::const_iterator it=blockinfo.begin(); it != blockinfo.end(); it++) {
         batch.Erase(make_pair(DB_BLOCK_INDEX, (*it)->GetBlockHash()));
     }
@@ -430,7 +426,7 @@ bool CBlockTreeDB::ReadTxIndex(const uint256 &txid, CDiskTxPos &pos) const {
 }
 
 bool CBlockTreeDB::WriteTxIndex(const std::vector<std::pair<uint256, CDiskTxPos> >&vect) {
-    CDBBatch batch(*this);
+    CDBBatch batch;
     for (std::vector<std::pair<uint256,CDiskTxPos> >::const_iterator it=vect.begin(); it!=vect.end(); it++)
         batch.Write(make_pair(DB_TXINDEX, it->first), it->second);
     return WriteBatch(batch);
@@ -440,7 +436,7 @@ bool CBlockTreeDB::WriteTxIndex(const std::vector<std::pair<uint256, CDiskTxPos>
 // https://github.com/bitpay/bitcoin/commit/017f548ea6d89423ef568117447e61dd5707ec42#diff-81e4f16a1b5d5b7ca25351a63d07cb80R183
 bool CBlockTreeDB::UpdateAddressUnspentIndex(const std::vector<CAddressUnspentDbEntry> &vect)
 {
-    CDBBatch batch(*this);
+    CDBBatch batch;
     for (std::vector<CAddressUnspentDbEntry>::const_iterator it=vect.begin(); it!=vect.end(); it++) {
         if (it->second.IsNull()) {
             batch.Erase(make_pair(DB_ADDRESSUNSPENTINDEX, it->first));
@@ -472,14 +468,14 @@ bool CBlockTreeDB::ReadAddressUnspentIndex(uint160 addressHash, int type, std::v
 }
 
 bool CBlockTreeDB::WriteAddressIndex(const std::vector<CAddressIndexDbEntry> &vect) {
-    CDBBatch batch(*this);
+    CDBBatch batch;
     for (std::vector<CAddressIndexDbEntry>::const_iterator it=vect.begin(); it!=vect.end(); it++)
         batch.Write(make_pair(DB_ADDRESSINDEX, it->first), it->second);
     return WriteBatch(batch);
 }
 
 bool CBlockTreeDB::EraseAddressIndex(const std::vector<CAddressIndexDbEntry> &vect) {
-    CDBBatch batch(*this);
+    CDBBatch batch;
     for (std::vector<CAddressIndexDbEntry>::const_iterator it=vect.begin(); it!=vect.end(); it++)
         batch.Erase(make_pair(DB_ADDRESSINDEX, it->first));
     return WriteBatch(batch);
@@ -519,7 +515,7 @@ bool CBlockTreeDB::ReadSpentIndex(CSpentIndexKey &key, CSpentIndexValue &value) 
 }
 
 bool CBlockTreeDB::UpdateSpentIndex(const std::vector<CSpentIndexDbEntry> &vect) {
-    CDBBatch batch(*this);
+    CDBBatch batch;
     for (std::vector<CSpentIndexDbEntry>::const_iterator it=vect.begin(); it!=vect.end(); it++) {
         if (it->second.IsNull()) {
             batch.Erase(make_pair(DB_SPENTINDEX, it->first));
@@ -531,7 +527,7 @@ bool CBlockTreeDB::UpdateSpentIndex(const std::vector<CSpentIndexDbEntry> &vect)
 }
 
 bool CBlockTreeDB::WriteTimestampIndex(const CTimestampIndexKey &timestampIndex) {
-    CDBBatch batch(*this);
+    CDBBatch batch;
     batch.Write(make_pair(DB_TIMESTAMPINDEX, timestampIndex), 0);
     return WriteBatch(batch);
 }
@@ -565,14 +561,14 @@ bool CBlockTreeDB::ReadTimestampIndex(unsigned int high, unsigned int low,
 bool CBlockTreeDB::WriteTimestampBlockIndex(const CTimestampBlockIndexKey &blockhashIndex,
     const CTimestampBlockIndexValue &logicalts)
 {
-    CDBBatch batch(*this);
+    CDBBatch batch;
     batch.Write(make_pair(DB_BLOCKHASHINDEX, blockhashIndex), logicalts);
     return WriteBatch(batch);
 }
 
 bool CBlockTreeDB::ReadTimestampBlockIndex(const uint256 &hash, unsigned int &ltimestamp) const
 {
-    CTimestampBlockIndexValue(lts);
+    CTimestampBlockIndexValue lts;
     if (!Read(std::make_pair(DB_BLOCKHASHINDEX, hash), lts))
         return false;
 

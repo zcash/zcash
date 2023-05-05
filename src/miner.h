@@ -54,8 +54,8 @@ class KeepMinerAddress
 public:
     KeepMinerAddress() {}
 
-    void operator()(const libzcash::OrchardRawAddress &addr) const {}
-    void operator()(const libzcash::SaplingPaymentAddress &pa) const {}
+    void operator()(const libzcash::OrchardRawAddress &) const {}
+    void operator()(const libzcash::SaplingPaymentAddress &) const {}
     void operator()(const boost::shared_ptr<CReserveScript> &coinbaseScript) const {
         coinbaseScript->KeepScript();
     }
@@ -68,10 +68,10 @@ class IsValidMinerAddress
 public:
     IsValidMinerAddress() {}
 
-    bool operator()(const libzcash::OrchardRawAddress &addr) const {
+    bool operator()(const libzcash::OrchardRawAddress &) const {
         return true;
     }
-    bool operator()(const libzcash::SaplingPaymentAddress &pa) const {
+    bool operator()(const libzcash::SaplingPaymentAddress &) const {
         return true;
     }
     bool operator()(const boost::shared_ptr<CReserveScript> &coinbaseScript) const {

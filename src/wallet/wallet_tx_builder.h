@@ -10,8 +10,6 @@
 #include "wallet/wallet.h"
 #include "zcash/memo.h"
 
-using namespace libzcash;
-
 int GetAnchorHeight(const CChain& chain, int anchorConfirmations);
 
 /**
@@ -40,19 +38,19 @@ public:
  */
 class Payment {
 private:
-    PaymentAddress address;
+    libzcash::PaymentAddress address;
     CAmount amount;
     std::optional<Memo> memo;
 public:
     Payment(
-            PaymentAddress address,
+            libzcash::PaymentAddress address,
             CAmount amount,
             std::optional<Memo> memo) :
         address(address), amount(amount), memo(memo) {
         assert(MoneyRange(amount));
     }
 
-    const PaymentAddress& GetAddress() const {
+    const libzcash::PaymentAddress& GetAddress() const {
         return address;
     }
 
@@ -74,7 +72,7 @@ typedef std::variant<
 class Payments {
 private:
     std::vector<ResolvedPayment> payments;
-    std::set<OutputPool> recipientPools;
+    std::set<libzcash::OutputPool> recipientPools;
     CAmount t_outputs_total{0};
     CAmount sapling_outputs_total{0};
     CAmount orchard_outputs_total{0};
@@ -87,40 +85,40 @@ public:
 
     void AddPayment(ResolvedPayment payment) {
         examine(payment.address, match {
-            [&](const CKeyID& addr) {
+            [&](const CKeyID&) {
                 t_outputs_total += payment.amount;
-                recipientPools.insert(OutputPool::Transparent);
+                recipientPools.insert(libzcash::OutputPool::Transparent);
             },
-            [&](const CScriptID& addr) {
+            [&](const CScriptID&) {
                 t_outputs_total += payment.amount;
-                recipientPools.insert(OutputPool::Transparent);
+                recipientPools.insert(libzcash::OutputPool::Transparent);
             },
-            [&](const libzcash::SaplingPaymentAddress& addr) {
+            [&](const libzcash::SaplingPaymentAddress&) {
                 sapling_outputs_total += payment.amount;
-                recipientPools.insert(OutputPool::Sapling);
+                recipientPools.insert(libzcash::OutputPool::Sapling);
             },
-            [&](const libzcash::OrchardRawAddress& addr) {
+            [&](const libzcash::OrchardRawAddress&) {
                 orchard_outputs_total += payment.amount;
-                recipientPools.insert(OutputPool::Orchard);
+                recipientPools.insert(libzcash::OutputPool::Orchard);
             }
         });
         payments.push_back(payment);
     }
 
-    std::set<OutputPool> GetRecipientPools() const {
+    std::set<libzcash::OutputPool> GetRecipientPools() const {
         return recipientPools;
     }
 
     bool HasTransparentRecipient() const {
-        return recipientPools.count(OutputPool::Transparent) > 0;
+        return recipientPools.count(libzcash::OutputPool::Transparent) > 0;
     }
 
     bool HasSaplingRecipient() const {
-        return recipientPools.count(OutputPool::Sapling) > 0;
+        return recipientPools.count(libzcash::OutputPool::Sapling) > 0;
     }
 
     bool HasOrchardRecipient() const {
-        return recipientPools.count(OutputPool::Orchard) > 0;
+        return recipientPools.count(libzcash::OutputPool::Orchard) > 0;
     }
 
     const std::vector<ResolvedPayment>& GetResolvedPayments() const {
@@ -148,8 +146,8 @@ public:
 };
 
 typedef std::variant<
-    RecipientAddress,
-    SproutPaymentAddress> ChangeAddress;
+    libzcash::RecipientAddress,
+    libzcash::SproutPaymentAddress> ChangeAddress;
 
 class TransactionEffects {
 private:
@@ -415,7 +413,6 @@ private:
             const ZTXOSelector& selector,
             const SpendableInputs& spendable,
             const std::vector<Payment>& payments,
-            const CChain& chain,
             const TransactionStrategy& strategy,
             const std::optional<CAmount>& fee,
             bool afterNU5) const;

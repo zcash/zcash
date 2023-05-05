@@ -442,7 +442,7 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
             // Let wallets know transactions went from 1-confirmed to
             // 0-confirmed or conflicted:
             for (const CTransaction &tx : block.vtx) {
-                SyncWithWallets(batchScanners, tx, NULL, pindexLastTip->nHeight);
+                SyncWithWallets(batchScanners, tx, nullptr, pindexLastTip->nHeight);
             }
             // Update cached incremental witnesses
             // This will take the cs_main lock in order to obtain the CBlockLocator
@@ -500,7 +500,7 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
                 // Tell wallet about transactions that went from mempool
                 // to conflicted:
                 for (const CTransaction &tx : blockData.txConflicted) {
-                    SyncWithWallets(batchScanners, tx, NULL, blockData.pindex->nHeight + 1);
+                    SyncWithWallets(batchScanners, tx, nullptr, blockData.pindex->nHeight + 1);
                 }
                 // ... and about transactions that got confirmed:
                 for (const CTransaction &tx : block.vtx) {
@@ -529,13 +529,13 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
         // Notify transactions in the mempool
         for (auto& tx : recentlyAdded.first) {
             try {
-                SyncWithWallets(batchScanners, tx, NULL, pindexLastTip->nHeight + 1);
+                SyncWithWallets(batchScanners, tx, nullptr, pindexLastTip->nHeight + 1);
             } catch (const boost::thread_interrupted&) {
                 throw;
             } catch (const std::exception& e) {
                 PrintExceptionContinue(&e, "ThreadNotifyWallets()");
             } catch (...) {
-                PrintExceptionContinue(NULL, "ThreadNotifyWallets()");
+                PrintExceptionContinue(nullptr, "ThreadNotifyWallets()");
             }
         }
 

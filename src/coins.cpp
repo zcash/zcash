@@ -200,8 +200,6 @@ bool CCoinsViewCache::GetNullifier(const uint256 &nullifier, ShieldedType type) 
         case ORCHARD:
             cacheToUse = &cacheOrchardNullifiers;
             break;
-        default:
-            throw std::runtime_error("Unknown shielded type");
     }
     CNullifiersMap::iterator it = cacheToUse->find(nullifier);
     if (it != cacheToUse->end())
@@ -502,7 +500,7 @@ void CCoinsViewCache::PushHistoryNode(uint32_t epochId, const HistoryNode node) 
 
         if (librustzcash_mmr_hash_node(epochId, &node, historyCache.root.begin()) != 0) {
             throw std::runtime_error("hashing node failed");
-        };
+        }
 
         return;
     }
@@ -551,6 +549,7 @@ void CCoinsViewCache::PopHistoryNode(uint32_t epochId) {
             // back.
 
             // Sensible action is to truncate the history cache:
+            [[fallthrough]];
         }
         case 1:
         {
@@ -665,8 +664,6 @@ void CCoinsViewCache::PopAnchor(const uint256 &newrt, ShieldedType type) {
                 hashOrchardAnchor
             );
             break;
-        default:
-            throw std::runtime_error("Unknown shielded type");
     }
 }
 
@@ -732,7 +729,7 @@ CCoinsModifier CCoinsViewCache::ModifyNewCoins(const uint256 &txid) {
 const CCoins* CCoinsViewCache::AccessCoins(const uint256 &txid) const {
     CCoinsMap::const_iterator it = FetchCoins(txid);
     if (it == cacheCoins.end()) {
-        return NULL;
+        return nullptr;
     } else {
         return &it->second.coins;
     }
@@ -760,19 +757,14 @@ uint256 CCoinsViewCache::GetBestAnchor(ShieldedType type) const {
             if (hashSproutAnchor.IsNull())
                 hashSproutAnchor = base->GetBestAnchor(type);
             return hashSproutAnchor;
-            break;
         case SAPLING:
             if (hashSaplingAnchor.IsNull())
                 hashSaplingAnchor = base->GetBestAnchor(type);
             return hashSaplingAnchor;
-            break;
         case ORCHARD:
             if (hashOrchardAnchor.IsNull())
                 hashOrchardAnchor = base->GetBestAnchor(type);
             return hashOrchardAnchor;
-            break;
-        default:
-            throw std::runtime_error("Unknown shielded type");
     }
 }
 

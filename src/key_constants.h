@@ -35,6 +35,10 @@ public:
         MAX_BECH32_TYPES
     };
 
+    KeyConstants() = default;
+    KeyConstants(const KeyConstants&) = default;
+    virtual ~KeyConstants() = default;
+
     virtual std::string NetworkIDString() const =0;
     virtual uint32_t BIP44CoinType() const =0;
     virtual const std::vector<unsigned char>& Base58Prefix(Base58Type type) const =0;
@@ -48,10 +52,10 @@ public:
     std::vector<unsigned char> base58Prefixes[KeyConstants::MAX_BASE58_TYPES];
     std::string bech32HRPs[KeyConstants::MAX_BECH32_TYPES];
 
-    std::string NetworkIDString() const { return strNetworkID; }
-    uint32_t BIP44CoinType() const { return bip44CoinType; }
-    const std::vector<unsigned char>& Base58Prefix(Base58Type type) const { return base58Prefixes[type]; }
-    const std::string& Bech32HRP(Bech32Type type) const { return bech32HRPs[type]; }
+    std::string NetworkIDString() const override { return strNetworkID; }
+    uint32_t BIP44CoinType() const override { return bip44CoinType; }
+    const std::vector<unsigned char>& Base58Prefix(Base58Type type) const override { return base58Prefixes[type]; }
+    const std::string& Bech32HRP(Bech32Type type) const override { return bech32HRPs[type]; }
 };
 
 #endif // ZCASH_KEY_CONSTANTS_H

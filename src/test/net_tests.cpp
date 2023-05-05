@@ -30,7 +30,7 @@ public:
 class CAddrManUncorrupted : public CAddrManSerializationMock
 {
 public:
-    void Serialize(CBaseDataStream<CSerializeData>& s) const
+    void Serialize(CBaseDataStream<CSerializeData>& s) const override
     {
         CAddrMan::Serialize(s);
     }
@@ -39,7 +39,7 @@ public:
 class CAddrManCorrupted : public CAddrManSerializationMock
 {
 public:
-    void Serialize(CBaseDataStream<CSerializeData>& s) const
+    void Serialize(CBaseDataStream<CSerializeData>& s) const override
     {
         // Produces corrupt output that claims addrman has 20 addrs when it only has one addr.
         unsigned char nVersion = 1;
@@ -92,9 +92,9 @@ BOOST_AUTO_TEST_CASE(caddrdb_read)
     BOOST_CHECK(addrman1.size() == 0);
     try {
         unsigned char pchMsgTmp[4];
-        ssPeers1 >> FLATDATA(pchMsgTmp);
+        ssPeers1 >> UNFLATDATA(pchMsgTmp);
         ssPeers1 >> addrman1;
-    } catch (const std::exception& e) {
+    } catch (const std::exception&) {
         exceptionThrown = true;
     }
 
@@ -124,9 +124,9 @@ BOOST_AUTO_TEST_CASE(caddrdb_read_corrupted)
     BOOST_CHECK(addrman1.size() == 0);
     try {
         unsigned char pchMsgTmp[4];
-        ssPeers1 >> FLATDATA(pchMsgTmp);
+        ssPeers1 >> UNFLATDATA(pchMsgTmp);
         ssPeers1 >> addrman1;
-    } catch (const std::exception& e) {
+    } catch (const std::exception&) {
         exceptionThrown = true;
     }
     // Even through de-serialization failed addrman is not left in a clean state.

@@ -21,8 +21,6 @@
 
 #include <rust/ed25519.h>
 
-using namespace libzcash;
-
 /**
 When estimating the number of coinbase utxos we can shield in a single transaction:
 1. An Orchard receiver is 9165 bytes.
@@ -59,13 +57,13 @@ public:
     AsyncRPCOperation_shieldcoinbase(
         WalletTxBuilder builder,
         ZTXOSelector ztxoSelector,
-        PaymentAddress toAddress,
+        libzcash::PaymentAddress toAddress,
         std::optional<Memo> memo,
         TransactionStrategy strategy,
         int nUTXOLimit,
         std::optional<CAmount> fee,
         UniValue contextInfo = NullUniValue);
-    virtual ~AsyncRPCOperation_shieldcoinbase();
+    virtual ~AsyncRPCOperation_shieldcoinbase() override;
 
     // We don't want to be copied or moved around
     AsyncRPCOperation_shieldcoinbase(AsyncRPCOperation_shieldcoinbase const&) = delete;             // Copy construct
@@ -75,9 +73,9 @@ public:
 
     Remaining prepare(CWallet& wallet);
 
-    virtual void main();
+    virtual void main() override;
 
-    virtual UniValue getStatus() const;
+    virtual UniValue getStatus() const override;
 
     bool testmode{false};  // Set to true to disable sending txs and generating proofs
 
@@ -86,7 +84,7 @@ private:
 
     WalletTxBuilder builder_;
     ZTXOSelector ztxoSelector_;
-    PaymentAddress toAddress_;
+    libzcash::PaymentAddress toAddress_;
     std::optional<Memo> memo_;
     TransactionStrategy strategy_;
     int nUTXOLimit_;

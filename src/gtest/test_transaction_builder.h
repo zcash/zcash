@@ -24,23 +24,23 @@ public:
         }
     }
 
-    bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const {
+    bool GetSaplingAnchorAt(const uint256 &, SaplingMerkleTree &) const {
         return false;
     }
 
-    bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const {
+    bool GetOrchardAnchorAt(const uint256 &, OrchardMerkleFrontier &) const {
         return false;
     }
 
-    bool GetNullifier(const uint256 &nf, ShieldedType type) const {
+    bool GetNullifier(const uint256 &, ShieldedType) const {
         return false;
     }
 
-    bool GetCoins(const uint256 &txid, CCoins &coins) const {
+    bool GetCoins(const uint256 &, CCoins &) const {
         return false;
     }
 
-    bool HaveCoins(const uint256 &txid) const {
+    bool HaveCoins(const uint256 &) const {
         return false;
     }
 
@@ -48,34 +48,34 @@ public:
         throw std::runtime_error("`GetBestBlock` unimplemented for mock TransactionBuilderCoinsViewDB");
     }
 
-    uint256 GetBestAnchor(ShieldedType type) const {
+    uint256 GetBestAnchor(ShieldedType) const {
         throw std::runtime_error("`GetBestAnchor` unimplemented for mock TransactionBuilderCoinsViewDB");
     }
 
-    HistoryIndex GetHistoryLength(uint32_t epochId) const { return 0; }
-    HistoryNode GetHistoryAt(uint32_t epochId, HistoryIndex index) const {
+    HistoryIndex GetHistoryLength(uint32_t) const { return 0; }
+    HistoryNode GetHistoryAt(uint32_t, HistoryIndex) const {
         throw std::runtime_error("`GetHistoryAt` unimplemented for mock TransactionBuilderCoinsViewDB");
     }
-    uint256 GetHistoryRoot(uint32_t epochId) const {
+    uint256 GetHistoryRoot(uint32_t) const {
         throw std::runtime_error("`GetHistoryRoot` unimplemented for mock TransactionBuilderCoinsViewDB");
     }
 
-    bool BatchWrite(CCoinsMap &mapCoins,
-                    const uint256 &hashBlock,
-                    const uint256 &hashSproutAnchor,
-                    const uint256 &hashSaplingAnchor,
-                    const uint256 &hashOrchardAnchor,
-                    CAnchorsSproutMap &mapSproutAnchors,
-                    CAnchorsSaplingMap &mapSaplingAnchors,
-                    CAnchorsOrchardMap &mapOrchardAnchors,
-                    CNullifiersMap &mapSproutNullifiers,
-                    CNullifiersMap &mapSaplingNullifiers,
-                    CNullifiersMap &mapOrchardNullifiers,
-                    CHistoryCacheMap &historyCacheMap) {
+    bool BatchWrite(CCoinsMap &,
+                    const uint256 &,
+                    const uint256 &,
+                    const uint256 &,
+                    const uint256 &,
+                    CAnchorsSproutMap &,
+                    CAnchorsSaplingMap &,
+                    CAnchorsOrchardMap &,
+                    CNullifiersMap &,
+                    CNullifiersMap &,
+                    CNullifiersMap &,
+                    CHistoryCacheMap &) {
         return false;
     }
 
-    bool GetStats(CCoinsStats &stats) const {
+    bool GetStats(CCoinsStats &) const {
         return false;
     }
 };

@@ -22,8 +22,6 @@
 
 #include <univalue.h>
 
-using namespace libzcash;
-
 class AsyncRPCOperation_sendmany : public AsyncRPCOperation {
 public:
     AsyncRPCOperation_sendmany(
@@ -36,7 +34,7 @@ public:
         std::optional<CAmount> fee,
         UniValue contextInfo = NullUniValue);
 
-    virtual ~AsyncRPCOperation_sendmany();
+    virtual ~AsyncRPCOperation_sendmany() override;
 
     // We don't want to be copied or moved around
     AsyncRPCOperation_sendmany(AsyncRPCOperation_sendmany const&) = delete;             // Copy construct
@@ -44,9 +42,9 @@ public:
     AsyncRPCOperation_sendmany& operator=(AsyncRPCOperation_sendmany const&) = delete;  // Copy assign
     AsyncRPCOperation_sendmany& operator=(AsyncRPCOperation_sendmany &&) = delete;      // Move assign
 
-    virtual void main();
+    virtual void main() override;
 
-    virtual UniValue getStatus() const;
+    virtual UniValue getStatus() const override;
 
     bool testmode{false};  // Set to true to disable sending txs and generating proofs
 

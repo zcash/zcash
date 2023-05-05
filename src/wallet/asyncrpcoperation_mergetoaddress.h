@@ -26,14 +26,12 @@
 
 #include <rust/ed25519.h>
 
-using namespace libzcash;
-
 // Package of info which is passed to perform_joinsplit methods.
 struct MergeToAddressJSInfo {
-    std::vector<JSInput> vjsin;
-    std::vector<JSOutput> vjsout;
-    std::vector<SproutNote> notes;
-    std::vector<SproutSpendingKey> zkeys;
+    std::vector<libzcash::JSInput> vjsin;
+    std::vector<libzcash::JSOutput> vjsout;
+    std::vector<libzcash::SproutNote> notes;
+    std::vector<libzcash::SproutSpendingKey> zkeys;
     CAmount vpub_old = 0;
     CAmount vpub_new = 0;
 };
@@ -52,7 +50,7 @@ public:
             TransactionStrategy strategy,
             TransactionEffects effects,
             UniValue contextInfo = NullUniValue);
-    virtual ~AsyncRPCOperation_mergetoaddress();
+    virtual ~AsyncRPCOperation_mergetoaddress() override;
 
     // We don't want to be copied or moved around
     AsyncRPCOperation_mergetoaddress(AsyncRPCOperation_mergetoaddress const&) = delete;            // Copy construct
@@ -60,14 +58,16 @@ public:
     AsyncRPCOperation_mergetoaddress& operator=(AsyncRPCOperation_mergetoaddress const&) = delete; // Copy assign
     AsyncRPCOperation_mergetoaddress& operator=(AsyncRPCOperation_mergetoaddress&&) = delete;      // Move assign
 
-    virtual void main();
+    virtual void main() override;
 
-    virtual UniValue getStatus() const;
+    virtual UniValue getStatus() const override;
 
     /// Set to true to disable sending txs and generating proofs
     bool testmode = false;
 
 private:
+    CWallet& wallet_;
+
     const TransactionStrategy strategy_;
 
     const TransactionEffects effects_;

@@ -192,7 +192,7 @@ UniValue addnode(const UniValue& params, bool fHelp)
     if (strCommand == "onetry")
     {
         CAddress addr;
-        OpenNetworkConnection(addr, NULL, strNode.c_str());
+        OpenNetworkConnection(addr, nullptr, strNode.c_str());
         return NullUniValue;
     }
 
@@ -232,7 +232,7 @@ UniValue disconnectnode(const UniValue& params, bool fHelp)
         );
 
     CNode* pNode = FindNode(params[0].get_str());
-    if (pNode == NULL)
+    if (pNode == nullptr)
         throw JSONRPCError(RPC_CLIENT_NODE_NOT_CONNECTED, "Node not found in connected nodes");
 
     pNode->fDisconnect = true;
@@ -479,13 +479,13 @@ UniValue getdeprecationinfo(const UniValue& params, bool fHelp)
     }
 
     UniValue deprecated(UniValue::VARR);
-    for (const auto feature : DEFAULT_ALLOW_DEPRECATED) {
+    for (const auto& feature : DEFAULT_ALLOW_DEPRECATED) {
         deprecated.push_back(feature);
     }
     obj.pushKV("deprecated_features", deprecated);
 
     UniValue disabled(UniValue::VARR);
-    for (const auto feature : DEFAULT_DENY_DEPRECATED) {
+    for (const auto& feature : DEFAULT_DENY_DEPRECATED) {
         disabled.push_back(feature);
     }
     obj.pushKV("disabled_features", disabled);
@@ -546,7 +546,7 @@ UniValue getnetworkinfo(const UniValue& params, bool fHelp)
     UniValue localAddresses(UniValue::VARR);
     {
         LOCK(cs_mapLocalHost);
-        for (const std::pair<CNetAddr, LocalServiceInfo> &item : mapLocalHost)
+        for (const std::pair<const CNetAddr, LocalServiceInfo> &item : mapLocalHost)
         {
             UniValue rec(UniValue::VOBJ);
             rec.pushKV("address", item.first.ToString());
@@ -684,8 +684,8 @@ static const CRPCCommand commands[] =
     { "network",            "clearbanned",            &clearbanned,            true  },
 };
 
-void RegisterNetRPCCommands(CRPCTable &tableRPC)
+void RegisterNetRPCCommands(CRPCTable &rpcTable)
 {
     for (unsigned int vcidx = 0; vcidx < ARRAYLEN(commands); vcidx++)
-        tableRPC.appendCommand(commands[vcidx].name, &commands[vcidx]);
+        rpcTable.appendCommand(commands[vcidx].name, &commands[vcidx]);
 }

@@ -120,6 +120,8 @@ public:
     FundingStream(const FundingStream& fs):
         startHeight(fs.startHeight), endHeight(fs.endHeight), addresses(fs.addresses) { }
 
+    FundingStream& operator=(const FundingStream& fs) = default;
+
     static std::variant<FundingStream, FundingStreamError> ValidateFundingStream(
         const Consensus::Params& params,
         const int startHeight,
@@ -134,11 +136,11 @@ public:
         const int endHeight,
         const std::vector<std::string>& strAddresses);
 
-    int GetStartHeight() const { return startHeight; };
-    int GetEndHeight() const { return endHeight; };
+    int GetStartHeight() const { return startHeight; }
+    int GetEndHeight() const { return endHeight; }
     const std::vector<FundingStreamAddress>& GetAddresses() const {
         return addresses;
-    };
+    }
 
     FundingStreamAddress RecipientAddress(const Params& params, int nHeight) const;
 };
@@ -186,10 +188,10 @@ public:
                 params.FeatureRequired(feature)) {
             // Transitively check that if a feature is active, all of the other features
             // that it depends on are also active.
-            auto requires = features[feature].dependsOn;
+            auto dependencies = features[feature].dependsOn;
             assert(std::all_of(
-                requires.begin(),
-                requires.end(),
+                dependencies.begin(),
+                dependencies.end(),
                 [&](Feature feat) {
                     return FeatureActive(params, nHeight, feat);
                 }

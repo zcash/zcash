@@ -7,7 +7,7 @@
 #ifndef BITCOIN_UNDO_H
 #define BITCOIN_UNDO_H
 
-#include "compressor.h" 
+#include "compressor.h"
 #include "primitives/transaction.h"
 #include "serialize.h"
 
@@ -55,7 +55,7 @@ public:
     // undo information for all txins
     std::vector<CTxInUndo> vprevout;
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
@@ -70,7 +70,7 @@ public:
     std::vector<CTxUndo> vtxundo; // for all but the coinbase
     uint256 old_sprout_tree_root;
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {

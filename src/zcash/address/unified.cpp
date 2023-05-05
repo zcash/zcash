@@ -180,7 +180,6 @@ UnifiedAddressGenerationResult ZcashdUnifiedFullViewingKey::FindAddress(
         const diversifier_index_t& j,
         const std::set<ReceiverType>& receiverTypes) const {
     diversifier_index_t j0(j);
-    bool hasTransparent = HasTransparent(receiverTypes);
     do {
         auto addr = Address(j0, receiverTypes);
         if (addr != UnifiedAddressGenerationResult(UnifiedAddressGenerationError::NoAddressForDiversifier)) {
@@ -199,20 +198,17 @@ UnifiedAddressGenerationResult ZcashdUnifiedFullViewingKey::FindAddress(
 std::optional<RecipientAddress> ZcashdUnifiedFullViewingKey::GetChangeAddress(const ChangeRequest& req) const {
     std::optional<RecipientAddress> addr;
     examine(req, match {
-        [&](const TransparentChangeRequest& req) {
+        [&](const TransparentChangeRequest& treq) {
             if (transparentKey.has_value()) {
-                auto changeAddr = transparentKey.value().GetChangeAddress(req.GetIndex());
-                if (changeAddr.has_value()) {
-                    addr = changeAddr.value();
-                }
+                addr = transparentKey.value().GetChangeAddress(treq.GetIndex());
             }
         },
-        [&](const SaplingChangeRequest& req) {
+        [&](const SaplingChangeRequest&) {
             if (saplingKey.has_value()) {
                 addr = saplingKey.value().GetChangeAddress();
             }
         },
-        [&](const OrchardChangeRequest& req) {
+        [&](const OrchardChangeRequest&) {
             if (orchardKey.has_value()) {
                 addr = orchardKey.value().GetChangeAddress();
             }

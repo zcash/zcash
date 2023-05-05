@@ -32,6 +32,8 @@ class uint256;
 
 class BatchScanner {
 public:
+    virtual ~BatchScanner() = default;
+
     /**
      * Adds a transaction to the batch scanner.
      *
@@ -84,15 +86,17 @@ void UnregisterAllValidationInterfaces();
 
 class CValidationInterface {
 protected:
-    virtual void UpdatedBlockTip(const CBlockIndex *pindex) {}
+    virtual ~CValidationInterface() = default;
+
+    virtual void UpdatedBlockTip(const CBlockIndex *) {}
     virtual BatchScanner* GetBatchScanner() { return nullptr; }
-    virtual void SyncTransaction(const CTransaction &tx, const CBlock *pblock, const int nHeight) {}
-    virtual void EraseFromWallet(const uint256 &hash) {}
-    virtual void ChainTip(const CBlockIndex *pindex, const CBlock *pblock, std::optional<MerkleFrontiers> added) {}
-    virtual void UpdatedTransaction(const uint256 &hash) {}
-    virtual void ResendWalletTransactions(int64_t nBestBlockTime) {}
+    virtual void SyncTransaction(const CTransaction &, const CBlock *, const int) {}
+    virtual void EraseFromWallet(const uint256 &) {}
+    virtual void ChainTip(const CBlockIndex *, const CBlock *, std::optional<MerkleFrontiers>) {}
+    virtual void UpdatedTransaction(const uint256 &) {}
+    virtual void ResendWalletTransactions(int64_t) {}
     virtual void BlockChecked(const CBlock&, const CValidationState&) {}
-    virtual void GetAddressForMining(std::optional<MinerAddress>&) {};
+    virtual void GetAddressForMining(std::optional<MinerAddress>&) {}
     friend void ::RegisterValidationInterface(CValidationInterface*);
     friend void ::UnregisterValidationInterface(CValidationInterface*);
     friend void ::UnregisterAllValidationInterfaces();

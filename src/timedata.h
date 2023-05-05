@@ -28,7 +28,7 @@ public:
     static const int64_t TIMEDATA_WARNING_THRESHOLD = 10 * 60;
     static const int64_t TIMEDATA_IGNORE_THRESHOLD = 10 * 24 * 60 * 60;
 
-    CTimeWarning() : nPeersBehind(0), nPeersAhead(0) {}
+    CTimeWarning() : nPeersAhead(0), nPeersBehind(0) {}
     virtual ~CTimeWarning() {}
 
     int64_t AddTimeData(const CNetAddr& ip, int64_t nTime, int64_t now);

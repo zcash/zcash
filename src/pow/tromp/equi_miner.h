@@ -223,7 +223,7 @@ struct equi {
   equi(const u32 n_threads) {
     assert(sizeof(hashunit) == 4);
     nthreads = n_threads;
-    const int err = pthread_barrier_init(&barry, NULL, nthreads);
+    const int err = pthread_barrier_init(&barry, nullptr, nthreads);
     assert(!err);
     hta.alloctrees();
     nslots = (bsizes *)hta.alloc(2 * NBUCKETS, sizeof(au32));
@@ -296,7 +296,7 @@ struct equi {
     if (soli < MAXSOLS)
       listindices1(WK, t, sols[soli]); // assume WK odd
   }
-  void showbsizes(u32 r) {
+  void showbsizes([[maybe_unused]] u32 r) {
 #if defined(HIST) || defined(SPARK) || defined(LOGSPARK)
     u32 binsizes[65];
     memset(binsizes, 0, 65 * sizeof(u32));
@@ -329,7 +329,7 @@ struct equi {
     u32 dunits;
     u32 prevbo;
     u32 nextbo;
-  
+
     htlayout(equi *eq, u32 r): hta(eq->hta), prevhashunits(0), dunits(0) {
       u32 nexthashbytes = hashsize(r);
       nexthashunits = hashwords(nexthashbytes);
@@ -471,7 +471,7 @@ struct equi {
       }
     }
   }
-  
+
   void digitodd(const u32 r, const u32 id) {
     htlayout htl(this, r);
     collisiondata cd;
@@ -523,7 +523,7 @@ struct equi {
       }
     }
   }
-  
+
   void digiteven(const u32 r, const u32 id) {
     htlayout htl(this, r);
     collisiondata cd;
@@ -575,11 +575,10 @@ struct equi {
       }
     }
   }
-  
+
   void digitK(const u32 id) {
     collisiondata cd;
     htlayout htl(this, WK);
-u32 nc = 0;
     for (u32 bucketid = id; bucketid < NBUCKETS; bucketid += nthreads) {
       cd.clear();
       slot0 *buck = htl.hta.trees0[(WK-1)/2][bucketid];
@@ -590,12 +589,12 @@ u32 nc = 0;
           continue;
         for (; cd.nextcollision(); ) {
           const u32 s0 = cd.slot();
-          if (htl.equal(buck[s0].hash, pslot1->hash))
-nc++,       candidate(tree(bucketid, s0, s1));
+          if (htl.equal(buck[s0].hash, pslot1->hash)) {
+              candidate(tree(bucketid, s0, s1));
+          }
         }
       }
     }
-//printf(" %d candidates ", nc);
   }
 };
 
@@ -609,7 +608,7 @@ void barrier(pthread_barrier_t *barry) {
   const int rc = pthread_barrier_wait(barry);
   if (rc != 0 && rc != PTHREAD_BARRIER_SERIAL_THREAD) {
 //    printf("Could not wait on barrier\n");
-    pthread_exit(NULL);
+    pthread_exit(nullptr);
   }
 }
 
@@ -644,8 +643,8 @@ void *worker(void *vp) {
 //    printf("Digit %d\n", WK);
   eq->digitK(tp->id);
   barrier(&eq->barry);
-  pthread_exit(NULL);
-  return 0;
+  pthread_exit(nullptr);
+  return nullptr;
 }
 
 void genhash(const rust::Box<blake2b::State>& ctx, u32 idx, uchar *hash) {
@@ -684,7 +683,7 @@ int verifyrec(const rust::Box<blake2b::State>& ctx, u32 *indices, uchar *hash, i
 }
 
 int compu32(const void *pa, const void *pb) {
-  u32 a = *(u32 *)pa, b = *(u32 *)pb;
+  u32 a = *(const u32 *)pa, b = *(const u32 *)pb;
   return a<b ? -1 : a==b ? 0 : +1;
 }
 

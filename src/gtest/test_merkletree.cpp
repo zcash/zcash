@@ -31,7 +31,7 @@
 using namespace std;
 
 template<>
-void expect_deser_same(const SproutTestingWitness& expected)
+void expect_deser_same(const SproutTestingWitness&)
 {
     // Cannot check this; IncrementalWitness cannot be
     // deserialized because it can only be constructed by
@@ -40,7 +40,7 @@ void expect_deser_same(const SproutTestingWitness& expected)
 }
 
 template<typename A, typename B, typename C>
-void expect_ser_test_vector(B& b, const C& c, const A& tree) {
+void expect_ser_test_vector(B& b, const C& c, const A&) {
     expect_test_vector<B, C>(b, c);
 }
 

@@ -45,7 +45,7 @@
 using namespace std;
 using namespace libzcash;
 
-CWallet* pwalletMain = NULL;
+CWallet* pwalletMain = nullptr;
 /** Transaction fee set by the user */
 CFeeRate payTxFee(DEFAULT_TRANSACTION_FEE);
 bool bSpendZeroConfChange = DEFAULT_SPEND_ZEROCONF_CHANGE;
@@ -55,9 +55,7 @@ unsigned int nOrchardActionLimit = DEFAULT_ORCHARD_ACTION_LIMIT;
 
 const char * DEFAULT_WALLET_DAT = "wallet.dat";
 
-std::set<ReceiverType> CWallet::DefaultReceiverTypes(int nHeight) {
-    // For now, just ignore the height information because the default
-    // is always the same.
+std::set<ReceiverType> CWallet::DefaultReceiverTypes() {
     return {ReceiverType::P2PKH, ReceiverType::Sapling, ReceiverType::Orchard};
 }
 
@@ -90,7 +88,7 @@ const CWalletTx* CWallet::GetWalletTx(const uint256& hash) const
     LOCK(cs_wallet);
     std::map<uint256, CWalletTx>::const_iterator it = mapWallet.find(hash);
     if (it == mapWallet.end())
-        return NULL;
+        return nullptr;
     return &(it->second);
 }
 
@@ -177,7 +175,7 @@ std::pair<SaplingPaymentAddress, bool> CWallet::GenerateLegacySaplingZKey(uint32
         auto addr = extfvk.DefaultAddress();
         if (!AddSaplingPaymentAddress(ivk, addr)) {
             throw std::runtime_error("CWallet::GenerateLegacySaplingZKey(): AddSaplingPaymentAddress failed.");
-        };
+        }
 
         return std::make_pair(addr, true) ;
     } else {
@@ -280,7 +278,7 @@ bool CWallet::AddOrchardRawAddress(
         // We should never add an Orchard raw address for which we don't know
         // the corresponding FVK.
         return false;
-    };
+    }
 
     if (!fFileBacked) {
         return true;
@@ -434,7 +432,6 @@ bool CWallet::AddCryptedKey(const CPubKey &vchPubKey,
                                                             vchCryptedSecret,
                                                             mapKeyMetadata[vchPubKey.GetID()]);
     }
-    return false;
 }
 
 
@@ -461,7 +458,6 @@ bool CWallet::AddCryptedSproutSpendingKey(
                                                              mapSproutZKeyMetadata[address]);
         }
     }
-    return false;
 }
 
 bool CWallet::AddCryptedSaplingSpendingKey(const libzcash::SaplingExtendedFullViewingKey &extfvk,
@@ -483,7 +479,6 @@ bool CWallet::AddCryptedSaplingSpendingKey(const libzcash::SaplingExtendedFullVi
                                                          mapSaplingZKeyMetadata[extfvk.ToIncomingViewingKey()]);
         }
     }
-    return false;
 }
 
 libzcash::transparent::AccountKey CWallet::GetLegacyAccountKey() const {
@@ -605,7 +600,7 @@ std::optional<libzcash::ZcashdUnifiedSpendingKey>
         auto saplingXFVK = saplingEsk.ToXFVK();
         if (!AddSaplingPaymentAddress(saplingXFVK.GetChangeIVK(), saplingXFVK.GetChangeAddress())) {
             throw std::runtime_error("CWallet::GenerateUnifiedSpendingKeyForAccount(): Failed to add Sapling change address to the wallet.");
-        };
+        }
 
         // Add Orchard spending key to the wallet
         auto orchardSk = usk.value().GetOrchardKey();
@@ -618,7 +613,7 @@ std::optional<libzcash::ZcashdUnifiedSpendingKey>
         auto orchardInternalFvk = orchardSk.ToFullViewingKey().ToInternalIncomingViewingKey();
         if (!AddOrchardRawAddress(orchardInternalFvk, orchardInternalFvk.Address(0))) {
             throw std::runtime_error("CWallet::GenerateUnifiedSpendingKeyForAccount(): Failed to add Orchard change address to the wallet.");
-        };
+        }
 
         auto zufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(Params(), ufvk);
         if (!CCryptoKeyStore::AddUnifiedFullViewingKey(zufvk)) {
@@ -645,7 +640,6 @@ bool CWallet::AddUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey &uf
     AssertLockHeld(cs_wallet);
 
     auto zufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(Params(), ufvk);
-    auto keyId = ufvk.GetKeyID(Params());
     if (!CCryptoKeyStore::AddUnifiedFullViewingKey(zufvk)) {
         return false;
     }
@@ -930,7 +924,7 @@ std::pair<PaymentAddress, RecipientType> CWallet::GetPaymentAddressForRecipient(
                     if (j.value().second) {
                         // std::get is safe here because we know we have a valid Sapling diversifier index
                         auto defaultUA = std::get<std::pair<UnifiedAddress, diversifier_index_t>>(
-                                ufvk->Address(j.value().first, CWallet::DefaultReceiverTypes(nHeight)));
+                                ufvk->Address(j.value().first, CWallet::DefaultReceiverTypes()));
                         return std::make_pair(PaymentAddress{defaultUA.first}, RecipientType::WalletExternalAddress);
                     } else {
                         return std::make_pair(PaymentAddress{addr}, RecipientType::WalletInternalAddress);
@@ -959,7 +953,7 @@ std::pair<PaymentAddress, RecipientType> CWallet::GetPaymentAddressForRecipient(
                 if (j.has_value()) {
                     if (j.value().second) {
                         // Attempt to reproduce the original unified address
-                        auto genResult = ufvk->Address(j.value().first, CWallet::DefaultReceiverTypes(nHeight));
+                        auto genResult = ufvk->Address(j.value().first, CWallet::DefaultReceiverTypes());
                         auto defaultUA = std::get_if<std::pair<UnifiedAddress, diversifier_index_t>>(&genResult);
                         if (defaultUA != nullptr) {
                             return std::make_pair(PaymentAddress{defaultUA->first}, RecipientType::WalletExternalAddress);
@@ -999,12 +993,12 @@ bool CWallet::IsInternalRecipient(const libzcash::RecipientAddress& recipient) c
 {
     auto self = this;
     return examine(recipient, match {
-        [&](const CKeyID& addr) {
+        [&](const CKeyID&) {
             // we never send transparent change when sending to or from a
             // unified address
             return false;
         },
-        [&](const CScriptID& addr) {
+        [&](const CScriptID&) {
             // we never use P2SH for change or shielding
             return false;
         },
@@ -1086,7 +1080,7 @@ bool CWallet::LoadCaches()
                 // keystore
                 for (const auto &[j, receiverTypes] : metadata->second.GetKnownReceiverSetsByDiversifierIndex()) {
                     bool restored = examine(ufvk.value().Address(j, receiverTypes), match {
-                        [&](const UnifiedAddressGenerationError& err) {
+                        [&](const UnifiedAddressGenerationError&) {
                             LogPrintf("%s: Error: Unable to generate a unified address.\n",
                                 __func__);
                             return false;
@@ -1696,9 +1690,9 @@ set<uint256> CWallet::GetConflicts(const uint256& txid) const
                 continue;  // No conflict if zero or one spends
             }
             range_n = mapTxSproutNullifiers.equal_range(nullifier);
-            for (TxNullifiers::const_iterator it = range_n.first; it != range_n.second; ++it) {
+            for (TxNullifiers::const_iterator nullIt = range_n.first; nullIt != range_n.second; ++nullIt) {
                 // TODO: Take into account transaction expiry for v4 transactions; see #5585
-                result.insert(it->second);
+                result.insert(nullIt->second);
             }
         }
     }
@@ -1711,9 +1705,9 @@ set<uint256> CWallet::GetConflicts(const uint256& txid) const
             continue;  // No conflict if zero or one spends
         }
         range_o = mapTxSaplingNullifiers.equal_range(nullifier);
-        for (TxNullifiers::const_iterator it = range_o.first; it != range_o.second; ++it) {
+        for (TxNullifiers::const_iterator nullIt = range_o.first; nullIt != range_o.second; ++nullIt) {
             // TODO: Take into account transaction expiry; see #5585
-            result.insert(it->second);
+            result.insert(nullIt->second);
         }
     }
 
@@ -1723,9 +1717,9 @@ set<uint256> CWallet::GetConflicts(const uint256& txid) const
         if (potential_spends.size() <= 1) {
             continue;  // No conflict if zero or one spends
         }
-        for (const uint256 txid : potential_spends) {
+        for (const uint256 spendTxid : potential_spends) {
             // TODO: Take into account transaction expiry; see #5585
-            result.insert(txid);
+            result.insert(spendTxid);
         }
     }
 
@@ -1827,7 +1821,7 @@ void CWallet::SyncMetaData(pair<typename TxSpendMap<T>::iterator, typename TxSpe
     // So: find smallest nOrderPos:
 
     int nMinOrderPos = std::numeric_limits<int>::max();
-    const CWalletTx* copyFrom = NULL;
+    const CWalletTx* copyFrom = nullptr;
     for (typename TxSpendMap<T>::iterator it = range.first; it != range.second; ++it)
     {
         const uint256& hash = it->second;
@@ -1882,14 +1876,14 @@ std::optional<ZTXOSelector> CWallet::ZTXOSelectorForAccount(
 }
 
 std::optional<ZTXOSelector> CWallet::ZTXOSelectorForAddress(
-        const libzcash::PaymentAddress& addr,
+        const libzcash::PaymentAddress& paymentAddr,
         bool requireSpendingKey,
         TransparentCoinbasePolicy transparentCoinbasePolicy,
         bool allowAddressLinkability) const
 {
     auto self = this;
     std::optional<ZTXOPattern> pattern = std::nullopt;
-    examine(addr, match {
+    examine(paymentAddr, match {
         [&](const CKeyID& addr) {
             if (!requireSpendingKey || self->HaveKey(addr)) {
                 pattern = addr;
@@ -1945,14 +1939,14 @@ std::optional<ZTXOSelector> CWallet::ZTXOSelectorForViewingKey(
     auto self = this;
     std::optional<ZTXOPattern> pattern = std::nullopt;
     examine(vk, match {
-        [&](const libzcash::SaplingExtendedFullViewingKey& vk) {
-            if (!requireSpendingKey || self->HaveSaplingSpendingKey(vk)) {
-                pattern = vk;
+        [&](const libzcash::SaplingExtendedFullViewingKey& sefvk) {
+            if (!requireSpendingKey || self->HaveSaplingSpendingKey(sefvk)) {
+                pattern = sefvk;
             }
         },
-        [&](const libzcash::SproutViewingKey& vk) {
-            if (!requireSpendingKey || self->HaveSproutSpendingKey(vk.address())) {
-                pattern = vk;
+        [&](const libzcash::SproutViewingKey& svk) {
+            if (!requireSpendingKey || self->HaveSproutSpendingKey(svk.address())) {
+                pattern = svk;
             }
         },
         [&](const libzcash::UnifiedFullViewingKey& ufvk) {
@@ -1996,8 +1990,8 @@ std::optional<libzcash::AccountId> CWallet::FindAccountForSelector(const ZTXOSel
                 result = self->GetUnifiedAccountId(meta.value().GetUFVKId());
             }
         },
-        [&](const libzcash::SproutPaymentAddress& addr) { },
-        [&](const libzcash::SproutViewingKey& vk) { },
+        [&](const libzcash::SproutPaymentAddress&) { },
+        [&](const libzcash::SproutViewingKey&) { },
         [&](const libzcash::SaplingPaymentAddress& addr) {
             auto meta = GetUFVKMetadataForReceiver(addr);
             if (meta.has_value()) {
@@ -2046,18 +2040,18 @@ bool CWallet::SelectorMatchesAddress(
             CTxDestination scriptIdDest = scriptId;
             return address == scriptIdDest;
         },
-        [&](const libzcash::SproutPaymentAddress& addr) { return false; },
-        [&](const libzcash::SproutViewingKey& vk) { return false; },
-        [&](const libzcash::SaplingPaymentAddress& addr) { return false; },
-        [&](const libzcash::SaplingExtendedFullViewingKey& extfvk) { return false; },
+        [&](const libzcash::SproutPaymentAddress&) { return false; },
+        [&](const libzcash::SproutViewingKey&) { return false; },
+        [&](const libzcash::SaplingPaymentAddress&) { return false; },
+        [&](const libzcash::SaplingExtendedFullViewingKey&) { return false; },
         [&](const libzcash::UnifiedAddress& uaSelector) {
             // for a UA selector when matching transparent addresses, we only match addresses
             // that explicitly appear as receivers in the UA.
             for (const auto& receiver : uaSelector) {
                 bool matches = examine(receiver, match {
-                    [&](const libzcash::OrchardRawAddress& orchardAddr) { return false; },
-                    [&](const libzcash::SaplingPaymentAddress& saplingAddr) { return false; },
-                    [&](const libzcash::UnknownReceiver& receiver) { return false; },
+                    [](const libzcash::OrchardRawAddress&) { return false; },
+                    [](const libzcash::SaplingPaymentAddress&) { return false; },
+                    [](const libzcash::UnknownReceiver&) { return false; },
                     [&](const CScriptID& scriptId) {
                         CTxDestination scriptIdDest = scriptId;
                         return address == scriptIdDest;
@@ -2100,7 +2094,7 @@ bool CWallet::SelectorMatchesAddress(
     return examine(selector.GetPattern(), match {
         [&](const libzcash::SproutPaymentAddress& a1) { return a0 == a1; },
         [&](const libzcash::SproutViewingKey& vk) { return a0 == vk.address(); },
-        [&](const auto& addr) { return false; },
+        [&](const auto&) { return false; },
     });
 }
 // Sapling
@@ -2109,10 +2103,10 @@ bool CWallet::SelectorMatchesAddress(
         const libzcash::SaplingPaymentAddress& a0) const {
     auto self = this;
     return examine(selector.GetPattern(), match {
-        [&](const CKeyID& keyId) { return false; },
-        [&](const CScriptID& scriptId) { return false; },
-        [&](const libzcash::SproutPaymentAddress& addr) { return false; },
-        [&](const libzcash::SproutViewingKey& vk) { return false; },
+        [&](const CKeyID&) { return false; },
+        [&](const CScriptID&) { return false; },
+        [&](const libzcash::SproutPaymentAddress&) { return false; },
+        [&](const libzcash::SproutViewingKey&) { return false; },
         [&](const libzcash::SaplingPaymentAddress& a1) {
             return a0 == a1;
         },
@@ -2307,7 +2301,7 @@ SpendableInputs CWallet::FindSpendableInputs(
                     unspent.sproutNoteEntries.push_back(SproutNoteEntry {
                         jsop, pa, plaintext.note(pa), plaintext.memo(), nDepth });
 
-                } catch (const note_decryption_failed &err) {
+                } catch (const note_decryption_failed &) {
                     // Couldn't decrypt with this spending key
                     throw std::runtime_error(strprintf(
                             "Could not decrypt note for payment address %s",
@@ -2384,7 +2378,7 @@ SpendableInputs CWallet::FindSpendableInputs(
                 }
                 return {};
             },
-            [&](const auto& addr) -> std::vector<OrchardIncomingViewingKey> { return {}; }
+            [&](const auto&) -> std::vector<OrchardIncomingViewingKey> { return {}; }
         });
 
         for (const auto& ivk : orchardIvks) {
@@ -3009,7 +3003,7 @@ bool CWallet::EncryptWallet(const SecureString& strWalletPassphrase)
             pwalletdbEncryption = new CWalletDB(strWalletFile);
             if (!pwalletdbEncryption->TxnBegin()) {
                 delete pwalletdbEncryption;
-                pwalletdbEncryption = NULL;
+                pwalletdbEncryption = nullptr;
                 return false;
             }
             pwalletdbEncryption->WriteMasterKey(nMasterKeyMaxID, kMasterKey);
@@ -3039,7 +3033,7 @@ bool CWallet::EncryptWallet(const SecureString& strWalletPassphrase)
             }
 
             delete pwalletdbEncryption;
-            pwalletdbEncryption = NULL;
+            pwalletdbEncryption = nullptr;
         }
 
         Lock();
@@ -3066,7 +3060,6 @@ DBErrors CWallet::ReorderTransactions()
     // Probably a bad idea to change the output of this
 
     // First: get all CWalletTx into a sorted-by-time multimap.
-    typedef std::multimap<int64_t, CWalletTx*> TxItems;
     TxItems txByTime;
 
     for (auto &entry : mapWallet)
@@ -3443,7 +3436,8 @@ WalletDecryptedNotes CWallet::TryDecryptShieldedOutputs(const CTransaction& tx)
     // everything in Rust.
 
     return WalletDecryptedNotes {
-        .sproutNoteData = sproutNoteData,
+        sproutNoteData,
+        {},
     };
 }
 
@@ -3553,11 +3547,11 @@ bool WalletBatchScanner::AddToWalletIfInvolvingMe(
 {
     AssertLockHeld(pwallet->cs_wallet);
 
-    auto decryptedNotesForTx = decryptedNotes.find(tx.GetHash());
-    if (decryptedNotesForTx == decryptedNotes.end()) {
+    auto decryptedNotesEntry = decryptedNotes.find(tx.GetHash());
+    if (decryptedNotesEntry == decryptedNotes.end()) {
         throw std::logic_error("Called WalletBatchScanner::AddToWalletIfInvolvingMe with a tx that wasn't passed to AddTransaction");
     }
-    auto decryptedNotes = decryptedNotesForTx->second;
+    auto decryptedNotesForTx = decryptedNotesEntry->second;
 
     // Fill in the details about decrypted Sapling notes.
     uint256 blockTag;
@@ -3571,20 +3565,20 @@ bool WalletBatchScanner::AddToWalletIfInvolvingMe(
             decrypted.diversifier,
             uint256::FromRawBytes(decrypted.pk_d));
 
-        decryptedNotes.saplingNoteDataAndAddressesToAdd.first.insert(
+        decryptedNotesForTx.saplingNoteDataAndAddressesToAdd.first.insert(
             std::make_pair(
                 SaplingOutPoint(uint256::FromRawBytes(decrypted.txid), decrypted.output),
                 SaplingNoteData(ivk)));
 
         // Only track the recipient -> ivk mappings the wallet doesn't have.
         if (pwallet->mapSaplingIncomingViewingKeys.count(addr) == 0) {
-            decryptedNotes.saplingNoteDataAndAddressesToAdd.second.insert(
+            decryptedNotesForTx.saplingNoteDataAndAddressesToAdd.second.insert(
                 std::make_pair(addr, ivk));
         }
     }
 
     return pwallet->AddToWalletIfInvolvingMe(
-        consensus, tx, pblock, nHeight, decryptedNotes, fUpdate);
+        consensus, tx, pblock, nHeight, decryptedNotesForTx, fUpdate);
 }
 
 //
@@ -3746,7 +3740,7 @@ mapSproutNoteData_t CWallet::FindMySproutNotes(const CTransaction &tx) const
                         noteData.insert(std::make_pair(jsoutpt, nd));
                     }
                     break;
-                } catch (const note_decryption_failed &err) {
+                } catch (const note_decryption_failed &) {
                     // Couldn't decrypt with this decryptor
                 } catch (const std::exception &exc) {
                     // Unexpected failure
@@ -3811,7 +3805,7 @@ std::pair<mapSaplingNoteData_t, SaplingIncomingViewingKeyMap> CWallet::FindMySap
                 nd.ivk = ivk;
                 noteData.insert(std::make_pair(op, nd));
                 break;
-            } catch (const rust::Error &e) {
+            } catch (const rust::Error &) {
                 continue;
             }
         }
@@ -3859,7 +3853,7 @@ bool CWallet::GetSproutNoteWitnesses(const std::vector<JSOutPoint>& notes,
                 mapWallet.at(note.hash).mapSproutNoteData.at(note).witnesses.size() > 0) {
             auto noteWitnesses = mapWallet.at(note.hash).mapSproutNoteData.at(note).witnesses;
             auto it = noteWitnesses.cbegin(), end = noteWitnesses.cend();
-            for (int i = 1; i < confirmations; i++) {
+            for (int j = 1; j < confirmations; j++) {
                 if (it == end) return false;
                 ++it;
             }
@@ -3895,7 +3889,7 @@ bool CWallet::GetSaplingNoteWitnesses(const std::vector<SaplingOutPoint>& notes,
                 mapWallet.at(note.hash).mapSaplingNoteData.at(note).witnesses.size() > 0) {
             auto noteWitnesses = mapWallet.at(note.hash).mapSaplingNoteData.at(note).witnesses;
             auto it = noteWitnesses.cbegin(), end = noteWitnesses.cend();
-            for (int i = 1; i < confirmations; i++) {
+            for (int j = 1; j < confirmations; j++) {
                 if (it == end) return false;
                 ++it;
             }
@@ -3998,7 +3992,7 @@ bool CWallet::IsChange(const CTxOut& txout) const
                 // make our determination
                 IsInternalKeyPath(44, BIP44CoinType(), keyMetaIt->second.hdKeypath);
         },
-        [&](const auto& other) { return false; }
+        [&](const auto&) { return false; }
     });
 }
 
@@ -4143,7 +4137,6 @@ bool CWallet::SetCryptedMnemonicSeed(const uint256& seedFp, const std::vector<un
         else
             return CWalletDB(strWalletFile).WriteCryptedMnemonicSeed(seedFp, vchCryptedSecret);
     }
-    return false;
 }
 
 bool CWallet::VerifyMnemonicSeed(const SecureString& mnemonic) {
@@ -4293,7 +4286,7 @@ std::pair<SproutNotePlaintext, SproutPaymentAddress> CWalletTx::DecryptSproutNot
                 (unsigned char) jsop.n);
 
         return std::make_pair(plaintext, pa);
-    } catch (const note_decryption_failed &err) {
+    } catch (const note_decryption_failed &) {
         // Couldn't decrypt with this spending key
         throw std::runtime_error(strprintf(
             "Could not decrypt note for payment address %s",
@@ -4335,7 +4328,7 @@ std::optional<std::pair<
 
         return SaplingNotePlaintext::from_rust(std::move(decrypted));
     } catch (const rust::Error &e) {
-        assert(false);
+        throw std::runtime_error(e.what());
     }
 }
 
@@ -4362,7 +4355,7 @@ std::optional<std::pair<
                 });
 
             return SaplingNotePlaintext::from_rust(std::move(decrypted));
-        } catch (const rust::Error &e) {
+        } catch (const rust::Error &) {
             // Try decrypting with the next ovk
         }
     }
@@ -4589,7 +4582,7 @@ std::optional<int> CWallet::ScanForWalletTransactions(
         // If there is an Orchard wallet checkpoint, the rewind point must not
         // be advanced past the last Orchard wallet checkpoint height.
         auto optOrchardCheckpointHeight = orchardWallet.GetLastCheckpointHeight();
-        while (chainActive.Next(pindex) != NULL && nTimeFirstKey && pindex->GetBlockTime() < nTimeFirstKey - TIMESTAMP_WINDOW &&
+        while (chainActive.Next(pindex) != nullptr && nTimeFirstKey && pindex->GetBlockTime() < nTimeFirstKey - TIMESTAMP_WINDOW &&
                (!optOrchardCheckpointHeight.has_value() || pindex->nHeight < optOrchardCheckpointHeight.value())) {
             pindex = chainActive.Next(pindex);
         }
@@ -4760,7 +4753,7 @@ bool CWalletTx::RelayWalletTransaction()
 set<uint256> CWalletTx::GetConflicts() const
 {
     set<uint256> result;
-    if (pwallet != NULL)
+    if (pwallet != nullptr)
     {
         uint256 myHash = GetHash();
         result = pwallet->GetConflicts(myHash);
@@ -4955,7 +4948,7 @@ bool CWalletTx::IsTrusted(const std::optional<int>& asOfHeight) const
     {
         // Transactions not sent by us: not trusted
         const CWalletTx* parent = pwallet->GetWalletTx(txin.prevout.hash);
-        if (parent == NULL)
+        if (parent == nullptr)
             return false;
         const CTxOut& parentOut = parent->vout[txin.prevout.n];
         if (pwallet->IsMine(parentOut) != ISMINE_SPENDABLE)
@@ -5225,7 +5218,7 @@ bool CWallet::SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int
     // List of values less than target
     pair<CAmount, pair<const CWalletTx*,unsigned int> > coinLowestLarger;
     coinLowestLarger.first = std::numeric_limits<CAmount>::max();
-    coinLowestLarger.second.first = NULL;
+    coinLowestLarger.second.first = nullptr;
     vector<pair<CAmount, pair<const CWalletTx*,unsigned int> > > vValue;
     CAmount nTotalLower = 0;
 
@@ -5275,7 +5268,7 @@ bool CWallet::SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int
 
     if (nTotalLower < nTargetValue)
     {
-        if (coinLowestLarger.second.first == NULL)
+        if (coinLowestLarger.second.first == nullptr)
             return false;
         setCoinsRet.insert(coinLowestLarger.second);
         nValueRet += coinLowestLarger.first;
@@ -5754,7 +5747,7 @@ bool CWallet::CommitTransaction(CWalletTx& wtxNew, std::optional<std::reference_
             // This is only to keep the database open to defeat the auto-flush for the
             // duration of this scope.  This is the only place where this optimization
             // maybe makes sense; please don't do it anywhere else.
-            CWalletDB* pwalletdb = fFileBacked ? new CWalletDB(strWalletFile,"r+") : NULL;
+            CWalletDB* pwalletdb = fFileBacked ? new CWalletDB(strWalletFile,"r+") : nullptr;
 
             if (reservekey) {
                 // Take key pair from key pool so it won't be used again
@@ -5894,7 +5887,7 @@ bool CWallet::DelAddressBook(const CTxDestination& address)
         {
             // Delete destdata tuples associated with address
             std::string strAddress = keyIO.EncodeDestination(address);
-            for (const std::pair<string, string> &item : mapAddressBook[address].destdata)
+            for (const std::pair<const string, string> &item : mapAddressBook[address].destdata)
             {
                 CWalletDB(strWalletFile).EraseDestData(strAddress, item.first);
             }
@@ -6389,7 +6382,7 @@ public:
             Process(script);
     }
 
-    void operator()(const CNoDestination &none) {}
+    void operator()(const CNoDestination &) {}
 };
 
 void CWallet::GetKeyBirthTimes(std::map<CKeyID, int64_t> &mapKeyBirth) const {
@@ -6528,7 +6521,7 @@ bool CWallet::InitLoadWallet(const CChainParams& params, bool clearWitnessCaches
         }
 
         delete tempWallet;
-        tempWallet = NULL;
+        tempWallet = nullptr;
     }
 
     uiInterface.InitMessage(_("Loading wallet..."));
@@ -6856,15 +6849,15 @@ int CMerkleTx::GetBlocksToMaturity(const std::optional<int>& asOfHeight) const
 
 bool CMerkleTx::AcceptToMemoryPool(CValidationState& state, bool fLimitFree, bool fRejectAbsurdFee)
 {
-    return ::AcceptToMemoryPool(Params(), mempool, state, *this, fLimitFree, NULL, fRejectAbsurdFee);
+    return ::AcceptToMemoryPool(Params(), mempool, state, *this, fLimitFree, nullptr, fRejectAbsurdFee);
 }
 
 NoteFilter NoteFilter::ForPaymentAddresses(const std::vector<libzcash::PaymentAddress>& paymentAddrs) {
     NoteFilter addrs;
-    for (const auto& addr: paymentAddrs) {
-        examine(addr, match {
-            [&](const CKeyID& keyId) { },
-            [&](const CScriptID& scriptId) { },
+    for (const auto& paymentAddr: paymentAddrs) {
+        examine(paymentAddr, match {
+            [&](const CKeyID&) { },
+            [&](const CScriptID&) { },
             [&](const libzcash::SproutPaymentAddress& addr) {
                 addrs.sproutAddresses.insert(addr);
             },
@@ -6880,7 +6873,7 @@ NoteFilter NoteFilter::ForPaymentAddresses(const std::vector<libzcash::PaymentAd
                         [&](const libzcash::SaplingPaymentAddress& addr) {
                             addrs.saplingAddresses.insert(addr);
                         },
-                        [&](const auto& other) { }
+                        [&](const auto&) { }
                     });
                 }
             },
@@ -7012,7 +7005,7 @@ void CWallet::GetFilteredNotes(
                 sproutEntriesRet.push_back(SproutNoteEntry {
                     jsop, pa, plaintext.note(pa), plaintext.memo(), wtx.GetDepthInMainChain(asOfHeight) });
 
-            } catch (const note_decryption_failed &err) {
+            } catch (const note_decryption_failed &) {
                 // Couldn't decrypt with this spending key
                 throw std::runtime_error(strprintf("Could not decrypt note for payment address %s", keyIO.EncodePaymentAddress(pa)));
             } catch (const std::exception &exc) {
@@ -7281,12 +7274,12 @@ PaymentAddressSource GetSourceForPaymentAddress::operator()(const libzcash::Unif
 // GetViewingKeyForPaymentAddress
 
 std::optional<libzcash::ViewingKey> GetViewingKeyForPaymentAddress::operator()(
-    const CKeyID &zaddr) const
+    const CKeyID &) const
 {
     return std::nullopt;
 }
 std::optional<libzcash::ViewingKey> GetViewingKeyForPaymentAddress::operator()(
-    const CScriptID &zaddr) const
+    const CScriptID &) const
 {
     return std::nullopt;
 }
@@ -7356,7 +7349,7 @@ KeyAddResult AddViewingKeyToWallet::operator()(const libzcash::SaplingExtendedFu
         return KeyNotAdded;
     }
 }
-KeyAddResult AddViewingKeyToWallet::operator()(const libzcash::UnifiedFullViewingKey& no) const {
+KeyAddResult AddViewingKeyToWallet::operator()(const libzcash::UnifiedFullViewingKey&) const {
     throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Unified full viewing key import is not yet supported.");
 }
 
@@ -7445,7 +7438,7 @@ std::optional<libzcash::ZcashdUnifiedFullViewingKey> UFVKForReceiver::operator()
         return std::nullopt;
     }
 }
-std::optional<libzcash::ZcashdUnifiedFullViewingKey> UFVKForReceiver::operator()(const CScriptID& scriptId) const {
+std::optional<libzcash::ZcashdUnifiedFullViewingKey> UFVKForReceiver::operator()(const CScriptID&) const {
     // We do not currently generate unified addresses containing P2SH components,
     // so there's nothing to look up here.
     return std::nullopt;
@@ -7461,7 +7454,7 @@ std::optional<libzcash::ZcashdUnifiedFullViewingKey> UFVKForReceiver::operator()
         return std::nullopt;
     }
 }
-std::optional<libzcash::ZcashdUnifiedFullViewingKey> UFVKForReceiver::operator()(const libzcash::UnknownReceiver& receiver) const {
+std::optional<libzcash::ZcashdUnifiedFullViewingKey> UFVKForReceiver::operator()(const libzcash::UnknownReceiver&) const {
     return std::nullopt;
 }
 
@@ -7524,7 +7517,7 @@ std::optional<libzcash::UnifiedAddress> UnifiedAddressForReceiver::operator()(co
     }
     return std::nullopt;
 }
-std::optional<libzcash::UnifiedAddress> UnifiedAddressForReceiver::operator()(const CScriptID& scriptId) const {
+std::optional<libzcash::UnifiedAddress> UnifiedAddressForReceiver::operator()(const CScriptID&) const {
     // We do not currently generate unified addresses containing P2SH components,
     // so there's nothing to look up here.
     return std::nullopt;
@@ -7558,66 +7551,85 @@ std::optional<libzcash::UnifiedAddress> UnifiedAddressForReceiver::operator()(co
 
     return std::nullopt;
 }
-std::optional<libzcash::UnifiedAddress> UnifiedAddressForReceiver::operator()(const libzcash::UnknownReceiver& receiver) const {
+std::optional<libzcash::UnifiedAddress> UnifiedAddressForReceiver::operator()(const libzcash::UnknownReceiver&) const {
     return std::nullopt;
 }
 
 PrivacyPolicy PrivacyPolicyMeet(PrivacyPolicy a, PrivacyPolicy b)
 {
+    // Each `case` is split into the following groups
+    // 1. a <= b (`return a`)
+    // 2. b < a (`return b`)
+    // 3. incomparable (`return PrivacyPolicy::…`)
     switch (a) {
         case PrivacyPolicy::FullPrivacy:
             return b;
         case PrivacyPolicy::AllowRevealedAmounts:
             switch (b) {
                 case PrivacyPolicy::FullPrivacy:
-                    return a;
-                default: return b;
-            };
-        case PrivacyPolicy::AllowRevealedRecipients:
-            switch (b) {
-                case PrivacyPolicy::FullPrivacy:
                 case PrivacyPolicy::AllowRevealedAmounts:
                     return a;
+                case PrivacyPolicy::AllowRevealedRecipients:
                 case PrivacyPolicy::AllowRevealedSenders:
-                    return PrivacyPolicy::AllowFullyTransparent;
+                case PrivacyPolicy::AllowFullyTransparent:
                 case PrivacyPolicy::AllowLinkingAccountAddresses:
-                    return PrivacyPolicy::NoPrivacy;
-                default: return b;
-            };
+                case PrivacyPolicy::NoPrivacy:
+                    return b;
+            }
         case PrivacyPolicy::AllowRevealedSenders:
             switch (b) {
                 case PrivacyPolicy::FullPrivacy:
                 case PrivacyPolicy::AllowRevealedAmounts:
+                case PrivacyPolicy::AllowRevealedSenders:
                     return a;
+                case PrivacyPolicy::AllowFullyTransparent:
+                case PrivacyPolicy::AllowLinkingAccountAddresses:
+                case PrivacyPolicy::NoPrivacy:
+                    return b;
                 case PrivacyPolicy::AllowRevealedRecipients:
                     return PrivacyPolicy::AllowFullyTransparent;
-                default: return b;
-            };
-        case PrivacyPolicy::AllowFullyTransparent:
+            }
+        case PrivacyPolicy::AllowRevealedRecipients:
             switch (b) {
                 case PrivacyPolicy::FullPrivacy:
                 case PrivacyPolicy::AllowRevealedAmounts:
                 case PrivacyPolicy::AllowRevealedRecipients:
-                case PrivacyPolicy::AllowRevealedSenders:
                     return a;
+                case PrivacyPolicy::AllowFullyTransparent:
+                case PrivacyPolicy::NoPrivacy:
+                    return b;
+                case PrivacyPolicy::AllowRevealedSenders:
+                    return PrivacyPolicy::AllowFullyTransparent;
                 case PrivacyPolicy::AllowLinkingAccountAddresses:
                     return PrivacyPolicy::NoPrivacy;
-                default: return b;
-            };
+            }
+        case PrivacyPolicy::AllowFullyTransparent:
+            switch (b) {
+                case PrivacyPolicy::FullPrivacy:
+                case PrivacyPolicy::AllowRevealedAmounts:
+                case PrivacyPolicy::AllowRevealedSenders:
+                case PrivacyPolicy::AllowRevealedRecipients:
+                case PrivacyPolicy::AllowFullyTransparent:
+                    return a;
+                case PrivacyPolicy::NoPrivacy:
+                    return b;
+                case PrivacyPolicy::AllowLinkingAccountAddresses:
+                    return PrivacyPolicy::NoPrivacy;
+            }
         case PrivacyPolicy::AllowLinkingAccountAddresses:
             switch (b) {
                 case PrivacyPolicy::FullPrivacy:
                 case PrivacyPolicy::AllowRevealedAmounts:
                 case PrivacyPolicy::AllowRevealedSenders:
+                case PrivacyPolicy::AllowLinkingAccountAddresses:
                     return a;
                 case PrivacyPolicy::AllowRevealedRecipients:
                 case PrivacyPolicy::AllowFullyTransparent:
+                case PrivacyPolicy::NoPrivacy:
                     return PrivacyPolicy::NoPrivacy;
-                default: return b;
-            };
+            }
         case PrivacyPolicy::NoPrivacy:
             return a;
-        default: assert(false);
     }
 }
 
@@ -7662,8 +7674,6 @@ std::string TransactionStrategy::ToString(PrivacyPolicy policy) {
             return "AllowLinkingAccountAddresses";
         case PrivacyPolicy::NoPrivacy:
             return "NoPrivacy";
-        default:
-            assert(false);
     }
 }
 
@@ -7693,12 +7703,12 @@ bool TransactionStrategy::IsCompatibleWith(PrivacyPolicy policy) const {
 
 bool ZTXOSelector::SelectsTransparent() const {
     return examine(this->pattern, match {
-        [](const CKeyID& keyId) { return true; },
-        [](const CScriptID& scriptId) { return true; },
-        [](const libzcash::SproutPaymentAddress& addr) { return false; },
-        [](const libzcash::SproutViewingKey& vk) { return false; },
-        [](const libzcash::SaplingPaymentAddress& addr) { return false; },
-        [](const libzcash::SaplingExtendedFullViewingKey& vk) { return false; },
+        [](const CKeyID&) { return true; },
+        [](const CScriptID&) { return true; },
+        [](const libzcash::SproutPaymentAddress&) { return false; },
+        [](const libzcash::SproutViewingKey&) { return false; },
+        [](const libzcash::SaplingPaymentAddress&) { return false; },
+        [](const libzcash::SaplingExtendedFullViewingKey&) { return false; },
         [](const libzcash::UnifiedAddress& ua) {
             return ua.GetP2PKHReceiver().has_value() || ua.GetP2SHReceiver().has_value();
         },
@@ -7708,19 +7718,19 @@ bool ZTXOSelector::SelectsTransparent() const {
 }
 bool ZTXOSelector::SelectsSprout() const {
     return transparentCoinbasePolicy != TransparentCoinbasePolicy::Require && examine(this->pattern, match {
-        [](const libzcash::SproutViewingKey& addr) { return true; },
-        [](const libzcash::SproutPaymentAddress& extfvk) { return true; },
-        [](const auto& addr) { return false; }
+        [](const libzcash::SproutViewingKey&) { return true; },
+        [](const libzcash::SproutPaymentAddress&) { return true; },
+        [](const auto&) { return false; }
     });
 }
 bool ZTXOSelector::SelectsSapling() const {
     return transparentCoinbasePolicy != TransparentCoinbasePolicy::Require && examine(this->pattern, match {
-        [](const libzcash::SaplingPaymentAddress& addr) { return true; },
-        [](const libzcash::SaplingExtendedSpendingKey& extfvk) { return true; },
+        [](const libzcash::SaplingPaymentAddress&) { return true; },
+        [](const libzcash::SaplingExtendedSpendingKey&) { return true; },
         [](const libzcash::UnifiedAddress& ua) { return ua.GetSaplingReceiver().has_value(); },
         [](const libzcash::UnifiedFullViewingKey& ufvk) { return ufvk.GetSaplingKey().has_value(); },
         [](const AccountZTXOPattern& acct) { return acct.IncludesSapling(); },
-        [](const auto& addr) { return false; }
+        [](const auto&) { return false; }
     });
 }
 bool ZTXOSelector::SelectsOrchard() const {
@@ -7728,7 +7738,7 @@ bool ZTXOSelector::SelectsOrchard() const {
         [](const libzcash::UnifiedAddress& ua) { return ua.GetOrchardReceiver().has_value(); },
         [](const libzcash::UnifiedFullViewingKey& ufvk) { return ufvk.GetOrchardKey().has_value(); },
         [](const AccountZTXOPattern& acct) { return acct.IncludesOrchard(); },
-        [](const auto& addr) { return false; }
+        [](const auto&) { return false; }
     });
 }
 

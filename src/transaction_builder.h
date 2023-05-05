@@ -71,8 +71,8 @@ public:
         return *this;
     }
 
-    inline libzcash::OrchardRawAddress FromAddress() const { return from; };
-    inline uint64_t Value() const { return noteValue; };
+    inline libzcash::OrchardRawAddress FromAddress() const { return from; }
+    inline uint64_t Value() const { return noteValue; }
 };
 
 /// A builder that constructs an `UnauthorizedBundle` from a set of notes to be spent,

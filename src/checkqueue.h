@@ -18,7 +18,7 @@
 template <typename T>
 class CCheckQueueControl;
 
-/** 
+/**
  * Queue for verifications that have to be performed.
   * The verifications are represented by a type T, which must provide an
   * operator(), returning a bool.
@@ -168,7 +168,7 @@ public:
 
 };
 
-/** 
+/**
  * RAII-style controller object for a CCheckQueue that guarantees the passed
  * queue is finished before continuing.
  */
@@ -186,14 +186,14 @@ public:
     explicit CCheckQueueControl(CCheckQueue<T> * const pqueueIn) : pqueue(pqueueIn), fDone(false)
     {
         // passed queue is supposed to be unused, or NULL
-        if (pqueue != NULL) {
-            ENTER_CRITICAL_SECTION(pqueue->ControlMutex);
+        if (pqueue != nullptr) {
+            ENTER_CRITICAL_SECTION(pqueue->ControlMutex)
         }
     }
 
     bool Wait()
     {
-        if (pqueue == NULL)
+        if (pqueue == nullptr)
             return true;
         bool fRet = pqueue->Wait();
         fDone = true;
@@ -202,7 +202,7 @@ public:
 
     void Add(std::vector<T>& vChecks)
     {
-        if (pqueue != NULL)
+        if (pqueue != nullptr)
             pqueue->Add(vChecks);
     }
 
@@ -210,8 +210,8 @@ public:
     {
         if (!fDone)
             Wait();
-        if (pqueue != NULL) {
-            LEAVE_CRITICAL_SECTION(pqueue->ControlMutex);
+        if (pqueue != nullptr) {
+            LEAVE_CRITICAL_SECTION(pqueue->ControlMutex)
         }
     }
 };

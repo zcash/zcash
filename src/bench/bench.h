@@ -36,7 +36,7 @@ static void CODE_TO_TIME(benchmark::State& state)
 BENCHMARK(CODE_TO_TIME);
 
  */
- 
+
 namespace benchmark {
     // In case high_resolution_clock is steady, prefer that, otherwise use steady_clock.
     struct best_clock {
@@ -90,7 +90,13 @@ namespace benchmark {
 }
 
 // BENCHMARK(foo) expands to:  benchmark::BenchRunner bench_11foo("foo", foo);
+//
+// NB: This silences `-Wmissing-variable-declarations` because the Boost macro doesn’t properly
+//     declare its variables.
 #define BENCHMARK(n) \
-    benchmark::BenchRunner BOOST_PP_CAT(bench_, BOOST_PP_CAT(__LINE__, n))(BOOST_PP_STRINGIZE(n), n);
+    _Pragma("GCC diagnostic push") \
+    _Pragma("GCC diagnostic ignored \"-Wmissing-variable-declarations\"") \
+    benchmark::BenchRunner BOOST_PP_CAT(bench_, BOOST_PP_CAT(__LINE__, n))(BOOST_PP_STRINGIZE(n), n); \
+    _Pragma("GCC diagnostic pop")
 
 #endif // BITCOIN_BENCH_BENCH_H

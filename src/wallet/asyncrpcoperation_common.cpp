@@ -44,11 +44,11 @@ std::pair<CTransaction, UniValue> SignSendRawTransaction(UniValue obj, std::opti
 }
 
 void ThrowInputSelectionError(
-        const InputSelectionError& err,
+        const InputSelectionError& error,
         const ZTXOSelector& selector,
         const TransactionStrategy& strategy)
 {
-    examine(err, match {
+    examine(error, match {
         [&](const AddressResolutionError& err) {
             switch (err) {
                 case AddressResolutionError::SproutRecipientsNotSupported:
@@ -112,8 +112,6 @@ void ThrowInputSelectionError(
                         "amounts. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` "
                         "parameter set to `AllowRevealedAmounts` or weaker if you wish to allow "
                         "this transaction to proceed anyway.");
-                default:
-                    assert(false);
             }
         },
         [&](const InvalidFundsError& err) {
@@ -202,11 +200,14 @@ void ThrowInputSelectionError(
             switch (err.side) {
                 case ActionSide::Input:
                     side = "inputs";
+                    break;
                 case ActionSide::Output:
                     side = "outputs";
+                    break;
                 case ActionSide::Both:
                     side = "actions";
-            };
+                    break;
+            }
             throw JSONRPCError(
                 RPC_INVALID_PARAMETER,
                 strprintf(

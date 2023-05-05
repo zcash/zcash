@@ -88,7 +88,7 @@ public:
         if (size_t(pend - pbegin) != keydata.size()) {
             fValid = false;
         } else if (Check(&pbegin[0])) {
-            memcpy(keydata.data(), (unsigned char*)&pbegin[0], keydata.size());
+            memcpy(keydata.data(), &pbegin[0], keydata.size());
             fValid = true;
             fCompressed = fCompressedIn;
         } else {
@@ -96,8 +96,9 @@ public:
         }
     }
 
-    //! Simple read-only vector-like interface.
+    //! Simple vector-like interface.
     unsigned int size() const { return (fValid ? keydata.size() : 0); }
+    unsigned char* begin() { return keydata.data(); }
     const unsigned char* begin() const { return keydata.data(); }
     const unsigned char* end() const { return keydata.data() + size(); }
 

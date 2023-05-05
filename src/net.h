@@ -95,8 +95,8 @@ CNode* FindNode(const CNetAddr& ip);
 CNode* FindNode(const CSubNet& subNet);
 CNode* FindNode(const std::string& addrName);
 CNode* FindNode(const CService& ip);
-CNode* ConnectNode(CAddress addrConnect, const char *pszDest = NULL);
-bool OpenNetworkConnection(const CAddress& addrConnect, CSemaphoreGrant *grantOutbound = NULL, const char *strDest = NULL, bool fOneShot = false);
+CNode* ConnectNode(CAddress addrConnect, const char *pszDest = nullptr);
+bool OpenNetworkConnection(const CAddress& addrConnect, CSemaphoreGrant *grantOutbound = nullptr, const char *strDest = nullptr, bool fOneShot = false);
 unsigned short GetListenPort();
 bool BindListenPort(const CService &bindAddr, std::string& strError, bool fWhitelisted = false);
 void StartNode(boost::thread_group& threadGroup, CScheduler& scheduler);
@@ -155,10 +155,10 @@ bool AddLocal(const CNetAddr& addr, int nScore = LOCAL_NONE);
 bool RemoveLocal(const CService& addr);
 bool SeenLocal(const CService& addr);
 bool IsLocal(const CService& addr);
-bool GetLocal(CService &addr, const CNetAddr *paddrPeer = NULL);
+bool GetLocal(CService &addr, const CNetAddr *paddrPeer = nullptr);
 bool IsReachable(enum Network net);
 bool IsReachable(const CNetAddr &addr);
-CAddress GetLocalAddress(const CNetAddr *paddrPeer = NULL);
+CAddress GetLocalAddress(const CNetAddr *paddrPeer = nullptr);
 
 
 extern bool fDiscover;
@@ -470,37 +470,37 @@ public:
     }
 
 
-    bool AddAddressIfNotAlreadyKnown(const CAddress& addr)
+    bool AddAddressIfNotAlreadyKnown(const CAddress& newAddr)
     {
         LOCK(cs_addrKnown);
         // Avoid adding to addrKnown after it has been reset in CloseSocketDisconnect.
         if (fDisconnect) {
             return false;
         }
-        if (!addrKnown.contains(addr.GetKey())) {
-            addrKnown.insert(addr.GetKey());
+        if (!addrKnown.contains(newAddr.GetKey())) {
+            addrKnown.insert(newAddr.GetKey());
             return true;
         } else {
             return false;
         }
     }
 
-    bool IsAddressKnown(const CAddress& addr) const
+    bool IsAddressKnown(const CAddress& newAddr) const
     {
         LOCK(cs_addrKnown);
-        return addrKnown.contains(addr.GetKey());
+        return addrKnown.contains(newAddr.GetKey());
     }
 
-    void PushAddress(const CAddress& addr, FastRandomContext &insecure_rand)
+    void PushAddress(const CAddress& newAddr, FastRandomContext &insecure_rand)
     {
         // Known checking here is only to save space from duplicates.
         // SendMessages will filter it again for knowns that were added
         // after addresses were pushed.
-        if (addr.IsValid() && !IsAddressKnown(addr)) {
+        if (newAddr.IsValid() && !IsAddressKnown(newAddr)) {
             if (vAddrToSend.size() >= MAX_ADDR_TO_SEND) {
-                vAddrToSend[insecure_rand.randrange(vAddrToSend.size())] = addr;
+                vAddrToSend[insecure_rand.randrange(vAddrToSend.size())] = newAddr;
             } else {
-                vAddrToSend.push_back(addr);
+                vAddrToSend.push_back(newAddr);
             }
         }
     }

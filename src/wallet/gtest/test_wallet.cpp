@@ -317,20 +317,20 @@ TEST(WalletTests, FindUnspentSproutNotes) {
     // Let's receive a new note
     CWalletTx wtx3;
     {
-        auto wtx = GetValidSproutReceive(sk, 20, true);
-        auto note = GetSproutNote(sk, wtx, 0, 1);
-        auto nullifier = note.nullifier(sk);
+        auto wtx4 = GetValidSproutReceive(sk, 20, true);
+        auto note4 = GetSproutNote(sk, wtx4, 0, 1);
+        auto nullifier4 = note4.nullifier(sk);
 
-        mapSproutNoteData_t noteData;
-        JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
-        SproutNoteData nd {sk.address(), nullifier};
-        noteData[jsoutpt] = nd;
+        mapSproutNoteData_t noteData4;
+        JSOutPoint jsoutpt4 {wtx4.GetHash(), 0, 1};
+        SproutNoteData nd4 {sk.address(), nullifier4};
+        noteData4[jsoutpt4] = nd;
 
-        wtx.SetSproutNoteData(noteData);
-        wallet.LoadWalletTx(wtx);
-        EXPECT_FALSE(wallet.IsSproutSpent(nullifier, std::nullopt));
+        wtx4.SetSproutNoteData(noteData4);
+        wallet.LoadWalletTx(wtx4);
+        EXPECT_FALSE(wallet.IsSproutSpent(nullifier4, std::nullopt));
 
-        wtx3 = wtx;
+        wtx3 = wtx4;
     }
 
     // Fake-mine the new transaction
@@ -1098,7 +1098,7 @@ TEST(WalletTests, NavigateFromSaplingNullifierToNote) {
     ASSERT_TRUE(nf);
     uint256 nullifier = nf.value();
 
-    MerkleFrontiers frontiers = { .sapling = testNote.tree };
+    MerkleFrontiers frontiers = { {}, testNote.tree, {} };
 
     // Verify dummy note is unspent
     EXPECT_FALSE(wallet.IsSaplingSpent(nullifier, std::nullopt));
@@ -1149,10 +1149,10 @@ TEST(WalletTests, NavigateFromSaplingNullifierToNote) {
         EXPECT_EQ(hash, op.hash);
         EXPECT_EQ(1, nd.witnesses.size());
         ASSERT_TRUE(nd.nullifier);
-        auto nf = nd.nullifier.value();
-        EXPECT_EQ(1, wallet.mapSaplingNullifiersToNotes.count(nf));
-        EXPECT_EQ(op.hash, wallet.mapSaplingNullifiersToNotes[nf].hash);
-        EXPECT_EQ(op.n, wallet.mapSaplingNullifiersToNotes[nf].n);
+        auto nf2 = nd.nullifier.value();
+        EXPECT_EQ(1, wallet.mapSaplingNullifiersToNotes.count(nf2));
+        EXPECT_EQ(op.hash, wallet.mapSaplingNullifiersToNotes[nf2].hash);
+        EXPECT_EQ(op.n, wallet.mapSaplingNullifiersToNotes[nf2].n);
     }
 
     // Tear down
@@ -1489,7 +1489,7 @@ TEST(WalletTests, CachedWitnessesChainTip) {
         block2.vtx.push_back(wtx);
         CBlockIndex index2(block2);
         index2.nHeight = 2;
-        MerkleFrontiers frontiers2 = { .sprout = frontiers.sprout, .sapling = frontiers.sapling };
+        MerkleFrontiers frontiers2 = { frontiers.sprout, frontiers.sapling, {} };
         wallet.IncrementNoteWitnesses(Params().GetConsensus(), &index2, &block2, frontiers2, true);
 
         auto anchors2 = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, 1, sproutWitnesses, saplingWitnesses);
@@ -1629,7 +1629,7 @@ TEST(WalletTests, CachedWitnessesCleanIndex) {
     std::vector<uint256> sproutAnchors;
     std::vector<uint256> saplingAnchors;
     MerkleFrontiers frontiers;
-    MerkleFrontiers riFrontiers = { .sprout = frontiers.sprout, .sapling = frontiers.sapling };
+    MerkleFrontiers riFrontiers = { frontiers.sprout, frontiers.sapling, {} };
     std::vector<std::optional<SproutWitness>> sproutWitnesses;
     std::vector<std::optional<SaplingWitness>> saplingWitnesses;
 
@@ -1679,26 +1679,26 @@ TEST(WalletTests, CachedWitnessesCleanIndex) {
             {
                 wallet.DecrementNoteWitnesses(Params().GetConsensus(), &(indices[i]));
 
-                auto anchors = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, 1, sproutWitnesses, saplingWitnesses);
+                auto anchors2 = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, 1, sproutWitnesses, saplingWitnesses);
                 for (size_t j = 0; j < numBlocks; j++) {
                     EXPECT_TRUE((bool) sproutWitnesses[j]);
                     EXPECT_TRUE((bool) saplingWitnesses[j]);
                 }
                 // Should equal final anchor because witness cache unaffected
-                EXPECT_EQ(sproutAnchors.back(), anchors.first);
-                EXPECT_EQ(saplingAnchors.back(), anchors.second);
+                EXPECT_EQ(sproutAnchors.back(), anchors2.first);
+                EXPECT_EQ(saplingAnchors.back(), anchors2.second);
             }
 
             {
                 wallet.IncrementNoteWitnesses(Params().GetConsensus(), &(indices[i]), &(blocks[i]), riPrevFrontiers, true);
-                auto anchors = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, 1, sproutWitnesses, saplingWitnesses);
+                auto anchors3 = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, 1, sproutWitnesses, saplingWitnesses);
                 for (size_t j = 0; j < numBlocks; j++) {
                     EXPECT_TRUE((bool) sproutWitnesses[j]);
                     EXPECT_TRUE((bool) saplingWitnesses[j]);
                 }
                 // Should equal final anchor because witness cache unaffected
-                EXPECT_EQ(sproutAnchors.back(), anchors.first);
-                EXPECT_EQ(saplingAnchors.back(), anchors.second);
+                EXPECT_EQ(sproutAnchors.back(), anchors3.first);
+                EXPECT_EQ(saplingAnchors.back(), anchors3.second);
             }
         }
     }
@@ -2077,7 +2077,7 @@ TEST(WalletTests, UpdatedSaplingNoteData) {
     builder.AddSaplingOutput(extfvk.fvk.ovk, pa2, 25000, {});
     auto tx = builder.Build().GetTxOrThrow();
 
-    MerkleFrontiers frontiers =  { .sapling = testNote.tree };
+    MerkleFrontiers frontiers =  { {}, testNote.tree, {} };
 
     // Wallet contains extfvk1 but not extfvk2
     CWalletTx wtx {&wallet, tx};

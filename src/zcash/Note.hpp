@@ -21,10 +21,13 @@ protected:
     uint64_t value_ = 0;
 public:
     BaseNote() {}
-    BaseNote(uint64_t value) : value_(value) {};
-    virtual ~BaseNote() {};
+    BaseNote(uint64_t value) : value_(value) {}
+    BaseNote(const BaseNote&) = default;
+    virtual ~BaseNote() {}
 
-    inline uint64_t value() const { return value_; };
+    BaseNote& operator=(const BaseNote&) = default;
+
+    inline uint64_t value() const { return value_; }
 };
 
 class SproutNote : public BaseNote {
@@ -38,7 +41,11 @@ public:
 
     SproutNote();
 
-    virtual ~SproutNote() {};
+    SproutNote(const SproutNote&) = default;
+
+    virtual ~SproutNote() override {}
+
+    SproutNote& operator=(const SproutNote&) = default;
 
     uint256 cm() const;
 
@@ -79,11 +86,14 @@ public:
     uint256 pk_d;
 
     SaplingNote(diversifier_t d, uint256 pk_d, uint64_t value, uint256 rseed, Zip212Enabled zip_212_enabled)
-            : BaseNote(value), d(d), pk_d(pk_d), rseed(rseed), zip_212_enabled(zip_212_enabled) {}
-
+            : BaseNote(value), rseed(rseed), zip_212_enabled(zip_212_enabled), d(d), pk_d(pk_d) {}
     SaplingNote(const SaplingPaymentAddress &address, uint64_t value, Zip212Enabled zip_212_enabled);
 
-    virtual ~SaplingNote() {};
+    SaplingNote(const SaplingNote&) = default;
+
+    virtual ~SaplingNote() override {}
+
+    SaplingNote& operator=(const SaplingNote&) = default;
 
     std::optional<uint256> cmu() const;
     std::optional<uint256> nullifier(const SaplingFullViewingKey &vk, const uint64_t position) const;
@@ -104,7 +114,10 @@ public:
     BaseNotePlaintext() {}
     BaseNotePlaintext(const BaseNote& note, const std::optional<Memo>& memo)
         : value_(note.value()), memo_(Memo::ToBytes(memo)) {}
+    BaseNotePlaintext(const BaseNotePlaintext&) = default;
     virtual ~BaseNotePlaintext() {}
+
+    BaseNotePlaintext& operator=(const BaseNotePlaintext&) = default;
 
     inline uint64_t value() const { return value_; }
     inline std::optional<Memo> memo() const { return Memo::FromBytes(memo_); }
@@ -119,11 +132,13 @@ public:
 
     SproutNotePlaintext(const SproutNote& note, const std::optional<Memo>& memo);
 
+    SproutNotePlaintext(const SproutNotePlaintext&) = default;
+
     SproutNote note(const SproutPaymentAddress& addr) const;
 
-    virtual ~SproutNotePlaintext() {}
+    virtual ~SproutNotePlaintext() override {}
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
@@ -165,6 +180,8 @@ public:
 
     SaplingNotePlaintext(const SaplingNote& note, const std::optional<Memo>& memo);
 
+    SaplingNotePlaintext(const SaplingNotePlaintext&) = default;
+
     static std::pair<SaplingNotePlaintext, SaplingPaymentAddress> from_rust(
         rust::Box<wallet::DecryptedSaplingOutput> decrypted);
 
@@ -195,9 +212,11 @@ public:
 
     std::optional<SaplingNote> note(const SaplingIncomingViewingKey& ivk) const;
 
-    virtual ~SaplingNotePlaintext() {}
+    virtual ~SaplingNotePlaintext() override {}
 
-    ADD_SERIALIZE_METHODS;
+    SaplingNotePlaintext& operator=(const SaplingNotePlaintext&) = default;
+
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
@@ -228,11 +247,11 @@ public:
     uint256 pk_d;
     uint256 esk;
 
-    SaplingOutgoingPlaintext() {};
+    SaplingOutgoingPlaintext() {}
 
     SaplingOutgoingPlaintext(uint256 pk_d, uint256 esk) : pk_d(pk_d), esk(esk) {}
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {

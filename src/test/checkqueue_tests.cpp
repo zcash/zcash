@@ -32,7 +32,7 @@ struct FakeCheck {
     {
         return true;
     }
-    void swap(FakeCheck& x){};
+    void swap(FakeCheck&){}
 };
 
 struct FakeCheckCheckCompletion {
@@ -42,13 +42,13 @@ struct FakeCheckCheckCompletion {
         ++n_calls;
         return true;
     }
-    void swap(FakeCheckCheckCompletion& x){};
+    void swap(FakeCheckCheckCompletion&){}
 };
 
 struct FailingCheck {
     bool fails;
-    FailingCheck(bool fails) : fails(fails){};
-    FailingCheck() : fails(true){};
+    FailingCheck(bool fails) : fails(fails){}
+    FailingCheck() : fails(true){}
     bool operator()()
     {
         return !fails;
@@ -56,22 +56,22 @@ struct FailingCheck {
     void swap(FailingCheck& x)
     {
         std::swap(fails, x.fails);
-    };
+    }
 };
 
 struct UniqueCheck {
     static std::mutex m;
     static std::unordered_multiset<size_t> results;
     size_t check_id;
-    UniqueCheck(size_t check_id_in) : check_id(check_id_in){};
-    UniqueCheck() : check_id(0){};
+    UniqueCheck(size_t check_id_in) : check_id(check_id_in){}
+    UniqueCheck() : check_id(0){}
     bool operator()()
     {
         std::lock_guard<std::mutex> l(m);
         results.insert(check_id);
         return true;
     }
-    void swap(UniqueCheck& x) { std::swap(x.check_id, check_id); };
+    void swap(UniqueCheck& x) { std::swap(x.check_id, check_id); }
 };
 
 
@@ -82,24 +82,24 @@ struct MemoryCheck {
     {
         return true;
     }
-    MemoryCheck(){};
-    MemoryCheck(const MemoryCheck& x)
+    MemoryCheck(){}
+    MemoryCheck(const MemoryCheck&)
     {
         // We have to do this to make sure that destructor calls are paired
         //
         // Really, copy constructor should be deletable, but CCheckQueue breaks
         // if it is deleted because of internal push_back.
         fake_allocated_memory += b;
-    };
+    }
     MemoryCheck(bool b_) : b(b_)
     {
         fake_allocated_memory += b;
-    };
+    }
     ~MemoryCheck(){
         fake_allocated_memory -= b;
-    
-    };
-    void swap(MemoryCheck& x) { std::swap(b, x.b); };
+
+    }
+    void swap(MemoryCheck& x) { std::swap(b, x.b); }
 };
 
 struct FrozenCleanupCheck {
@@ -114,6 +114,7 @@ struct FrozenCleanupCheck {
         return true;
     }
     FrozenCleanupCheck() {}
+    FrozenCleanupCheck(const FrozenCleanupCheck&) = default;
     ~FrozenCleanupCheck()
     {
         if (should_freeze) {
@@ -123,7 +124,7 @@ struct FrozenCleanupCheck {
             cv.wait(l, []{ return nFrozen == 0;});
         }
     }
-    void swap(FrozenCleanupCheck& x){std::swap(should_freeze, x.should_freeze);};
+    void swap(FrozenCleanupCheck& x){std::swap(should_freeze, x.should_freeze);}
 };
 
 // Static Allocations
@@ -338,7 +339,7 @@ BOOST_AUTO_TEST_CASE(test_CheckQueue_Memory)
     tg.join_all();
 }
 
-// Test that a new verification cannot occur until all checks 
+// Test that a new verification cannot occur until all checks
 // have been destructed
 BOOST_AUTO_TEST_CASE(test_CheckQueue_FrozenCleanup)
 {
@@ -412,15 +413,15 @@ BOOST_AUTO_TEST_CASE(test_CheckQueueControl_Locks)
             std::unique_lock<std::mutex> l(m);
             tg.create_thread([&]{
                     CCheckQueueControl<FakeCheck> control(queue.get());
-                    std::unique_lock<std::mutex> l(m);
+                    std::unique_lock<std::mutex> l2(m);
                     has_lock = true;
                     cv.notify_one();
-                    cv.wait(l, [&]{return has_tried;});
+                    cv.wait(l2, [&]{return has_tried;});
                     done = true;
                     cv.notify_one();
                     // Wait until the done is acknowledged
                     //
-                    cv.wait(l, [&]{return done_ack;});
+                    cv.wait(l2, [&]{return done_ack;});
                     });
             // Wait for thread to get the lock
             cv.wait(l, [&](){return has_lock;});
@@ -440,4 +441,3 @@ BOOST_AUTO_TEST_CASE(test_CheckQueueControl_Locks)
     }
 }
 BOOST_AUTO_TEST_SUITE_END()
-

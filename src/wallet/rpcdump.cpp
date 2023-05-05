@@ -336,7 +336,7 @@ UniValue z_importwallet(const UniValue& params, bool fHelp)
             + HelpExampleRpc("z_importwallet", "\"path/to/exportdir/nameofbackup\"")
         );
 
-	return importwallet_impl(params, true);
+    return importwallet_impl(params, true);
 }
 
 UniValue importwallet(const UniValue& params, bool fHelp)
@@ -359,7 +359,7 @@ UniValue importwallet(const UniValue& params, bool fHelp)
             + HelpExampleRpc("importwallet", "\"path/to/exportdir/nameofbackup\"")
         );
 
-	return importwallet_impl(params, false);
+    return importwallet_impl(params, false);
 }
 
 UniValue importwallet_impl(const UniValue& params, bool fImportZKeys)
@@ -521,7 +521,7 @@ UniValue dumpprivkey(const UniValue& params, bool fHelp)
 }
 
 
-UniValue dumpwallet(const UniValue& params, bool fHelp)
+UniValue dumpwallet(const UniValue&, bool)
 {
     throw JSONRPCError(RPC_METHOD_NOT_FOUND, "dumpwallet has been removed. Use z_exportwallet instead.");
 }
@@ -962,12 +962,11 @@ UniValue z_exportkey(const UniValue& params, bool fHelp)
                 throw JSONRPCError(RPC_WALLET_ERROR, "Wallet does not hold the private spending key for this Sapling address");
             }
         },
-        [&](const libzcash::UnifiedAddress& ua) {
+        [&](const libzcash::UnifiedAddress&) -> std::string {
             throw JSONRPCError(
                     RPC_WALLET_ERROR,
                     "No serialized form is defined for unified spending keys. "
                     "Use the emergency recovery phrase for this wallet for backup purposes instead.");
-            return std::string(); //unreachable, here to make the compiler happy
         }
     });
     return result;

@@ -17,7 +17,7 @@ class CZMQAbstractNotifier;
 class CZMQNotificationInterface : public CValidationInterface
 {
 public:
-    virtual ~CZMQNotificationInterface();
+    virtual ~CZMQNotificationInterface() override;
 
     static CZMQNotificationInterface* CreateWithArguments(const std::map<std::string, std::string> &args);
 
@@ -26,9 +26,9 @@ protected:
     void Shutdown();
 
     // CValidationInterface
-    void SyncTransaction(const CTransaction &tx, const CBlock *pblock, const int nHeight);
-    void UpdatedBlockTip(const CBlockIndex *pindex);
-    void BlockChecked(const CBlock& block, const CValidationState& state);
+    void SyncTransaction(const CTransaction &tx, const CBlock *pblock, const int nHeight) override;
+    void UpdatedBlockTip(const CBlockIndex *pindex) override;
+    void BlockChecked(const CBlock& block, const CValidationState& state) override;
 
 private:
     CZMQNotificationInterface();
