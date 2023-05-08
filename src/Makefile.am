@@ -200,7 +200,6 @@ LIBZCASH_H = \
   zcash/address/sprout.hpp \
   zcash/address/unified.h \
   zcash/address/zip32.h \
-  zcash/cache.h \
   zcash/History.hpp \
   zcash/JoinSplit.hpp \
   zcash/memo.h \
@@ -406,7 +405,9 @@ libcxxbridge_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(EVENT_CFLAGS) $(E
 libcxxbridge_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libcxxbridge_a_SOURCES = \
   $(CXXBRIDGE_CPP) \
-  $(CXXBRIDGE_H)
+  $(CXXBRIDGE_H) \
+  zcash/cache.cpp \
+  zcash/cache.h
 
 if ENABLE_ZMQ
 libbitcoin_zmq_a_CPPFLAGS = $(BITCOIN_INCLUDES) $(ZMQ_CFLAGS)
@@ -685,7 +686,6 @@ libzcash_a_SOURCES = \
   zcash/address/sprout.cpp \
   zcash/address/unified.cpp \
   zcash/address/zip32.cpp \
-  zcash/cache.cpp \
   zcash/History.cpp \
   zcash/JoinSplit.cpp \
   zcash/memo.cpp \
@@ -751,7 +751,7 @@ if GLIBC_BACK_COMPAT
 endif
 
 libzcash_script_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined $(RELDFLAGS)
-libzcash_script_la_LIBADD = $(LIBSECP256K1)
+libzcash_script_la_LIBADD = $(LIBRUSTZCASH) $(LIBSECP256K1)
 libzcash_script_la_CPPFLAGS = $(AM_CPPFLAGS) -I$(builddir)/obj -I$(srcdir)/rust/include -I$(srcdir)/rust/gen/include -I$(srcdir)/secp256k1/include -DBUILD_BITCOIN_INTERNAL
 libzcash_script_la_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 
