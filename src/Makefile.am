@@ -25,6 +25,7 @@ LIBBITCOIN_SERVER=libbitcoin_server.a
 LIBBITCOIN_COMMON=libbitcoin_common.a
 LIBBITCOIN_CONSENSUS=libbitcoin_consensus.a
 LIBBITCOIN_CLI=libbitcoin_cli.a
+LIBBITCOIN_SCRIPT=libbitcoin_script.a
 LIBBITCOIN_UTIL=libbitcoin_util.a
 LIBBITCOIN_CRYPTO=crypto/libbitcoin_crypto.a
 LIBBITCOIN_CRYPTO_SSE41=crypto/libbitcoin_crypto_sse41.a
@@ -157,6 +158,7 @@ EXTRA_LIBRARIES += \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBBITCOIN_UTIL) \
   $(LIBBITCOIN_COMMON) \
+  $(LIBBITCOIN_SCRIPT) \
   $(LIBBITCOIN_CONSENSUS) \
   $(LIBBITCOIN_SERVER) \
   $(LIBBITCOIN_CLI) \
@@ -479,28 +481,15 @@ crypto_libbitcoin_crypto_shani_a_CXXFLAGS += $(SHANI_CXXFLAGS)
 crypto_libbitcoin_crypto_shani_a_CPPFLAGS += -DENABLE_SHANI
 crypto_libbitcoin_crypto_shani_a_SOURCES = crypto/sha256_shani.cpp
 
-# consensus: shared between all executables that validate any consensus rules.
-libbitcoin_consensus_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
-libbitcoin_consensus_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-libbitcoin_consensus_a_SOURCES = \
+# script: shared between all executables that validate any Bitcoin-style scripts.
+libbitcoin_script_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
+libbitcoin_script_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libbitcoin_script_a_SOURCES = \
   amount.cpp \
   amount.h \
-  arith_uint256.cpp \
-  arith_uint256.h \
-  consensus/funding.cpp \
-  consensus/funding.h \
-  consensus/merkle.cpp \
-  consensus/merkle.h \
-  consensus/params.cpp \
-  consensus/params.h \
-  consensus/upgrades.cpp \
-  consensus/upgrades.h \
-  consensus/validation.h \
   hash.cpp \
   hash.h \
   prevector.h \
-  primitives/block.cpp \
-  primitives/block.h \
   primitives/orchard.h \
   primitives/transaction.cpp \
   primitives/transaction.h \
@@ -521,6 +510,24 @@ libbitcoin_consensus_a_SOURCES = \
   util/strencodings.h \
   version.h \
   zip317.cpp
+
+# consensus: shared between all executables that validate any consensus rules.
+libbitcoin_consensus_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
+libbitcoin_consensus_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libbitcoin_consensus_a_SOURCES = \
+  arith_uint256.cpp \
+  arith_uint256.h \
+  consensus/funding.cpp \
+  consensus/funding.h \
+  consensus/merkle.cpp \
+  consensus/merkle.h \
+  consensus/params.cpp \
+  consensus/params.h \
+  consensus/upgrades.cpp \
+  consensus/upgrades.h \
+  consensus/validation.h \
+  primitives/block.cpp \
+  primitives/block.h
 
 # common: shared between zcashd and non-server tools
 libbitcoin_common_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
@@ -609,6 +616,7 @@ zcashd_LDADD = \
   $(LIBBITCOIN_UTIL) \
   $(LIBBITCOIN_ZMQ) \
   $(LIBBITCOIN_CONSENSUS) \
+  $(LIBBITCOIN_SCRIPT) \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBRUSTZCASH) \
   $(LIBZCASH) \
@@ -665,6 +673,7 @@ zcash_tx_LDADD = \
   $(LIBBITCOIN_COMMON) \
   $(LIBBITCOIN_UTIL) \
   $(LIBBITCOIN_CONSENSUS) \
+  $(LIBBITCOIN_SCRIPT) \
   $(LIBCXXBRIDGE) \
   $(LIBSECP256K1) \
   $(LIBRUSTZCASH) \
@@ -701,7 +710,7 @@ libzcash_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 # zcash_script library #
 if BUILD_BITCOIN_LIBS
 include_HEADERS = script/zcash_script.h
-libzcash_script_la_SOURCES = $(crypto_libbitcoin_crypto_a_SOURCES) $(libbitcoin_consensus_a_SOURCES) uint256.cpp
+libzcash_script_la_SOURCES = $(crypto_libbitcoin_crypto_a_SOURCES) $(libbitcoin_script_a_SOURCES) uint256.cpp
 
 if GLIBC_BACK_COMPAT
   libzcash_script_la_SOURCES += compat/glibc_compat.cpp
