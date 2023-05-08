@@ -499,8 +499,6 @@ static void MutateTxSign(CMutableTransaction& tx, const std::string& strInput)
 
 class Secp256k1Init
 {
-    ECCVerifyHandle globalVerifyHandle;
-
 public:
     Secp256k1Init() {
         ECC_Start();
