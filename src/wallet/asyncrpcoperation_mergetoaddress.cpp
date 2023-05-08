@@ -188,6 +188,7 @@ main_impl(
                 chainActive,
                 strategy);
         auto tx = buildResult.GetTxOrThrow();
+        LogPrint("zrpc", "%s, conventional fee: %s\n", id, FormatMoney(tx.GetConventionalFee()));
 
         UniValue sendResult = SendTransaction(tx, payments.GetResolvedPayments(), std::nullopt, testmode);
 

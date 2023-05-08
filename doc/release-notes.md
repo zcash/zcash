@@ -4,6 +4,17 @@ release-notes at release time)
 Notable changes
 ===============
 
+Change to Transaction Relay Policy
+----------------------------------
+
+Transactions paying less than the ZIP 317 conventional fee to the extent that
+they have more than `-txunpaidactionlimit` unpaid actions (default: 50) will
+not be accepted to the mempool or relayed. For the default values of
+`-txunpaidactionlimit` and `-blockunpaidactionlimit`, these transactions would
+never be mined by the ZIP 317 block construction algorithm. (If the transaction
+has been prioritised by `prioritisetransaction`, the modified fee is used to
+calculate the number of unpaid actions.)
+
 Removal of Fee Estimation
 -------------------------
 

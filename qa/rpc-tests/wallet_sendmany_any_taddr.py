@@ -7,6 +7,7 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     LEGACY_DEFAULT_FEE,
     assert_equal,
+    assert_raises_message,
     connect_nodes_bi,
     start_nodes,
     sync_blocks,
@@ -25,6 +26,7 @@ class WalletSendManyAnyTaddr(BitcoinTestFramework):
             '-allowdeprecated=getnewaddress',
             '-allowdeprecated=z_getnewaddress',
             '-allowdeprecated=z_getbalance',
+            '-debug=mempool',
         ]] * self.num_nodes)
 
     def run_test(self):
@@ -130,9 +132,14 @@ class WalletSendManyAnyTaddr(BitcoinTestFramework):
         # Ensure that node 2 has no transparent funds.
         self.nodes[2].generate(100) # To ensure node 2's pending coinbase is spendable
         self.sync_all()
-        wait_and_assert_operationid_status(
+        assert_raises_message(AssertionError, "tx unpaid action limit exceeded",
+            wait_and_assert_operationid_status,
             self.nodes[2],
             self.nodes[2].z_shieldcoinbase("*", node2zaddr, 0)['opid'],
+        )
+        wait_and_assert_operationid_status(
+            self.nodes[2],
+            self.nodes[2].z_shieldcoinbase("*", node2zaddr)['opid'],
         )
         self.sync_all()
         assert_equal(0, self.nodes[2].getbalance())

@@ -496,9 +496,13 @@ Node relay options:
   -datacarrier
        Relay and mine data carrier transactions (default: 1)
 
-  -datacarriersize
+  -datacarriersize=<n>
        Maximum size of data in data carrier transactions we relay and mine
        (default: 83)
+
+  -txunpaidactionlimit=<n>
+       Transactions with more than this number of unpaid actions will not be
+       accepted to the mempool or relayed (default: 50)
 
 Block creation options:
 
