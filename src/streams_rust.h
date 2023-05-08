@@ -16,6 +16,7 @@ rust::Box<stream::CppStream> ToRustStream(RustDataStream& stream);
 rust::Box<stream::CppStream> ToRustStream(CAutoFile& file);
 rust::Box<stream::CppStream> ToRustStream(CBufferedFile& file);
 rust::Box<stream::CppStream> ToRustStream(CHashWriter& writer);
+rust::Box<stream::CppStream> ToRustStream(CBLAKE2bWriter& writer);
 rust::Box<stream::CppStream> ToRustStream(CSizeComputer& sc);
 
 #endif // ZCASH_STREAMS_RUST_H

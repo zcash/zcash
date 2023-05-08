@@ -24,8 +24,8 @@ use crate::{
         Bundle as SaplingBundle, BundleAssembler as SaplingBundleAssembler, Prover, Verifier,
     },
     streams::{
-        from_auto_file, from_buffered_file, from_data, from_hash_writer, from_size_computer,
-        CppStream,
+        from_auto_file, from_blake2b_writer, from_buffered_file, from_data, from_hash_writer,
+        from_size_computer, CppStream,
     },
     wallet_scanner::{init_batch_scanner, BatchResult, BatchScanner},
 };
@@ -42,6 +42,7 @@ pub(crate) mod ffi {
         type CAutoFile = crate::streams::ffi::CAutoFile;
         type CBufferedFile = crate::streams::ffi::CBufferedFile;
         type CHashWriter = crate::streams::ffi::CHashWriter;
+        type CBLAKE2bWriter = crate::streams::ffi::CBLAKE2bWriter;
         type CSizeComputer = crate::streams::ffi::CSizeComputer;
     }
     #[namespace = "stream"]
@@ -52,6 +53,7 @@ pub(crate) mod ffi {
         fn from_auto_file(file: Pin<&mut CAutoFile>) -> Box<CppStream<'_>>;
         fn from_buffered_file(file: Pin<&mut CBufferedFile>) -> Box<CppStream<'_>>;
         fn from_hash_writer(writer: Pin<&mut CHashWriter>) -> Box<CppStream<'_>>;
+        fn from_blake2b_writer(writer: Pin<&mut CBLAKE2bWriter>) -> Box<CppStream<'_>>;
         fn from_size_computer(sc: Pin<&mut CSizeComputer>) -> Box<CppStream<'_>>;
     }
 
