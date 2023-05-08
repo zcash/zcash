@@ -691,21 +691,51 @@ libzcash_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 if BUILD_BITCOIN_LIBS
 include_HEADERS = script/zcash_script.h
 libzcash_script_la_SOURCES = \
+  amount.cpp \
+  amount.h \
   crypto/hmac_sha512.cpp \
+  crypto/hmac_sha512.h \
   crypto/ripemd160.cpp \
+  crypto/ripemd160.h \
   crypto/sha1.cpp \
+  crypto/sha1.h \
   crypto/sha256.cpp \
+  crypto/sha256.h \
+  crypto/sha256_avx2.cpp \
+  crypto/sha256_shani.cpp \
+  crypto/sha256_sse4.cpp \
+  crypto/sha256_sse41.cpp \
   crypto/sha512.cpp \
+  crypto/sha512.h \
   hash.cpp \
+  hash.h \
   primitives/transaction.cpp \
-  primitives/tx_version_info.cpp \
+  primitives/transaction.h \
   pubkey.cpp \
-  script/zcash_script.cpp \
+  pubkey.h \
+  rust/gen/src/blake2b.cpp \
+  rust/gen/src/streams.cpp \
+  rust/gen/src/bridge.cpp \
   script/interpreter.cpp \
+  script/interpreter.h \
   script/script.cpp \
+  script/script.h \
+  script/script_error.cpp \
+  script/script_error.h \
+  script/zcash_script.cpp \
+  serialize.h \
+  streams_rust.cpp \
+  streams_rust.h \
+  support/cleanse.cpp \
+  support/cleanse.h \
   uint256.cpp \
+  uint256.h \
   util/strencodings.cpp \
-  zip317.cpp
+  util/strencodings.h \
+  zcash/cache.cpp \
+  zcash/cache.h \
+  zip317.cpp \
+  zip317.h
 
 if GLIBC_BACK_COMPAT
   libzcash_script_la_SOURCES += compat/glibc_compat.cpp
