@@ -601,10 +601,12 @@ UniValue z_exportwallet(const UniValue& params, bool fHelp)
                 "# Emergency Recovery Information:\n"
                 "# - recovery_phrase=\"%s\"\n"
                 "# - language=%s\n"
-                "# - fingerprint=%s\n",
+                "# - fingerprint=%s\n"
+                "# - num_accounts=%s\n",
                 mSeed.GetMnemonic(),
                 MnemonicSeed::LanguageName(mSeed.GetLanguage()),
-                mSeed.Fingerprint().GetHex()
+                mSeed.Fingerprint().GetHex(),
+                pwalletMain->mapUnifiedAccountKeys.size()
                 );
     }
 

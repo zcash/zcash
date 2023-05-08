@@ -137,6 +137,14 @@ void ParseParameters(int argc, const char* const argv[])
     }
 }
 
+std::optional<std::string> GetOptionalArg(const std::string& strArg)
+{
+    LOCK(cs_args);
+    if (mapArgs.count(strArg))
+        return mapArgs[strArg];
+    return std::nullopt;
+}
+
 std::string GetArg(const std::string& strArg, const std::string& strDefault)
 {
     LOCK(cs_args);

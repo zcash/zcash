@@ -115,6 +115,14 @@ inline bool IsSwitchChar(char c)
 }
 
 /**
+ * Return a string argument, or std::nullopt if the argument is not present.
+ *
+ * @param strArg Argument to get (e.g. "-foo")
+ * @return command-line argument or std::nullopt
+ */
+std::optional<std::string> GetOptionalArg(const std::string& strArg);
+
+/**
  * Return string argument or default value
  *
  * @param strArg Argument to get (e.g. "-foo")

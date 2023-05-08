@@ -42,6 +42,8 @@ extern "C" {
     /// `zip339_free_phrase`.
     const char * zip339_entropy_to_phrase(Language language, const uint8_t *entropy, size_t entropy_len);
 
+    bool zip339_phrase_raw_entropy(Language language, const char *phrase, uint8_t (*buf)[64]);
+
     /// Frees a phrase returned by `zip339_entropy_to_phrase`.
     void zip339_free_phrase(const char *phrase);
 

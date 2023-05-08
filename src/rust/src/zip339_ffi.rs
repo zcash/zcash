@@ -1,4 +1,4 @@
-use libc::{c_char, size_t};
+use libc::{c_char, size_t, strlen};
 use std::{
     convert::{TryFrom, TryInto},
     ffi::{CStr, CString},
@@ -56,6 +56,39 @@ pub extern "C" fn zip339_entropy_to_phrase(
         }
     }
     ptr::null()
+}
+
+/// Copies the raw entropy corresponding to the given phrase into the 64-byte buffer `buf`.
+/// Returns true if successful, false on error. In case of error, `buf` is zeroed.
+/// It is an error for the contents of `phrase` not to be a valid UTF-8 encoding.
+///
+/// Safety: `phrase` must point to a nul-terminated C string.
+#[no_mangle]
+pub extern "C" fn zip339_phrase_raw_entropy(
+    language: Language,
+    phrase: *const c_char,
+    buf: *mut u8,
+) -> bool {
+    assert!(!buf.is_null());
+    assert!(!phrase.is_null());
+
+    let phrase = unsafe { slice::from_raw_parts(phrase as *const u8, strlen(phrase) + 1) };
+
+    if let Ok(language) = language.try_into() {
+        if let Ok(phrase) = std::str::from_utf8(phrase) {
+            if let Ok(mnemonic) = zip339::Mnemonic::from_phrase_in(language, phrase) {
+                let entropy = mnemonic.entropy();
+                unsafe {
+                    ptr::copy(entropy.as_ptr(), buf, 64);
+                }
+                return true;
+            }
+        }
+    }
+    unsafe {
+        ptr::write_bytes(buf, 0, 64);
+    }
+    false
 }
 
 /// Frees a phrase returned by `zip339_entropy_to_phrase`.

@@ -66,3 +66,18 @@ MnemonicSeed MnemonicSeed::FromLegacySeed(const HDSeed& legacySeed, uint32_t bip
     throw std::runtime_error("Failed to find a valid mnemonic seed that could be derived from the legacy seed.");
 }
 
+std::optional<HDSeed> MnemonicSeed::ToLegacySeed() const
+{
+    RawHDSeed result;
+    result.resize(64);
+
+    if (zip339_phrase_raw_entropy(
+        language,
+        mnemonic.data(),
+        (uint8_t (*)[64]) result.data()
+    )) {
+        return {HDSeed(result)};
+    } else {
+        return std::nullopt;
+    }
+}

@@ -40,6 +40,7 @@
 #include <variant>
 
 #include <boost/algorithm/string/replace.hpp>
+#include <boost/algorithm/string/trim.hpp>
 #include <boost/thread.hpp>
 
 using namespace std;
@@ -4088,11 +4089,15 @@ void CWallet::GenerateNewSeed(Language language)
         MnemonicSeed::FromLegacySeed(legacySeed.value(), BIP44CoinType(), language) :
         MnemonicSeed::Random(BIP44CoinType(), language, WALLET_MNEMONIC_ENTROPY_LENGTH);
 
-    int64_t nCreationTime = GetTime();
+    CWallet::InitWithSeed(seed);
+}
 
+
+void CWallet::InitWithSeed(MnemonicSeed seed) {
+    int64_t nCreationTime = GetTime();
     // If the wallet is encrypted and locked, this will fail.
     if (!SetMnemonicSeed(seed))
-        throw std::runtime_error(std::string(__func__) + ": SetHDSeed failed");
+        throw std::runtime_error(std::string(__func__) + ": SetMnemonicSeed failed");
 
     // store the key creation time together with
     // the child index counter in the database
@@ -6488,6 +6493,7 @@ std::string CWallet::GetWalletHelpString(bool showDebug)
                                                               "the ZIP 317 fee calculation is used."),
                                                             CURRENCY_UNIT));
     strUsage += HelpMessageOpt("-rescan", _("Rescan the block chain for missing wallet transactions on startup"));
+    strUsage += HelpMessageOpt("-recoverwallet", _("Recover the wallet from an emergency recovery phrase (implies -rescan)"));
     strUsage += HelpMessageOpt("-salvagewallet", _("Attempt to recover private keys from a corrupt wallet on startup (implies -rescan)"));
     strUsage += HelpMessageOpt("-spendzeroconfchange", strprintf(_("Spend unconfirmed change when sending transactions (default: %u)"), DEFAULT_SPEND_ZEROCONF_CHANGE));
     strUsage += HelpMessageOpt("-txexpirydelta", strprintf(_("Set the number of blocks after which a transaction that has not been mined will become invalid (min: %u, default: %u (pre-Blossom) or %u (post-Blossom))"), TX_EXPIRING_SOON_THRESHOLD + 1, DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA, DEFAULT_POST_BLOSSOM_TX_EXPIRY_DELTA));
@@ -6578,6 +6584,17 @@ bool CWallet::InitLoadWallet(const CChainParams& params, bool clearWitnessCaches
             return UIError(_("Cannot downgrade wallet"));
         }
         walletInstance->SetMaxVersion(nMaxVersion);
+    }
+
+    auto recoverPath = GetOptionalArg("-recoverwallet");
+    if (recoverPath.has_value()) {
+        if (!fFirstRun) {
+            return UIError(_("Cannot recover over an existing wallet file."));
+        }
+        if (!walletInstance->RecoverFromFile(recoverPath.value())) {
+            return false;
+        }
+        assert(walletInstance->HaveMnemonicSeed());
     }
 
     if (!walletInstance->HaveMnemonicSeed())
@@ -6687,6 +6704,127 @@ bool CWallet::InitLoadWallet(const CChainParams& params, bool clearWitnessCaches
     walletInstance->SetBroadcastTransactions(GetBoolArg("-walletbroadcast", DEFAULT_WALLETBROADCAST));
 
     pwalletMain = walletInstance;
+    return true;
+}
+
+bool CWallet::RecoverFromFile(const std::string& recoverPath) {
+    if (!fs::exists(recoverPath)) {
+        return UIError(_("Wallet recover file not found."));
+    }
+
+    // Parse file and search for "recovery_phrase="
+    std::ifstream recoverFile;
+    recoverFile.open(recoverPath, std::ios::in);
+    assert(recoverFile.is_open());
+    SecureString line;
+    std::optional<SecureString> recoveryPhrase;
+    std::optional<Language> language;
+    std::optional<uint256> fingerprint;
+    uint32_t numAccounts = 1;
+
+    uint32_t lineNumber = 0;
+    uint32_t lastUsedLine;
+    while (recoverFile.good()) {
+        // Constrain parser to follow the multi-line format of z_exportwallet:
+        std::getline(recoverFile, line);
+        lineNumber++;
+
+        if (!line.empty()) {
+            auto recoverPos = line.find("recovery_phrase=");
+            if (recoverPos != std::string::npos) {
+                // Check that file contains exactly one recovery phrase line
+                if (recoveryPhrase.has_value()) {
+                    return UIError(_("The file should contain exactly one recovery phrase line."));
+                }
+                lastUsedLine = lineNumber;
+                SecureString tmp = line.substr(recoverPos + 16, std::string::npos);
+                boost::trim(tmp);
+                if (tmp.front() == '\"' && tmp.back() == '\"') {
+                    tmp.erase(0, 1);
+                    tmp.pop_back();
+                }
+                recoveryPhrase = tmp;
+            }
+
+            auto languagePos = line.find("language=");
+            if (languagePos != std::string::npos) {
+                // If a "language=" line appears, it must immediately follow
+                // "recovery_phrase="
+                if (!(recoveryPhrase.has_value() && lineNumber == (lastUsedLine + 1))) {
+                    return UIError(_("The 'language=' line must immediately follow the 'recovery_phrase=' line."));
+                }
+                lastUsedLine++;
+
+                auto languageName = line.substr(languagePos + 9, std::string::npos);
+                boost::trim(languageName);
+                language = MnemonicSeed::LanguageFromName(languageName.c_str());
+                if (!language.has_value()) {
+                    return UIError(strprintf(_("The given recovery phrase language '%s' is unknown."), languageName));
+                }
+            }
+
+            // Look for an optional "fingerprint=" line
+            auto fingerprintPos = line.find("fingerprint=");
+            if (fingerprintPos != std::string::npos) {
+                if (!(recoveryPhrase.has_value() && lineNumber == (lastUsedLine + 1))) {
+                    return UIError(_("The 'fingerprint=' line must immediately follow the last used line."));
+                }
+                lastUsedLine++;
+
+                auto seedFpStr = line.substr(fingerprintPos + 12, std::string::npos);
+                boost::trim(seedFpStr);
+                uint256 seedFp;
+                seedFp.SetHex(seedFpStr.c_str());
+                fingerprint = seedFp;
+            }
+
+            // Syntax:
+            //     num_accounts=INT
+            //
+            // Constrained to immediately follow fingerprint= (if present).
+            //
+            // If this line is not present, treat it as num_accounts=1.
+            // If num_accounts=0, treat it as such (no automatic account recovery).
+            auto numAccountsPos = line.find("num_accounts=");
+            if (numAccountsPos != std::string::npos) {
+                if (!(recoveryPhrase.has_value() && lineNumber == (lastUsedLine + 1))) {
+                    return UIError(_("The 'num_accounts=' line must immediately follow the last used line."));
+                }
+                lastUsedLine++;
+
+                auto numAccountsStr = line.substr(numAccountsPos + 13, std::string::npos);
+                boost::trim(numAccountsStr);
+                numAccounts = static_cast<uint32_t>(std::stoul(numAccountsStr.c_str()));
+            }
+        }
+    }
+
+    if (!recoveryPhrase.has_value()) {
+        return UIError(_("Unable to parse mnemonic phrase from recovery file."));
+    }
+
+    auto seed = MnemonicSeed::ForPhrase(
+        language.value_or(MnemonicSeed::LanguageFromName("English").value()),
+        recoveryPhrase.value());
+
+    if (!seed.has_value()) {
+        return UIError(_("Unable to generate a valid seed from the given recovery phrase and language."));
+    }
+
+    if (!language.has_value()) {
+        return UIError(_("Incorrect language provided for the given recovery phrase. Check that the phrase is correct, and add a language=LANGUAGE_NAME line if the recovery phrase language is not English."));
+    }
+
+    // Check against fingerprint, if available
+    if (fingerprint.has_value()) {
+        assert(seed.value().Fingerprint() == fingerprint.value());
+    }
+
+    InitWithSeed(seed.value());
+    for (uint32_t acctId = 0; acctId < numAccounts; acctId++) {
+        GenerateNewUnifiedSpendingKey();
+        // GenerateUnifiedAddress(acctId, CWallet::DefaultReceiverTypes(chainActive.Height()), std::nullopt);
+    }
     return true;
 }
 

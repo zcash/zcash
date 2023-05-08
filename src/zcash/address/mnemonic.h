@@ -41,6 +41,40 @@ public:
 
     static std::optional<MnemonicSeed> FromEntropy(const RawHDSeed& entropy, uint32_t bip44CoinType, Language language = English);
 
+    static std::optional<Language> LanguageFromName(std::string name) {
+            if (name == "English") {
+                return English;
+            }
+            if (name == "Simplified Chinese") {
+                return SimplifiedChinese;
+            }
+            if (name == "Traditional Chinese") {
+                return TraditionalChinese;
+            }
+            if (name == "Czech") {
+                return Czech;
+            }
+            if (name == "French") {
+                return French;
+            }
+            if (name == "Italian") {
+                return Italian;
+            }
+            if (name == "Japanese") {
+                return Japanese;
+            }
+            if (name == "Korean") {
+                return Korean;
+            }
+            if (name == "Portuguese") {
+                return Portuguese;
+            }
+            if (name == "Spanish") {
+                return Spanish;
+            }
+            return std::nullopt;
+    }
+
     static std::string LanguageName(Language language) {
         switch (language) {
             case English:
@@ -103,6 +137,8 @@ public:
     const SecureString& GetMnemonic() const {
         return mnemonic;
     }
+
+    std::optional<HDSeed> ToLegacySeed() const;
 
     friend bool operator==(const MnemonicSeed& a, const MnemonicSeed& b)
     {
