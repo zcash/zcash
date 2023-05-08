@@ -750,7 +750,7 @@ if GLIBC_BACK_COMPAT
   libzcash_script_la_SOURCES += compat/glibc_compat.cpp
 endif
 
-libzcash_script_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined $(RELDFLAGS)
+libzcash_script_la_LDFLAGS = $(AM_LDFLAGS) --no-undefined --error-unresolved-symbols $(RELDFLAGS)
 libzcash_script_la_LIBADD = $(LIBRUSTZCASH) $(LIBSECP256K1)
 libzcash_script_la_CPPFLAGS = $(AM_CPPFLAGS) -I$(builddir)/obj -I$(srcdir)/rust/include -I$(srcdir)/rust/gen/include -I$(srcdir)/secp256k1/include -DBUILD_BITCOIN_INTERNAL
 libzcash_script_la_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
