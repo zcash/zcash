@@ -292,9 +292,6 @@ double benchmark_try_decrypt_sprout_notes(size_t nKeys)
 
 double benchmark_try_decrypt_sapling_notes(size_t nKeys)
 {
-    // Set params
-    const Consensus::Params& consensusParams = Params().GetConsensus();
-
     auto masterKey = GetTestMasterSaplingSpendingKey();
 
     CWallet wallet(Params());
@@ -306,7 +303,7 @@ double benchmark_try_decrypt_sapling_notes(size_t nKeys)
 
     // Generate a key that has not been added to the wallet
     auto sk = masterKey.Derive(nKeys);
-    auto tx = GetValidSaplingReceive(consensusParams, wallet, sk, 10);
+    auto tx = GetValidSaplingReceive(Params(), wallet, sk, 10);
 
     struct timeval tv_start;
     timer_start(tv_start);
@@ -372,10 +369,10 @@ double benchmark_increment_sprout_note_witnesses(size_t nTxs)
     return timer_stop(tv_start);
 }
 
-CWalletTx CreateSaplingTxWithNoteData(const Consensus::Params& consensusParams,
+CWalletTx CreateSaplingTxWithNoteData(const CChainParams& params,
                                       CBasicKeyStore& keyStore,
                                       const libzcash::SaplingExtendedSpendingKey &sk) {
-    auto wtx = GetValidSaplingReceive(consensusParams, keyStore, sk, 10);
+    auto wtx = GetValidSaplingReceive(params, keyStore, sk, 10);
     auto testNote = GetTestSaplingNote(sk.ToXFVK().DefaultAddress(), 10);
     auto fvk = sk.expsk.full_viewing_key();
     auto nullifier = testNote.note.nullifier(fvk, testNote.tree.witness().position()).value();
@@ -393,8 +390,6 @@ CWalletTx CreateSaplingTxWithNoteData(const Consensus::Params& consensusParams,
 
 double benchmark_increment_sapling_note_witnesses(size_t nTxs)
 {
-    const Consensus::Params& consensusParams = Params().GetConsensus();
-
     CWallet wallet(Params());
     MerkleFrontiers frontiers;
 
@@ -404,7 +399,7 @@ double benchmark_increment_sapling_note_witnesses(size_t nTxs)
     // First block
     CBlock block1;
     for (int i = 0; i < nTxs; ++i) {
-        auto wtx = CreateSaplingTxWithNoteData(consensusParams, wallet, saplingSpendingKey);
+        auto wtx = CreateSaplingTxWithNoteData(Params(), wallet, saplingSpendingKey);
         wallet.LoadWalletTx(wtx);
         block1.vtx.push_back(wtx);
     }
@@ -419,7 +414,7 @@ double benchmark_increment_sapling_note_witnesses(size_t nTxs)
     CBlock block2;
     block2.hashPrevBlock = block1.GetHash();
     {
-        auto saplingTx = CreateSaplingTxWithNoteData(consensusParams, wallet, saplingSpendingKey);
+        auto saplingTx = CreateSaplingTxWithNoteData(Params(), wallet, saplingSpendingKey);
         wallet.LoadWalletTx(saplingTx);
         block1.vtx.push_back(saplingTx);
     }

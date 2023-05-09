@@ -5,6 +5,7 @@
 #ifndef ZCASH_TRANSACTION_BUILDER_H
 #define ZCASH_TRANSACTION_BUILDER_H
 
+#include "chainparams.h"
 #include "coins.h"
 #include "consensus/params.h"
 #include "keystore.h"
@@ -287,7 +288,7 @@ public:
      * value of the -preferredtxversion configuration flag.
      */
     TransactionBuilder(
-        const Consensus::Params& consensusParams,
+        const CChainParams& params,
         int nHeight,
         std::optional<uint256> orchardAnchor,
         const CKeyStore* keyStore = nullptr,

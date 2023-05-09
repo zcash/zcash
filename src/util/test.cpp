@@ -372,7 +372,7 @@ TestSaplingNote GetTestSaplingNote(const libzcash::SaplingPaymentAddress& pa, CA
     return { note, tree };
 }
 
-CWalletTx GetValidSaplingReceive(const Consensus::Params& consensusParams,
+CWalletTx GetValidSaplingReceive(const CChainParams& params,
                                  CBasicKeyStore& keyStore,
                                  const libzcash::SaplingExtendedSpendingKey &sk,
                                  CAmount value) {
@@ -383,7 +383,7 @@ CWalletTx GetValidSaplingReceive(const Consensus::Params& consensusParams,
     auto fvk = sk.expsk.full_viewing_key();
     auto pa = sk.ToXFVK().DefaultAddress();
 
-    auto builder = TransactionBuilder(consensusParams, 1, std::nullopt, &keyStore);
+    auto builder = TransactionBuilder(params, 1, std::nullopt, &keyStore);
     builder.SetFee(0);
     builder.AddTransparentInput(COutPoint(), scriptPubKey, value);
     builder.AddSaplingOutput(fvk.ovk, pa, value, {});

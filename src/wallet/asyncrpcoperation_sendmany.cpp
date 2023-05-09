@@ -178,7 +178,7 @@ AsyncRPCOperation_sendmany::main_impl(CWallet& wallet) {
                 LogPrint("zrpc", "%s: fee: %s\n", getId(), FormatMoney(effects.GetFee()));
 
                 auto buildResult = effects.ApproveAndBuild(
-                        Params().GetConsensus(),
+                        Params(),
                         wallet,
                         chainActive,
                         strategy_);

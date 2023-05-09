@@ -865,7 +865,7 @@ bool TransactionEffects::InvolvesOrchard() const
 }
 
 TransactionBuilderResult TransactionEffects::ApproveAndBuild(
-        const Consensus::Params& consensus,
+        const CChainParams& params,
         const CWallet& wallet,
         const CChain& chain,
         const TransactionStrategy& strategy) const
@@ -895,7 +895,7 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
         orchardAnchor = anchorBlockIndex->hashFinalOrchardRoot;
     }
 
-    auto builder = TransactionBuilder(consensus, nextBlockHeight, orchardAnchor, &wallet);
+    auto builder = TransactionBuilder(params, nextBlockHeight, orchardAnchor, &wallet);
     builder.SetFee(fee);
 
     // Track the total of notes that we've added to the builder. This

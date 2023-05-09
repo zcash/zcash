@@ -23,7 +23,7 @@ TEST(RecursiveDynamicUsageTests, TestTransactionTransparent)
     auto scriptPubKey = GetScriptForDestination(tsk.GetPubKey().GetID());
     CTxDestination taddr = tsk.GetPubKey().GetID();
 
-    auto builder = TransactionBuilder(consensusParams, 1, std::nullopt, &keystore);
+    auto builder = TransactionBuilder(Params(), 1, std::nullopt, &keystore);
     builder.SetFee(10000);
     builder.AddTransparentInput(COutPoint(), scriptPubKey, 50000);
     builder.AddTransparentOutput(taddr, 40000);
@@ -59,7 +59,7 @@ TEST(RecursiveDynamicUsageTests, TestTransactionSaplingToSapling)
     auto sk = libzcash::SaplingSpendingKey::random();
     auto testNote = GetTestSaplingNote(sk.default_address(), 50000);
 
-    auto builder = TransactionBuilder(consensusParams, 1, std::nullopt);
+    auto builder = TransactionBuilder(Params(), 1, std::nullopt);
     builder.SetFee(10000);
     builder.AddSaplingSpend(sk.expanded_spending_key(), testNote.note, testNote.tree.root(), testNote.tree.witness());
     builder.AddSaplingOutput(sk.full_viewing_key().ovk, sk.default_address(), 5000, {});
@@ -83,7 +83,7 @@ TEST(RecursiveDynamicUsageTests, TestTransactionTransparentToSapling)
     auto scriptPubKey = GetScriptForDestination(tsk.GetPubKey().GetID());
     auto sk = libzcash::SaplingSpendingKey::random();
 
-    auto builder = TransactionBuilder(consensusParams, 1, std::nullopt, &keystore);
+    auto builder = TransactionBuilder(Params(), 1, std::nullopt, &keystore);
     builder.SetFee(10000);
     builder.AddTransparentInput(COutPoint(), scriptPubKey, 50000);
     builder.AddSaplingOutput(sk.full_viewing_key().ovk, sk.default_address(), 40000, {});
@@ -108,7 +108,7 @@ TEST(RecursiveDynamicUsageTests, TestTransactionSaplingToTransparent)
     auto sk = libzcash::SaplingSpendingKey::random();
     auto testNote = GetTestSaplingNote(sk.default_address(), 50000);
 
-    auto builder = TransactionBuilder(consensusParams, 1, std::nullopt, &keystore);
+    auto builder = TransactionBuilder(Params(), 1, std::nullopt, &keystore);
     builder.SetFee(10000);
     builder.AddSaplingSpend(sk.expanded_spending_key(), testNote.note, testNote.tree.root(), testNote.tree.witness());
     builder.AddTransparentOutput(taddr, 40000);

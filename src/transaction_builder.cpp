@@ -250,13 +250,13 @@ std::string TransactionBuilderResult::GetError() {
 }
 
 TransactionBuilder::TransactionBuilder(
-    const Consensus::Params& consensusParams,
+    const CChainParams& params,
     int nHeight,
     std::optional<uint256> orchardAnchor,
     const CKeyStore* keystore,
     const CCoinsViewCache* coinsView,
     CCriticalSection* cs_coinsView) :
-    consensusParams(consensusParams),
+    consensusParams(params.GetConsensus()),
     nHeight(nHeight),
     keystore(keystore),
     coinsView(coinsView),
