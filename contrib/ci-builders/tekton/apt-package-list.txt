@@ -24,3 +24,4 @@ python3-venv
 valgrind
 wget
 zstd
+jq
