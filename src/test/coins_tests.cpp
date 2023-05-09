@@ -14,6 +14,7 @@
 #include "primitives/transaction.h"
 #include "pubkey.h"
 #include "transaction_builder.h"
+#include "util/test.h"
 #include "zcash/Note.hpp"
 #include "zcash/address/mnemonic.h"
 
@@ -286,9 +287,8 @@ public:
         jsd.nullifiers[0] = sproutNullifier;
         mutableTx.vJoinSplit.emplace_back(jsd);
 
-        saplingNullifier = InsecureRand256();
-        SpendDescription sd;
-        sd.nullifier = saplingNullifier;
+        SpendDescription sd = RandomInvalidSpendDescription();
+        saplingNullifier = sd.nullifier();
         mutableTx.vShieldedSpend.push_back(sd);
 
         // The Orchard bundle builder always pads to two Actions, so we can just

@@ -678,8 +678,8 @@ void CCoinsViewCache::SetNullifiers(const CTransaction& tx, bool spent) {
             ret.first->second.flags |= CNullifiersCacheEntry::DIRTY;
         }
     }
-    for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
-        std::pair<CNullifiersMap::iterator, bool> ret = cacheSaplingNullifiers.insert(std::make_pair(spendDescription.nullifier, CNullifiersCacheEntry()));
+    for (const auto& spendDescription : tx.GetSaplingSpends()) {
+        std::pair<CNullifiersMap::iterator, bool> ret = cacheSaplingNullifiers.insert(std::make_pair(spendDescription.nullifier(), CNullifiersCacheEntry()));
         ret.first->second.entered = spent;
         ret.first->second.flags |= CNullifiersCacheEntry::DIRTY;
     }
@@ -1020,10 +1020,11 @@ tl::expected<void, UnsatisfiedShieldedReq> CCoinsViewCache::CheckShieldedRequire
         intermediates.insert(std::make_pair(tree.root(), tree));
     }
 
-    for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
-        if (GetNullifier(spendDescription.nullifier, SAPLING)) { // Prevent double spends
+    for (const auto& spendDescription : tx.GetSaplingSpends()) {
+        uint256 nullifier = spendDescription.nullifier();
+        if (GetNullifier(nullifier, SAPLING)) { // Prevent double spends
             auto txid = tx.GetHash().ToString();
-            auto nf = spendDescription.nullifier.ToString();
+            auto nf = nullifier.ToString();
             TracingWarn("consensus", "Sapling double-spend detected",
                 "txid", txid.c_str(),
                 "nf", nf.c_str());
@@ -1031,9 +1032,10 @@ tl::expected<void, UnsatisfiedShieldedReq> CCoinsViewCache::CheckShieldedRequire
         }
 
         SaplingMerkleTree tree;
-        if (!GetSaplingAnchorAt(spendDescription.anchor, tree)) {
+        uint256 rt = spendDescription.anchor();
+        if (!GetSaplingAnchorAt(rt, tree)) {
             auto txid = tx.GetHash().ToString();
-            auto anchor = spendDescription.anchor.ToString();
+            auto anchor = rt.ToString();
             TracingWarn("consensus", "Transaction uses unknown Sapling anchor",
                 "txid", txid.c_str(),
                 "anchor", anchor.c_str());

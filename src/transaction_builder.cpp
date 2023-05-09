@@ -147,7 +147,7 @@ std::optional<OutputDescription> OutputDescriptionInfo::Build(rust::Box<sapling:
     std::move(ss.begin(), ss.end(), addressBytes.begin());
 
     std::array<unsigned char, 32> cvBytes;
-    OutputDescription odesc;
+    libzcash::GrothProof zkproof;
     uint256 rcm = this->note.rcm();
     if (!ctx->create_output_proof(
             encryptor.get_esk().GetRawBytes(),
@@ -155,23 +155,22 @@ std::optional<OutputDescription> OutputDescriptionInfo::Build(rust::Box<sapling:
             rcm.GetRawBytes(),
             this->note.value(),
             cvBytes,
-            odesc.zkproof)) {
+            zkproof)) {
         return std::nullopt;
     }
 
-    odesc.cv = uint256::FromRawBytes(cvBytes);
-    odesc.cmu = *cmu;
-    odesc.ephemeralKey = encryptor.get_epk();
-    odesc.encCiphertext = enc.first;
+    auto cv = uint256::FromRawBytes(cvBytes);
+    auto ephemeralKey = encryptor.get_epk();
+    auto encCiphertext = enc.first;
 
     libzcash::SaplingOutgoingPlaintext outPlaintext(this->note.pk_d, encryptor.get_esk());
-    odesc.outCiphertext = outPlaintext.encrypt(
+    auto outCiphertext = outPlaintext.encrypt(
         this->ovk,
-        odesc.cv,
-        odesc.cmu,
+        cv,
+        *cmu,
         encryptor);
 
-    return odesc;
+    return OutputDescription(cv, *cmu, ephemeralKey, encCiphertext, outCiphertext, zkproof);
 }
 
 JSDescription JSDescriptionInfo::BuildDeterministic(
@@ -575,7 +574,7 @@ TransactionBuilderResult TransactionBuilder::Build()
 
         std::array<unsigned char, 32> cv;
         std::array<unsigned char, 32> rk;
-        SpendDescription sdesc;
+        libzcash::GrothProof zkproof;
         uint256 rcm = spend.note.rcm();
         if (!ctx->create_spend_proof(
                 spend.expsk.full_viewing_key().ak.GetRawBytes(),
@@ -588,15 +587,18 @@ TransactionBuilderResult TransactionBuilder::Build()
                 witness,
                 cv,
                 rk,
-                sdesc.zkproof)) {
+                zkproof)) {
             return TransactionBuilderResult("Spend proof failed");
         }
 
-        sdesc.cv = uint256::FromRawBytes(cv);
-        sdesc.rk = uint256::FromRawBytes(rk);
-        sdesc.anchor = spend.anchor;
-        sdesc.nullifier = *nf;
-        mtx.vShieldedSpend.push_back(sdesc);
+        SpendDescription::spend_auth_sig_t spendAuthSig;
+        mtx.vShieldedSpend.push_back(SpendDescription(
+            uint256::FromRawBytes(cv),
+            spend.anchor,
+            *nf,
+            uint256::FromRawBytes(rk),
+            zkproof,
+            spendAuthSig));
     }
 
     // Create Sapling OutputDescriptions
@@ -669,7 +671,7 @@ TransactionBuilderResult TransactionBuilder::Build()
             spends[i].expsk.ask.begin(),
             spends[i].alpha.begin(),
             dataToBeSigned.begin(),
-            mtx.vShieldedSpend[i].spendAuthSig.data());
+            mtx.vShieldedSpend[i].spend_auth_sig_mut().data());
     }
     ctx->binding_sig(
         mtx.valueBalanceSapling,

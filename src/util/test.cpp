@@ -335,24 +335,32 @@ CKey AddTestCKeyToKeyStore(CBasicKeyStore& keyStore) {
 }
 
 SpendDescription RandomInvalidSpendDescription() {
-    SpendDescription sdesc;
-    zcash_test_harness_random_jubjub_point(sdesc.cv.begin());
-    zcash_test_harness_random_jubjub_base(sdesc.anchor.begin());
-    sdesc.nullifier = GetRandHash();
-    zcash_test_harness_random_jubjub_point(sdesc.rk.begin());
-    GetRandBytes(sdesc.zkproof.begin(), sdesc.zkproof.size());
-    return sdesc;
+    uint256 cv;
+    uint256 anchor;
+    uint256 rk;
+    libzcash::GrothProof zkproof;
+    SpendDescription::spend_auth_sig_t spendAuthSig;
+    zcash_test_harness_random_jubjub_point(cv.begin());
+    zcash_test_harness_random_jubjub_base(anchor.begin());
+    zcash_test_harness_random_jubjub_point(rk.begin());
+    GetRandBytes(zkproof.begin(), zkproof.size());
+    return SpendDescription(cv, anchor, GetRandHash(), rk, zkproof, spendAuthSig);
 }
 
 OutputDescription RandomInvalidOutputDescription() {
-    OutputDescription odesc;
-    zcash_test_harness_random_jubjub_point(odesc.cv.begin());
-    zcash_test_harness_random_jubjub_base(odesc.cmu.begin());
-    zcash_test_harness_random_jubjub_point(odesc.ephemeralKey.begin());
-    GetRandBytes(odesc.encCiphertext.begin(), odesc.encCiphertext.size());
-    GetRandBytes(odesc.outCiphertext.begin(), odesc.outCiphertext.size());
-    GetRandBytes(odesc.zkproof.begin(), odesc.zkproof.size());
-    return odesc;
+    uint256 cv;
+    uint256 cmu;
+    uint256 ephemeralKey;
+    libzcash::SaplingEncCiphertext encCiphertext;
+    libzcash::SaplingOutCiphertext outCiphertext;
+    libzcash::GrothProof zkproof;
+    zcash_test_harness_random_jubjub_point(cv.begin());
+    zcash_test_harness_random_jubjub_base(cmu.begin());
+    zcash_test_harness_random_jubjub_point(ephemeralKey.begin());
+    GetRandBytes(encCiphertext.begin(), encCiphertext.size());
+    GetRandBytes(outCiphertext.begin(), outCiphertext.size());
+    GetRandBytes(zkproof.begin(), zkproof.size());
+    return OutputDescription(cv, cmu, ephemeralKey, encCiphertext, outCiphertext, zkproof);
 }
 
 TestSaplingNote GetTestSaplingNote(const libzcash::SaplingPaymentAddress& pa, CAmount value) {

@@ -22,23 +22,23 @@ SaplingBundle::SaplingBundle(
         : valueBalanceSapling(valueBalanceSapling), bindingSigSapling(bindingSig)
 {
     for (auto &spend : vShieldedSpend) {
-        vSpendsSapling.emplace_back(spend.cv, spend.nullifier, spend.rk);
+        vSpendsSapling.emplace_back(spend.cv(), spend.nullifier(), spend.rk());
         if (anchorSapling.IsNull()) {
-            anchorSapling = spend.anchor;
+            anchorSapling = spend.anchor();
         } else {
-            assert(anchorSapling == spend.anchor);
+            assert(anchorSapling == spend.anchor());
         }
-        vSpendProofsSapling.push_back(spend.zkproof);
-        vSpendAuthSigSapling.push_back(spend.spendAuthSig);
+        vSpendProofsSapling.push_back(spend.zkproof());
+        vSpendAuthSigSapling.push_back(spend.spend_auth_sig());
     }
     for (auto &output : vShieldedOutput) {
         vOutputsSapling.emplace_back(
-            output.cv,
-            output.cmu,
-            output.ephemeralKey,
-            output.encCiphertext,
-            output.outCiphertext);
-        vOutputProofsSapling.push_back(output.zkproof);
+            output.cv(),
+            output.cmu(),
+            output.ephemeral_key(),
+            output.enc_ciphertext(),
+            output.out_ciphertext());
+        vOutputProofsSapling.push_back(output.zkproof());
     }
 }
 
@@ -48,10 +48,10 @@ std::vector<SpendDescription> SaplingBundle::GetV4ShieldedSpend()
     for (int i = 0; i < vSpendsSapling.size(); i++) {
         auto spend = vSpendsSapling[i];
         vShieldedSpend.emplace_back(
-            spend.cv,
+            spend.cv(),
             anchorSapling,
-            spend.nullifier,
-            spend.rk,
+            spend.nullifier(),
+            spend.rk(),
             vSpendProofsSapling[i],
             vSpendAuthSigSapling[i]);
     }
@@ -64,11 +64,11 @@ std::vector<OutputDescription> SaplingBundle::GetV4ShieldedOutput()
     for (int i = 0; i < vOutputsSapling.size(); i++) {
         auto output = vOutputsSapling[i];
         vShieldedOutput.emplace_back(
-            output.cv,
-            output.cmu,
-            output.ephemeralKey,
-            output.encCiphertext,
-            output.outCiphertext,
+            output.cv(),
+            output.cmu(),
+            output.ephemeral_key(),
+            output.enc_ciphertext(),
+            output.out_ciphertext(),
             vOutputProofsSapling[i]);
     }
     return vShieldedOutput;
@@ -386,8 +386,8 @@ size_t CTransaction::GetLogicalActionCount() const {
             vin,
             vout,
             vJoinSplit.size(),
-            vShieldedSpend.size(),
-            vShieldedOutput.size(),
+            GetSaplingSpendsCount(),
+            GetSaplingOutputsCount(),
             orchardBundle.GetNumActions());
 }
 
@@ -412,8 +412,8 @@ std::string CTransaction::ToString() const
             nLockTime,
             nExpiryHeight,
             valueBalanceSapling,
-            vShieldedSpend.size(),
-            vShieldedOutput.size());
+            GetSaplingSpendsCount(),
+            GetSaplingOutputsCount());
         if (nVersion >= ZIP225_MIN_TX_VERSION) {
             str += strprintf(", nConsensusBranchId=%08x, valueBalanceOrchard=%u, vOrchardAction.size=%u",
                 nConsensusBranchId.value_or(0),
