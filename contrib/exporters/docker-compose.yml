@@ -1,12 +1,16 @@
 ---
-version: '2.2'
+version: '3.8'
 
 services:
   zcashd:
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 4000M
 #    command: ["-reindex"]
     image: electriccoinco/zcashd:latest
 #    image: localhost:5000/electriccoinco/zcashd:v5.0.0
-    mem_limit: 8G
     volumes:
       - $ZCASHD_DATADIR:/srv/zcashd/.zcash
       - $ZCASHD_PARMDIR:/srv/zcashd/.zcash-params
@@ -15,7 +19,6 @@ services:
     ports:
       - "$ZCASHD_RPCPORT:$ZCASHD_RPCPORT"
       - "$ZCASHD_PROMETHEUSPORT:$ZCASHD_PROMETHEUSPORT"
-    cpus: 2
     logging:
       driver: loki
       options:
