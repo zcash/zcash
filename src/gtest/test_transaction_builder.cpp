@@ -65,21 +65,21 @@ TEST(TransactionBuilder, SaplingToSapling) {
 
     auto consensusParams = RegtestActivateSapling();
 
-    auto sk = libzcash::SaplingSpendingKey::random();
-    auto expsk = sk.expanded_spending_key();
-    auto fvk = sk.full_viewing_key();
-    auto pa = sk.default_address();
+    auto sk = GetTestMasterSaplingSpendingKey();
+    auto extfvk = sk.ToXFVK();
+    auto fvk = extfvk.fvk;
+    auto pa = extfvk.DefaultAddress();
 
     auto testNote = GetTestSaplingNote(pa, 4000);
 
     // Create a Sapling-only transaction
     // 0.00004 z-ZEC in, 0.000025 z-ZEC out, default fee, 0.000005 z-ZEC change
     auto builder = TransactionBuilder(Params(), 2, std::nullopt);
-    builder.AddSaplingSpend(expsk, testNote.note, testNote.tree.root(), testNote.tree.witness());
+    builder.AddSaplingSpend(sk, testNote.note, testNote.tree.root(), testNote.tree.witness());
 
     // Check that trying to add a different anchor fails
     // TODO: the following check can be split out in to another test
-    ASSERT_THROW(builder.AddSaplingSpend(expsk, testNote.note, uint256(), testNote.tree.witness()), UniValue);
+    ASSERT_THROW(builder.AddSaplingSpend(sk, testNote.note, uint256(), testNote.tree.witness()), UniValue);
 
     builder.AddSaplingOutput(fvk.ovk, pa, 2500, {});
     auto tx = builder.Build().GetTxOrThrow();
@@ -104,9 +104,10 @@ TEST(TransactionBuilder, SaplingToSprout) {
 
     auto consensusParams = RegtestActivateSapling();
 
-    auto sk = libzcash::SaplingSpendingKey::random();
-    auto expsk = sk.expanded_spending_key();
-    auto pa = sk.default_address();
+    auto sk = GetTestMasterSaplingSpendingKey();
+    auto extfvk = sk.ToXFVK();
+    auto fvk = extfvk.fvk;
+    auto pa = extfvk.DefaultAddress();
 
     auto testNote = GetTestSaplingNote(pa, 4000);
 
@@ -118,7 +119,7 @@ TEST(TransactionBuilder, SaplingToSprout) {
     //                              - 0.000005 Sapling-ZEC change
     //                              - default t-ZEC fee
     auto builder = TransactionBuilder(Params(), 2, std::nullopt, nullptr);
-    builder.AddSaplingSpend(expsk, testNote.note, testNote.tree.root(), testNote.tree.witness());
+    builder.AddSaplingSpend(sk, testNote.note, testNote.tree.root(), testNote.tree.witness());
     builder.AddSproutOutput(sproutAddr, 2500, std::nullopt);
     auto tx = builder.Build().GetTxOrThrow();
 
@@ -299,10 +300,10 @@ TEST(TransactionBuilder, FailsWithNegativeChange)
     auto consensusParams = RegtestActivateSapling();
 
     // Generate dummy Sapling address
-    auto sk = libzcash::SaplingSpendingKey::random();
-    auto expsk = sk.expanded_spending_key();
-    auto fvk = sk.full_viewing_key();
-    auto pa = sk.default_address();
+    auto sk = GetTestMasterSaplingSpendingKey();
+    auto extfvk = sk.ToXFVK();
+    auto fvk = extfvk.fvk;
+    auto pa = extfvk.DefaultAddress();
 
     // Set up dummy transparent address
     CBasicKeyStore keystore;
@@ -327,7 +328,7 @@ TEST(TransactionBuilder, FailsWithNegativeChange)
 
     // Fails if there is insufficient input
     // 0.00005 t-ZEC out, default fee, 0.00005999 z-ZEC in
-    builder.AddSaplingSpend(expsk, testNote.note, testNote.tree.root(), testNote.tree.witness());
+    builder.AddSaplingSpend(sk, testNote.note, testNote.tree.root(), testNote.tree.witness());
     EXPECT_EQ("Change cannot be negative: -0.00000001 ZEC", builder.Build().GetError());
 
     // Succeeds if there is sufficient input
@@ -345,9 +346,10 @@ TEST(TransactionBuilder, ChangeOutput)
     auto consensusParams = RegtestActivateSapling();
 
     // Generate dummy Sapling address
-    auto sk = libzcash::SaplingSpendingKey::random();
-    auto expsk = sk.expanded_spending_key();
-    auto pa = sk.default_address();
+    auto sk = GetTestMasterSaplingSpendingKey();
+    auto extfvk = sk.ToXFVK();
+    auto fvk = extfvk.fvk;
+    auto pa = extfvk.DefaultAddress();
 
     auto testNote = GetTestSaplingNote(pa, 2500);
 
@@ -373,7 +375,7 @@ TEST(TransactionBuilder, ChangeOutput)
     {
         auto builder = TransactionBuilder(Params(), 1, std::nullopt, &keystore);
         builder.AddTransparentInput(COutPoint(), scriptPubKey, 2500);
-        builder.AddSaplingSpend(expsk, testNote.note, testNote.tree.root(), testNote.tree.witness());
+        builder.AddSaplingSpend(sk, testNote.note, testNote.tree.root(), testNote.tree.witness());
         auto tx = builder.Build().GetTxOrThrow();
 
         EXPECT_EQ(tx.vin.size(), 1);
@@ -426,17 +428,17 @@ TEST(TransactionBuilder, SetFee)
     auto consensusParams = RegtestActivateSapling();
 
     // Generate dummy Sapling address
-    auto sk = libzcash::SaplingSpendingKey::random();
-    auto expsk = sk.expanded_spending_key();
-    auto fvk = sk.full_viewing_key();
-    auto pa = sk.default_address();
+    auto sk = GetTestMasterSaplingSpendingKey();
+    auto extfvk = sk.ToXFVK();
+    auto fvk = extfvk.fvk;
+    auto pa = extfvk.DefaultAddress();
 
     auto testNote = GetTestSaplingNote(pa, 50000);
 
     // Default fee
     {
         auto builder = TransactionBuilder(Params(), 1, std::nullopt);
-        builder.AddSaplingSpend(expsk, testNote.note, testNote.tree.root(), testNote.tree.witness());
+        builder.AddSaplingSpend(sk, testNote.note, testNote.tree.root(), testNote.tree.witness());
         builder.AddSaplingOutput(fvk.ovk, pa, 25000, {});
         auto tx = builder.Build().GetTxOrThrow();
 
@@ -452,7 +454,7 @@ TEST(TransactionBuilder, SetFee)
     // Configured fee
     {
         auto builder = TransactionBuilder(Params(), 1, std::nullopt);
-        builder.AddSaplingSpend(expsk, testNote.note, testNote.tree.root(), testNote.tree.witness());
+        builder.AddSaplingSpend(sk, testNote.note, testNote.tree.root(), testNote.tree.witness());
         builder.AddSaplingOutput(fvk.ovk, pa, 25000, {});
         builder.SetFee(20000);
         auto tx = builder.Build().GetTxOrThrow();
@@ -476,9 +478,8 @@ TEST(TransactionBuilder, CheckSaplingTxVersion)
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
     const Consensus::Params& consensusParams = Params().GetConsensus();
 
-    auto sk = libzcash::SaplingSpendingKey::random();
-    auto expsk = sk.expanded_spending_key();
-    auto pk = sk.default_address();
+    auto sk = GetTestMasterSaplingSpendingKey();
+    auto pk = sk.ToXFVK().DefaultAddress();
 
     // Cannot add Sapling outputs to a non-Sapling transaction
     auto builder = TransactionBuilder(Params(), 1, std::nullopt);
@@ -494,7 +495,7 @@ TEST(TransactionBuilder, CheckSaplingTxVersion)
     libzcash::SaplingNote note(pk, 50000, libzcash::Zip212Enabled::BeforeZip212);
     SaplingMerkleTree tree;
     try {
-        builder.AddSaplingSpend(expsk, note, uint256(), tree.witness());
+        builder.AddSaplingSpend(sk, note, uint256(), tree.witness());
     } catch (std::runtime_error const & err) {
         EXPECT_EQ(err.what(), std::string("TransactionBuilder cannot add Sapling spend to pre-Sapling transaction"));
     } catch(...) {

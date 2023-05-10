@@ -351,7 +351,7 @@ void TransactionBuilder::AddOrchardOutput(
 }
 
 void TransactionBuilder::AddSaplingSpend(
-    libzcash::SaplingExpandedSpendingKey expsk,
+    libzcash::SaplingExtendedSpendingKey extsk,
     libzcash::SaplingNote note,
     uint256 anchor,
     SaplingWitness witness)
@@ -366,7 +366,7 @@ void TransactionBuilder::AddSaplingSpend(
         throw JSONRPCError(RPC_WALLET_ERROR, "Anchor does not match previously-added Sapling spends.");
     }
 
-    spends.emplace_back(expsk, note, anchor, witness);
+    spends.emplace_back(extsk.expsk, note, anchor, witness);
     mtx.valueBalanceSapling += note.value();
 }
 

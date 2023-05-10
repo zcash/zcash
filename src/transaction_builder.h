@@ -362,7 +362,7 @@ public:
     // Throws if the anchor does not match the anchor used by
     // previously-added Sapling spends.
     void AddSaplingSpend(
-        libzcash::SaplingExpandedSpendingKey expsk,
+        libzcash::SaplingExtendedSpendingKey extsk,
         libzcash::SaplingNote note,
         uint256 anchor,
         SaplingWitness witness);

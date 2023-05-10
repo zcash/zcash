@@ -958,7 +958,7 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
             ));
         }
 
-        builder.AddSaplingSpend(saplingKeys[i].expsk, saplingNotes[i], anchor, witnesses[i].value());
+        builder.AddSaplingSpend(saplingKeys[i], saplingNotes[i], anchor, witnesses[i].value());
     }
 
     // Add outputs
