@@ -43,6 +43,11 @@ class CCoinsViewTest : public CCoinsView
     std::map<uint256, bool> mapSaplingNullifiers_;
     std::map<uint256, bool> mapOrchardNullifiers_;
 
+    std::map<libzcash::SubtreeIndex, libzcash::SubtreeData> mapSaplingSubtrees;
+    std::optional<libzcash::LatestSubtree> latestSaplingSubtree;
+    std::map<libzcash::SubtreeIndex, libzcash::SubtreeData> mapOrchardSubtrees;
+    std::optional<libzcash::LatestSubtree> latestOrchardSubtree;
+
 public:
     CCoinsViewTest() {
         hashBestSproutAnchor_ = SproutMerkleTree::empty_root();
@@ -170,6 +175,39 @@ public:
         throw std::runtime_error("`GetHistoryRoot` unimplemented for mock CCoinsViewTest");
     }
 
+    std::optional<libzcash::LatestSubtree> GetLatestSubtree(ShieldedType type) const {
+        switch (type) {
+            case SAPLING:
+                return latestSaplingSubtree;
+            case ORCHARD:
+                return latestOrchardSubtree;
+            default:
+                throw std::runtime_error("Unknown shielded type");
+        }
+    };
+    std::optional<libzcash::SubtreeData> GetSubtreeData(
+            ShieldedType type,
+            libzcash::SubtreeIndex index) const
+    {
+        const std::map<libzcash::SubtreeIndex, libzcash::SubtreeData>* mapToUse;
+        switch (type) {
+            case SAPLING:
+                mapToUse = &mapSaplingSubtrees;
+                break;
+            case ORCHARD:
+                mapToUse = &mapOrchardSubtrees;
+                break;
+            default:
+                throw std::runtime_error("Unknown shielded type");
+        }
+        std::map<libzcash::SubtreeIndex, libzcash::SubtreeData>::const_iterator it = mapToUse->find(index);
+        if (it == mapToUse->end()) {
+            return std::nullopt;
+        } else {
+            return it->second;
+        }
+    };
+
     void BatchWriteNullifiers(CNullifiersMap& mapNullifiers, std::map<uint256, bool>& cacheNullifiers)
     {
         for (CNullifiersMap::iterator it = mapNullifiers.begin(); it != mapNullifiers.end(); ) {
@@ -215,7 +253,9 @@ public:
                     CNullifiersMap& mapSproutNullifiers,
                     CNullifiersMap& mapSaplingNullifiers,
                     CNullifiersMap& mapOrchardNullifiers,
-                    CHistoryCacheMap &historyCacheMap)
+                    CHistoryCacheMap &historyCacheMap,
+                    SubtreeCache &cacheSaplingSubtrees,
+                    SubtreeCache &cacheOrchardSubtrees)
     {
         for (CCoinsMap::iterator it = mapCoins.begin(); it != mapCoins.end(); ) {
             if (it->second.flags & CCoinsCacheEntry::DIRTY) {
@@ -236,6 +276,8 @@ public:
         BatchWriteNullifiers(mapSproutNullifiers, mapSproutNullifiers_);
         BatchWriteNullifiers(mapSaplingNullifiers, mapSaplingNullifiers_);
         BatchWriteNullifiers(mapOrchardNullifiers, mapOrchardNullifiers_);
+
+        // TODO: inherit from cacheSaplingSubtrees and cacheOrchardSubtrees
 
         if (!hashBlock.IsNull())
             hashBestBlock_ = hashBlock;
@@ -266,7 +308,9 @@ public:
                      memusage::DynamicUsage(cacheSproutNullifiers) +
                      memusage::DynamicUsage(cacheSaplingNullifiers) +
                      memusage::DynamicUsage(cacheOrchardNullifiers) +
-                     memusage::DynamicUsage(historyCacheMap);
+                     memusage::DynamicUsage(historyCacheMap) +
+                     memusage::DynamicUsage(cacheSaplingSubtrees) +
+                     memusage::DynamicUsage(cacheOrchardSubtrees);
         for (CCoinsMap::iterator it = cacheCoins.begin(); it != cacheCoins.end(); it++) {
             ret += it->second.coins.DynamicMemoryUsage();
         }

@@ -46,6 +46,9 @@ static const char DB_MMR_LENGTH = 'M';
 static const char DB_MMR_NODE = 'm';
 static const char DB_MMR_ROOT = 'r';
 
+static const char DB_SUBTREE_LATEST = 'e';
+static const char DB_SUBTREE_DATA = 'n';
+
 // insightexplorer
 static const char DB_ADDRESSINDEX = 'd';
 static const char DB_ADDRESSUNSPENTINDEX = 'u';
@@ -207,6 +210,26 @@ uint256 CCoinsViewDB::GetHistoryRoot(uint32_t epochId) const {
     return root;
 }
 
+
+std::optional<libzcash::LatestSubtree> CCoinsViewDB::GetLatestSubtree(ShieldedType type) const {
+    libzcash::LatestSubtree latestSubtree;
+    if (!db.Read(make_pair(DB_SUBTREE_LATEST, (uint8_t) type), latestSubtree)) {
+        return std::nullopt;
+    }
+
+    return latestSubtree;
+}
+
+std::optional<libzcash::SubtreeData> CCoinsViewDB::GetSubtreeData(
+        ShieldedType type, libzcash::SubtreeIndex index) const
+{
+    libzcash::SubtreeData subtreeData;
+    if (!db.Read(make_pair(DB_SUBTREE_DATA, make_pair((uint8_t) type, index)), subtreeData)) {
+        return std::nullopt;
+    }
+    return subtreeData;
+}
+
 void BatchWriteNullifiers(CDBBatch& batch, CNullifiersMap& mapToUse, const char& dbChar)
 {
     for (CNullifiersMap::iterator it = mapToUse.begin(); it != mapToUse.end();) {
@@ -265,6 +288,65 @@ void BatchWriteHistory(CDBBatch& batch, CHistoryCacheMap& historyCacheMap) {
     }
 }
 
+void WriteSubtrees(
+    CDBBatch& batch,
+    ShieldedType type,
+    std::optional<libzcash::LatestSubtree> oldLatestSubtree,
+    std::optional<libzcash::LatestSubtree> newLatestSubtree,
+    const std::vector<libzcash::SubtreeData> &newSubtrees
+)
+{
+    // The current index we're operating on
+    libzcash::SubtreeIndex cursor_index;
+    // The number of subtrees we'll need to remove from the database
+    libzcash::SubtreeIndex pops;
+
+    if (!oldLatestSubtree.has_value()) {
+        // Nothing to remove; start inserting at 0.
+        cursor_index = 0;
+        pops = 0;
+        assert(!newLatestSubtree.has_value());
+    } else {
+        cursor_index = oldLatestSubtree.value().index;
+        if (!newLatestSubtree.has_value()) {
+            // Every subtree must be removed
+            pops = cursor_index + 1;
+        } else {
+            // Only remove what's necessary to get us to the
+            // correct index.
+            assert(newLatestSubtree.value().index <= cursor_index);
+            pops = cursor_index - newLatestSubtree.value().index;
+        }
+    }
+
+    for (libzcash::SubtreeIndex i = 0; i < pops; i++) {
+        batch.Erase(make_pair(DB_SUBTREE_DATA, make_pair((uint8_t) type, cursor_index - i)));
+    }
+    cursor_index -= pops;
+
+    if (!newSubtrees.empty()) {
+        // cursor_index is now at the position we need to add the new subtrees
+        for (const libzcash::SubtreeData& subtreeData : newSubtrees) {
+            batch.Write(make_pair(DB_SUBTREE_DATA, make_pair((uint8_t) type, cursor_index)), subtreeData);
+            cursor_index += 1;
+        }
+
+        libzcash::SubtreeData latestSubtreeData = newSubtrees.back();
+
+        // Note: the latest index will be cursor_index - 1 after the final iteration of the loop above.
+        libzcash::LatestSubtree latestSubtree(cursor_index - 1, latestSubtreeData.root, latestSubtreeData.nHeight);
+        batch.Write(make_pair(DB_SUBTREE_LATEST, (uint8_t) type), latestSubtree);
+    } else {
+        // There are no new subtrees from the cache, so newLatestSubtree is the (possibly new) best index.
+        if (newLatestSubtree.has_value()) {
+            batch.Write(make_pair(DB_SUBTREE_LATEST, (uint8_t) type), newLatestSubtree);
+        } else {
+            // Delete the entry if it's std::nullopt
+            batch.Erase(make_pair(DB_SUBTREE_LATEST, (uint8_t) type));
+        }
+    }
+}
+
 bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
                               const uint256 &hashBlock,
                               const uint256 &hashSproutAnchor,
@@ -276,7 +358,12 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
                               CNullifiersMap &mapSproutNullifiers,
                               CNullifiersMap &mapSaplingNullifiers,
                               CNullifiersMap &mapOrchardNullifiers,
-                              CHistoryCacheMap &historyCacheMap) {
+                              CHistoryCacheMap &historyCacheMap,
+                              SubtreeCache &cacheSaplingSubtrees,
+                              SubtreeCache &cacheOrchardSubtrees) {
+    auto latestSaplingSubtree = GetLatestSubtree(SAPLING);
+    auto latestOrchardSubtree = GetLatestSubtree(ORCHARD);
+
     CDBBatch batch(db);
     size_t count = 0;
     size_t changed = 0;
@@ -301,6 +388,9 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
     ::BatchWriteNullifiers(batch, mapOrchardNullifiers, DB_ORCHARD_NULLIFIER);
 
     ::BatchWriteHistory(batch, historyCacheMap);
+
+    WriteSubtrees(batch, SAPLING, latestSaplingSubtree, cacheSaplingSubtrees.parentLatestSubtree, cacheSaplingSubtrees.newSubtrees);
+    WriteSubtrees(batch, ORCHARD, latestOrchardSubtree, cacheOrchardSubtrees.parentLatestSubtree, cacheOrchardSubtrees.newSubtrees);
 
     if (!hashBlock.IsNull())
         batch.Write(DB_BEST_BLOCK, hashBlock);

@@ -94,6 +94,10 @@ public:
     HistoryIndex GetHistoryLength(uint32_t epochId) const;
     HistoryNode GetHistoryAt(uint32_t epochId, HistoryIndex index) const;
     uint256 GetHistoryRoot(uint32_t epochId) const;
+    std::optional<libzcash::LatestSubtree> GetLatestSubtree(ShieldedType type) const;
+    std::optional<libzcash::SubtreeData> GetSubtreeData(
+            ShieldedType type,
+            libzcash::SubtreeIndex index) const;
     bool BatchWrite(CCoinsMap &mapCoins,
                     const uint256 &hashBlock,
                     const uint256 &hashSproutAnchor,
@@ -105,7 +109,9 @@ public:
                     CNullifiersMap &mapSproutNullifiers,
                     CNullifiersMap &mapSaplingNullifiers,
                     CNullifiersMap &mapOrchardNullifiers,
-                    CHistoryCacheMap &historyCacheMap);
+                    CHistoryCacheMap &historyCacheMap,
+                    SubtreeCache &cacheSaplingSubtrees,
+                    SubtreeCache &cacheOrchardSubtrees);
     bool GetStats(CCoinsStats &stats) const;
 };
 

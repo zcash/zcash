@@ -58,6 +58,8 @@ uint256 CCoinsViewBacked::GetBestAnchor(ShieldedType type) const { return base->
 HistoryIndex CCoinsViewBacked::GetHistoryLength(uint32_t epochId) const { return base->GetHistoryLength(epochId); }
 HistoryNode CCoinsViewBacked::GetHistoryAt(uint32_t epochId, HistoryIndex index) const { return base->GetHistoryAt(epochId, index); }
 uint256 CCoinsViewBacked::GetHistoryRoot(uint32_t epochId) const { return base->GetHistoryRoot(epochId); }
+std::optional<libzcash::LatestSubtree> CCoinsViewBacked::GetLatestSubtree(ShieldedType type) const { return base->GetLatestSubtree(type); }
+std::optional<libzcash::SubtreeData> CCoinsViewBacked::GetSubtreeData(ShieldedType type, libzcash::SubtreeIndex index) const { return base->GetSubtreeData(type, index); }
 void CCoinsViewBacked::SetBackend(CCoinsView &viewIn) { base = &viewIn; }
 bool CCoinsViewBacked::BatchWrite(CCoinsMap &mapCoins,
                                   const uint256 &hashBlock,
@@ -70,12 +72,14 @@ bool CCoinsViewBacked::BatchWrite(CCoinsMap &mapCoins,
                                   CNullifiersMap &mapSproutNullifiers,
                                   CNullifiersMap &mapSaplingNullifiers,
                                   CNullifiersMap &mapOrchardNullifiers,
-                                  CHistoryCacheMap &historyCacheMap) {
+                                  CHistoryCacheMap &historyCacheMap,
+                                  SubtreeCache &cacheSaplingSubtrees,
+                                  SubtreeCache &cacheOrchardSubtrees) {
     return base->BatchWrite(mapCoins, hashBlock,
                             hashSproutAnchor, hashSaplingAnchor, hashOrchardAnchor,
                             mapSproutAnchors, mapSaplingAnchors, mapOrchardAnchors,
                             mapSproutNullifiers, mapSaplingNullifiers, mapOrchardNullifiers,
-                            historyCacheMap);
+                            historyCacheMap, cacheSaplingSubtrees, cacheOrchardSubtrees);
 }
 bool CCoinsViewBacked::GetStats(CCoinsStats &stats) const { return base->GetStats(stats); }
 
@@ -97,6 +101,8 @@ size_t CCoinsViewCache::DynamicMemoryUsage() const {
            memusage::DynamicUsage(cacheSaplingNullifiers) +
            memusage::DynamicUsage(cacheOrchardNullifiers) +
            memusage::DynamicUsage(historyCacheMap) +
+           memusage::DynamicUsage(cacheSaplingSubtrees) +
+           memusage::DynamicUsage(cacheOrchardSubtrees) +
            cachedCoinsUsage;
 }
 
@@ -239,6 +245,31 @@ HistoryNode CCoinsViewCache::GetHistoryAt(uint32_t epochId, HistoryIndex index) 
 
 uint256 CCoinsViewCache::GetHistoryRoot(uint32_t epochId) const {
     return SelectHistoryCache(epochId).root;
+}
+
+std::optional<libzcash::LatestSubtree> CCoinsViewCache::GetLatestSubtree(ShieldedType type) const {
+    switch (type) {
+        case SAPLING:
+            return cacheSaplingSubtrees.GetLatestSubtree(base);
+        case ORCHARD:
+            return cacheOrchardSubtrees.GetLatestSubtree(base);
+        default:
+            throw std::runtime_error("GetLatestSubtree: unsupported shielded type in cache of subtrees");
+    }
+}
+
+std::optional<libzcash::SubtreeData> CCoinsViewCache::GetSubtreeData(
+    ShieldedType type,
+    libzcash::SubtreeIndex index) const
+{
+    switch (type) {
+        case SAPLING:
+            return cacheSaplingSubtrees.GetSubtreeData(base, index);
+        case ORCHARD:
+            return cacheOrchardSubtrees.GetSubtreeData(base, index);
+        default:
+            throw std::runtime_error("GetLatestSubtree: unsupported shielded type in cache of subtrees");
+    }
 }
 
 template<typename Tree, typename Cache, typename CacheIterator, typename CacheEntry>
@@ -873,7 +904,9 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
                                  CNullifiersMap &mapSproutNullifiers,
                                  CNullifiersMap &mapSaplingNullifiers,
                                  CNullifiersMap &mapOrchardNullifiers,
-                                 CHistoryCacheMap &historyCacheMapIn) {
+                                 CHistoryCacheMap &historyCacheMapIn,
+                                 SubtreeCache &cacheSaplingSubtreesIn,
+                                 SubtreeCache &cacheOrchardSubtreesIn) {
     assert(!hasModifier);
     for (CCoinsMap::iterator it = mapCoins.begin(); it != mapCoins.end();) {
         if (it->second.flags & CCoinsCacheEntry::DIRTY) { // Ignore non-dirty entries (optimization).
@@ -919,6 +952,9 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
 
     ::BatchWriteHistory(historyCacheMap, historyCacheMapIn);
 
+    cacheSaplingSubtrees.BatchWrite(base, cacheSaplingSubtreesIn);
+    cacheOrchardSubtrees.BatchWrite(base, cacheOrchardSubtreesIn);
+
     hashSproutAnchor = hashSproutAnchorIn;
     hashSaplingAnchor = hashSaplingAnchorIn;
     hashOrchardAnchor = hashOrchardAnchorIn;
@@ -938,7 +974,9 @@ bool CCoinsViewCache::Flush() {
                                 cacheSproutNullifiers,
                                 cacheSaplingNullifiers,
                                 cacheOrchardNullifiers,
-                                historyCacheMap);
+                                historyCacheMap,
+                                cacheSaplingSubtrees,
+                                cacheOrchardSubtrees);
     cacheCoins.clear();
     cacheSproutAnchors.clear();
     cacheSaplingAnchors.clear();
@@ -947,6 +985,8 @@ bool CCoinsViewCache::Flush() {
     cacheSaplingNullifiers.clear();
     cacheOrchardNullifiers.clear();
     historyCacheMap.clear();
+    cacheSaplingSubtrees.clear();
+    cacheOrchardSubtrees.clear();
     cachedCoinsUsage = 0;
     return fOk;
 }
@@ -1101,4 +1141,137 @@ CCoinsModifier::~CCoinsModifier()
         // If the coin still exists after the modification, add the new usage
         cache.cachedCoinsUsage += it->second.coins.DynamicMemoryUsage();
     }
+}
+
+void SubtreeCache::clear() {
+    initialized = false;
+    parentLatestSubtree = std::nullopt;
+    newSubtrees.clear();
+}
+
+std::optional<libzcash::LatestSubtree> SubtreeCache::GetLatestSubtree(CCoinsView *parentView) {
+    if (!initialized) {
+        parentLatestSubtree = parentView->GetLatestSubtree(type);
+        initialized = true;
+    }
+
+    if (newSubtrees.size() > 0) {
+        // The latest subtree is in our cache.
+
+        libzcash::SubtreeIndex index;
+        if (parentLatestSubtree.has_value()) {
+            // The best subtree index is newSubtrees.size() larger than
+            // our parent view's subtree index.
+            index = parentLatestSubtree.value().index + newSubtrees.size();
+        } else {
+            // The parent view has no subtrees
+            index = newSubtrees.size() - 1;
+        }
+
+        auto lastSubtree = newSubtrees.back();
+        return libzcash::LatestSubtree(index, lastSubtree.root, lastSubtree.nHeight);
+    } else {
+        return parentLatestSubtree;
+    }
+}
+
+std::optional<libzcash::SubtreeData> SubtreeCache::GetSubtreeData(CCoinsView *parentView, libzcash::SubtreeIndex index) {
+    auto latestSubtree = GetLatestSubtree(parentView);
+
+    if (!latestSubtree.has_value() || latestSubtree.value().index < index) {
+        // This subtree isn't complete in our local view
+        return std::nullopt;
+    }
+
+    if (parentLatestSubtree.has_value() && parentLatestSubtree.value().index <= index) {
+        // This subtree is complete, but it's not in the local cache
+        return parentView->GetSubtreeData(type, index);
+    } else {
+        if (parentLatestSubtree.has_value()) {
+            // Get the index into our local `newSubtrees` that the subtree should
+            // be located.
+            auto localIndex = index - (parentLatestSubtree.value().index + 1);
+            assert(newSubtrees.size() > localIndex);
+            return newSubtrees[localIndex];
+        } else {
+            // The index we've been given is the index into our local `newSubtrees`
+            // since the parent view has no subtrees.
+            assert(newSubtrees.size() > index);
+            return newSubtrees[index];
+        }
+    }
+}
+
+void SubtreeCache::PushSubtree(CCoinsView *parentView, libzcash::SubtreeData subtree) {
+    GetLatestSubtree(parentView);
+
+    newSubtrees.push_back(subtree);
+}
+
+void SubtreeCache::PopSubtree(CCoinsView *parentView) {
+    GetLatestSubtree(parentView);
+
+    if (newSubtrees.empty()) {
+        // Try to pop from the parent view
+        if (parentLatestSubtree.has_value()) {
+            libzcash::SubtreeIndex parentIndex = parentLatestSubtree.value().index;
+
+            if (parentIndex == 0) {
+                // This pops the only subtree left in the parent view.
+                parentLatestSubtree = std::nullopt;
+            } else {
+                parentIndex -= 1;
+                auto newParent = parentView->GetSubtreeData(type, parentIndex);
+                if (!newParent.has_value()) {
+                    throw std::runtime_error("cache inconsistency; parent view does not have subtree");
+                }
+
+                parentLatestSubtree = libzcash::LatestSubtree(
+                    parentIndex,
+                    newParent.value().root,
+                    newParent.value().nHeight
+                );
+            }
+        } else {
+            throw std::runtime_error("tried to pop a subtree from an empty subtree list");
+        }
+    } else {
+        newSubtrees.pop_back();
+    }
+}
+
+void SubtreeCache::BatchWrite(CCoinsView *parentView, SubtreeCache &childMap) {
+    auto bestSubtree = GetLatestSubtree(parentView);
+    if (!bestSubtree.has_value()) {
+        // childMap could not have popped from us
+        if (childMap.parentLatestSubtree.has_value()) {
+            throw std::runtime_error("cache inconsistency; child view of parent's latest subtree cannot be correct");
+        }
+    } else {
+        uint64_t pops;
+        // Compute the number of times we must PopSubtree until our best subtree
+        // is the same as the child's parentLatestSubtree index.
+        if (childMap.parentLatestSubtree.has_value()) {
+            if (childMap.parentLatestSubtree.value().index > bestSubtree.value().index) {
+                throw std::runtime_error("cache inconsistency; child view of parent's latest subtree cannot be correct");
+            }
+            pops = bestSubtree.value().index - childMap.parentLatestSubtree.value().index;
+        } else {
+            // We have to pop everything.
+            pops = bestSubtree.value().index + 1;
+        }
+
+        for (uint64_t i = 0; i < pops; i++) {
+            PopSubtree(parentView);
+        }
+    }
+
+    // Now we can inherit the child's new subtrees
+    newSubtrees.insert(
+        newSubtrees.end(),
+        std::make_move_iterator(childMap.newSubtrees.begin()),
+        std::make_move_iterator(childMap.newSubtrees.end())
+    );
+
+    childMap.clear();
 }
