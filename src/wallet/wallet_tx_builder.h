@@ -396,6 +396,7 @@ private:
         InputSelectionError>
     IterateLimit(
             CWallet& wallet,
+            const CChain& chain,
             const ZTXOSelector& selector,
             const TransactionStrategy& strategy,
             CAmount sendAmount,

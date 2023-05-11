@@ -2,8 +2,10 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-#include "util/moneystr.h"
 #include "wallet/wallet_tx_builder.h"
+
+#include "script/sign.h"
+#include "util/moneystr.h"
 #include "zip317.h"
 
 using namespace libzcash;
@@ -21,6 +23,9 @@ static size_t PadCount(size_t n)
 
 static CAmount
 CalcZIP317Fee(
+        const Consensus::Params& consensus,
+        const CWallet& wallet,
+        const CChain& chain,
         const std::optional<SpendableInputs>& inputs,
         const std::vector<ResolvedPayment>& payments,
         const std::optional<ChangeAddress>& changeAddr)
@@ -67,10 +72,15 @@ CalcZIP317Fee(
     size_t saplingInputCount = 0;
     size_t orchardInputCount = 0;
     if (inputs.has_value()) {
+        auto consensusBranchId = CurrentEpochBranchId(chain.Height(), consensus);
         for (const auto& utxo : inputs.value().utxos) {
-            vin.emplace_back(
-                    COutPoint(utxo.tx->GetHash(), utxo.i),
-                    utxo.tx->vout[utxo.i].scriptPubKey);
+            SignatureData sigdata;
+            ProduceSignature(
+                    DummySignatureCreator(&wallet),
+                    utxo.tx->vout[utxo.i].scriptPubKey,
+                    sigdata,
+                    consensusBranchId);
+            vin.emplace_back(COutPoint(utxo.tx->GetHash(), utxo.i), sigdata.scriptSig);
         }
         sproutInputCount = inputs.value().sproutNoteEntries.size();
         saplingInputCount = inputs.value().saplingNoteEntries.size();
@@ -211,6 +221,9 @@ ValidateAmount(const SpendableInputs& spendable, const CAmount& fee)
 
 static tl::expected<std::pair<ResolvedPayment, CAmount>, InputSelectionError>
 ResolveNetPayment(
+        const Consensus::Params& consensus,
+        const CWallet& wallet,
+        const CChain& chain,
         const ZTXOSelector& selector,
         const SpendableInputs& spendable,
         const NetAmountRecipient& netpay,
@@ -241,7 +254,7 @@ ResolveNetPayment(
                     orchardOutputs)
                 .map_error([](const auto& error) -> InputSelectionError { return error; })
                 .and_then([&](const auto& rpayment) {
-                    auto finalFee = fee.value_or(CalcZIP317Fee(spendable, {rpayment}, std::nullopt));
+                    auto finalFee = fee.value_or(CalcZIP317Fee(consensus, wallet, chain, spendable, {rpayment}, std::nullopt));
                     return ValidateAmount(spendable, finalFee)
                         .and_then([&](void) {
                             return ResolvePayment(
@@ -429,7 +442,7 @@ WalletTxBuilder::PrepareTransaction(
                         afterNU5);
             },
             [&](const NetAmountRecipient& netRecipient) {
-                return ResolveNetPayment(selector, spendable, netRecipient, fee, strategy, afterNU5)
+                return ResolveNetPayment(params.GetConsensus(), wallet, chain, selector, spendable, netRecipient, fee, strategy, afterNU5)
                     .map([&](const auto& pair) {
                         const auto& [payment, finalFee] = pair;
                         return InputSelection(spendable, {{payment}}, finalFee, std::nullopt);
@@ -484,6 +497,9 @@ SpendableInputs WalletTxBuilder::FindAllSpendableInputs(
 }
 
 CAmount GetConstrainedFee(
+        const Consensus::Params& consensus,
+        const CWallet& wallet,
+        const CChain& chain,
         const std::optional<SpendableInputs>& inputs,
         const std::vector<ResolvedPayment>& payments,
         const std::optional<ChangeAddress>& changeAddr)
@@ -493,7 +509,7 @@ CAmount GetConstrainedFee(
     // lower bound.
     constexpr unsigned int DUMMY_TX_SIZE = 1;
 
-    return CWallet::ConstrainFee(CalcZIP317Fee(inputs, payments, changeAddr), DUMMY_TX_SIZE);
+    return CWallet::ConstrainFee(CalcZIP317Fee(consensus, wallet, chain, inputs, payments, changeAddr), DUMMY_TX_SIZE);
 }
 
 static tl::expected<void, InputSelectionError>
@@ -538,6 +554,7 @@ tl::expected<
     InputSelectionError>
 WalletTxBuilder::IterateLimit(
         CWallet& wallet,
+        const CChain& chain,
         const ZTXOSelector& selector,
         const TransactionStrategy& strategy,
         CAmount sendAmount,
@@ -549,7 +566,7 @@ WalletTxBuilder::IterateLimit(
     SpendableInputs spendableMut;
 
     auto previousFee = MINIMUM_FEE;
-    auto updatedFee = GetConstrainedFee(std::nullopt, resolved.GetResolvedPayments(), std::nullopt);
+    auto updatedFee = GetConstrainedFee(params.GetConsensus(), wallet, chain, std::nullopt, resolved.GetResolvedPayments(), std::nullopt);
     // This is used to increase the target amount just enough (generally by 0 or 1) to force
     // selection of additional notes.
     CAmount bumpTargetAmount{0};
@@ -593,6 +610,9 @@ WalletTxBuilder::IterateLimit(
             }
             previousFee = updatedFee;
             updatedFee = GetConstrainedFee(
+                    params.GetConsensus(),
+                    wallet,
+                    chain,
                     spendableMut,
                     resolved.GetResolvedPayments(),
                     changeAmount > 0 ? changeAddr : std::nullopt);
@@ -729,7 +749,7 @@ WalletTxBuilder::ResolveInputsAndPayments(
             //       adding the change payment. We can remove this check and make the later one
             //       unconditional once that’s fixed.
             auto conventionalFee =
-                CalcZIP317Fee(spendableMut, resolved.GetResolvedPayments(), changeAddr);
+                CalcZIP317Fee(params.GetConsensus(), wallet, chain, spendableMut, resolved.GetResolvedPayments(), changeAddr);
             if (finalFee > WEIGHT_RATIO_CAP * conventionalFee) {
                 return tl::make_unexpected(AbsurdFeeError(conventionalFee, finalFee));
             }
@@ -740,13 +760,13 @@ WalletTxBuilder::ResolveInputsAndPayments(
             }
         } else {
             auto conventionalFee =
-                CalcZIP317Fee(spendableMut, resolved.GetResolvedPayments(), std::nullopt);
+                CalcZIP317Fee(params.GetConsensus(), wallet, chain, spendableMut, resolved.GetResolvedPayments(), std::nullopt);
             if (finalFee > WEIGHT_RATIO_CAP * conventionalFee) {
                 return tl::make_unexpected(AbsurdFeeError(resolved.Total(), finalFee));
             }
         }
     } else {
-        auto limitResult = IterateLimit(wallet, selector, strategy, sendAmount, dustThreshold, spendable, resolved, afterNU5);
+        auto limitResult = IterateLimit(wallet, chain, selector, strategy, sendAmount, dustThreshold, spendable, resolved, afterNU5);
         if (limitResult.has_value()) {
             std::tie(spendableMut, finalFee, changeAddr) = limitResult.value();
             targetAmount = sendAmount + finalFee;
