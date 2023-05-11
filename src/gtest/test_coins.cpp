@@ -279,6 +279,7 @@ class TxWithNullifiers
 {
 public:
     CTransaction tx;
+    CTransaction txV5;
     uint256 sproutNullifier;
     uint256 saplingNullifier;
     uint256 orchardNullifier;
@@ -286,6 +287,12 @@ public:
     TxWithNullifiers()
     {
         CMutableTransaction mutableTx;
+        CMutableTransaction mutableTxV5;
+
+        mutableTxV5.fOverwintered = true;
+        mutableTxV5.nVersion = ZIP225_TX_VERSION;
+        mutableTxV5.nVersionGroupId = ZIP225_VERSION_GROUP_ID;
+        mutableTxV5.nConsensusBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_NU5].nBranchId;
 
         sproutNullifier = GetRandHash();
         JSDescription jsd;
@@ -301,10 +308,11 @@ public:
         uint256 orchardAnchor;
         uint256 dataToBeSigned;
         auto builder = orchard::Builder(true, true, orchardAnchor);
-        mutableTx.orchardBundle = builder.Build().value().ProveAndSign({}, dataToBeSigned).value();
-        orchardNullifier = mutableTx.orchardBundle.GetNullifiers().at(0);
+        mutableTxV5.orchardBundle = builder.Build().value().ProveAndSign({}, dataToBeSigned).value();
+        orchardNullifier = mutableTxV5.orchardBundle.GetNullifiers().at(0);
 
         tx = CTransaction(mutableTx);
+        txV5 = CTransaction(mutableTxV5);
     }
 };
 
@@ -375,11 +383,13 @@ TEST(CoinsTests, NullifierRegression)
 
         // Insert a nullifier into the base.
         cache1.SetNullifiers(txWithNullifiers.tx, true);
+        cache1.SetNullifiers(txWithNullifiers.txV5, true);
         checkNullifierCache(cache1, txWithNullifiers, true);
         cache1.Flush(); // Flush to base.
 
         // Remove the nullifier from cache
         cache1.SetNullifiers(txWithNullifiers.tx, false);
+        cache1.SetNullifiers(txWithNullifiers.txV5, false);
 
         // The nullifier now should be `false`.
         checkNullifierCache(cache1, txWithNullifiers, false);
@@ -395,11 +405,13 @@ TEST(CoinsTests, NullifierRegression)
 
         // Insert a nullifier into the base.
         cache1.SetNullifiers(txWithNullifiers.tx, true);
+        cache1.SetNullifiers(txWithNullifiers.txV5, true);
         checkNullifierCache(cache1, txWithNullifiers, true);
         cache1.Flush(); // Flush to base.
 
         // Remove the nullifier from cache
         cache1.SetNullifiers(txWithNullifiers.tx, false);
+        cache1.SetNullifiers(txWithNullifiers.txV5, false);
         cache1.Flush(); // Flush to base.
 
         // The nullifier now should be `false`.
@@ -415,6 +427,7 @@ TEST(CoinsTests, NullifierRegression)
         // Insert a nullifier into the base.
         TxWithNullifiers txWithNullifiers;
         cache1.SetNullifiers(txWithNullifiers.tx, true);
+        cache1.SetNullifiers(txWithNullifiers.txV5, true);
         checkNullifierCache(cache1, txWithNullifiers, true);
         cache1.Flush(); // Empties cache.
 
@@ -424,6 +437,7 @@ TEST(CoinsTests, NullifierRegression)
             CCoinsViewCacheTest cache2(&cache1);
             checkNullifierCache(cache2, txWithNullifiers, true);
             cache1.SetNullifiers(txWithNullifiers.tx, false);
+            cache1.SetNullifiers(txWithNullifiers.txV5, false);
             cache2.Flush(); // Empties cache, flushes to cache1.
         }
 
@@ -440,6 +454,7 @@ TEST(CoinsTests, NullifierRegression)
         // Insert a nullifier into the base.
         TxWithNullifiers txWithNullifiers;
         cache1.SetNullifiers(txWithNullifiers.tx, true);
+        cache1.SetNullifiers(txWithNullifiers.txV5, true);
         cache1.Flush(); // Empties cache.
 
         // Create cache on top.
@@ -447,6 +462,7 @@ TEST(CoinsTests, NullifierRegression)
             // Remove the nullifier.
             CCoinsViewCacheTest cache2(&cache1);
             cache2.SetNullifiers(txWithNullifiers.tx, false);
+            cache2.SetNullifiers(txWithNullifiers.txV5, false);
             cache2.Flush(); // Empties cache, flushes to cache1.
         }
 
@@ -667,6 +683,7 @@ TEST(CoinsTests, NullifiersTest)
         checkNullifierCache(cache, txWithNullifiers, false);
     }
     cache.SetNullifiers(txWithNullifiers.tx, true);
+    cache.SetNullifiers(txWithNullifiers.txV5, true);
     {
         SCOPED_TRACE("cache with spent nullifiers");
         checkNullifierCache(cache, txWithNullifiers, true);
@@ -680,6 +697,7 @@ TEST(CoinsTests, NullifiersTest)
         checkNullifierCache(cache2, txWithNullifiers, true);
     }
     cache2.SetNullifiers(txWithNullifiers.tx, false);
+    cache2.SetNullifiers(txWithNullifiers.txV5, false);
     {
         SCOPED_TRACE("cache2 with unspent nullifiers");
         checkNullifierCache(cache2, txWithNullifiers, false);
