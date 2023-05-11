@@ -850,42 +850,19 @@ static void ZC_LoadParams(
     struct timeval tv_start, tv_end;
     float elapsed;
 
-    fs::path sapling_spend = ZC_GetParamsDir() / "sapling-spend.params";
-    fs::path sapling_output = ZC_GetParamsDir() / "sapling-output.params";
     fs::path sprout_groth16 = ZC_GetParamsDir() / "sprout-groth16.params";
-
-    if (!(
-        fs::exists(sapling_spend) &&
-        fs::exists(sapling_output) &&
-        fs::exists(sprout_groth16)
-    )) {
-        uiInterface.ThreadSafeMessageBox(strprintf(
-            _("Cannot find the Zcash network parameters in the following directory:\n"
-              "%s\n"
-              "Please run 'zcash-fetch-params' or './zcutil/fetch-params.sh' and then restart."),
-                ZC_GetParamsDir()),
-            "", CClientUIInterface::MSG_ERROR);
-        StartShutdown();
-        return;
-    }
-
     static_assert(
         sizeof(fs::path::value_type) == sizeof(codeunit),
         "librustzcash not configured correctly");
-    auto sapling_spend_str = sapling_spend.native();
-    auto sapling_output_str = sapling_output.native();
     auto sprout_groth16_str = sprout_groth16.native();
 
-    LogPrintf("Loading Sapling (Spend) parameters from %s\n", sapling_spend.string().c_str());
-    LogPrintf("Loading Sapling (Output) parameters from %s\n", sapling_output.string().c_str());
-    LogPrintf("Loading Sapling (Sprout Groth16) parameters from %s\n", sprout_groth16.string().c_str());
+    LogPrintf("Sprout parameters will be fetched from %s if needed\n", sprout_groth16.string().c_str());
+    LogPrintf("Sapling parameters are bundled in this binary\n");
+    LogPrintf("Orchard parameters are generated deterministically\n");
+
     gettimeofday(&tv_start, 0);
 
     librustzcash_init_zksnark_params(
-        reinterpret_cast<const codeunit*>(sapling_spend_str.c_str()),
-        sapling_spend_str.length(),
-        reinterpret_cast<const codeunit*>(sapling_output_str.c_str()),
-        sapling_output_str.length(),
         reinterpret_cast<const codeunit*>(sprout_groth16_str.c_str()),
         sprout_groth16_str.length(),
         true
