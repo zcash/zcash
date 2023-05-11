@@ -181,6 +181,13 @@ pub extern "C" fn librustzcash_init_zksnark_params(
             sprout_path.as_ref().map(Path::new),
         );
 
+        let sprout_vk = {
+            use bellman::groth16::{VerifyingKey, prepare_verifying_key};
+            let sprout_vk_bytes = include_bytes!("sprout-groth16.vk");
+            let vk = VerifyingKey::<Bls12>::read(&sprout_vk_bytes[..]).expect("should be able to parse Sprout verification key");
+            prepare_verifying_key(&vk)
+        };
+
         // Load params
         let params = load_parameters(spend_path, output_path, sprout_path);
         let sapling_spend_params = params.spend_params;
@@ -205,7 +212,7 @@ pub extern "C" fn librustzcash_init_zksnark_params(
 
             SAPLING_SPEND_VK = Some(sapling_spend_vk);
             SAPLING_OUTPUT_VK = Some(sapling_output_vk);
-            SPROUT_GROTH16_VK = params.sprout_vk;
+            SPROUT_GROTH16_VK = Some(sprout_vk);
 
             ORCHARD_PK = orchard_pk;
             ORCHARD_VK = Some(orchard_vk);
