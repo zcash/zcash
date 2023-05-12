@@ -160,9 +160,10 @@ pub extern "C" fn librustzcash_init_zksnark_params(
         let sprout_path = sprout_path.as_ref().map(Path::new);
 
         let sprout_vk = {
-            use bellman::groth16::{VerifyingKey, prepare_verifying_key};
+            use bellman::groth16::{prepare_verifying_key, VerifyingKey};
             let sprout_vk_bytes = include_bytes!("sprout-groth16.vk");
-            let vk = VerifyingKey::<Bls12>::read(&sprout_vk_bytes[..]).expect("should be able to parse Sprout verification key");
+            let vk = VerifyingKey::<Bls12>::read(&sprout_vk_bytes[..])
+                .expect("should be able to parse Sprout verification key");
             prepare_verifying_key(&vk)
         };
 
@@ -170,7 +171,7 @@ pub extern "C" fn librustzcash_init_zksnark_params(
         let (sapling_spend_params, sapling_output_params) = {
             let (spend_buf, output_buf) = wagyu_zcash_parameters::load_sapling_parameters();
             let spend_params = Parameters::<Bls12>::read(&spend_buf[..], false)
-            .expect("couldn't deserialize Sapling spend parameters");
+                .expect("couldn't deserialize Sapling spend parameters");
             let output_params = Parameters::<Bls12>::read(&output_buf[..], false)
                 .expect("couldn't deserialize Sapling spend parameters");
             (spend_params, output_params)
