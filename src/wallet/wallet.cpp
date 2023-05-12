@@ -2158,9 +2158,11 @@ bool CWallet::SelectorMatchesAddress(
     });
 }
 
-std::optional<RecipientAddress> CWallet::GenerateChangeAddressForAccount(
+tl::expected<RecipientAddress, AccountChangeAddressFailure>
+CWallet::GenerateChangeAddressForAccount(
         libzcash::AccountId accountId,
-        std::set<OutputPool> changeOptions) {
+        std::set<OutputPool> changeOptions)
+{
     AssertLockHeld(cs_wallet);
 
     if (accountId == ZCASH_LEGACY_ACCOUNT) {
@@ -2170,6 +2172,7 @@ std::optional<RecipientAddress> CWallet::GenerateChangeAddressForAccount(
                 return GenerateNewKey(false).GetID();
             }
         }
+        return tl::make_unexpected(AccountChangeAddressFailure::TransparentChangeNotPermitted);
     } else {
         auto ufvk = this->GetUnifiedFullViewingKeyByAccount(accountId);
         if (ufvk.has_value()) {
@@ -2197,10 +2200,11 @@ std::optional<RecipientAddress> CWallet::GenerateChangeAddressForAccount(
                     return changeAddr.value();
                 }
             }
+            return tl::make_unexpected(AccountChangeAddressFailure::DisjointReceivers);
+        } else {
+            return tl::make_unexpected(AccountChangeAddressFailure::NoSuchAccount);
         }
     }
-
-    return std::nullopt;
 }
 
 SpendableInputs CWallet::FindSpendableInputs(
