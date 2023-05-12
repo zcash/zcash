@@ -8,6 +8,7 @@
 #include "transaction_builder.h"
 #include "util/test.h"
 #include "gtest/utils.h"
+#include "wallet/asyncrpcoperation_common.h"
 #include "wallet/asyncrpcoperation_shieldcoinbase.h"
 #include "wallet/asyncrpcoperation_sendmany.h"
 #include "wallet/memo.h"
@@ -16,8 +17,8 @@
 #include <librustzcash.h>
 #include <rust/ed25519.h>
 
-namespace {
-
+namespace
+{
 bool find_error(const UniValue& objError, const std::string& expected) {
     return find_value(objError, "message").get_str().find(expected) != string::npos;
 }
@@ -28,7 +29,108 @@ CWalletTx FakeWalletTx() {
     mtx.vout[0].nValue = 1;
     return CWalletTx(nullptr, mtx);
 }
+}
 
+TEST(WalletRPCTests, PrepareTransaction)
+{
+    LoadProofParameters();
+    SelectParams(CBaseChainParams::TESTNET);
+
+    LoadGlobalWallet();
+
+    RegtestActivateSapling();
+    {
+        LOCK2(cs_main, pwalletMain->cs_wallet);
+
+        if (!pwalletMain->HaveMnemonicSeed()) {
+            pwalletMain->GenerateNewSeed();
+        }
+
+        UniValue retValue;
+
+        KeyIO keyIO(Params());
+        // add keys manually
+        auto taddr = pwalletMain->GenerateNewKey(true).GetID();
+        auto pa = pwalletMain->GenerateNewLegacySaplingZKey();
+
+        const Consensus::Params& consensusParams = Params().GetConsensus();
+
+        int nextBlockHeight = chainActive.Height() + 1;
+
+        // Add a fake transaction to the wallet
+        CMutableTransaction mtx = CreateNewContextualCMutableTransaction(consensusParams, nextBlockHeight, false);
+        CScript scriptPubKey = CScript() << OP_DUP << OP_HASH160 << ToByteVector(taddr) << OP_EQUALVERIFY << OP_CHECKSIG;
+        mtx.vout.push_back(CTxOut(5 * COIN, scriptPubKey));
+
+        CWalletTx wtx(pwalletMain, mtx);
+        pwalletMain->LoadWalletTx(wtx);
+
+        // Fake-mine the transaction
+        EXPECT_EQ(-1, chainActive.Height());
+        CBlock block;
+        block.vtx.push_back(wtx);
+        block.hashMerkleRoot = BlockMerkleRoot(block);
+        auto blockHash = block.GetHash();
+        CBlockIndex fakeIndex {block};
+        mapBlockIndex.insert(std::make_pair(blockHash, &fakeIndex));
+        chainActive.SetTip(&fakeIndex);
+        EXPECT_TRUE(chainActive.Contains(&fakeIndex));
+        EXPECT_EQ(0, chainActive.Height());
+        wtx.SetMerkleBranch(block);
+        pwalletMain->LoadWalletTx(wtx);
+
+        WalletTxBuilder builder(Params(), minRelayTxFee);
+
+        auto selector = CWallet::LegacyTransparentZTXOSelector(
+                true,
+                TransparentCoinbasePolicy::Disallow);
+
+        { // send from legacy account with change, but insufficient policy
+            auto saplingKey = pwalletMain->GenerateNewLegacySaplingZKey();
+            Payment saplingPayment(saplingKey, 4 * COIN, std::nullopt);
+            std::vector<Payment> payments {saplingPayment};
+
+            TransactionStrategy strategy(PrivacyPolicy::AllowRevealedSenders);
+
+            SpendableInputs inputs;
+            inputs.utxos.emplace_back(COutput(&wtx, 0, 100, true));
+
+            builder.PrepareTransaction(
+                    *pwalletMain,
+                    selector,
+                    inputs,
+                    payments,
+                    chainActive,
+                    strategy,
+                    std::nullopt,
+                    1)
+                .map_error([&](const auto& err) {
+                    examine(err, match {
+                        [](AddressResolutionError are) {
+                            EXPECT_EQ(are, AddressResolutionError::TransparentChangeNotAllowed);
+                        },
+                        [&](const auto& e) {
+                            try {
+                                ThrowInputSelectionError(e, selector, strategy);
+                            } catch (const UniValue& value) {
+                                FAIL() << value.write();
+                            }
+                        },
+                    });
+                })
+                .map([](const auto&) {
+                    FAIL() << "Expected an error";
+                });
+        }
+
+        // Tear down
+        chainActive.SetTip(NULL);
+        mapBlockIndex.erase(blockHash);
+
+    }
+    // Revert to default
+    RegtestDeactivateSapling();
+    UnloadGlobalWallet();
 }
 
 // TODO: test private methods
