@@ -13,23 +13,34 @@
 #include "zcash/Note.hpp"
 
 #include <librustzcash.h>
+#include <rust/builder.h>
 #include <rust/ed25519.h>
 
-uint256 ProduceZip244SignatureHash(
+uint256 ProduceShieldedSignatureHash(
+    uint32_t consensusBranchId,
     const CTransaction& tx,
     const std::vector<CTxOut>& allPrevOutputs,
-    const orchard::UnauthorizedBundle& orchardBundle)
+    const std::optional<orchard::UnauthorizedBundle>& orchardBundle)
 {
-    uint256 dataToBeSigned;
-    PrecomputedTransactionData local(tx, allPrevOutputs);
-    if (!zcash_builder_zip244_shielded_signature_digest(
-        local.preTx.release(),
-        orchardBundle.inner.get(),
-        dataToBeSigned.begin()))
-    {
-        throw std::logic_error("ZIP 225 signature hash failed");
+    CDataStream sTx(SER_NETWORK, PROTOCOL_VERSION);
+    sTx << tx;
+
+    CDataStream sAllPrevOutputs(SER_NETWORK, PROTOCOL_VERSION);
+    sAllPrevOutputs << allPrevOutputs;
+
+    const OrchardUnauthorizedBundlePtr* orchardBundlePtr;
+    if (orchardBundle.has_value()) {
+        orchardBundlePtr = orchardBundle->inner.get();
+    } else {
+        orchardBundlePtr = nullptr;
     }
-    return dataToBeSigned;
+
+    auto dataToBeSigned = builder::shielded_signature_digest(
+        consensusBranchId,
+        {reinterpret_cast<const unsigned char*>(sTx.data()), sTx.size()},
+        {reinterpret_cast<const unsigned char*>(sAllPrevOutputs.data()), sAllPrevOutputs.size()},
+        orchardBundlePtr);
+    return uint256::FromRawBytes(dataToBeSigned);
 }
 
 namespace orchard {
@@ -641,9 +652,9 @@ TransactionBuilderResult TransactionBuilder::Build()
     // Empty output script.
     uint256 dataToBeSigned;
     try {
-        if (orchardBundle.has_value()) {
-            // Orchard is only usable with v5+ transactions.
-            dataToBeSigned = ProduceZip244SignatureHash(mtx, tIns, orchardBundle.value());
+        if (mtx.fOverwintered) {
+            // ProduceShieldedSignatureHash is only usable with v3+ transactions.
+            dataToBeSigned = ProduceShieldedSignatureHash(consensusBranchId, mtx, tIns, orchardBundle);
         } else {
             CScript scriptCode;
             const PrecomputedTransactionData txdata(mtx, tIns);

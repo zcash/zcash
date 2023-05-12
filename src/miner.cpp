@@ -183,18 +183,19 @@ public:
     }
 
     void ComputeBindingSig(rust::Box<sapling::Prover> saplingCtx, std::optional<orchard::UnauthorizedBundle> orchardBundle) const {
+        auto consensusBranchId = CurrentEpochBranchId(nHeight, chainparams.GetConsensus());
         // Empty output script.
         uint256 dataToBeSigned;
         try {
-            if (orchardBundle.has_value()) {
-                // Orchard is only usable with v5+ transactions.
-                dataToBeSigned = ProduceZip244SignatureHash(mtx, {}, orchardBundle.value());
+            if (mtx.fOverwintered) {
+                // ProduceShieldedSignatureHash is only usable with v3+ transactions.
+                dataToBeSigned = ProduceShieldedSignatureHash(consensusBranchId, mtx, {}, orchardBundle);
             } else {
                 CScript scriptCode;
                 PrecomputedTransactionData txdata(mtx, {});
                 dataToBeSigned = SignatureHash(
                     scriptCode, mtx, NOT_AN_INPUT, SIGHASH_ALL, 0,
-                    CurrentEpochBranchId(nHeight, chainparams.GetConsensus()),
+                    consensusBranchId,
                     txdata);
             }
         } catch (std::logic_error ex) {

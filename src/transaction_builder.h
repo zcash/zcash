@@ -30,10 +30,11 @@
 class OrchardWallet;
 namespace orchard { class UnauthorizedBundle; }
 
-uint256 ProduceZip244SignatureHash(
+uint256 ProduceShieldedSignatureHash(
+    uint32_t consensusBranchId,
     const CTransaction& tx,
     const std::vector<CTxOut>& allPrevOutputs,
-    const orchard::UnauthorizedBundle& orchardBundle);
+    const std::optional<orchard::UnauthorizedBundle>& orchardBundle);
 
 namespace orchard {
 
@@ -146,12 +147,13 @@ private:
     friend class Builder;
     // The parentheses here are necessary to avoid the following compilation error:
     //     error: C++ requires a type specifier for all declarations
-    //             friend uint256 ::ProduceZip244SignatureHash(
+    //             friend uint256 ::ProduceShieldedSignatureHash(
     //             ~~~~~~           ^
-    friend uint256 (::ProduceZip244SignatureHash(
+    friend uint256 (::ProduceShieldedSignatureHash(
+        uint32_t consensusBranchId,
         const CTransaction& tx,
         const std::vector<CTxOut>& allPrevOutputs,
-        const UnauthorizedBundle& orchardBundle));
+        const std::optional<orchard::UnauthorizedBundle>& orchardBundle));
 
 public:
     // UnauthorizedBundle should never be copied

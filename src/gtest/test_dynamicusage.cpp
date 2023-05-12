@@ -25,7 +25,9 @@ TEST(RecursiveDynamicUsageTests, TestTransactionTransparent)
 
     auto builder = TransactionBuilder(Params(), 1, std::nullopt, &keystore);
     builder.SetFee(10000);
-    builder.AddTransparentInput(COutPoint(), scriptPubKey, 50000);
+    builder.AddTransparentInput(
+        COutPoint(uint256S("7777777777777777777777777777777777777777777777777777777777777777"), 0),
+        scriptPubKey, 50000);
     builder.AddTransparentOutput(taddr, 40000);
 
     auto tx = builder.Build().GetTxOrThrow();
@@ -88,7 +90,9 @@ TEST(RecursiveDynamicUsageTests, TestTransactionTransparentToSapling)
 
     auto builder = TransactionBuilder(Params(), 1, std::nullopt, &keystore);
     builder.SetFee(10000);
-    builder.AddTransparentInput(COutPoint(), scriptPubKey, 50000);
+    builder.AddTransparentInput(
+        COutPoint(uint256S("7777777777777777777777777777777777777777777777777777777777777777"), 0),
+        scriptPubKey, 50000);
     builder.AddSaplingOutput(sk.full_viewing_key().ovk, sk.default_address(), 40000, {});
 
     auto tx = builder.Build().GetTxOrThrow();

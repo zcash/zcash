@@ -8,6 +8,7 @@
 //
 // This file can't use a module comment (`//! comment`) because it causes compilation issues in zcash_script.
 use crate::{
+    builder_ffi::shielded_signature_digest,
     bundlecache::init as bundlecache_init,
     merkle_frontier::{new_orchard, orchard_empty_root, parse_orchard, Orchard, OrchardWallet},
     note_encryption::{
@@ -261,6 +262,20 @@ pub(crate) mod ffi {
         fn size(self: &Orchard) -> u64;
         fn append_bundle(self: &mut Orchard, bundle: &Bundle) -> bool;
         unsafe fn init_wallet(self: &Orchard, wallet: *mut OrchardWallet) -> bool;
+    }
+
+    unsafe extern "C++" {
+        include!("rust/builder.h");
+        type OrchardUnauthorizedBundlePtr;
+    }
+    #[namespace = "builder"]
+    extern "Rust" {
+        unsafe fn shielded_signature_digest(
+            consensus_branch_id: u32,
+            tx_bytes: &[u8],
+            all_prev_outputs: &[u8],
+            orchard_bundle: *const OrchardUnauthorizedBundlePtr,
+        ) -> Result<[u8; 32]>;
     }
 
     #[namespace = "wallet"]

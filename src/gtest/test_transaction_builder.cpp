@@ -332,7 +332,9 @@ TEST(TransactionBuilder, FailsWithNegativeChange)
     EXPECT_EQ("Change cannot be negative: -0.00000001 ZEC", builder.Build().GetError());
 
     // Succeeds if there is sufficient input
-    builder.AddTransparentInput(COutPoint(), scriptPubKey, 1);
+    builder.AddTransparentInput(
+        COutPoint(uint256S("7777777777777777777777777777777777777777777777777777777777777777"), 0),
+        scriptPubKey, 1);
     EXPECT_TRUE(builder.Build().IsTx());
 
     // Revert to default
@@ -364,17 +366,19 @@ TEST(TransactionBuilder, ChangeOutput)
     auto tkeyid = tsk.GetPubKey().GetID();
     auto scriptPubKey = GetScriptForDestination(tkeyid);
 
+    auto fakeCoin = COutPoint(uint256S("7777777777777777777777777777777777777777777777777777777777777777"), 0);
+
     // No change address and no Sapling spends
     {
         auto builder = TransactionBuilder(Params(), 1, std::nullopt, &keystore);
-        builder.AddTransparentInput(COutPoint(), scriptPubKey, 2500);
+        builder.AddTransparentInput(fakeCoin, scriptPubKey, 2500);
         EXPECT_EQ("Could not determine change address", builder.Build().GetError());
     }
 
     // Change to the same address as the first Sapling spend
     {
         auto builder = TransactionBuilder(Params(), 1, std::nullopt, &keystore);
-        builder.AddTransparentInput(COutPoint(), scriptPubKey, 2500);
+        builder.AddTransparentInput(fakeCoin, scriptPubKey, 2500);
         builder.AddSaplingSpend(sk, testNote.note, testNote.tree.root(), testNote.tree.witness());
         auto tx = builder.Build().GetTxOrThrow();
 
@@ -389,7 +393,7 @@ TEST(TransactionBuilder, ChangeOutput)
     // Change to a Sapling address
     {
         auto builder = TransactionBuilder(Params(), 1, std::nullopt, &keystore);
-        builder.AddTransparentInput(COutPoint(), scriptPubKey, 2500);
+        builder.AddTransparentInput(fakeCoin, scriptPubKey, 2500);
         builder.SendChangeTo(zChangeAddr, fvkOut.ovk);
         auto tx = builder.Build().GetTxOrThrow();
 
@@ -404,7 +408,7 @@ TEST(TransactionBuilder, ChangeOutput)
     // Change to a transparent address
     {
         auto builder = TransactionBuilder(Params(), 1, std::nullopt, &keystore);
-        builder.AddTransparentInput(COutPoint(), scriptPubKey, 2500);
+        builder.AddTransparentInput(fakeCoin, scriptPubKey, 2500);
         builder.SendChangeTo(tkeyid, {});
         auto tx = builder.Build().GetTxOrThrow();
 

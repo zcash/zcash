@@ -2217,7 +2217,9 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
     // Generate shielding tx from transparent to Sapling
     // 0.0005 t-ZEC in, 0.0004 z-ZEC out, default fee
     auto builder = TransactionBuilder(Params(), 1, std::nullopt, &keystore);
-    builder.AddTransparentInput(COutPoint(), scriptPubKey, 5000);
+    builder.AddTransparentInput(
+        COutPoint(uint256S("7777777777777777777777777777777777777777777777777777777777777777"), 0),
+        scriptPubKey, 5000);
     builder.AddSaplingOutput(extfvk.fvk.ovk, pk, 4000, {});
     auto tx1 = builder.Build().GetTxOrThrow();
 

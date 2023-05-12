@@ -84,8 +84,50 @@ impl TransparentAuthorizingContext for TransparentAuth {
     }
 }
 
-struct MapTransparent {
+pub(crate) struct MapTransparent {
     auth: TransparentAuth,
+}
+
+impl MapTransparent {
+    pub(crate) fn parse(all_prev_outputs: &[u8], tx: &Transaction) -> Result<Self, String> {
+        let mut cursor = Cursor::new(all_prev_outputs);
+        match Vector::read(&mut cursor, transparent::TxOut::read) {
+            Err(e) => Err(format!("Invalid all_prev_outputs field: {}", e)),
+            Ok(_) if (cursor.position() as usize) != all_prev_outputs.len() => {
+                Err("all_prev_outputs had trailing data".into())
+            }
+            Ok(all_prev_outputs)
+                if tx.transparent_bundle().map_or(false, |t| {
+                    // Coinbase txs have one fake input.
+                    t.is_coinbase() && !all_prev_outputs.is_empty()
+                }) =>
+            {
+                Err(format!(
+                    "all_prev_outputs should be empty for a coinbase tx but has length {}",
+                    all_prev_outputs.len()
+                ))
+            }
+            Ok(all_prev_outputs)
+                if tx
+                    .transparent_bundle()
+                    .map(|t| {
+                        // For non-coinbase txs, every input is real.
+                        !t.is_coinbase() && t.vin.len() != all_prev_outputs.len()
+                    })
+                    // If we have no transparent part, we should have no prev outputs.
+                    .unwrap_or_else(|| !all_prev_outputs.is_empty()) =>
+            {
+                Err(format!(
+                    "all_prev_outputs is incorrect length {} (should be {})",
+                    all_prev_outputs.len(),
+                    tx.transparent_bundle().map(|t| t.vin.len()).unwrap_or(0),
+                ))
+            }
+            Ok(all_prev_outputs) => Ok(MapTransparent {
+                auth: TransparentAuth { all_prev_outputs },
+            }),
+        }
+    }
 }
 
 impl transparent::MapAuth<transparent::Authorized, TransparentAuth> for MapTransparent {
@@ -158,48 +200,12 @@ pub extern "C" fn zcash_transaction_precomputed_init(
             let all_prev_outputs =
                 unsafe { slice::from_raw_parts(all_prev_outputs, all_prev_outputs_len) };
 
-            let mut cursor = Cursor::new(all_prev_outputs);
-            let f_transparent = match Vector::read(&mut cursor, transparent::TxOut::read) {
+            let f_transparent = match MapTransparent::parse(all_prev_outputs, &tx) {
+                Ok(f) => f,
                 Err(e) => {
-                    error!("Invalid all_prev_outputs field: {}", e);
+                    error!("{}", e);
                     return ptr::null_mut();
                 }
-                Ok(_) if (cursor.position() as usize) != all_prev_outputs.len() => {
-                    error!("all_prev_outputs had trailing data");
-                    return ptr::null_mut();
-                }
-                Ok(all_prev_outputs)
-                    if tx.transparent_bundle().map_or(false, |t| {
-                        // Coinbase txs have one fake input.
-                        t.is_coinbase() && !all_prev_outputs.is_empty()
-                    }) =>
-                {
-                    error!(
-                        "all_prev_outputs should be empty for a coinbase tx but has length {}",
-                        all_prev_outputs.len()
-                    );
-                    return ptr::null_mut();
-                }
-                Ok(all_prev_outputs)
-                    if tx
-                        .transparent_bundle()
-                        .map(|t| {
-                            // For non-coinbase txs, every input is real.
-                            !t.is_coinbase() && t.vin.len() != all_prev_outputs.len()
-                        })
-                        // If we have no transparent part, we should have no prev outputs.
-                        .unwrap_or_else(|| !all_prev_outputs.is_empty()) =>
-                {
-                    error!(
-                        "all_prev_outputs is incorrect length {} (should be {})",
-                        all_prev_outputs.len(),
-                        tx.transparent_bundle().map(|t| t.vin.len()).unwrap_or(0),
-                    );
-                    return ptr::null_mut();
-                }
-                Ok(all_prev_outputs) => MapTransparent {
-                    auth: TransparentAuth { all_prev_outputs },
-                },
             };
 
             let tx = tx.into_data().map_authorization(f_transparent, (), ());
