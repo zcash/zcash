@@ -666,6 +666,15 @@ public:
     // Pop MMR node history from the end of the history tree
     void PopHistoryNode(uint32_t epochId);
 
+    // Push a new subtree for a given shielded type. Only Sapling
+    // and Orchard supported.
+    void PushSubtree(ShieldedType type, libzcash::SubtreeData subtree);
+
+    // Pop a subtree out of the database. Only Sapling and Orchard
+    // supported. Throws an exception if there isn't a subtree present
+    // in the database.
+    void PopSubtree(ShieldedType type);
+
     /**
      * Return a pointer to CCoins in the cache, or NULL if not found. This is
      * more efficient than GetCoins. Modifications to other cache entries are

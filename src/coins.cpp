@@ -268,7 +268,7 @@ std::optional<libzcash::SubtreeData> CCoinsViewCache::GetSubtreeData(
         case ORCHARD:
             return cacheOrchardSubtrees.GetSubtreeData(base, index);
         default:
-            throw std::runtime_error("GetLatestSubtree: unsupported shielded type in cache of subtrees");
+            throw std::runtime_error("GetSubtreeData: unsupported shielded type in cache of subtrees");
     }
 }
 
@@ -638,6 +638,30 @@ void CCoinsViewCache::PopHistoryNode(uint32_t epochId) {
     }
 }
 
+void CCoinsViewCache::PushSubtree(ShieldedType type, libzcash::SubtreeData subtree)
+{
+    switch(type) {
+        case SAPLING:
+            return cacheSaplingSubtrees.PushSubtree(base, subtree);
+        case ORCHARD:
+            return cacheOrchardSubtrees.PushSubtree(base, subtree);
+        default:
+            throw std::runtime_error("PushSubtree: unsupported shielded type");
+    }
+}
+
+void CCoinsViewCache::PopSubtree(ShieldedType type)
+{
+    switch(type) {
+        case SAPLING:
+            return cacheSaplingSubtrees.PopSubtree(base);
+        case ORCHARD:
+            return cacheOrchardSubtrees.PopSubtree(base);
+        default:
+            throw std::runtime_error("PopSubtree: unsupported shielded type");
+    }
+}
+
 template<typename Tree, typename Cache, typename CacheEntry>
 void CCoinsViewCache::AbstractPopAnchor(
     const uint256 &newrt,
@@ -963,6 +987,11 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
 }
 
 bool CCoinsViewCache::Flush() {
+    // This ensures that before we pass the subtree caches
+    // they have been initialized correctly
+    cacheSaplingSubtrees.GetLatestSubtree(base);
+    cacheOrchardSubtrees.GetLatestSubtree(base);
+
     bool fOk = base->BatchWrite(cacheCoins,
                                 hashBlock,
                                 hashSproutAnchor,
@@ -1183,7 +1212,7 @@ std::optional<libzcash::SubtreeData> SubtreeCache::GetSubtreeData(CCoinsView *pa
         return std::nullopt;
     }
 
-    if (parentLatestSubtree.has_value() && parentLatestSubtree.value().index <= index) {
+    if (parentLatestSubtree.has_value() && (index <= parentLatestSubtree.value().index)) {
         // This subtree is complete, but it's not in the local cache
         return parentView->GetSubtreeData(type, index);
     } else {

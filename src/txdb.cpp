@@ -296,36 +296,37 @@ void WriteSubtrees(
     const std::vector<libzcash::SubtreeData> &newSubtrees
 )
 {
-    // The current index we're operating on
-    libzcash::SubtreeIndex cursor_index;
     // The number of subtrees we'll need to remove from the database
     libzcash::SubtreeIndex pops;
 
     if (!oldLatestSubtree.has_value()) {
-        // Nothing to remove; start inserting at 0.
-        cursor_index = 0;
+        // Nothing to remove
         pops = 0;
         assert(!newLatestSubtree.has_value());
     } else {
-        cursor_index = oldLatestSubtree.value().index;
         if (!newLatestSubtree.has_value()) {
             // Every subtree must be removed
-            pops = cursor_index + 1;
+            pops = oldLatestSubtree.value().index + 1;
         } else {
             // Only remove what's necessary to get us to the
             // correct index.
-            assert(newLatestSubtree.value().index <= cursor_index);
-            pops = cursor_index - newLatestSubtree.value().index;
+            assert(newLatestSubtree.value().index <= oldLatestSubtree.value().index);
+            pops = oldLatestSubtree.value().index - newLatestSubtree.value().index;
         }
     }
 
     for (libzcash::SubtreeIndex i = 0; i < pops; i++) {
-        batch.Erase(make_pair(DB_SUBTREE_DATA, make_pair((uint8_t) type, cursor_index - i)));
+        batch.Erase(make_pair(DB_SUBTREE_DATA, make_pair((uint8_t) type, oldLatestSubtree.value().index - i)));
     }
-    cursor_index -= pops;
 
     if (!newSubtrees.empty()) {
-        // cursor_index is now at the position we need to add the new subtrees
+        libzcash::SubtreeIndex cursor_index;
+        if (newLatestSubtree.has_value()) {
+            cursor_index = newLatestSubtree.value().index + 1;
+        } else {
+            cursor_index = 0;
+        }
+
         for (const libzcash::SubtreeData& subtreeData : newSubtrees) {
             batch.Write(make_pair(DB_SUBTREE_DATA, make_pair((uint8_t) type, cursor_index)), subtreeData);
             cursor_index += 1;
@@ -339,7 +340,7 @@ void WriteSubtrees(
     } else {
         // There are no new subtrees from the cache, so newLatestSubtree is the (possibly new) best index.
         if (newLatestSubtree.has_value()) {
-            batch.Write(make_pair(DB_SUBTREE_LATEST, (uint8_t) type), newLatestSubtree);
+            batch.Write(make_pair(DB_SUBTREE_LATEST, (uint8_t) type), newLatestSubtree.value());
         } else {
             // Delete the entry if it's std::nullopt
             batch.Erase(make_pair(DB_SUBTREE_LATEST, (uint8_t) type));
@@ -388,6 +389,9 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
     ::BatchWriteNullifiers(batch, mapOrchardNullifiers, DB_ORCHARD_NULLIFIER);
 
     ::BatchWriteHistory(batch, historyCacheMap);
+
+    assert(cacheSaplingSubtrees.initialized);
+    assert(cacheOrchardSubtrees.initialized);
 
     WriteSubtrees(batch, SAPLING, latestSaplingSubtree, cacheSaplingSubtrees.parentLatestSubtree, cacheSaplingSubtrees.newSubtrees);
     WriteSubtrees(batch, ORCHARD, latestOrchardSubtree, cacheOrchardSubtrees.parentLatestSubtree, cacheOrchardSubtrees.newSubtrees);
