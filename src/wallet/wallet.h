@@ -447,7 +447,6 @@ public:
 };
 
 enum class WalletUAGenerationError {
-    NoSuchAccount,
     ExistingAddressMismatch,
     WalletEncrypted
 };
@@ -827,16 +826,55 @@ public:
     bool IsCompatibleWith(PrivacyPolicy policy) const;
 };
 
+class UnifiedAccount
+{
+public:
+    libzcash::AccountId id;
+    libzcash::UnifiedFullViewingKey ufvk;
+
+    UnifiedAccount(libzcash::AccountId id, libzcash::UnifiedFullViewingKey ufvk)
+        : id(id), ufvk(ufvk) {}
+
+    friend bool operator==(const UnifiedAccount &a, const UnifiedAccount &b) {
+        return a.id == b.id;
+    }
+
+    libzcash::UnifiedFullViewingKey GetUnifiedFullViewingKey() const;
+
+    /**
+     * Generate a change address for the specified account.
+     *
+     * If a shielded change address is requested, this will return the default
+     * unified address for the internal unified full viewing key.
+     *
+     * If a transparent change address is requested, this will generate a fresh
+     * diversified unified address from the internal unified full viewing key,
+     * and return the associated transparent change address.
+     *
+     * Returns `std::nullopt` if the account does not have an internal spending
+     * key matching the requested `OutputPool`.
+     */
+    std::optional<libzcash::RecipientAddress>
+    GenerateChangeAddress(
+            const CChainParams& params,
+            const std::set<libzcash::OutputPool>& changeOptions) const;
+};
+
+/**
+ * A class representing the collective spend authorities of all legacy transparent addresses
+ * generated via the `getnewaddress` RPC method.
+ */
+class LegacyAccount
+{
+public:
+    LegacyAccount() {}
+};
+
 /**
  * A class representing the ZIP 316 unified spending authority associated with
  * a ZIP 32 account and this wallet's mnemonic seed. This is intended to be
  * used as a ZTXOPattern value to choose prior Zcash transaction outputs,
  * including both transparent UTXOs and shielded notes.
- *
- * If the account ID is set to `ZCASH_LEGACY_ACCOUNT`, the instance instead
- * represents the collective spend authorities of all legacy transparent addresses
- * generated via the `getnewaddress` RPC method. Shielded notes will never be
- * selected for this account ID.
  *
  * If the set of receiver types provided is non-empty, only outputs for
  * protocols corresponding to the provided set of receiver types may be used.
@@ -844,14 +882,14 @@ public:
  * protocols outputs are selected for.
  */
 class AccountZTXOPattern {
-    libzcash::AccountId accountId;
+    UnifiedAccount account;
     std::set<libzcash::ReceiverType> receiverTypes;
 public:
-    AccountZTXOPattern(libzcash::AccountId accountIdIn, std::set<libzcash::ReceiverType> receiverTypesIn):
-        accountId(accountIdIn), receiverTypes(receiverTypesIn) {}
+    AccountZTXOPattern(UnifiedAccount account, std::set<libzcash::ReceiverType> receiverTypesIn):
+        account(account), receiverTypes(receiverTypesIn) {}
 
-    libzcash::AccountId GetAccountId() const {
-        return accountId;
+    const UnifiedAccount& GetAccount() const {
+        return account;
     }
 
     const std::set<libzcash::ReceiverType>& GetReceiverTypes() const {
@@ -875,7 +913,7 @@ public:
     }
 
     friend bool operator==(const AccountZTXOPattern &a, const AccountZTXOPattern &b) {
-        return a.accountId == b.accountId && a.receiverTypes == b.receiverTypes;
+        return a.account == b.account && a.receiverTypes == b.receiverTypes;
     }
 };
 
@@ -886,6 +924,7 @@ public:
 typedef std::variant<
     CKeyID,
     CScriptID,
+    LegacyAccount,
     libzcash::SproutPaymentAddress,
     libzcash::SproutViewingKey,
     libzcash::SaplingPaymentAddress,
@@ -1556,8 +1595,8 @@ public:
      * If the `requireSpendingKey` flag is set, this will only return a selector
      * that will choose outputs for which this wallet holds the spending keys.
      */
-    std::optional<ZTXOSelector> ZTXOSelectorForAccount(
-            libzcash::AccountId account,
+    ZTXOSelector ZTXOSelectorForAccount(
+            const UnifiedAccount& account,
             bool requireSpendingKey,
             TransparentCoinbasePolicy transparentCoinbasePolicy,
             std::set<libzcash::ReceiverType> receiverTypes={}) const;
@@ -1598,25 +1637,7 @@ public:
      * used in z_sendmany to ensure that we always correctly determine change
      * addresses and OVKs on the basis of account UFVKs when possible.
      */
-    std::optional<libzcash::AccountId> FindAccountForSelector(const ZTXOSelector& paymentSource) const;
-
-    /**
-     * Generate a change address for the specified account.
-     *
-     * If a shielded change address is requested, this will return the default
-     * unified address for the internal unified full viewing key.
-     *
-     * If a transparent change address is requested, this will generate a fresh
-     * diversified unified address from the internal unified full viewing key,
-     * and return the associated transparent change address.
-     *
-     * Returns `std::nullopt` if the account does not have an internal spending
-     * key matching the requested `OutputPool`.
-     */
-    tl::expected<libzcash::RecipientAddress, AccountChangeAddressFailure>
-    GenerateChangeAddressForAccount(
-            libzcash::AccountId accountId,
-            std::set<libzcash::OutputPool> changeOptions);
+    std::optional<UnifiedAccount> FindAccountForSelector(const ZTXOSelector& paymentSource) const;
 
     SpendableInputs FindSpendableInputs(
             ZTXOSelector paymentSource,
@@ -1796,8 +1817,7 @@ public:
 
     //! Generate the unified spending key from the wallet's mnemonic seed
     //! for the next unused account identifier.
-    std::pair<libzcash::UnifiedFullViewingKey, libzcash::AccountId>
-        GenerateNewUnifiedSpendingKey();
+    UnifiedAccount GenerateNewUnifiedSpendingKey();
 
     //! Generate the unified spending key for the specified ZIP-32/BIP-44
     //! account identifier from the wallet's mnemonic seed, or returns
@@ -1816,7 +1836,7 @@ public:
     //! If no diversifier index is provided, the next unused diversifier index
     //! will be selected.
     WalletUAGenerationResult GenerateUnifiedAddress(
-        const libzcash::AccountId& accountId,
+        const UnifiedAccount& account,
         const std::set<libzcash::ReceiverType>& receivers,
         std::optional<libzcash::diversifier_index_t> j = std::nullopt);
 
@@ -1843,7 +1863,7 @@ public:
     //! failures in reconstructing the cache.
     bool LoadCaches();
 
-    std::optional<libzcash::AccountId> GetUnifiedAccountId(const libzcash::UFVKId& ufvkId) const;
+    std::optional<UnifiedAccount> GetUnifiedAccount(const libzcash::UFVKId& ufvkId) const;
 
     /**
      * Reconstructs a unified address by determining the UFVK that the receiver
@@ -1857,7 +1877,7 @@ public:
     /**
      * Finds a unified account ID for a given receiver.
      */
-    std::optional<libzcash::AccountId> FindUnifiedAccountByReceiver(
+    std::optional<UnifiedAccount> FindUnifiedAccountByReceiver(
             const libzcash::Receiver& receiver) const;
 
     /**

@@ -812,7 +812,7 @@ TEST(WalletTests, GetConflictedOrchardNotes) {
     LOCK2(cs_main, wallet.cs_wallet);
 
     // Create an account.
-    auto ufvk = wallet.GenerateNewUnifiedSpendingKey().first;
+    auto ufvk = wallet.GenerateNewUnifiedSpendingKey().GetUnifiedFullViewingKey();
     auto fvk = ufvk.GetOrchardKey().value();
     auto ivk = fvk.ToIncomingViewingKey();
     libzcash::diversifier_index_t j(0);
@@ -2378,7 +2378,12 @@ TEST(WalletTests, GenerateUnifiedAddress) {
     (void) RegtestActivateSapling();
     TestWallet wallet(Params());
 
-    auto uaResult = wallet.GenerateUnifiedAddress(0, {ReceiverType::P2PKH, ReceiverType::Sapling});
+    auto account0 =
+        UnifiedAccount(
+                0,
+                pwalletMain->GetUnifiedFullViewingKeyByAccount(0).value().ToFullViewingKey());
+
+    auto uaResult = wallet.GenerateUnifiedAddress(account0, {ReceiverType::P2PKH, ReceiverType::Sapling});
 
     // If the wallet does not have a mnemonic seed available, it is
     // treated as if the wallet is encrypted.
@@ -2391,20 +2396,12 @@ TEST(WalletTests, GenerateUnifiedAddress) {
     EXPECT_FALSE(wallet.IsCrypted());
     EXPECT_TRUE(wallet.GetMnemonicSeed().has_value());
 
-    // If the user has not generated a unified spending key,
-    // we cannot create an address for the account corresponding
-    // to that spending key.
-    uaResult = wallet.GenerateUnifiedAddress(0, {ReceiverType::P2PKH, ReceiverType::Sapling});
-    expected = WalletUAGenerationError::NoSuchAccount;
-    EXPECT_EQ(uaResult, expected);
-
     // lock required by GenerateNewUnifiedSpendingKey
     LOCK(wallet.cs_wallet);
 
     // Create an account, then generate an address for that account.
-    auto ufvkpair = wallet.GenerateNewUnifiedSpendingKey();
-    auto ufvk = ufvkpair.first;
-    auto account = ufvkpair.second;
+    auto account = wallet.GenerateNewUnifiedSpendingKey();
+    auto ufvk = account.GetUnifiedFullViewingKey();
     uaResult = wallet.GenerateUnifiedAddress(account, {ReceiverType::P2PKH, ReceiverType::Sapling});
     auto ua = std::get_if<std::pair<libzcash::UnifiedAddress, libzcash::diversifier_index_t>>(&uaResult);
     EXPECT_NE(ua, nullptr);
@@ -2419,7 +2416,7 @@ TEST(WalletTests, GenerateUnifiedAddress) {
 
     // Explicitly trigger the invalid transparent child index failure
     uaResult = wallet.GenerateUnifiedAddress(
-            0,
+            account,
             {ReceiverType::P2PKH, ReceiverType::Sapling},
             MAX_TRANSPARENT_CHILD_IDX.succ().value());
     expected = UnifiedAddressGenerationError::InvalidTransparentChildIndex;
@@ -2430,7 +2427,7 @@ TEST(WalletTests, GenerateUnifiedAddress) {
     // the diversifier index is out of range. If it succeeds, we'll attempt to generate
     // the next available diversifier, and this should always fail
     uaResult = wallet.GenerateUnifiedAddress(
-            0,
+            account,
             {ReceiverType::P2PKH, ReceiverType::Sapling},
             MAX_TRANSPARENT_CHILD_IDX);
     ua = std::get_if<std::pair<libzcash::UnifiedAddress, libzcash::diversifier_index_t>>(&uaResult);
@@ -2439,7 +2436,7 @@ TEST(WalletTests, GenerateUnifiedAddress) {
         EXPECT_EQ(uaResult, expected);
     } else {
         // the previous generation attempt succeeded, so this one should definitely fail.
-        uaResult = wallet.GenerateUnifiedAddress(0, {ReceiverType::P2PKH, ReceiverType::Sapling});
+        uaResult = wallet.GenerateUnifiedAddress(account, {ReceiverType::P2PKH, ReceiverType::Sapling});
         expected = UnifiedAddressGenerationError::InvalidTransparentChildIndex;
         EXPECT_EQ(uaResult, expected);
     }
@@ -2457,9 +2454,8 @@ TEST(WalletTests, GenerateUnifiedSpendingKeyAddsOrchardAddresses) {
     LOCK(wallet.cs_wallet);
 
     // Create an account.
-    auto ufvkpair = wallet.GenerateNewUnifiedSpendingKey();
-    auto ufvk = ufvkpair.first;
-    auto account = ufvkpair.second;
+    auto account = wallet.GenerateNewUnifiedSpendingKey();
+    auto ufvk = account.GetUnifiedFullViewingKey();
     auto fvk = ufvk.GetOrchardKey();
     EXPECT_TRUE(fvk.has_value());
 

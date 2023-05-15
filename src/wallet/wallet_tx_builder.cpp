@@ -280,12 +280,12 @@ WalletTxBuilder::GetChangeAddress(
         bool afterNU5) const
 {
     // Determine the account we're sending from.
-    auto sendFromAccount = wallet.FindAccountForSelector(selector).value_or(ZCASH_LEGACY_ACCOUNT);
+    auto sendFromAccount = wallet.FindAccountForSelector(selector);
 
     auto getAllowedChangePools = [&](const std::set<ReceiverType>& receiverTypes) {
         std::set<OutputPool> result{resolvedPayments.GetRecipientPools()};
         // We always allow shielded change when not sending from the legacy account.
-        if (sendFromAccount != ZCASH_LEGACY_ACCOUNT) {
+        if (sendFromAccount.has_value()) {
             result.insert(OutputPool::Sapling);
         }
         for (ReceiverType rtype : receiverTypes) {
@@ -314,29 +314,33 @@ WalletTxBuilder::GetChangeAddress(
 
     auto changeAddressForTransparentSelector = [&](const std::set<ReceiverType>& receiverTypes)
         -> tl::expected<ChangeAddress, AddressResolutionError> {
-        auto addr = wallet.GenerateChangeAddressForAccount(
-                sendFromAccount,
-                getAllowedChangePools(receiverTypes));
-        if (addr.has_value()) {
-            return {addr.value()};
+        if (sendFromAccount.has_value()) {
+            auto addr = sendFromAccount.value().GenerateChangeAddress(params, getAllowedChangePools(receiverTypes));
+            if (addr.has_value()) {
+                return addr.value();
+            } else {
+                return tl::make_unexpected(AddressResolutionError::TransparentChangeNotAllowed);
+            }
         } else {
-            return tl::make_unexpected(AddressResolutionError::TransparentChangeNotAllowed);
+            if (strategy.AllowRevealedRecipients()) {
+                return wallet.GenerateNewKey(false).GetID();
+            } else {
+                return tl::make_unexpected(AddressResolutionError::TransparentChangeNotAllowed);
+            }
         }
     };
 
     auto changeAddressForSaplingAddress = [&](const libzcash::SaplingPaymentAddress& addr)
-        -> RecipientAddress {
+        -> tl::expected<ChangeAddress, AddressResolutionError>{
         // for Sapling, if using a legacy address, return change to the
         // originating address; otherwise return it to the Sapling internal
         // address corresponding to the UFVK.
-        if (sendFromAccount == ZCASH_LEGACY_ACCOUNT) {
-            return addr;
-        } else {
-            auto addr = wallet.GenerateChangeAddressForAccount(
-                    sendFromAccount,
-                    getAllowedChangePools({ReceiverType::Sapling}));
+        if (sendFromAccount.has_value()) {
+            auto addr = sendFromAccount.value().GenerateChangeAddress(params, getAllowedChangePools({ReceiverType::Sapling}));
             assert(addr.has_value());
             return addr.value();
+        } else {
+            return addr;
         }
     };
 
@@ -354,6 +358,9 @@ WalletTxBuilder::GetChangeAddress(
         },
         [&](const CScriptID&) {
             return changeAddressForTransparentSelector({ReceiverType::P2SH});
+        },
+        [&](const LegacyAccount& acct) -> tl::expected<ChangeAddress, AddressResolutionError> {
+            return changeAddressForTransparentSelector({ReceiverType::P2PKH, ReceiverType::P2SH});
         },
         [](const libzcash::SproutPaymentAddress& addr)
             -> tl::expected<ChangeAddress, AddressResolutionError> {
@@ -386,21 +393,13 @@ WalletTxBuilder::GetChangeAddress(
                     fvk.GetKnownReceiverTypes());
         },
         [&](const AccountZTXOPattern& acct) -> tl::expected<ChangeAddress, AddressResolutionError> {
-            return wallet.GenerateChangeAddressForAccount(
-                    acct.GetAccountId(),
-                    getAllowedChangePools(acct.GetReceiverTypes()))
-                .map_error([](auto err) {
-                    switch (err) {
-                        case AccountChangeAddressFailure::DisjointReceivers:
-                            return AddressResolutionError::CouldNotResolveReceiver;
-                        case AccountChangeAddressFailure::TransparentChangeNotPermitted:
-                            return AddressResolutionError::TransparentChangeNotAllowed;
-                        case AccountChangeAddressFailure::NoSuchAccount:
-                            throw std::runtime_error("Selector account doesn’t exist.");
-                    }
-                });
-
-        }
+            auto addr = acct.GetAccount().GenerateChangeAddress(params, getAllowedChangePools(acct.GetReceiverTypes()));
+            if (addr.has_value()) {
+                return addr.value();
+            } else {
+                return tl::make_unexpected(AddressResolutionError::CouldNotResolveReceiver);
+            };
+        },
     });
 }
 
@@ -823,10 +822,13 @@ std::pair<uint256, uint256> WalletTxBuilder::SelectOVKs(
         const SpendableInputs& spendable) const
 {
     return examine(selector.GetPattern(), match {
-        [&](const CKeyID& keyId) {
+        [&](const CKeyID&) {
             return wallet.GetLegacyAccountKey().ToAccountPubKey().GetOVKsForShielding();
         },
-        [&](const CScriptID& keyId) {
+        [&](const CScriptID&) {
+            return wallet.GetLegacyAccountKey().ToAccountPubKey().GetOVKsForShielding();
+        },
+        [&](const LegacyAccount&) {
             return wallet.GetLegacyAccountKey().ToAccountPubKey().GetOVKsForShielding();
         },
         [&](const libzcash::SproutPaymentAddress&) {
@@ -854,14 +856,7 @@ std::pair<uint256, uint256> WalletTxBuilder::SelectOVKs(
             return GetOVKsForUFVK(ufvk, spendable);
         },
         [&](const AccountZTXOPattern& acct) {
-            if (acct.GetAccountId() == ZCASH_LEGACY_ACCOUNT) {
-                return wallet.GetLegacyAccountKey().ToAccountPubKey().GetOVKsForShielding();
-            } else {
-                auto ufvk = wallet.GetUnifiedFullViewingKeyByAccount(acct.GetAccountId());
-                // By definition, we have a UFVK for every known non-legacy account.
-                assert(ufvk.has_value());
-                return GetOVKsForUFVK(ufvk.value().ToFullViewingKey(), spendable);
-            }
+            return GetOVKsForUFVK(acct.GetAccount().GetUnifiedFullViewingKey(), spendable);
         },
     });
 }
