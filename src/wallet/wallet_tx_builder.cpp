@@ -376,11 +376,20 @@ WalletTxBuilder::GetChangeAddress(
                     fvk.GetKnownReceiverTypes());
         },
         [&](const AccountZTXOPattern& acct) -> tl::expected<ChangeAddress, AddressResolutionError> {
-                auto addr = wallet.GenerateChangeAddressForAccount(
+            return wallet.GenerateChangeAddressForAccount(
                     acct.GetAccountId(),
-                    getAllowedChangePools(acct.GetReceiverTypes()));
-            assert(addr.has_value());
-            return addr.value();
+                    getAllowedChangePools(acct.GetReceiverTypes()))
+                .map_error([](auto err) {
+                    switch (err) {
+                        case AccountChangeAddressFailure::DisjointReceivers:
+                            return AddressResolutionError::CouldNotResolveReceiver;
+                        case AccountChangeAddressFailure::TransparentChangeNotPermitted:
+                            return AddressResolutionError::TransparentChangeNotAllowed;
+                        case AccountChangeAddressFailure::NoSuchAccount:
+                            throw std::runtime_error("Selector account doesn’t exist.");
+                    }
+                });
+
         }
     });
 }
