@@ -13,6 +13,7 @@
 #include "wallet/asyncrpcoperation_sendmany.h"
 #include "wallet/memo.h"
 #include "zcash/JoinSplit.hpp"
+#include "zip317.h"
 
 #include <librustzcash.h>
 #include <rust/ed25519.h>
@@ -28,6 +29,25 @@ CWalletTx FakeWalletTx() {
     mtx.vout.resize(1);
     mtx.vout[0].nValue = 1;
     return CWalletTx(nullptr, mtx);
+}
+
+/// Expects that the fee calculated during transaction construction matches the fee used by block
+/// construction. It allows the fee included in the transaction to be `MARGINAL_FEE` higher than the
+/// fee expected by block construction.
+void ExpectConsistentFee(const TransactionStrategy& strategy, const TransactionEffects& effects)
+{
+    auto buildResult = effects.ApproveAndBuild(
+            Params().GetConsensus(),
+            *pwalletMain,
+            chainActive,
+            strategy);
+    auto tx = buildResult.GetTxOrThrow();
+
+    auto expectedFee = tx.GetConventionalFee();
+    // Allow one incremental fee tick of buffer above the conventional fee.
+    EXPECT_TRUE(effects.GetFee() == expectedFee || effects.GetFee() == expectedFee + MARGINAL_FEE)
+        << "effects.GetFee() = " << effects.GetFee() << std::endl
+        << "tx.GetConventionalFee() = " << expectedFee;
 }
 }
 
@@ -45,8 +65,6 @@ TEST(WalletRPCTests, PrepareTransaction)
         if (!pwalletMain->HaveMnemonicSeed()) {
             pwalletMain->GenerateNewSeed();
         }
-
-        UniValue retValue;
 
         KeyIO keyIO(Params());
         // add keys manually
@@ -181,7 +199,7 @@ TEST(WalletRPCTests, RPCZMergeToAddressInternals)
 
     SpendableInputs inputs;
     auto wtx = FakeWalletTx();
-    inputs.utxos.emplace_back(COutput(&wtx, 0, 100, true));
+    inputs.utxos.emplace_back(&wtx, 0, 100, true);
 
     // Can’t send to Sprout
     builder.PrepareTransaction(
@@ -412,20 +430,20 @@ TEST(WalletRPCTests, ZIP317Fee)
 
         { // test transparent inputs to NetAmountRecipient
             auto saplingKey = pwalletMain->GenerateNewLegacySaplingZKey();
-            NetAmountRecipient zaddr2(saplingKey, std::nullopt);
+            NetAmountRecipient zaddr(saplingKey, std::nullopt);
 
             TransactionStrategy strategy(PrivacyPolicy::AllowRevealedSenders);
 
             SpendableInputs inputs;
             for (size_t i = 0; i < utxoCount; i++) {
-                inputs.utxos.emplace_back(COutput(&wtx, i, 100, true));
+                inputs.utxos.emplace_back(&wtx, i, 100, true);
             }
 
             auto effects = builder.PrepareTransaction(
                     *pwalletMain,
                     selector,
                     inputs,
-                    zaddr2,
+                    zaddr,
                     chainActive,
                     strategy,
                     std::nullopt,
@@ -439,19 +457,7 @@ TEST(WalletRPCTests, ZIP317Fee)
             })
             .value();
 
-            auto buildResult = effects.ApproveAndBuild(
-                    Params().GetConsensus(),
-                    *pwalletMain,
-                    chainActive,
-                    strategy);
-            auto tx = buildResult.GetTxOrThrow();
-
-            auto expectedFee = tx.GetConventionalFee();
-            // Leave one incremental fee tick of buffer above the conventional fee.
-            EXPECT_TRUE(effects.GetFee() == expectedFee
-                        || effects.GetFee() == expectedFee + 5000)
-            << "effects.GetFee() = " << effects.GetFee() << std::endl
-            << "expectedFee = " << expectedFee;
+            ExpectConsistentFee(strategy, effects);
         }
 
         { // test transparent inputs to Payment vector
@@ -465,7 +471,7 @@ TEST(WalletRPCTests, ZIP317Fee)
 
             SpendableInputs inputs;
             for (size_t i = 0; i < utxoCount; i++) {
-                inputs.utxos.emplace_back(COutput(&wtx, i, 100, true));
+                inputs.utxos.emplace_back(&wtx, i, 100, true);
             }
 
             auto effects = builder.PrepareTransaction(
@@ -486,19 +492,7 @@ TEST(WalletRPCTests, ZIP317Fee)
                 })
                 .value();
 
-            auto buildResult = effects.ApproveAndBuild(
-                    Params().GetConsensus(),
-                    *pwalletMain,
-                    chainActive,
-                    strategy);
-            auto tx = buildResult.GetTxOrThrow();
-
-            auto expectedFee = tx.GetConventionalFee();
-            // Leave one incremental fee tick of buffer above the conventional fee.
-            EXPECT_TRUE(effects.GetFee() == expectedFee
-                        || effects.GetFee() == expectedFee + 5000)
-                << "effects.GetFee() = " << effects.GetFee() << std::endl
-                << "expectedFee = " << expectedFee;
+            ExpectConsistentFee(strategy, effects);
         }
 
         // Tear down
