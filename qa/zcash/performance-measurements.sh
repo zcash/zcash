@@ -87,14 +87,17 @@ function zcashd_stop {
 }
 
 function zcashd_heaptrack_start {
+    TEST_NAME="$1"
     case "$1" in
         sendtoaddress|loadwallet|listunspent)
             case "$2" in
                 200k-recv)
                     use_200k_benchmark 0
+                    TEST_NAME="${TEST_NAME}-200k-recv"
                     ;;
                 200k-send)
                     use_200k_benchmark 1
+                    TEST_NAME="${TEST_NAME}-200k-send"
                     ;;
                 *)
                     echo "Bad arguments to zcashd_heaptrack_start."
@@ -106,7 +109,7 @@ function zcashd_heaptrack_start {
             mkdir -p "$DATADIR/regtest"
             touch "$DATADIR/zcash.conf"
     esac
-    heaptrack ./src/zcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 -showmetrics=0 &
+    heaptrack -o "${TEST_NAME}" ./src/zcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 -showmetrics=0 &
     ZCASHD_PID=$!
     zcash_rpc_wait_for_start
 }
