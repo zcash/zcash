@@ -23,12 +23,11 @@ static size_t PadCount(size_t n)
 
 static CAmount
 CalcZIP317Fee(
-        const Consensus::Params& consensus,
         const CWallet& wallet,
-        const CChain& chain,
         const std::optional<SpendableInputs>& inputs,
         const std::vector<ResolvedPayment>& payments,
-        const std::optional<ChangeAddress>& changeAddr)
+        const std::optional<ChangeAddress>& changeAddr,
+        uint32_t consensusBranchId)
 {
     std::vector<CTxOut> vout{};
     size_t sproutOutputCount{}, saplingOutputCount{}, orchardOutputCount{};
@@ -72,7 +71,6 @@ CalcZIP317Fee(
     size_t saplingInputCount = 0;
     size_t orchardInputCount = 0;
     if (inputs.has_value()) {
-        auto consensusBranchId = CurrentEpochBranchId(chain.Height(), consensus);
         for (const auto& utxo : inputs.value().utxos) {
             SignatureData sigdata;
             ProduceSignature(
@@ -221,15 +219,14 @@ ValidateAmount(const SpendableInputs& spendable, const CAmount& fee)
 
 static tl::expected<std::pair<ResolvedPayment, CAmount>, InputSelectionError>
 ResolveNetPayment(
-        const Consensus::Params& consensus,
         const CWallet& wallet,
-        const CChain& chain,
         const ZTXOSelector& selector,
         const SpendableInputs& spendable,
         const NetAmountRecipient& netpay,
         const std::optional<CAmount>& fee,
         const TransactionStrategy& strategy,
-        bool afterNU5)
+        bool afterNU5,
+        uint32_t consensusBranchId)
 {
     bool canResolveOrchard = afterNU5 && !selector.SelectsSprout();
     CAmount maxSaplingAvailable = spendable.GetSaplingTotal();
@@ -254,7 +251,7 @@ ResolveNetPayment(
                     orchardOutputs)
                 .map_error([](const auto& error) -> InputSelectionError { return error; })
                 .and_then([&](const auto& rpayment) {
-                    auto finalFee = fee.value_or(CalcZIP317Fee(consensus, wallet, chain, spendable, {rpayment}, std::nullopt));
+                    auto finalFee = fee.value_or(CalcZIP317Fee(wallet, spendable, {rpayment}, std::nullopt, consensusBranchId));
                     return ValidateAmount(spendable, finalFee)
                         .and_then([&](void) {
                             return ResolvePayment(
@@ -427,8 +424,10 @@ WalletTxBuilder::PrepareTransaction(
         }
     }
 
+    auto consensus = params.GetConsensus();
     int anchorHeight = GetAnchorHeight(chain, anchorConfirmations);
-    bool afterNU5 = params.GetConsensus().NetworkUpgradeActive(anchorHeight, Consensus::UPGRADE_NU5);
+    bool afterNU5 = consensus.NetworkUpgradeActive(anchorHeight, Consensus::UPGRADE_NU5);
+    auto consensusBranchId = CurrentEpochBranchId(chain.Height(), consensus);
     auto selected = examine(payments, match {
             [&](const std::vector<Payment>& payments) {
                 return ResolveInputsAndPayments(
@@ -436,13 +435,13 @@ WalletTxBuilder::PrepareTransaction(
                         selector,
                         spendable,
                         payments,
-                        chain,
                         strategy,
                         fee,
-                        afterNU5);
+                        afterNU5,
+                        consensusBranchId);
             },
             [&](const NetAmountRecipient& netRecipient) {
-                return ResolveNetPayment(params.GetConsensus(), wallet, chain, selector, spendable, netRecipient, fee, strategy, afterNU5)
+                return ResolveNetPayment(wallet, selector, spendable, netRecipient, fee, strategy, afterNU5, consensusBranchId)
                     .map([&](const auto& pair) {
                         const auto& [payment, finalFee] = pair;
                         return InputSelection(spendable, {{payment}}, finalFee, std::nullopt);
@@ -497,19 +496,20 @@ SpendableInputs WalletTxBuilder::FindAllSpendableInputs(
 }
 
 CAmount GetConstrainedFee(
-        const Consensus::Params& consensus,
         const CWallet& wallet,
-        const CChain& chain,
         const std::optional<SpendableInputs>& inputs,
         const std::vector<ResolvedPayment>& payments,
-        const std::optional<ChangeAddress>& changeAddr)
+        const std::optional<ChangeAddress>& changeAddr,
+        uint32_t consensusBranchId)
 {
     // We know that minRelayFee <= MINIMUM_FEE <= conventional_fee, so we can use an arbitrary
     // transaction size when constraining the fee, because we are guaranteed to already satisfy the
     // lower bound.
     constexpr unsigned int DUMMY_TX_SIZE = 1;
 
-    return CWallet::ConstrainFee(CalcZIP317Fee(consensus, wallet, chain, inputs, payments, changeAddr), DUMMY_TX_SIZE);
+    return CWallet::ConstrainFee(
+            CalcZIP317Fee(wallet, inputs, payments, changeAddr, consensusBranchId),
+            DUMMY_TX_SIZE);
 }
 
 static tl::expected<void, InputSelectionError>
@@ -554,19 +554,19 @@ tl::expected<
     InputSelectionError>
 WalletTxBuilder::IterateLimit(
         CWallet& wallet,
-        const CChain& chain,
         const ZTXOSelector& selector,
         const TransactionStrategy& strategy,
         CAmount sendAmount,
         CAmount dustThreshold,
         const SpendableInputs& spendable,
         Payments& resolved,
-        bool afterNU5) const
+        bool afterNU5,
+        uint32_t consensusBranchId) const
 {
     SpendableInputs spendableMut;
 
     auto previousFee = MINIMUM_FEE;
-    auto updatedFee = GetConstrainedFee(params.GetConsensus(), wallet, chain, std::nullopt, resolved.GetResolvedPayments(), std::nullopt);
+    auto updatedFee = GetConstrainedFee(wallet, std::nullopt, resolved.GetResolvedPayments(), std::nullopt, consensusBranchId);
     // This is used to increase the target amount just enough (generally by 0 or 1) to force
     // selection of additional notes.
     CAmount bumpTargetAmount{0};
@@ -610,12 +610,11 @@ WalletTxBuilder::IterateLimit(
             }
             previousFee = updatedFee;
             updatedFee = GetConstrainedFee(
-                    params.GetConsensus(),
                     wallet,
-                    chain,
                     spendableMut,
                     resolved.GetResolvedPayments(),
-                    changeAmount > 0 ? changeAddr : std::nullopt);
+                    changeAmount > 0 ? changeAddr : std::nullopt,
+                    consensusBranchId);
         } else {
             return tl::make_unexpected(
                     ReportInvalidFunds(
@@ -655,10 +654,10 @@ WalletTxBuilder::ResolveInputsAndPayments(
         const ZTXOSelector& selector,
         const SpendableInputs& spendable,
         const std::vector<Payment>& payments,
-        const CChain& chain,
         const TransactionStrategy& strategy,
         const std::optional<CAmount>& fee,
-        bool afterNU5) const
+        bool afterNU5,
+        uint32_t consensusBranchId) const
 {
     LOCK2(cs_main, wallet.cs_wallet);
 
@@ -749,7 +748,7 @@ WalletTxBuilder::ResolveInputsAndPayments(
             //       adding the change payment. We can remove this check and make the later one
             //       unconditional once that’s fixed.
             auto conventionalFee =
-                CalcZIP317Fee(params.GetConsensus(), wallet, chain, spendableMut, resolved.GetResolvedPayments(), changeAddr);
+                CalcZIP317Fee(wallet, spendableMut, resolved.GetResolvedPayments(), changeAddr, consensusBranchId);
             if (finalFee > WEIGHT_RATIO_CAP * conventionalFee) {
                 return tl::make_unexpected(AbsurdFeeError(conventionalFee, finalFee));
             }
@@ -760,13 +759,13 @@ WalletTxBuilder::ResolveInputsAndPayments(
             }
         } else {
             auto conventionalFee =
-                CalcZIP317Fee(params.GetConsensus(), wallet, chain, spendableMut, resolved.GetResolvedPayments(), std::nullopt);
+                CalcZIP317Fee(wallet, spendableMut, resolved.GetResolvedPayments(), std::nullopt, consensusBranchId);
             if (finalFee > WEIGHT_RATIO_CAP * conventionalFee) {
                 return tl::make_unexpected(AbsurdFeeError(resolved.Total(), finalFee));
             }
         }
     } else {
-        auto limitResult = IterateLimit(wallet, chain, selector, strategy, sendAmount, dustThreshold, spendable, resolved, afterNU5);
+        auto limitResult = IterateLimit(wallet, selector, strategy, sendAmount, dustThreshold, spendable, resolved, afterNU5, consensusBranchId);
         if (limitResult.has_value()) {
             std::tie(spendableMut, finalFee, changeAddr) = limitResult.value();
             targetAmount = sendAmount + finalFee;

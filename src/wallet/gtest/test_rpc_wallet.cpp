@@ -146,7 +146,15 @@ TEST(WalletRPCTests, RPCZMergeToAddressInternals)
     {
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    UniValue retValue;
+    EXPECT_EQ(-1, chainActive.Height());
+    CBlock block;
+    block.hashMerkleRoot = BlockMerkleRoot(block);
+    auto blockHash = block.GetHash();
+    CBlockIndex fakeIndex {block};
+    mapBlockIndex.insert(std::make_pair(blockHash, &fakeIndex));
+    chainActive.SetTip(&fakeIndex);
+    EXPECT_TRUE(chainActive.Contains(&fakeIndex));
+    EXPECT_EQ(0, chainActive.Height());
 
     // Mutable tx containing contextual information we need to build tx
     // We removed the ability to create pre-Sapling Sprout proofs, so we can
@@ -214,6 +222,11 @@ TEST(WalletRPCTests, RPCZMergeToAddressInternals)
             }));
         })
         .map([](const auto&) { EXPECT_TRUE(false); });
+
+    // Tear down
+    chainActive.SetTip(NULL);
+    mapBlockIndex.erase(blockHash);
+
     }
     UnloadGlobalWallet();
 }
@@ -232,8 +245,6 @@ TEST(WalletRPCTests, RPCZsendmanyTaddrToSapling)
     if (!pwalletMain->HaveMnemonicSeed()) {
         pwalletMain->GenerateNewSeed();
     }
-
-    UniValue retValue;
 
     KeyIO keyIO(Params());
     // add keys manually
@@ -356,8 +367,6 @@ TEST(WalletRPCTests, ZIP317Fee)
         if (!pwalletMain->HaveMnemonicSeed()) {
             pwalletMain->GenerateNewSeed();
         }
-
-        UniValue retValue;
 
         KeyIO keyIO(Params());
         // add keys manually
