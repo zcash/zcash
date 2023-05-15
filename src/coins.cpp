@@ -254,7 +254,7 @@ std::optional<libzcash::LatestSubtree> CCoinsViewCache::GetLatestSubtree(Shielde
         case ORCHARD:
             return cacheOrchardSubtrees.GetLatestSubtree(base);
         default:
-            throw std::runtime_error("GetLatestSubtree: unsupported shielded type in cache of subtrees");
+            throw std::runtime_error("GetLatestSubtree: unsupported shielded type");
     }
 }
 
@@ -268,7 +268,7 @@ std::optional<libzcash::SubtreeData> CCoinsViewCache::GetSubtreeData(
         case ORCHARD:
             return cacheOrchardSubtrees.GetSubtreeData(base, index);
         default:
-            throw std::runtime_error("GetSubtreeData: unsupported shielded type in cache of subtrees");
+            throw std::runtime_error("GetSubtreeData: unsupported shielded type");
     }
 }
 
@@ -989,8 +989,8 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
 bool CCoinsViewCache::Flush() {
     // This ensures that before we pass the subtree caches
     // they have been initialized correctly
-    cacheSaplingSubtrees.GetLatestSubtree(base);
-    cacheOrchardSubtrees.GetLatestSubtree(base);
+    cacheSaplingSubtrees.Initialize(base);
+    cacheOrchardSubtrees.Initialize(base);
 
     bool fOk = base->BatchWrite(cacheCoins,
                                 hashBlock,
@@ -1178,11 +1178,16 @@ void SubtreeCache::clear() {
     newSubtrees.clear();
 }
 
-std::optional<libzcash::LatestSubtree> SubtreeCache::GetLatestSubtree(CCoinsView *parentView) {
+void SubtreeCache::Initialize(CCoinsView *parentView)
+{
     if (!initialized) {
         parentLatestSubtree = parentView->GetLatestSubtree(type);
         initialized = true;
     }
+}
+
+std::optional<libzcash::LatestSubtree> SubtreeCache::GetLatestSubtree(CCoinsView *parentView) {
+    Initialize(parentView);
 
     if (newSubtrees.size() > 0) {
         // The latest subtree is in our cache.
@@ -1205,6 +1210,8 @@ std::optional<libzcash::LatestSubtree> SubtreeCache::GetLatestSubtree(CCoinsView
 }
 
 std::optional<libzcash::SubtreeData> SubtreeCache::GetSubtreeData(CCoinsView *parentView, libzcash::SubtreeIndex index) {
+    Initialize(parentView);
+
     auto latestSubtree = GetLatestSubtree(parentView);
 
     if (!latestSubtree.has_value() || latestSubtree.value().index < index) {
@@ -1212,12 +1219,12 @@ std::optional<libzcash::SubtreeData> SubtreeCache::GetSubtreeData(CCoinsView *pa
         return std::nullopt;
     }
 
-    if (parentLatestSubtree.has_value() && (index <= parentLatestSubtree.value().index)) {
+    if (parentLatestSubtree.has_value() && index <= parentLatestSubtree.value().index) {
         // This subtree is complete, but it's not in the local cache
         return parentView->GetSubtreeData(type, index);
     } else {
         if (parentLatestSubtree.has_value()) {
-            // Get the index into our local `newSubtrees` that the subtree should
+            // Get the index into our local `newSubtrees` where the subtree should
             // be located.
             auto localIndex = index - (parentLatestSubtree.value().index + 1);
             assert(newSubtrees.size() > localIndex);
@@ -1232,13 +1239,13 @@ std::optional<libzcash::SubtreeData> SubtreeCache::GetSubtreeData(CCoinsView *pa
 }
 
 void SubtreeCache::PushSubtree(CCoinsView *parentView, libzcash::SubtreeData subtree) {
-    GetLatestSubtree(parentView);
+    Initialize(parentView);
 
     newSubtrees.push_back(subtree);
 }
 
 void SubtreeCache::PopSubtree(CCoinsView *parentView) {
-    GetLatestSubtree(parentView);
+    Initialize(parentView);
 
     if (newSubtrees.empty()) {
         // Try to pop from the parent view
@@ -1270,9 +1277,13 @@ void SubtreeCache::PopSubtree(CCoinsView *parentView) {
 }
 
 void SubtreeCache::BatchWrite(CCoinsView *parentView, SubtreeCache &childMap) {
+    Initialize(parentView);
     auto bestSubtree = GetLatestSubtree(parentView);
     if (!bestSubtree.has_value()) {
-        // childMap could not have popped from us
+        // We do not have any local subtrees, so it cannot be possible
+        // for the childMap to think we have any latest subtree, which
+        // suggests the wrong childMap was passed or the wrong backing
+        // view has been set in the cache.
         if (childMap.parentLatestSubtree.has_value()) {
             throw std::runtime_error("cache inconsistency; child view of parent's latest subtree cannot be correct");
         }
