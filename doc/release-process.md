@@ -3,8 +3,29 @@ Release Process
 Meta: There should always be a single release engineer to disambiguate responsibility.
 
 If this is a hotfix release, please see the [Hotfix Release
-Process](https://github.com/zcash/zcash/blob/master/doc/hotfix-process.md) documentation
-before proceeding.
+Process](./hotfix-process.md) documentation before proceeding.
+
+## Pre-pre-release
+
+These are steps that can be considered done even weeks ahead of the release, so if you know you are going to be running an upcoming release, you can get ahead of the game and start these steps.
+
+### (optional) have a GitHub token for updatecheck.py
+
+This isn’t necessary, but can help avoid rate limiting failures from the GitHub API.
+
+If you had one in the past, it might have expired. If it did, it’s easy to regenerate it.
+
+1. visit [GitHub’s personal access tokens page](https://github.com/settings/tokens?type=beta).
+2. if you have an existing “ECC updatecheck” token, check if it says “This token has expired.” If not, you’re probably good to go, but if it is expired, click on the token name, then click “Regenerate taken” and jump to step 5.
+3. if you don’t have one, click “Generate new token”
+4. Fill in “ECC updatecheck” for the token name and click “Generate token” (you can change the expiration or description if you like, but don’t change the resource owner (you), repository access (public repositories), or permissions)
+5. copy the new token and write it to `${XDG_DATA_HOME:=~/.local/share}/zcash/updatecheck/token`, replacing any existing contents – if you close the page before writing it to the file, you won’t be able to access the token again, so jump back to step 1.
+
+### set up PGP for signing the tag
+
+You will need git to be able to sign with your PGP key to complete the release, so make sure it all works now.
+
+**TODO**: Add steps here that cover creating and setting up a PGP key to use with git.
 
 ## Pre-release
 
@@ -16,26 +37,33 @@ is a common reason.)
 
 ### Pre-release checklist:
 
-Check that dependencies are properly hosted.
+#### Check that dependencies are properly hosted.
 
-Check that there are no surprising performance regressions.
+**What does this mean?**
 
-Update `src/chainparams.cpp` nMinimumChainWork with information from the getblockchaininfo rpc.
+#### Check that there are no surprising performance regressions.
 
-Check that dependencies are up-to-date or have been postponed:
+**How do we check for performance regressions?**
 
-```
+#### Update [`src/chainparams.cpp`](../src/chainparams.cpp)
+
+Call `getblockchaininfo` against an up-to-date mainnet note and copy the value of the “chainwork” field to `consensus.nMinimumChainWork` in the definition of `CMainParams::CMainParams()` (be careful to not update `CTestNetParams` or `CRegTestParams`).
+
+#### Check that dependencies are up-to-date or have been postponed.
+
+See the [pre-pre-relase section](#pre-pre-release) for optional setup.
+
+```bash
 $ ./qa/zcash/updatecheck.py
 ```
-
-You can optionally create a file `~/.local/share/zcash/updatecheck/token` (or
-`$XDG_DATA_HOME/zcash/updatecheck/token` if the `XDG_DATA_HOME` environment
-variable is set) to avoid running into GitHub rate limiting. Create an
-unprivileged personal access token on GitHub and copy the value into the file.
 
 If there are updates that have not been postponed, review their changelogs
 for urgent security fixes, and if there aren't any, postpone the update by
 adding a line to `qa/zcash/postponed-updates.txt`.
+
+**TODO**: For hotfixes, should we maybe backport changes to this from master? As it may have changed since the release branched.
+
+**TODO**: If you follow this process, then this PR is made against master (because we don’t yet have a release candidate or release stabilization branch), but for hotfixes it will be made against the hotfix branch. Should we change this process to match what’s required on the hotfix side?
 
 ### Protocol Safety Checks:
 
@@ -95,8 +123,14 @@ permitted.
 Having identified the commit from which the release will be made, the release
 manager constructs the release stabilization branch as follows:
 
-    $ git checkout -b version-X.Y.0 <COMMIT_ID>
-    $ git push 'git@github.com:zcash/zcash' $(git rev-parse --abbrev-ref HEAD)
+```bash
+$ git checkout -b version-X.Y.0 <COMMIT_ID>
+$ git push 'git@github.com:zcash/zcash' $(git rev-parse --abbrev-ref HEAD)
+```
+
+### Update the release notes
+
+Make sure the existing [release notes](./release-notes.md) cover everything significant in the release and make any necessary changes in a PR against the release stabilization branch.
 
 ### Create the release candidate branch
 
@@ -104,25 +138,42 @@ Run the release script to create the first release candidate. This will create
 a branch based upon the specified commit ID, then commit standard automated
 changes to that branch locally:
 
-    $ ./zcutil/make-release.py <COMMIT_ID> <RELEASE> <RELEASE_PREV> <RELEASE_FROM> <APPROX_RELEASE_HEIGHT>
+The `APPROX_RELEASE_HEIGHT` should be some time after the current height, which can be retrieved either from another `getblockchaininfo` call against a mainnet node (the “estimatedheight” field) or some online chain explorer. A four-hour window from now is reasonable, and there are 48 blocks per hour, so generally add `200` to the current chain height.
+
+**NB**: Hotfixes are slightly different here, refer back to the [Hotfix Release
+Process](./hotfix-process.md).
+
+**maybe merge the hotfix process doc, calling out the differences along the way**
+
+**NB**: Ensure your working tree is clean before running this, as it will change branches and make changes that won’t work on a dirty tree.
+
+```bash
+$ ./zcutil/make-release.py <COMMIT_ID> <RELEASE> <RELEASE_PREV> <RELEASE_FROM> <APPROX_RELEASE_HEIGHT>
+```
 
 Examples:
 
-    $ ./zcutil/make-release.py 600c4acee1 v1.1.0-rc1 v1.0.0 v1.0.0 280300
-    $ ./zcutil/make-release.py b89b48cda1 v1.1.0 v1.1.0-rc1 v1.0.0 300600
+```bash
+$ ./zcutil/make-release.py 600c4acee1 v1.1.0-rc1 v1.0.0 v1.0.0 280300
+$ ./zcutil/make-release.py b89b48cda1 v1.1.0 v1.1.0-rc1 v1.0.0 300600
+```
 
 ### Create, Review, and Merge the release branch pull request
 
 Review the automated changes in git:
 
-    $ git log version-X.Y.0..HEAD
+```bash
+$ git log version-X.Y.0..HEAD
+```
 
 Push the resulting branch to github:
 
-    $ git push 'git@github.com:$YOUR_GITHUB_NAME/zcash' $(git rev-parse --abbrev-ref HEAD)
+```bash
+$ git push 'git@github.com:$YOUR_GITHUB_NAME/zcash' $(git rev-parse --abbrev-ref HEAD)
+```
 
 Then create the PR on github targeting the `version-X.Y.0` branch. Complete the
-standard review process and wait for CI to complete. 
+standard review process and wait for CI to complete.
 
 ## Make a tag for the tip of the release candidate branch
 
@@ -136,31 +187,36 @@ been included in a merge commit.
 Check the last commit on the local and remote versions of the release branch to
 make sure they are the same:
 
-    $ git log -1
+```bash
+$ git log -1
+```
 
 If you haven't previously done so, set the gpg key id you intend to use for
-signing:
+signing (See the [pre-pre-relase section](#pre-pre-release) for PGP setup):
 
-    git config --global user.signingkey <keyid>
+```bash
+$ git config --global user.signingkey <keyid>
+```
 
-Then create the git tag. The `-s` means the release tag will be signed.  Enter
-"Release <version>." and save when prompted for a commit message.  **CAUTION:**
+Then create the git tag. The `-s` means the release tag will be signed. **CAUTION:**
 Remember the `v` at the beginning here:
 
-    $ git tag -s vX.Y.Z-rcN
-    $ git push origin vX.Y.Z-rcN
+```bash
+$ git tag -m 'Release vX.Y.Z-rcN.' -s vX.Y.Z-rcN
+$ git push 'git@github.com:zcash/zcash' vX.Y.Z-rcN
+```
 
 ## Merge the release candidate branch to the release stabilization branch
 
 Once CI has completed and the release candidate branch has sufficient approving
 reviews, merge the release candidate branch back to the release stabilization
 branch. Testing proceeds as normal. Any changes that need to be made during the
-release candidate period are made by submitting PRs targeting the release 
+release candidate period are made by submitting PRs targeting the release
 stabilization branch.
 
 Subsequent release candidates, and the creation of the final release, follow
 the same process as for release candidates, omitting the `-rcN` suffix for the
-final release. 
+final release.
 
 ## Make and deploy deterministic builds
 
@@ -221,5 +277,9 @@ Update the [Zcashd Full Node and CLI](https://zcash.readthedocs.io/en/latest/rtd
 documentation on ReadTheDocs to give the new version number.
 
 ### Publish the release announcement (blog, github, zcash-dev, slack)
+
+### Update this process
+
+Submit a PR against master containing any adjustments to or clarifications of this process that you needed to make to get to this point.
 
 ## Celebrate

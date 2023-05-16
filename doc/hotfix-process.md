@@ -39,10 +39,12 @@ Release candidates for hotfixes should be created and tested as normal, using
 the `hotfix-<RELEASE>` branch in place of the release stabilization branch,
 with a couple of minor differences:
 
-- When running the release script, use the `--hotfix` flag. Provide the hash of 
+- When running the release script, use the `--hotfix` flag. Provide the hash of
   the commit to be released as the first argument:
 
     $ ./zcutil/make-release.py --hotfix <COMMIT_ID> <RELEASE> <RELEASE_PREV> <RELEASE_FROM> <APPROX_RELEASE_HEIGHT>
+
+    **NB**: Do not make release candidates (i.e., versions with `-rcN` suffixes) for hotfixes.
 
 - To review the automated changes in git:
 
