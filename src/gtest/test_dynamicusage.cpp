@@ -66,7 +66,7 @@ TEST(RecursiveDynamicUsageTests, TestTransactionSaplingToSapling)
 
     auto builder = TransactionBuilder(Params(), 1, std::nullopt);
     builder.SetFee(10000);
-    builder.AddSaplingSpend(sk, testNote.note, testNote.tree.root(), testNote.tree.witness());
+    builder.AddSaplingSpend(sk, testNote.note, testNote.tree.witness());
     builder.AddSaplingOutput(fvk.ovk, pa, 5000, {});
 
     auto tx = builder.Build().GetTxOrThrow();
@@ -117,7 +117,7 @@ TEST(RecursiveDynamicUsageTests, TestTransactionSaplingToTransparent)
 
     auto builder = TransactionBuilder(Params(), 1, std::nullopt, &keystore);
     builder.SetFee(10000);
-    builder.AddSaplingSpend(sk, testNote.note, testNote.tree.root(), testNote.tree.witness());
+    builder.AddSaplingSpend(sk, testNote.note, testNote.tree.witness());
     builder.AddTransparentOutput(taddr, 40000);
 
     auto tx = builder.Build().GetTxOrThrow();

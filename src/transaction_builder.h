@@ -366,7 +366,6 @@ public:
     void AddSaplingSpend(
         libzcash::SaplingExtendedSpendingKey extsk,
         libzcash::SaplingNote note,
-        uint256 anchor,
         SaplingWitness witness);
 
     void AddSaplingOutput(

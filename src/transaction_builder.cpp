@@ -364,7 +364,6 @@ void TransactionBuilder::AddOrchardOutput(
 void TransactionBuilder::AddSaplingSpend(
     libzcash::SaplingExtendedSpendingKey extsk,
     libzcash::SaplingNote note,
-    uint256 anchor,
     SaplingWitness witness)
 {
     // Sanity check: cannot add Sapling spend to pre-Sapling transaction
@@ -373,6 +372,7 @@ void TransactionBuilder::AddSaplingSpend(
     }
 
     // Consistency check: all anchors must equal the first one
+    auto anchor = witness.root();
     if (spends.size() > 0 && spends[0].anchor != anchor) {
         throw JSONRPCError(RPC_WALLET_ERROR, "Anchor does not match previously-added Sapling spends.");
     }

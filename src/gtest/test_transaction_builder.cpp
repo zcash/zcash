@@ -75,11 +75,12 @@ TEST(TransactionBuilder, SaplingToSapling) {
     // Create a Sapling-only transaction
     // 0.00004 z-ZEC in, 0.000025 z-ZEC out, default fee, 0.000005 z-ZEC change
     auto builder = TransactionBuilder(Params(), 2, std::nullopt);
-    builder.AddSaplingSpend(sk, testNote.note, testNote.tree.root(), testNote.tree.witness());
+    builder.AddSaplingSpend(sk, testNote.note, testNote.tree.witness());
 
     // Check that trying to add a different anchor fails
     // TODO: the following check can be split out in to another test
-    ASSERT_THROW(builder.AddSaplingSpend(sk, testNote.note, uint256(), testNote.tree.witness()), UniValue);
+    testNote.tree.append(uint256());
+    ASSERT_THROW(builder.AddSaplingSpend(sk, testNote.note, testNote.tree.witness()), UniValue);
 
     builder.AddSaplingOutput(fvk.ovk, pa, 2500, {});
     auto tx = builder.Build().GetTxOrThrow();
@@ -119,7 +120,7 @@ TEST(TransactionBuilder, SaplingToSprout) {
     //                              - 0.000005 Sapling-ZEC change
     //                              - default t-ZEC fee
     auto builder = TransactionBuilder(Params(), 2, std::nullopt, nullptr);
-    builder.AddSaplingSpend(sk, testNote.note, testNote.tree.root(), testNote.tree.witness());
+    builder.AddSaplingSpend(sk, testNote.note, testNote.tree.witness());
     builder.AddSproutOutput(sproutAddr, 2500, std::nullopt);
     auto tx = builder.Build().GetTxOrThrow();
 
@@ -328,7 +329,7 @@ TEST(TransactionBuilder, FailsWithNegativeChange)
 
     // Fails if there is insufficient input
     // 0.00005 t-ZEC out, default fee, 0.00005999 z-ZEC in
-    builder.AddSaplingSpend(sk, testNote.note, testNote.tree.root(), testNote.tree.witness());
+    builder.AddSaplingSpend(sk, testNote.note, testNote.tree.witness());
     EXPECT_EQ("Change cannot be negative: -0.00000001 ZEC", builder.Build().GetError());
 
     // Succeeds if there is sufficient input
@@ -379,7 +380,7 @@ TEST(TransactionBuilder, ChangeOutput)
     {
         auto builder = TransactionBuilder(Params(), 1, std::nullopt, &keystore);
         builder.AddTransparentInput(fakeCoin, scriptPubKey, 2500);
-        builder.AddSaplingSpend(sk, testNote.note, testNote.tree.root(), testNote.tree.witness());
+        builder.AddSaplingSpend(sk, testNote.note, testNote.tree.witness());
         auto tx = builder.Build().GetTxOrThrow();
 
         EXPECT_EQ(tx.vin.size(), 1);
@@ -442,7 +443,7 @@ TEST(TransactionBuilder, SetFee)
     // Default fee
     {
         auto builder = TransactionBuilder(Params(), 1, std::nullopt);
-        builder.AddSaplingSpend(sk, testNote.note, testNote.tree.root(), testNote.tree.witness());
+        builder.AddSaplingSpend(sk, testNote.note, testNote.tree.witness());
         builder.AddSaplingOutput(fvk.ovk, pa, 25000, {});
         auto tx = builder.Build().GetTxOrThrow();
 
@@ -458,7 +459,7 @@ TEST(TransactionBuilder, SetFee)
     // Configured fee
     {
         auto builder = TransactionBuilder(Params(), 1, std::nullopt);
-        builder.AddSaplingSpend(sk, testNote.note, testNote.tree.root(), testNote.tree.witness());
+        builder.AddSaplingSpend(sk, testNote.note, testNote.tree.witness());
         builder.AddSaplingOutput(fvk.ovk, pa, 25000, {});
         builder.SetFee(20000);
         auto tx = builder.Build().GetTxOrThrow();
@@ -499,7 +500,7 @@ TEST(TransactionBuilder, CheckSaplingTxVersion)
     libzcash::SaplingNote note(pk, 50000, libzcash::Zip212Enabled::BeforeZip212);
     SaplingMerkleTree tree;
     try {
-        builder.AddSaplingSpend(sk, note, uint256(), tree.witness());
+        builder.AddSaplingSpend(sk, note, tree.witness());
     } catch (std::runtime_error const & err) {
         EXPECT_EQ(err.what(), std::string("TransactionBuilder cannot add Sapling spend to pre-Sapling transaction"));
     } catch(...) {
