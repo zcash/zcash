@@ -129,63 +129,6 @@ std::optional<OrchardBundle> UnauthorizedBundle::ProveAndSign(
 
 } // namespace orchard
 
-SpendDescriptionInfo::SpendDescriptionInfo(
-    libzcash::SaplingExpandedSpendingKey expsk,
-    libzcash::SaplingNote note,
-    uint256 anchor,
-    SaplingWitness witness) : expsk(expsk), note(note), anchor(anchor), witness(witness)
-{
-    librustzcash_sapling_generate_r(alpha.begin());
-}
-
-std::optional<OutputDescription> OutputDescriptionInfo::Build(rust::Box<sapling::Prover>& ctx) {
-    auto cmu = this->note.cmu();
-    if (!cmu) {
-        return std::nullopt;
-    }
-
-    libzcash::SaplingNotePlaintext notePlaintext(this->note, this->memo);
-
-    auto res = notePlaintext.encrypt(this->note.pk_d);
-    if (!res) {
-        return std::nullopt;
-    }
-    auto enc = res.value();
-    auto encryptor = enc.second;
-
-    libzcash::SaplingPaymentAddress address(this->note.d, this->note.pk_d);
-    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-    ss << address;
-    std::array<unsigned char, 43> addressBytes;
-    std::move(ss.begin(), ss.end(), addressBytes.begin());
-
-    std::array<unsigned char, 32> cvBytes;
-    libzcash::GrothProof zkproof;
-    uint256 rcm = this->note.rcm();
-    if (!ctx->create_output_proof(
-            encryptor.get_esk().GetRawBytes(),
-            addressBytes,
-            rcm.GetRawBytes(),
-            this->note.value(),
-            cvBytes,
-            zkproof)) {
-        return std::nullopt;
-    }
-
-    auto cv = uint256::FromRawBytes(cvBytes);
-    auto ephemeralKey = encryptor.get_epk();
-    auto encCiphertext = enc.first;
-
-    libzcash::SaplingOutgoingPlaintext outPlaintext(this->note.pk_d, encryptor.get_esk());
-    auto outCiphertext = outPlaintext.encrypt(
-        this->ovk,
-        cv,
-        *cmu,
-        encryptor);
-
-    return OutputDescription(cv, *cmu, ephemeralKey, encCiphertext, outCiphertext, zkproof);
-}
-
 JSDescription JSDescriptionInfo::BuildDeterministic(
     bool computeProof,
     uint256 *esk // payment disclosure

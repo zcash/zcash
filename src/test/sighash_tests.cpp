@@ -22,7 +22,6 @@
 #include <boost/test/unit_test.hpp>
 
 #include <rust/ed25519.h>
-#include <rust/test_harness.h>
 
 #include <univalue.h>
 

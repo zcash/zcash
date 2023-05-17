@@ -1,22 +1,10 @@
 use group::{ff::Field, Group, GroupEncoding};
-use jubjub::{ExtendedPoint, Fq};
 use rand::{thread_rng, Rng};
-use rand_core::OsRng;
 use zcash_note_encryption::EphemeralKeyBytes;
 use zcash_primitives::{
     sapling::{self, redjubjub, value::ValueCommitment},
     transaction::components::{sapling as sapling_tx, Amount},
 };
-
-#[no_mangle]
-pub extern "C" fn zcash_test_harness_random_jubjub_base(ret: *mut [u8; 32]) {
-    *unsafe { &mut *ret } = Fq::random(OsRng).to_bytes();
-}
-
-#[no_mangle]
-pub extern "C" fn zcash_test_harness_random_jubjub_point(ret: *mut [u8; 32]) {
-    *unsafe { &mut *ret } = ExtendedPoint::random(OsRng).to_bytes();
-}
 
 pub(crate) fn test_only_invalid_sapling_bundle(
     spends: usize,

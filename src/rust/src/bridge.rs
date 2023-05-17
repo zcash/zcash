@@ -21,11 +21,11 @@ use crate::{
     params::{network, Network},
     sapling::{
         apply_sapling_bundle_signatures, build_sapling_bundle, finish_bundle_assembly,
-        init_batch_validator as init_sapling_batch_validator, init_prover, init_verifier,
-        new_bundle_assembler, new_sapling_builder, none_sapling_bundle,
-        parse_v4_sapling_components, parse_v4_sapling_output, parse_v4_sapling_spend,
-        parse_v5_sapling_bundle, BatchValidator as SaplingBatchValidator, Bundle as SaplingBundle,
-        BundleAssembler as SaplingBundleAssembler, Output, Prover, SaplingBuilder,
+        init_batch_validator as init_sapling_batch_validator, init_verifier, new_bundle_assembler,
+        new_sapling_builder, none_sapling_bundle, parse_v4_sapling_components,
+        parse_v4_sapling_output, parse_v4_sapling_spend, parse_v5_sapling_bundle,
+        BatchValidator as SaplingBatchValidator, Bundle as SaplingBundle,
+        BundleAssembler as SaplingBundleAssembler, Output, SaplingBuilder,
         SaplingUnauthorizedBundle, Spend, Verifier,
     },
     streams::{
@@ -216,40 +216,6 @@ pub(crate) mod ffi {
             bundle: Box<SaplingUnauthorizedBundle>,
             sighash_bytes: [u8; 32],
         ) -> Result<Box<SaplingBundle>>;
-
-        type Prover;
-
-        fn init_prover() -> Box<Prover>;
-        #[allow(clippy::too_many_arguments)]
-        fn create_spend_proof(
-            self: &mut Prover,
-            ak: &[u8; 32],
-            nsk: &[u8; 32],
-            diversifier: &[u8; 11],
-            rcm: &[u8; 32],
-            ar: &[u8; 32],
-            value: u64,
-            anchor: &[u8; 32],
-            merkle_path: &[u8; 1065], // 1 + 33 * SAPLING_TREE_DEPTH + 8
-            cv: &mut [u8; 32],
-            rk_out: &mut [u8; 32],
-            zkproof: &mut [u8; 192], // GROTH_PROOF_SIZE
-        ) -> bool;
-        fn create_output_proof(
-            self: &mut Prover,
-            esk: &[u8; 32],
-            payment_address: &[u8; 43],
-            rcm: &[u8; 32],
-            value: u64,
-            cv: &mut [u8; 32],
-            zkproof: &mut [u8; 192], // GROTH_PROOF_SIZE
-        ) -> bool;
-        fn binding_sig(
-            self: &mut Prover,
-            value_balance: i64,
-            sighash: &[u8; 32],
-            result: &mut [u8; 64],
-        ) -> bool;
 
         type Verifier;
 

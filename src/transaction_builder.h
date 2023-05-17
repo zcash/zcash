@@ -184,33 +184,6 @@ public:
 
 } // namespace orchard
 
-struct SpendDescriptionInfo {
-    libzcash::SaplingExpandedSpendingKey expsk;
-    libzcash::SaplingNote note;
-    uint256 alpha;
-    uint256 anchor;
-    SaplingWitness witness;
-
-    SpendDescriptionInfo(
-        libzcash::SaplingExpandedSpendingKey expsk,
-        libzcash::SaplingNote note,
-        uint256 anchor,
-        SaplingWitness witness);
-};
-
-struct OutputDescriptionInfo {
-    uint256 ovk;
-    libzcash::SaplingNote note;
-    std::optional<libzcash::Memo> memo;
-
-    OutputDescriptionInfo(
-        uint256 ovk,
-        libzcash::SaplingNote note,
-        std::optional<libzcash::Memo> memo) : ovk(ovk), note(note), memo(memo) {}
-
-    std::optional<OutputDescription> Build(rust::Box<sapling::Prover>& ctx);
-};
-
 struct JSDescriptionInfo {
     ed25519::VerificationKey joinSplitPubKey;
     uint256 anchor;

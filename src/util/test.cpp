@@ -11,7 +11,6 @@
 #include <optional>
 
 #include <rust/ed25519.h>
-#include <rust/test_harness.h>
 
 // Sprout
 CMutableTransaction GetValidSproutReceiveTransaction(
@@ -332,35 +331,6 @@ CKey AddTestCKeyToKeyStore(CBasicKeyStore& keyStore) {
     CKey tsk = keyIO.DecodeSecret(T_SECRET_REGTEST);
     keyStore.AddKey(tsk);
     return tsk;
-}
-
-SpendDescription RandomInvalidSpendDescription() {
-    uint256 cv;
-    uint256 anchor;
-    uint256 rk;
-    libzcash::GrothProof zkproof;
-    SpendDescription::spend_auth_sig_t spendAuthSig;
-    zcash_test_harness_random_jubjub_point(cv.begin());
-    zcash_test_harness_random_jubjub_base(anchor.begin());
-    zcash_test_harness_random_jubjub_point(rk.begin());
-    GetRandBytes(zkproof.begin(), zkproof.size());
-    return SpendDescription(cv, anchor, GetRandHash(), rk, zkproof, spendAuthSig);
-}
-
-OutputDescription RandomInvalidOutputDescription() {
-    uint256 cv;
-    uint256 cmu;
-    uint256 ephemeralKey;
-    libzcash::SaplingEncCiphertext encCiphertext;
-    libzcash::SaplingOutCiphertext outCiphertext;
-    libzcash::GrothProof zkproof;
-    zcash_test_harness_random_jubjub_point(cv.begin());
-    zcash_test_harness_random_jubjub_base(cmu.begin());
-    zcash_test_harness_random_jubjub_point(ephemeralKey.begin());
-    GetRandBytes(encCiphertext.begin(), encCiphertext.size());
-    GetRandBytes(outCiphertext.begin(), outCiphertext.size());
-    GetRandBytes(zkproof.begin(), zkproof.size());
-    return OutputDescription(cv, cmu, ephemeralKey, encCiphertext, outCiphertext, zkproof);
 }
 
 TestSaplingNote GetTestSaplingNote(const libzcash::SaplingPaymentAddress& pa, CAmount value) {

@@ -17,8 +17,6 @@
 #include "zcash/Note.hpp"
 #include "zcash/NoteEncryption.hpp"
 
-#include <rust/test_harness.h>
-
 #include <optional>
 
 using ::testing::Return;

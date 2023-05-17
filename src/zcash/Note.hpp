@@ -215,8 +215,6 @@ public:
         READWRITE(memo_);       // 512 bytes
     }
 
-    std::optional<SaplingNotePlaintextEncryptionResult> encrypt(const uint256& pk_d) const;
-
     uint256 rcm() const;
     uint256 generate_or_derive_esk() const;
     unsigned char get_leadbyte() const {
@@ -249,13 +247,6 @@ public:
         const uint256& cm,
         const uint256& epk
     );
-
-    SaplingOutCiphertext encrypt(
-        const uint256& ovk,
-        const uint256& cv,
-        const uint256& cm,
-        SaplingNoteEncryption& enc
-    ) const;
 };
 
 
