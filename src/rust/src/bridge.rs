@@ -20,13 +20,19 @@ use crate::{
     orchard_ffi::{orchard_batch_validation_init, BatchValidator as OrchardBatchValidator},
     params::{network, Network},
     sapling::{
-        finish_bundle_assembly, init_batch_validator as init_sapling_batch_validator, init_prover,
-        init_verifier, new_bundle_assembler, BatchValidator as SaplingBatchValidator,
-        Bundle as SaplingBundle, BundleAssembler as SaplingBundleAssembler, Prover, Verifier,
+        apply_sapling_bundle_signatures, build_sapling_bundle, finish_bundle_assembly,
+        init_batch_validator as init_sapling_batch_validator, init_prover, init_verifier,
+        new_bundle_assembler, new_sapling_builder, BatchValidator as SaplingBatchValidator,
+        Bundle as SaplingBundle, BundleAssembler as SaplingBundleAssembler, Output, Prover,
+        SaplingBuilder, SaplingUnauthorizedBundle, Spend, Verifier,
     },
     streams::{
         from_auto_file, from_blake2b_writer, from_buffered_file, from_data, from_hash_writer,
         from_size_computer, CppStream,
+    },
+    test_harness_ffi::{
+        test_only_invalid_sapling_bundle, test_only_replace_sapling_nullifier,
+        test_only_replace_sapling_output_parts,
     },
     wallet_scanner::{init_batch_scanner, BatchResult, BatchScanner},
 };
@@ -91,8 +97,48 @@ pub(crate) mod ffi {
 
     #[namespace = "sapling"]
     extern "Rust" {
+        type Spend;
+
+        fn cv(self: &Spend) -> [u8; 32];
+        fn anchor(self: &Spend) -> [u8; 32];
+        fn nullifier(self: &Spend) -> [u8; 32];
+        fn rk(self: &Spend) -> [u8; 32];
+        fn zkproof(self: &Spend) -> [u8; 192];
+        fn spend_auth_sig(self: &Spend) -> [u8; 64];
+
+        type Output;
+
+        fn cv(self: &Output) -> [u8; 32];
+        fn cmu(self: &Output) -> [u8; 32];
+        fn ephemeral_key(self: &Output) -> [u8; 32];
+        fn enc_ciphertext(self: &Output) -> [u8; 580];
+        fn out_ciphertext(self: &Output) -> [u8; 80];
+        fn zkproof(self: &Output) -> [u8; 192];
+        fn serialize_v4(self: &Output, stream: &mut CppStream<'_>) -> Result<()>;
+
         #[rust_name = "SaplingBundle"]
         type Bundle;
+
+        #[cxx_name = "test_only_invalid_bundle"]
+        fn test_only_invalid_sapling_bundle(
+            spends: usize,
+            outputs: usize,
+            value_balance: i64,
+        ) -> Box<SaplingBundle>;
+        #[cxx_name = "test_only_replace_nullifier"]
+        fn test_only_replace_sapling_nullifier(
+            bundle: &mut SaplingBundle,
+            spend_index: usize,
+            nullifier: [u8; 32],
+        );
+        #[cxx_name = "test_only_replace_output_parts"]
+        fn test_only_replace_sapling_output_parts(
+            bundle: &mut SaplingBundle,
+            output_index: usize,
+            cmu: [u8; 32],
+            enc_ciphertext: [u8; 580],
+            out_ciphertext: [u8; 80],
+        );
 
         #[rust_name = "SaplingBundleAssembler"]
         type BundleAssembler;
@@ -121,6 +167,42 @@ pub(crate) mod ffi {
             value_balance: i64,
             binding_sig: [u8; 64],
         ) -> Box<SaplingBundle>;
+
+        #[cxx_name = "Builder"]
+        type SaplingBuilder;
+
+        #[cxx_name = "new_builder"]
+        fn new_sapling_builder(network: &Network, height: u32) -> Box<SaplingBuilder>;
+        fn add_spend(
+            self: &mut SaplingBuilder,
+            extsk: &[u8],
+            diversifier: [u8; 11],
+            recipient: [u8; 43],
+            value: u64,
+            rcm: [u8; 32],
+            merkle_path: [u8; 1065],
+        ) -> Result<()>;
+        fn add_recipient(
+            self: &mut SaplingBuilder,
+            ovk: [u8; 32],
+            to: [u8; 43],
+            value: u64,
+            memo: [u8; 512],
+        ) -> Result<()>;
+        #[cxx_name = "build_bundle"]
+        fn build_sapling_bundle(
+            builder: Box<SaplingBuilder>,
+            target_height: u32,
+        ) -> Result<Box<SaplingUnauthorizedBundle>>;
+
+        #[cxx_name = "UnauthorizedBundle"]
+        type SaplingUnauthorizedBundle;
+
+        #[cxx_name = "apply_bundle_signatures"]
+        fn apply_sapling_bundle_signatures(
+            bundle: Box<SaplingUnauthorizedBundle>,
+            sighash_bytes: [u8; 32],
+        ) -> Result<Box<SaplingBundle>>;
 
         type Prover;
 
