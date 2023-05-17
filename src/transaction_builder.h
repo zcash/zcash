@@ -313,9 +313,12 @@ public:
         valueBalanceOrchard(std::move(builder.valueBalanceOrchard)),
         spends(std::move(builder.spends)),
         outputs(std::move(builder.outputs)),
+        orchardSpendingKeys(std::move(orchardSpendingKeys)),
+        firstOrchardSpendAddr(std::move(firstOrchardSpendAddr)),
         jsInputs(std::move(builder.jsInputs)),
         jsOutputs(std::move(builder.jsOutputs)),
         tIns(std::move(builder.tIns)),
+        orchardChangeAddr(std::move(builder.orchardChangeAddr)),
         saplingChangeAddr(std::move(builder.saplingChangeAddr)),
         sproutChangeAddr(std::move(builder.sproutChangeAddr)),
         tChangeAddr(std::move(builder.tChangeAddr)) {}
@@ -333,9 +336,12 @@ public:
             valueBalanceOrchard = std::move(builder.valueBalanceOrchard);
             spends = std::move(builder.spends);
             outputs = std::move(builder.outputs);
+            orchardSpendingKeys = std::move(builder.orchardSpendingKeys),
+            firstOrchardSpendAddr = std::move(builder.firstOrchardSpendAddr),
             jsInputs = std::move(builder.jsInputs);
             jsOutputs = std::move(builder.jsOutputs);
             tIns = std::move(builder.tIns);
+            orchardChangeAddr = std::move(builder.orchardChangeAddr);
             saplingChangeAddr = std::move(builder.saplingChangeAddr);
             sproutChangeAddr = std::move(builder.sproutChangeAddr);
             tChangeAddr = std::move(builder.tChangeAddr);
