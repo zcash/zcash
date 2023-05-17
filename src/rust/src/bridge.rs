@@ -23,8 +23,8 @@ use crate::{
         apply_sapling_bundle_signatures, build_sapling_bundle, finish_bundle_assembly,
         init_batch_validator as init_sapling_batch_validator, init_prover, init_verifier,
         new_bundle_assembler, new_sapling_builder, none_sapling_bundle,
-        parse_v4_sapling_components, parse_v5_sapling_bundle,
-        BatchValidator as SaplingBatchValidator, Bundle as SaplingBundle,
+        parse_v4_sapling_components, parse_v4_sapling_output, parse_v4_sapling_spend,
+        parse_v5_sapling_bundle, BatchValidator as SaplingBatchValidator, Bundle as SaplingBundle,
         BundleAssembler as SaplingBundleAssembler, Output, Prover, SaplingBuilder,
         SaplingUnauthorizedBundle, Spend, Verifier,
     },
@@ -101,6 +101,8 @@ pub(crate) mod ffi {
     extern "Rust" {
         type Spend;
 
+        #[cxx_name = "parse_v4_spend"]
+        fn parse_v4_sapling_spend(bytes: &[u8]) -> Result<Box<Spend>>;
         fn cv(self: &Spend) -> [u8; 32];
         fn anchor(self: &Spend) -> [u8; 32];
         fn nullifier(self: &Spend) -> [u8; 32];
@@ -110,6 +112,8 @@ pub(crate) mod ffi {
 
         type Output;
 
+        #[cxx_name = "parse_v4_output"]
+        fn parse_v4_sapling_output(bytes: &[u8]) -> Result<Box<Output>>;
         fn cv(self: &Output) -> [u8; 32];
         fn cmu(self: &Output) -> [u8; 32];
         fn ephemeral_key(self: &Output) -> [u8; 32];

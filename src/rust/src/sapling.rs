@@ -46,6 +46,13 @@ use crate::{
 
 pub(crate) struct Spend(sapling::SpendDescription<sapling::Authorized>);
 
+pub(crate) fn parse_v4_sapling_spend(bytes: &[u8]) -> Result<Box<Spend>, String> {
+    sapling::SpendDescription::read(&mut io::Cursor::new(bytes))
+        .map(Spend)
+        .map(Box::new)
+        .map_err(|e| format!("{}", e))
+}
+
 impl Spend {
     pub(crate) fn cv(&self) -> [u8; 32] {
         self.0.cv().to_bytes()
@@ -78,6 +85,13 @@ impl Spend {
 }
 
 pub(crate) struct Output(sapling::OutputDescription<[u8; 192]>);
+
+pub(crate) fn parse_v4_sapling_output(bytes: &[u8]) -> Result<Box<Output>, String> {
+    sapling::OutputDescription::read(&mut io::Cursor::new(bytes))
+        .map(Output)
+        .map(Box::new)
+        .map_err(|e| format!("{}", e))
+}
 
 impl Output {
     pub(crate) fn cv(&self) -> [u8; 32] {
