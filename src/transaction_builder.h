@@ -34,6 +34,7 @@ uint256 ProduceShieldedSignatureHash(
     uint32_t consensusBranchId,
     const CTransaction& tx,
     const std::vector<CTxOut>& allPrevOutputs,
+    const sapling::UnauthorizedBundle& saplingBundle,
     const std::optional<orchard::UnauthorizedBundle>& orchardBundle);
 
 namespace orchard {
@@ -153,6 +154,7 @@ private:
         uint32_t consensusBranchId,
         const CTransaction& tx,
         const std::vector<CTxOut>& allPrevOutputs,
+        const sapling::UnauthorizedBundle& saplingBundle,
         const std::optional<orchard::UnauthorizedBundle>& orchardBundle));
 
 public:
@@ -267,11 +269,12 @@ private:
     std::optional<uint256> orchardAnchor;
     std::optional<orchard::Builder> orchardBuilder;
     CAmount valueBalanceOrchard = 0;
+    rust::Box<sapling::Builder> saplingBuilder;
+    CAmount valueBalanceSapling = 0;
 
     std::vector<libzcash::OrchardSpendingKey> orchardSpendingKeys;
     std::optional<libzcash::OrchardRawAddress> firstOrchardSpendAddr;
-    std::vector<SpendDescriptionInfo> spends;
-    std::vector<OutputDescriptionInfo> outputs;
+    std::optional<std::pair<uint256, libzcash::SaplingPaymentAddress>> firstSaplingSpendAddr;
     std::vector<libzcash::JSInput> jsInputs;
     std::vector<libzcash::JSOutput> jsOutputs;
     std::vector<CTxOut> tIns;
@@ -282,7 +285,10 @@ private:
     std::optional<CTxDestination> tChangeAddr;
 
 public:
-    TransactionBuilder() {}
+    TransactionBuilder() :
+        saplingBuilder(sapling::new_builder(
+            *Params().RustNetwork(),
+            Params().GetConsensus().vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight)) {}
     /**
      * If an Orchard anchor is provided, the resulting builder will always attempt
      * to construct a V5 transaction unless NU5 is not yet active. If an Orchard
@@ -311,10 +317,11 @@ public:
         orchardAnchor(std::move(builder.orchardAnchor)),
         orchardBuilder(std::move(builder.orchardBuilder)),
         valueBalanceOrchard(std::move(builder.valueBalanceOrchard)),
-        spends(std::move(builder.spends)),
-        outputs(std::move(builder.outputs)),
+        saplingBuilder(std::move(builder.saplingBuilder)),
+        valueBalanceSapling(std::move(builder.valueBalanceSapling)),
         orchardSpendingKeys(std::move(orchardSpendingKeys)),
         firstOrchardSpendAddr(std::move(firstOrchardSpendAddr)),
+        firstSaplingSpendAddr(std::move(firstSaplingSpendAddr)),
         jsInputs(std::move(builder.jsInputs)),
         jsOutputs(std::move(builder.jsOutputs)),
         tIns(std::move(builder.tIns)),
@@ -334,10 +341,11 @@ public:
             fee = std::move(builder.fee);
             orchardBuilder = std::move(builder.orchardBuilder);
             valueBalanceOrchard = std::move(builder.valueBalanceOrchard);
-            spends = std::move(builder.spends);
-            outputs = std::move(builder.outputs);
+            saplingBuilder = std::move(builder.saplingBuilder);
+            valueBalanceSapling = std::move(builder.valueBalanceSapling);
             orchardSpendingKeys = std::move(builder.orchardSpendingKeys),
             firstOrchardSpendAddr = std::move(builder.firstOrchardSpendAddr),
+            firstSaplingSpendAddr = std::move(builder.firstSaplingSpendAddr),
             jsInputs = std::move(builder.jsInputs);
             jsOutputs = std::move(builder.jsOutputs);
             tIns = std::move(builder.tIns);

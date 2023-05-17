@@ -326,8 +326,8 @@ TEST(ChecktransactionTests, BadTxnsTxouttotalToolargeOutputs) {
 }
 
 TEST(ChecktransactionTests, ValueBalanceNonZero) {
-    CMutableTransaction mtx = GetValidTransaction();
-    mtx.valueBalanceSapling = 10;
+    CMutableTransaction mtx = GetValidTransaction(NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId);
+    mtx.saplingBundle = sapling::test_only_invalid_bundle(0, 0, 10);
 
     CTransaction tx(mtx);
 
@@ -336,35 +336,10 @@ TEST(ChecktransactionTests, ValueBalanceNonZero) {
     CheckTransactionWithoutProofVerification(tx, state);
 }
 
-TEST(ChecktransactionTests, PositiveValueBalanceTooLarge) {
-    CMutableTransaction mtx = GetValidTransaction();
-    mtx.vShieldedSpend.resize(1);
-    mtx.valueBalanceSapling = MAX_MONEY + 1;
-
-    CTransaction tx(mtx);
-
-    MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-valuebalance-toolarge", false, "")).Times(1);
-    CheckTransactionWithoutProofVerification(tx, state);
-}
-
-TEST(ChecktransactionTests, NegativeValueBalanceTooLarge) {
-    CMutableTransaction mtx = GetValidTransaction();
-    mtx.vShieldedSpend.resize(1);
-    mtx.valueBalanceSapling = -(MAX_MONEY + 1);
-
-    CTransaction tx(mtx);
-
-    MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-valuebalance-toolarge", false, "")).Times(1);
-    CheckTransactionWithoutProofVerification(tx, state);
-}
-
 TEST(ChecktransactionTests, ValueBalanceOverflowsTotal) {
-    CMutableTransaction mtx = GetValidTransaction();
-    mtx.vShieldedSpend.resize(1);
+    CMutableTransaction mtx = GetValidTransaction(NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId);
     mtx.vout[0].nValue = 1;
-    mtx.valueBalanceSapling = -MAX_MONEY;
+    mtx.saplingBundle = sapling::test_only_invalid_bundle(1, 0, -MAX_MONEY);
 
     CTransaction tx(mtx);
 
@@ -879,7 +854,7 @@ TEST(ChecktransactionTests, SaplingSproutInputSumsTooLarge) {
         mtx.vJoinSplit.push_back(jsdesc);
     }
 
-    mtx.vShieldedSpend.push_back(RandomInvalidSpendDescription());
+    mtx.saplingBundle = sapling::test_only_invalid_bundle(1, 0, 0);
 
     mtx.vJoinSplit[0].vpub_new = (MAX_MONEY / 2) + 10;
 
@@ -889,7 +864,7 @@ TEST(ChecktransactionTests, SaplingSproutInputSumsTooLarge) {
         EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
     }
 
-    mtx.valueBalanceSapling = (MAX_MONEY / 2) + 10;
+    mtx.saplingBundle = sapling::test_only_invalid_bundle(1, 0, (MAX_MONEY / 2) + 10);
 
     {
         UNSAFE_CTransaction tx(mtx);
@@ -1151,7 +1126,7 @@ TEST(ChecktransactionTests, InvalidSaplingShieldedCoinbase) {
     // Make it an invalid shielded coinbase (no ciphertexts or commitments).
     mtx.vin.resize(1);
     mtx.vin[0].prevout.SetNull();
-    mtx.vShieldedOutput.push_back(RandomInvalidOutputDescription());
+    mtx.saplingBundle = sapling::test_only_invalid_bundle(0, 1, 0);
     mtx.vJoinSplit.resize(0);
 
     CTransaction tx(mtx);
@@ -1177,13 +1152,12 @@ TEST(ChecktransactionTests, HeartwoodAcceptsSaplingShieldedCoinbase) {
     RegtestActivateHeartwood(false, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
     auto chainparams = Params();
 
-    uint256 ovk;
-    auto note = libzcash::SaplingNote(
-        libzcash::SaplingSpendingKey::random().default_address(), CAmount(123456), libzcash::Zip212Enabled::BeforeZip212);
-    auto output = OutputDescriptionInfo(ovk, note, std::nullopt);
-
-    auto ctx = sapling::init_prover();
-    auto odesc = output.Build(ctx).value();
+    auto builder = sapling::new_builder(*chainparams.RustNetwork(), 10);
+    builder->add_recipient(
+        uint256().GetRawBytes(),
+        libzcash::SaplingSpendingKey::random().default_address().GetRawBytes(),
+        123456,
+        libzcash::Memo::ToBytes(std::nullopt));
 
     CMutableTransaction mtx = GetValidTransaction();
     mtx.fOverwintered = true;
@@ -1193,67 +1167,66 @@ TEST(ChecktransactionTests, HeartwoodAcceptsSaplingShieldedCoinbase) {
     mtx.vin.resize(1);
     mtx.vin[0].prevout.SetNull();
     mtx.vJoinSplit.resize(0);
-    mtx.vShieldedOutput.push_back(odesc);
+    mtx.saplingBundle = sapling::apply_bundle_signatures(sapling::build_bundle(std::move(builder), 10), {});
+    auto outputs = mtx.saplingBundle.GetDetails().outputs();
+    auto& odesc = outputs[0];
 
     // Transaction should fail with a bad public cmu.
     {
-        mtx.vShieldedOutput[0] = OutputDescription(
-            odesc.cv(),
-            uint256S("1234"),
-            odesc.ephemeral_key(),
+        sapling::test_only_replace_output_parts(
+            mtx.saplingBundle.GetDetailsMut(),
+            0,
+            uint256S("1234").GetRawBytes(),
             odesc.enc_ciphertext(),
-            odesc.out_ciphertext(),
-            odesc.zkproof());
+            odesc.out_ciphertext());
         CTransaction tx(mtx);
         EXPECT_TRUE(tx.IsCoinBase());
 
         MockCValidationState state;
         EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-output-desc-invalid-outct", false, "")).Times(1);
         ContextualCheckTransaction(tx, state, chainparams, 10, 57);
-
-        mtx.vShieldedOutput[0] = odesc;
     }
 
     // Transaction should fail with a bad outCiphertext.
     {
-        mtx.vShieldedOutput[0] = OutputDescription(
-            odesc.cv(),
+        sapling::test_only_replace_output_parts(
+            mtx.saplingBundle.GetDetailsMut(),
+            0,
             odesc.cmu(),
-            odesc.ephemeral_key(),
             odesc.enc_ciphertext(),
-            {{}},
-            odesc.zkproof());
+            {{}});
         CTransaction tx(mtx);
         EXPECT_TRUE(tx.IsCoinBase());
 
         MockCValidationState state;
         EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-output-desc-invalid-outct", false, "")).Times(1);
         ContextualCheckTransaction(tx, state, chainparams, 10, 57);
-
-        mtx.vShieldedOutput[0] = odesc;
     }
 
     // Transaction should fail with a bad encCiphertext.
     {
-        mtx.vShieldedOutput[0] = OutputDescription(
-            odesc.cv(),
+        sapling::test_only_replace_output_parts(
+            mtx.saplingBundle.GetDetailsMut(),
+            0,
             odesc.cmu(),
-            odesc.ephemeral_key(),
             {{}},
-            odesc.out_ciphertext(),
-            odesc.zkproof());
+            odesc.out_ciphertext());
         CTransaction tx(mtx);
         EXPECT_TRUE(tx.IsCoinBase());
 
         MockCValidationState state;
         EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-output-desc-invalid-encct", false, "")).Times(1);
         ContextualCheckTransaction(tx, state, chainparams, 10, 57);
-
-        mtx.vShieldedOutput[0] = odesc;
     }
 
     // Test the success case.
     {
+        sapling::test_only_replace_output_parts(
+            mtx.saplingBundle.GetDetailsMut(),
+            0,
+            odesc.cmu(),
+            odesc.enc_ciphertext(),
+            odesc.out_ciphertext());
         CTransaction tx(mtx);
         EXPECT_TRUE(tx.IsCoinBase());
 
@@ -1273,11 +1246,6 @@ TEST(ChecktransactionTests, HeartwoodEnforcesSaplingRulesOnShieldedCoinbase) {
     RegtestActivateHeartwood(false, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
     auto chainparams = Params();
 
-    uint256 ovk;
-    auto note = libzcash::SaplingNote(
-        libzcash::SaplingSpendingKey::random().default_address(), CAmount(123456), libzcash::Zip212Enabled::BeforeZip212);
-    auto output = OutputDescriptionInfo(ovk, note, std::nullopt);
-
     CMutableTransaction mtx = GetValidTransaction();
     mtx.fOverwintered = true;
     mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
@@ -1287,7 +1255,7 @@ TEST(ChecktransactionTests, HeartwoodEnforcesSaplingRulesOnShieldedCoinbase) {
     mtx.vin[0].prevout.SetNull();
     mtx.vin[0].scriptSig << 123;
     mtx.vJoinSplit.resize(0);
-    mtx.valueBalanceSapling = -1000;
+    mtx.saplingBundle = sapling::test_only_invalid_bundle(0, 0, -1000);
 
     // Coinbase transaction should fail non-contextual checks with no shielded
     // outputs and non-zero valueBalanceSapling.
@@ -1301,34 +1269,14 @@ TEST(ChecktransactionTests, HeartwoodEnforcesSaplingRulesOnShieldedCoinbase) {
     }
 
     // Add a Sapling output.
-    auto ctx = sapling::init_prover();
-    auto odesc = output.Build(ctx).value();
-    mtx.vShieldedOutput.push_back(odesc);
+    auto builder = sapling::new_builder(*chainparams.RustNetwork(), 10);
+    builder->add_recipient(
+        uint256().GetRawBytes(),
+        libzcash::SaplingSpendingKey::random().default_address().GetRawBytes(),
+        1000,
+        libzcash::Memo::ToBytes(std::nullopt));
+    mtx.saplingBundle = sapling::apply_bundle_signatures(sapling::build_bundle(std::move(builder), 10), {});
 
-    // Coinbase transaction should fail non-contextual checks with valueBalanceSapling
-    // out of range.
-    {
-        mtx.valueBalanceSapling = MAX_MONEY + 1;
-        EXPECT_THROW((CTransaction(mtx)), std::ios_base::failure);
-        UNSAFE_CTransaction tx(mtx);
-        EXPECT_TRUE(tx.IsCoinBase());
-
-        MockCValidationState state;
-        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-valuebalance-toolarge", false, "")).Times(1);
-        EXPECT_FALSE(CheckTransactionWithoutProofVerification(tx, state));
-    }
-    {
-        mtx.valueBalanceSapling = -MAX_MONEY - 1;
-        EXPECT_THROW((CTransaction(mtx)), std::ios_base::failure);
-        UNSAFE_CTransaction tx(mtx);
-        EXPECT_TRUE(tx.IsCoinBase());
-
-        MockCValidationState state;
-        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-valuebalance-toolarge", false, "")).Times(1);
-        EXPECT_FALSE(CheckTransactionWithoutProofVerification(tx, state));
-    }
-
-    mtx.valueBalanceSapling = -1000;
     CTransaction tx(mtx);
     EXPECT_TRUE(tx.IsCoinBase());
 

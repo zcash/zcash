@@ -1568,7 +1568,7 @@ std::set<std::pair<libzcash::SaplingPaymentAddress, libzcash::nullifier_t>> CWal
                 auto & ivk = noteData.ivk;
                 if (nullifier && ivkMap.count(ivk) > 0) {
                     for (const auto & addr : ivkMap[ivk]) {
-                        nullifierSet.insert(std::make_pair(addr, nullifier.value()));
+                        nullifierSet.insert(std::make_pair(addr, nullifier->GetRawBytes()));
                     }
                 }
             }
@@ -1706,7 +1706,7 @@ set<uint256> CWallet::GetConflicts(const uint256& txid) const
     std::pair<TxNullifiers::const_iterator, TxNullifiers::const_iterator> range_o;
 
     for (const auto& spend : wtx.GetSaplingSpends()) {
-        const uint256& nullifier = spend.nullifier();
+        const uint256 nullifier = uint256::FromRawBytes(spend.nullifier());
         if (mapTxSaplingNullifiers.count(nullifier) <= 1) {
             continue;  // No conflict if zero or one spends
         }
@@ -2523,7 +2523,7 @@ void CWallet::AddToSpends(const uint256& wtxid)
         }
     }
     for (const auto& spend : thisTx.GetSaplingSpends()) {
-        AddToSaplingSpends(spend.nullifier(), wtxid);
+        AddToSaplingSpends(uint256::FromRawBytes(spend.nullifier()), wtxid);
     }
 
     // for Orchard, the effects of this operation are performed by
@@ -2787,11 +2787,11 @@ void CWallet::IncrementNoteWitnesses(
         }
         // Sapling
         for (const auto& spend : tx.GetSaplingSpends()) {
-            nullifiersSapling.emplace_back(spend.nullifier());
+            nullifiersSapling.emplace_back(uint256::FromRawBytes(spend.nullifier()));
         }
         uint32_t i = 0;
         for (const auto& output : tx.GetSaplingOutputs()) {
-            const uint256& note_commitment = output.cmu();
+            const uint256& note_commitment = uint256::FromRawBytes(output.cmu());
             frontiers.sapling.append(note_commitment);
             noteCommitmentsSapling.emplace_back(note_commitment);
 
@@ -3194,7 +3194,7 @@ void CWallet::UpdateNullifierNoteMapWithTx(const CWalletTx& wtx)
 
         for (const mapSaplingNoteData_t::value_type& item : wtx.mapSaplingNoteData) {
             if (item.second.nullifier) {
-                mapSaplingNullifiersToNotes[*item.second.nullifier] = item.first;
+                mapSaplingNullifiersToNotes[item.second.nullifier->GetRawBytes()] = item.first;
             }
         }
     }
@@ -3216,7 +3216,7 @@ void CWallet::UpdateSaplingNullifierNoteMapWithTx(CWalletTx& wtx) {
             //
             // If there are no witnesses, erase the nullifier and associated mapping.
             if (item.second.nullifier) {
-                mapSaplingNullifiersToNotes.erase(item.second.nullifier.value());
+                mapSaplingNullifiersToNotes.erase(item.second.nullifier->GetRawBytes());
             }
             item.second.nullifier = std::nullopt;
         }
@@ -3239,7 +3239,7 @@ void CWallet::UpdateSaplingNullifierNoteMapWithTx(CWalletTx& wtx) {
             // This should not happen.  If it does, maybe the position has been corrupted or miscalculated?
             assert(optNullifier != std::nullopt);
             uint256 nullifier = optNullifier.value();
-            mapSaplingNullifiersToNotes[nullifier] = op;
+            mapSaplingNullifiersToNotes[nullifier.GetRawBytes()] = op;
             item.second.nullifier = nullifier;
         }
     }
@@ -3795,9 +3795,9 @@ std::pair<mapSaplingNoteData_t, SaplingIncomingViewingKeyMap> CWallet::FindMySap
                     height,
                     ivk.GetRawBytes(),
                     {
-                        output.cv().GetRawBytes(),
-                        output.cmu().GetRawBytes(),
-                        output.ephemeral_key().GetRawBytes(),
+                        output.cv(),
+                        output.cmu(),
+                        output.ephemeral_key(),
                         output.enc_ciphertext(),
                         output.out_ciphertext(),
                     });
@@ -4320,7 +4320,8 @@ std::optional<std::pair<
         return std::nullopt;
     }
 
-    auto output = GetSaplingOutputs()[op.n];
+    auto outputs = GetSaplingOutputs();
+    auto& output = outputs[op.n];
     auto nd = this->mapSaplingNoteData.at(op);
 
     try {
@@ -4331,9 +4332,9 @@ std::optional<std::pair<
             params.GetConsensus().vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight,
             nd.ivk.GetRawBytes(),
             {
-                output.cv().GetRawBytes(),
-                output.cmu().GetRawBytes(),
-                output.ephemeral_key().GetRawBytes(),
+                output.cv(),
+                output.cmu(),
+                output.ephemeral_key(),
                 output.enc_ciphertext(),
                 output.out_ciphertext(),
             });
@@ -4348,7 +4349,8 @@ std::optional<std::pair<
     SaplingNotePlaintext,
     SaplingPaymentAddress>> CWalletTx::RecoverSaplingNote(const CChainParams& params, SaplingOutPoint op, std::set<uint256>& ovks) const
 {
-    auto output = GetSaplingOutputs()[op.n];
+    auto outputs = GetSaplingOutputs();
+    auto& output = outputs[op.n];
 
     for (auto ovk : ovks) {
         try {
@@ -4359,9 +4361,9 @@ std::optional<std::pair<
                 params.GetConsensus().vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight,
                 ovk.GetRawBytes(),
                 {
-                    output.cv().GetRawBytes(),
-                    output.cmu().GetRawBytes(),
-                    output.ephemeral_key().GetRawBytes(),
+                    output.cv(),
+                    output.cmu(),
+                    output.ephemeral_key(),
                     output.enc_ciphertext(),
                     output.out_ciphertext(),
                 });

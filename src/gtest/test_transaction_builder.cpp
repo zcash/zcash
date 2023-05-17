@@ -80,7 +80,7 @@ TEST(TransactionBuilder, SaplingToSapling) {
     // Check that trying to add a different anchor fails
     // TODO: the following check can be split out in to another test
     testNote.tree.append(uint256());
-    ASSERT_THROW(builder.AddSaplingSpend(sk, testNote.note, testNote.tree.witness()), UniValue);
+    ASSERT_THROW(builder.AddSaplingSpend(sk, testNote.note, testNote.tree.witness()), rust::Error);
 
     builder.AddSaplingOutput(fvk.ovk, pa, 2500, {});
     auto tx = builder.Build().GetTxOrThrow();
@@ -130,7 +130,7 @@ TEST(TransactionBuilder, SaplingToSprout) {
     EXPECT_EQ(tx.vJoinSplit[0].vpub_old, 2500);
     EXPECT_EQ(tx.vJoinSplit[0].vpub_new, 0);
     EXPECT_EQ(tx.GetSaplingSpendsCount(), 1);
-    EXPECT_EQ(tx.GetSaplingOutputsCount(), 1);
+    EXPECT_EQ(tx.GetSaplingOutputsCount(), 2);
     EXPECT_EQ(tx.GetValueBalanceSapling(), 3500);
 
     CValidationState state;
@@ -387,7 +387,7 @@ TEST(TransactionBuilder, ChangeOutput)
         EXPECT_EQ(tx.vout.size(), 0);
         EXPECT_EQ(tx.vJoinSplit.size(), 0);
         EXPECT_EQ(tx.GetSaplingSpendsCount(), 1);
-        EXPECT_EQ(tx.GetSaplingOutputsCount(), 1);
+        EXPECT_EQ(tx.GetSaplingOutputsCount(), 2);
         EXPECT_EQ(tx.GetValueBalanceSapling(), -1500);
     }
 

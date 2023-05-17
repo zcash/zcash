@@ -95,7 +95,7 @@ pub(crate) fn test_only_invalid_sapling_bundle(
         Amount::from_i64(value_balance).unwrap(),
         sapling_tx::Authorized { binding_sig },
     );
-    Box::new(crate::sapling::Bundle(bundle))
+    Box::new(crate::sapling::Bundle(Some(bundle)))
 }
 
 pub(crate) fn test_only_replace_sapling_nullifier(
@@ -103,8 +103,7 @@ pub(crate) fn test_only_replace_sapling_nullifier(
     spend_index: usize,
     nullifier: [u8; 32],
 ) {
-    let bundle = &mut bundle.0;
-    {
+    if let Some(bundle) = bundle.0.as_mut() {
         *bundle = sapling_tx::Bundle::temporary_zcashd_from_parts(
             bundle
                 .shielded_spends()
@@ -139,8 +138,7 @@ pub(crate) fn test_only_replace_sapling_output_parts(
     enc_ciphertext: [u8; 580],
     out_ciphertext: [u8; 80],
 ) {
-    let bundle = &mut bundle.0;
-    {
+    if let Some(bundle) = bundle.0.as_mut() {
         *bundle = sapling_tx::Bundle::temporary_zcashd_from_parts(
             bundle.shielded_spends().to_vec(),
             bundle

@@ -761,13 +761,13 @@ TEST(WalletTests, GetConflictedSaplingNotes) {
         // Create transaction to spend note B
         auto builder2 = TransactionBuilder(Params(), 2, std::nullopt);
         builder2.AddSaplingSpend(sk, note2, spend_note_witness);
-        builder2.AddSaplingOutput(extfvk.fvk.ovk, pk, 20000, {});
+        builder2.AddSaplingOutput(extfvk.fvk.ovk, pk, 2000, {});
         auto tx2 = builder2.Build().GetTxOrThrow();
 
         // Create conflicting transaction which also spends note B
         auto builder3 = TransactionBuilder(Params(), 2, std::nullopt);
         builder3.AddSaplingSpend(sk, note2, spend_note_witness);
-        builder3.AddSaplingOutput(extfvk.fvk.ovk, pk, 19999, {});
+        builder3.AddSaplingOutput(extfvk.fvk.ovk, pk, 1999, {});
         auto tx3 = builder3.Build().GetTxOrThrow();
 
         CWalletTx wtx2 {&wallet, tx2};
@@ -1145,7 +1145,7 @@ TEST(WalletTests, NavigateFromSaplingNullifierToNote) {
         EXPECT_EQ(hash, op.hash);
         EXPECT_EQ(1, nd.witnesses.size());
         ASSERT_TRUE(nd.nullifier);
-        auto nf = nd.nullifier.value();
+        auto nf = nd.nullifier->GetRawBytes();
         EXPECT_EQ(1, wallet.mapSaplingNullifiersToNotes.count(nf));
         EXPECT_EQ(op.hash, wallet.mapSaplingNullifiersToNotes[nf].hash);
         EXPECT_EQ(op.n, wallet.mapSaplingNullifiersToNotes[nf].n);
@@ -1211,7 +1211,7 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
         auto pk = extfvk.DefaultAddress();
 
         // Generate Sapling note A
-        libzcash::SaplingNote note(pk, 5000, zip_212_enabled[ver]);
+        libzcash::SaplingNote note(pk, 50000, zip_212_enabled[ver]);
         auto cm = note.cmu().value();
         MerkleFrontiers frontiers;
         frontiers.sapling.append(cm);
@@ -1220,7 +1220,7 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
         // Generate transaction, which sends funds to note B
         auto builder = TransactionBuilder(Params(), 1, std::nullopt);
         builder.AddSaplingSpend(sk, note, witness);
-        builder.AddSaplingOutput(extfvk.fvk.ovk, pk, 2500, {});
+        builder.AddSaplingOutput(extfvk.fvk.ovk, pk, 25000, {});
         auto tx = builder.Build().GetTxOrThrow();
 
         CWalletTx wtx {&wallet, tx};
@@ -1262,7 +1262,7 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
         // Manually compute the nullifier and check map entry does not exist
         auto nf = note.nullifier(extfvk.fvk, witness.position());
         ASSERT_TRUE(nf);
-        ASSERT_FALSE(wallet.mapSaplingNullifiersToNotes.count(nf.value()));
+        ASSERT_FALSE(wallet.mapSaplingNullifiersToNotes.count(nf->GetRawBytes()));
 
         // Decrypt note B
         auto maybe_pt = wtx.DecryptSaplingNote(Params(), SaplingOutPoint(wtx.GetHash(), 0));
@@ -1281,7 +1281,7 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
         // Create transaction to spend note B
         auto builder2 = TransactionBuilder(Params(), 2, std::nullopt);
         builder2.AddSaplingSpend(sk, note2, spend_note_witness);
-        builder2.AddSaplingOutput(extfvk.fvk.ovk, pk, 1250, {});
+        builder2.AddSaplingOutput(extfvk.fvk.ovk, pk, 12500, {});
         auto tx2 = builder2.Build().GetTxOrThrow();
         EXPECT_EQ(tx2.vin.size(), 0);
         EXPECT_EQ(tx2.vout.size(), 0);
@@ -1317,7 +1317,7 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
 
         // Verify note B belongs to wallet.
         EXPECT_TRUE(wallet.IsFromMe(wtx2));
-        ASSERT_TRUE(wallet.mapSaplingNullifiersToNotes.count(nullifier2));
+        ASSERT_TRUE(wallet.mapSaplingNullifiersToNotes.count(nullifier2.GetRawBytes()));
 
         // Tear down
         chainActive.SetTip(NULL);
@@ -1913,7 +1913,7 @@ TEST(WalletTests, SetBestChainIgnoresTxsWithoutShieldedData) {
     mtxSapling.fOverwintered = true;
     mtxSapling.nVersion = SAPLING_TX_VERSION;
     mtxSapling.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
-    mtxSapling.vShieldedOutput.push_back(RandomInvalidOutputDescription());
+    mtxSapling.saplingBundle = sapling::test_only_invalid_bundle(0, 1, 0);
     CWalletTx wtxSapling {nullptr, mtxSapling};
     SetSaplingNoteData(wtxSapling);
     wallet.LoadWalletTx(wtxSapling);
@@ -1923,7 +1923,7 @@ TEST(WalletTests, SetBestChainIgnoresTxsWithoutShieldedData) {
     mtxSaplingTransparent.fOverwintered = true;
     mtxSaplingTransparent.nVersion = SAPLING_TX_VERSION;
     mtxSaplingTransparent.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
-    mtxSaplingTransparent.vShieldedOutput.push_back(RandomInvalidOutputDescription());
+    mtxSaplingTransparent.saplingBundle = sapling::test_only_invalid_bundle(0, 1, 0);
     CWalletTx wtxSaplingTransparent {nullptr, mtxSaplingTransparent};
     wallet.LoadWalletTx(wtxSaplingTransparent);
 

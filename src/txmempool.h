@@ -22,6 +22,7 @@
 #include "spentindex.h"
 #include "util/time.h"
 #include "weighted_map.h"
+#include "zcash/Note.hpp"
 
 #undef foreach
 #include "boost/multi_index_container.hpp"
@@ -353,7 +354,7 @@ private:
     uint64_t nNotifiedSequence = 0;
 
     std::map<uint256, const CTransaction*> mapSproutNullifiers;
-    std::map<uint256, const CTransaction*> mapSaplingNullifiers;
+    std::map<libzcash::nullifier_t, const CTransaction*> mapSaplingNullifiers;
     std::map<uint256, const CTransaction*> mapOrchardNullifiers;
     RecentlyEvictedList* recentlyEvicted = new RecentlyEvictedList(GetNodeClock(), DEFAULT_MEMPOOL_EVICTION_MEMORY_MINUTES * 60);
     MempoolLimitTxSet* limitSet = new MempoolLimitTxSet(DEFAULT_MEMPOOL_TOTAL_COST_LIMIT);

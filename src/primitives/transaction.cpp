@@ -14,66 +14,6 @@
 
 #include <rust/transaction.h>
 
-SaplingBundle::SaplingBundle(
-    const std::vector<SpendDescription>& vShieldedSpend,
-    const std::vector<OutputDescription>& vShieldedOutput,
-    const CAmount& valueBalanceSapling,
-    const binding_sig_t& bindingSig)
-        : valueBalanceSapling(valueBalanceSapling), bindingSigSapling(bindingSig)
-{
-    for (auto &spend : vShieldedSpend) {
-        vSpendsSapling.emplace_back(spend.cv(), spend.nullifier(), spend.rk());
-        if (anchorSapling.IsNull()) {
-            anchorSapling = spend.anchor();
-        } else {
-            assert(anchorSapling == spend.anchor());
-        }
-        vSpendProofsSapling.push_back(spend.zkproof());
-        vSpendAuthSigSapling.push_back(spend.spend_auth_sig());
-    }
-    for (auto &output : vShieldedOutput) {
-        vOutputsSapling.emplace_back(
-            output.cv(),
-            output.cmu(),
-            output.ephemeral_key(),
-            output.enc_ciphertext(),
-            output.out_ciphertext());
-        vOutputProofsSapling.push_back(output.zkproof());
-    }
-}
-
-std::vector<SpendDescription> SaplingBundle::GetV4ShieldedSpend()
-{
-    std::vector<SpendDescription> vShieldedSpend;
-    for (int i = 0; i < vSpendsSapling.size(); i++) {
-        auto spend = vSpendsSapling[i];
-        vShieldedSpend.emplace_back(
-            spend.cv(),
-            anchorSapling,
-            spend.nullifier(),
-            spend.rk(),
-            vSpendProofsSapling[i],
-            vSpendAuthSigSapling[i]);
-    }
-    return vShieldedSpend;
-}
-
-std::vector<OutputDescription> SaplingBundle::GetV4ShieldedOutput()
-{
-    std::vector<OutputDescription> vShieldedOutput;
-    for (int i = 0; i < vOutputsSapling.size(); i++) {
-        auto output = vOutputsSapling[i];
-        vShieldedOutput.emplace_back(
-            output.cv(),
-            output.cmu(),
-            output.ephemeral_key(),
-            output.enc_ciphertext(),
-            output.out_ciphertext(),
-            vOutputProofsSapling[i]);
-    }
-    return vShieldedOutput;
-}
-
 std::string COutPoint::ToString() const
 {
     return strprintf("COutPoint(%s, %u)", hash.ToString().substr(0,10), n);
@@ -151,14 +91,13 @@ std::string CTxOut::ToString() const
 }
 
 
-CMutableTransaction::CMutableTransaction() : nVersion(CTransaction::SPROUT_MIN_CURRENT_VERSION), fOverwintered(false), nVersionGroupId(0), nExpiryHeight(0), nLockTime(0), valueBalanceSapling(0) {}
+CMutableTransaction::CMutableTransaction() : nVersion(CTransaction::SPROUT_MIN_CURRENT_VERSION), fOverwintered(false), nVersionGroupId(0), nExpiryHeight(0), nLockTime(0) {}
 CMutableTransaction::CMutableTransaction(const CTransaction& tx) : nVersion(tx.nVersion), fOverwintered(tx.fOverwintered), nVersionGroupId(tx.nVersionGroupId), nExpiryHeight(tx.nExpiryHeight),
                                                                    nConsensusBranchId(tx.GetConsensusBranchId()),
                                                                    vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime),
-                                                                   valueBalanceSapling(tx.GetValueBalanceSapling()), vShieldedSpend(tx.vShieldedSpend), vShieldedOutput(tx.vShieldedOutput),
+                                                                   saplingBundle(tx.GetSaplingBundle()),
                                                                    orchardBundle(tx.GetOrchardBundle()),
-                                                                   vJoinSplit(tx.vJoinSplit), joinSplitPubKey(tx.joinSplitPubKey), joinSplitSig(tx.joinSplitSig),
-                                                                   bindingSig(tx.bindingSig)
+                                                                   vJoinSplit(tx.vJoinSplit), joinSplitPubKey(tx.joinSplitPubKey), joinSplitSig(tx.joinSplitSig)
 {
 }
 
@@ -212,18 +151,16 @@ CTransaction::CTransaction() : nVersion(CTransaction::SPROUT_MIN_CURRENT_VERSION
                                fOverwintered(false), nVersionGroupId(0), nExpiryHeight(0),
                                nConsensusBranchId(std::nullopt),
                                vin(), vout(), nLockTime(0),
-                               valueBalanceSapling(0), vShieldedSpend(), vShieldedOutput(),
+                               saplingBundle(),
                                orchardBundle(),
-                               vJoinSplit(), joinSplitPubKey(), joinSplitSig(),
-                               bindingSig() { }
+                               vJoinSplit(), joinSplitPubKey(), joinSplitSig() { }
 
 CTransaction::CTransaction(const CMutableTransaction &tx) : nVersion(tx.nVersion), fOverwintered(tx.fOverwintered), nVersionGroupId(tx.nVersionGroupId), nExpiryHeight(tx.nExpiryHeight),
                                                             nConsensusBranchId(tx.nConsensusBranchId),
                                                             vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime),
-                                                            valueBalanceSapling(tx.valueBalanceSapling), vShieldedSpend(tx.vShieldedSpend), vShieldedOutput(tx.vShieldedOutput),
+                                                            saplingBundle(tx.saplingBundle),
                                                             orchardBundle(tx.orchardBundle),
-                                                            vJoinSplit(tx.vJoinSplit), joinSplitPubKey(tx.joinSplitPubKey), joinSplitSig(tx.joinSplitSig),
-                                                            bindingSig(tx.bindingSig)
+                                                            vJoinSplit(tx.vJoinSplit), joinSplitPubKey(tx.joinSplitPubKey), joinSplitSig(tx.joinSplitSig)
 {
     UpdateHash();
 }
@@ -235,10 +172,9 @@ CTransaction::CTransaction(
     bool evilDeveloperFlag) : nVersion(tx.nVersion), fOverwintered(tx.fOverwintered), nVersionGroupId(tx.nVersionGroupId), nExpiryHeight(tx.nExpiryHeight),
                               nConsensusBranchId(tx.nConsensusBranchId),
                               vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime),
-                              valueBalanceSapling(tx.valueBalanceSapling), vShieldedSpend(tx.vShieldedSpend), vShieldedOutput(tx.vShieldedOutput),
+                              saplingBundle(tx.saplingBundle),
                               orchardBundle(tx.orchardBundle),
-                              vJoinSplit(tx.vJoinSplit), joinSplitPubKey(tx.joinSplitPubKey), joinSplitSig(tx.joinSplitSig),
-                              bindingSig(tx.bindingSig)
+                              vJoinSplit(tx.vJoinSplit), joinSplitPubKey(tx.joinSplitPubKey), joinSplitSig(tx.joinSplitSig)
 {
     assert(evilDeveloperFlag);
 }
@@ -248,12 +184,10 @@ CTransaction::CTransaction(CMutableTransaction &&tx) : nVersion(tx.nVersion),
                                                        nConsensusBranchId(tx.nConsensusBranchId),
                                                        vin(std::move(tx.vin)), vout(std::move(tx.vout)),
                                                        nLockTime(tx.nLockTime), nExpiryHeight(tx.nExpiryHeight),
-                                                       valueBalanceSapling(tx.valueBalanceSapling),
-                                                       vShieldedSpend(std::move(tx.vShieldedSpend)), vShieldedOutput(std::move(tx.vShieldedOutput)),
+                                                       saplingBundle(std::move(tx.saplingBundle)),
                                                        orchardBundle(std::move(tx.orchardBundle)),
                                                        vJoinSplit(std::move(tx.vJoinSplit)),
-                                                       joinSplitPubKey(std::move(tx.joinSplitPubKey)), joinSplitSig(std::move(tx.joinSplitSig)),
-                                                       bindingSig(std::move(tx.bindingSig))
+                                                       joinSplitPubKey(std::move(tx.joinSplitPubKey)), joinSplitSig(std::move(tx.joinSplitSig))
 {
     UpdateHash();
 }
@@ -267,14 +201,11 @@ CTransaction& CTransaction::operator=(const CTransaction &tx) {
     *const_cast<std::vector<CTxOut>*>(&vout) = tx.vout;
     *const_cast<unsigned int*>(&nLockTime) = tx.nLockTime;
     *const_cast<uint32_t*>(&nExpiryHeight) = tx.nExpiryHeight;
-    valueBalanceSapling = tx.valueBalanceSapling;
-    *const_cast<std::vector<SpendDescription>*>(&vShieldedSpend) = tx.vShieldedSpend;
-    *const_cast<std::vector<OutputDescription>*>(&vShieldedOutput) = tx.vShieldedOutput;
+    saplingBundle = tx.saplingBundle;
     orchardBundle = tx.orchardBundle;
     *const_cast<std::vector<JSDescription>*>(&vJoinSplit) = tx.vJoinSplit;
     *const_cast<ed25519::VerificationKey*>(&joinSplitPubKey) = tx.joinSplitPubKey;
     *const_cast<ed25519::Signature*>(&joinSplitSig) = tx.joinSplitSig;
-    *const_cast<binding_sig_t*>(&bindingSig) = tx.bindingSig;
     *const_cast<uint256*>(&wtxid.hash) = tx.wtxid.hash;
     *const_cast<uint256*>(&wtxid.authDigest) = tx.wtxid.authDigest;
     return *this;
@@ -293,6 +224,7 @@ CAmount CTransaction::GetValueOut() const
         }
     }
 
+    auto valueBalanceSapling = saplingBundle.GetValueBalance();
     if (valueBalanceSapling <= 0) {
         // NB: negative valueBalanceSapling "takes" money from the transparent value pool just as outputs do
         if (valueBalanceSapling < -MAX_MONEY) {
@@ -335,6 +267,7 @@ CAmount CTransaction::GetShieldedValueIn() const
 {
     CAmount nValue = 0;
 
+    auto valueBalanceSapling = saplingBundle.GetValueBalance();
     if (valueBalanceSapling >= 0) {
         // NB: positive valueBalanceSapling "gives" money to the transparent value pool just as inputs do
         if (valueBalanceSapling > MAX_MONEY) {
@@ -411,7 +344,7 @@ std::string CTransaction::ToString() const
             vout.size(),
             nLockTime,
             nExpiryHeight,
-            valueBalanceSapling,
+            saplingBundle.GetValueBalance(),
             GetSaplingSpendsCount(),
             GetSaplingOutputsCount());
         if (nVersion >= ZIP225_MIN_TX_VERSION) {

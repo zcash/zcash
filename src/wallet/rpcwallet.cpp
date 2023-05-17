@@ -4725,6 +4725,7 @@ size_t EstimateTxSize(
     // Depending on the input notes, the actual tx size may turn out to be larger and perhaps invalid.
     size_t txsize = 0;
     size_t taddrRecipientCount = 0;
+    size_t saplingRecipientCount = 0;
     size_t orchardRecipientCount = 0;
     for (const Payment& recipient : recipients) {
         examine(recipient.GetAddress(), match {
@@ -4735,7 +4736,7 @@ size_t EstimateTxSize(
                 taddrRecipientCount += 1;
             },
             [&](const libzcash::SaplingPaymentAddress& addr) {
-                mtx.vShieldedOutput.push_back(RandomInvalidOutputDescription());
+                saplingRecipientCount += 1;
             },
             [&](const libzcash::SproutPaymentAddress& addr) {
                 JSDescription jsdesc;
@@ -4746,7 +4747,7 @@ size_t EstimateTxSize(
                 if (addr.GetOrchardReceiver().has_value()) {
                     orchardRecipientCount += 1;
                 } else if (addr.GetSaplingReceiver().has_value()) {
-                    mtx.vShieldedOutput.push_back(RandomInvalidOutputDescription());
+                    saplingRecipientCount += 1;
                 } else if (addr.GetP2PKHReceiver().has_value()
                            || addr.GetP2SHReceiver().has_value()) {
                     taddrRecipientCount += 1;
@@ -4764,6 +4765,8 @@ size_t EstimateTxSize(
         mtx.nVersionGroupId = ZIP225_VERSION_GROUP_ID;
         mtx.nVersion = ZIP225_TX_VERSION;
     }
+    // Fine to call this because we are only testing that `mtx` is a valid size.
+    mtx.saplingBundle = sapling::test_only_invalid_bundle(0, saplingRecipientCount, 0);
 
     CTransaction tx(mtx);
     txsize += GetSerializeSize(tx, SER_NETWORK, tx.nVersion);

@@ -93,34 +93,26 @@ class AddFundingStreamValueToTx
 {
 private:
     CMutableTransaction &mtx;
-    rust::Box<sapling::Prover>& ctx;
+    sapling::Builder& saplingBuilder;
     const CAmount fundingStreamValue;
     const libzcash::Zip212Enabled zip212Enabled;
 public:
     AddFundingStreamValueToTx(
             CMutableTransaction &mtx,
-            rust::Box<sapling::Prover>& ctx,
+            sapling::Builder& saplingBuilder,
             const CAmount fundingStreamValue,
-            const libzcash::Zip212Enabled zip212Enabled): mtx(mtx), ctx(ctx), fundingStreamValue(fundingStreamValue), zip212Enabled(zip212Enabled) {}
+            const libzcash::Zip212Enabled zip212Enabled): mtx(mtx), saplingBuilder(saplingBuilder), fundingStreamValue(fundingStreamValue), zip212Enabled(zip212Enabled) {}
 
-    bool operator()(const libzcash::SaplingPaymentAddress& pa) const {
-        uint256 ovk;
-        auto note = libzcash::SaplingNote(pa, fundingStreamValue, zip212Enabled);
-        auto output = OutputDescriptionInfo(ovk, note, std::nullopt);
-
-        auto odesc = output.Build(ctx);
-        if (odesc) {
-            mtx.vShieldedOutput.push_back(odesc.value());
-            mtx.valueBalanceSapling -= fundingStreamValue;
-            return true;
-        } else {
-            return false;
-        }
+    void operator()(const libzcash::SaplingPaymentAddress& pa) const {
+        saplingBuilder.add_recipient(
+            {},
+            pa.GetRawBytes(),
+            fundingStreamValue,
+            libzcash::Memo::ToBytes(std::nullopt));
     }
 
-    bool operator()(const CScript& scriptPubKey) const {
+    void operator()(const CScript& scriptPubKey) const {
         mtx.vout.push_back(CTxOut(fundingStreamValue, scriptPubKey));
-        return true;
     }
 };
 
@@ -148,7 +140,7 @@ public:
         }
     }
 
-    CAmount SetFoundersRewardAndGetMinerValue(rust::Box<sapling::Prover>& ctx) const {
+    CAmount SetFoundersRewardAndGetMinerValue(sapling::Builder& saplingBuilder) const {
         auto block_subsidy = GetBlockSubsidy(nHeight, chainparams.GetConsensus());
         auto miner_reward = block_subsidy; // founders' reward or funding stream amounts will be subtracted below
 
@@ -161,10 +153,7 @@ public:
 
                 for (Consensus::FundingStreamElement fselem : fundingStreamElements) {
                     miner_reward -= fselem.second;
-                    bool added = std::visit(AddFundingStreamValueToTx(mtx, ctx, fselem.second, GetZip212Flag()), fselem.first);
-                    if (!added) {
-                        throw new std::runtime_error("Failed to add funding stream output.");
-                    }
+                    std::visit(AddFundingStreamValueToTx(mtx, saplingBuilder, fselem.second, GetZip212Flag()), fselem.first);
                 }
             } else if (nHeight <= chainparams.GetConsensus().GetLastFoundersRewardBlockHeight(nHeight)) {
                 // Founders reward is 20% of the block subsidy
@@ -182,14 +171,21 @@ public:
         return miner_reward + nFees;
     }
 
-    void ComputeBindingSig(rust::Box<sapling::Prover> saplingCtx, std::optional<orchard::UnauthorizedBundle> orchardBundle) const {
+    void ComputeBindingSig(rust::Box<sapling::Builder> saplingBuilder, std::optional<orchard::UnauthorizedBundle> orchardBundle) const {
         auto consensusBranchId = CurrentEpochBranchId(nHeight, chainparams.GetConsensus());
+        auto saplingBundle = sapling::build_bundle(std::move(saplingBuilder), nHeight);
+
         // Empty output script.
         uint256 dataToBeSigned;
         try {
             if (mtx.fOverwintered) {
                 // ProduceShieldedSignatureHash is only usable with v3+ transactions.
-                dataToBeSigned = ProduceShieldedSignatureHash(consensusBranchId, mtx, {}, orchardBundle);
+                dataToBeSigned = ProduceShieldedSignatureHash(
+                    consensusBranchId,
+                    mtx,
+                    {},
+                    *saplingBundle,
+                    orchardBundle);
             } else {
                 CScript scriptCode;
                 PrecomputedTransactionData txdata(mtx, {});
@@ -211,19 +207,13 @@ public:
             }
         }
 
-        bool success = saplingCtx->binding_sig(
-            mtx.valueBalanceSapling,
-            dataToBeSigned.GetRawBytes(),
-            mtx.bindingSig);
-
-        if (!success) {
-            throw new std::runtime_error("An error occurred computing the binding signature.");
-        }
+        mtx.saplingBundle = sapling::apply_bundle_signatures(
+            std::move(saplingBundle), dataToBeSigned.GetRawBytes());
     }
 
     // Create Orchard output
     void operator()(const libzcash::OrchardRawAddress &to) const {
-        auto ctx = sapling::init_prover();
+        auto saplingBuilder = sapling::new_builder(*chainparams.RustNetwork(), nHeight);
 
         // `enableSpends` must be set to `false` for coinbase transactions. This
         // means the Orchard anchor is unconstrained, so we set it to the empty
@@ -233,7 +223,7 @@ public:
 
         // Shielded coinbase outputs must be recoverable with an all-zeroes ovk.
         uint256 ovk;
-        auto miner_reward = SetFoundersRewardAndGetMinerValue(ctx);
+        auto miner_reward = SetFoundersRewardAndGetMinerValue(*saplingBuilder);
         builder.AddOutput(ovk, to, miner_reward, std::nullopt);
 
         // orchard::Builder pads to two Actions, but does so using a "no OVK" policy for
@@ -254,46 +244,38 @@ public:
             throw new std::runtime_error("Failed to create shielded output for miner");
         }
 
-        ComputeBindingSig(std::move(ctx), std::move(bundle));
+        ComputeBindingSig(std::move(saplingBuilder), std::move(bundle));
     }
 
-    // Create shielded output
+    // Create Sapling output
     void operator()(const libzcash::SaplingPaymentAddress &pa) const {
-        auto ctx = sapling::init_prover();
+        auto saplingBuilder = sapling::new_builder(*chainparams.RustNetwork(), nHeight);
 
-        auto miner_reward = SetFoundersRewardAndGetMinerValue(ctx);
-        mtx.valueBalanceSapling -= miner_reward;
+        auto miner_reward = SetFoundersRewardAndGetMinerValue(*saplingBuilder);
 
-        uint256 ovk;
+        saplingBuilder->add_recipient(
+            {},
+            pa.GetRawBytes(),
+            miner_reward,
+            libzcash::Memo::ToBytes(std::nullopt));
 
-        auto note = libzcash::SaplingNote(pa, miner_reward, GetZip212Flag());
-        auto output = OutputDescriptionInfo(ovk, note, std::nullopt);
-
-        auto odesc = output.Build(ctx);
-        if (!odesc) {
-            throw new std::runtime_error("Failed to create shielded output for miner");
-        }
-        mtx.vShieldedOutput.push_back(odesc.value());
-
-        ComputeBindingSig(std::move(ctx), std::nullopt);
+        ComputeBindingSig(std::move(saplingBuilder), std::nullopt);
     }
 
     // Create transparent output
     void operator()(const boost::shared_ptr<CReserveScript> &coinbaseScript) const {
         // Add the FR output and fetch the miner's output value.
-        auto ctx = sapling::init_prover();
+        auto saplingBuilder = sapling::new_builder(*chainparams.RustNetwork(), nHeight);
 
         // Miner output will be vout[0]; Founders' Reward & funding stream outputs
         // will follow.
         mtx.vout.resize(1);
-        auto value = SetFoundersRewardAndGetMinerValue(ctx);
+        auto value = SetFoundersRewardAndGetMinerValue(*saplingBuilder);
 
         // Now fill in the miner's output.
         mtx.vout[0] = CTxOut(value, coinbaseScript->reserveScript);
 
-        if (mtx.vShieldedOutput.size() > 0) {
-            ComputeBindingSig(std::move(ctx), std::nullopt);
-        }
+        ComputeBindingSig(std::move(saplingBuilder), std::nullopt);
     }
 };
 
@@ -443,7 +425,7 @@ CBlockTemplate* BlockAssembler::CreateNewBlock(
     // Update the Sapling commitment tree.
     for (const CTransaction& tx : pblock->vtx) {
         for (const auto& odesc : tx.GetSaplingOutputs()) {
-            sapling_tree.append(odesc.cmu());
+            sapling_tree.append(uint256::FromRawBytes(odesc.cmu()));
         }
     }
 

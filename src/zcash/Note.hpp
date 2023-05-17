@@ -16,7 +16,7 @@
 
 namespace libzcash {
 
-typedef uint256 nullifier_t;
+typedef std::array<uint8_t, 32> nullifier_t;
 
 class BaseNote {
 protected:

@@ -22,9 +22,11 @@ use crate::{
     sapling::{
         apply_sapling_bundle_signatures, build_sapling_bundle, finish_bundle_assembly,
         init_batch_validator as init_sapling_batch_validator, init_prover, init_verifier,
-        new_bundle_assembler, new_sapling_builder, BatchValidator as SaplingBatchValidator,
-        Bundle as SaplingBundle, BundleAssembler as SaplingBundleAssembler, Output, Prover,
-        SaplingBuilder, SaplingUnauthorizedBundle, Spend, Verifier,
+        new_bundle_assembler, new_sapling_builder, none_sapling_bundle,
+        parse_v4_sapling_components, parse_v5_sapling_bundle,
+        BatchValidator as SaplingBatchValidator, Bundle as SaplingBundle,
+        BundleAssembler as SaplingBundleAssembler, Output, Prover, SaplingBuilder,
+        SaplingUnauthorizedBundle, Spend, Verifier,
     },
     streams::{
         from_auto_file, from_blake2b_writer, from_buffered_file, from_data, from_hash_writer,
@@ -116,8 +118,28 @@ pub(crate) mod ffi {
         fn zkproof(self: &Output) -> [u8; 192];
         fn serialize_v4(self: &Output, stream: &mut CppStream<'_>) -> Result<()>;
 
-        #[rust_name = "SaplingBundle"]
-        type Bundle;
+        #[cxx_name = "Bundle"]
+        type SaplingBundle;
+
+        #[cxx_name = "none_bundle"]
+        fn none_sapling_bundle() -> Box<SaplingBundle>;
+        fn box_clone(self: &SaplingBundle) -> Box<SaplingBundle>;
+        #[cxx_name = "parse_v5_bundle"]
+        fn parse_v5_sapling_bundle(stream: &mut CppStream<'_>) -> Result<Box<SaplingBundle>>;
+        fn serialize_v4_components(
+            self: &SaplingBundle,
+            stream: &mut CppStream<'_>,
+            has_sapling: bool,
+        ) -> Result<()>;
+        fn serialize_v5(self: &SaplingBundle, stream: &mut CppStream<'_>) -> Result<()>;
+        fn recursive_dynamic_usage(self: &SaplingBundle) -> usize;
+        fn is_present(self: &SaplingBundle) -> bool;
+        fn spends(self: &SaplingBundle) -> Vec<Spend>;
+        fn outputs(self: &SaplingBundle) -> Vec<Output>;
+        fn num_spends(self: &SaplingBundle) -> usize;
+        fn num_outputs(self: &SaplingBundle) -> usize;
+        fn value_balance_zat(self: &SaplingBundle) -> i64;
+        fn binding_sig(self: &SaplingBundle) -> [u8; 64];
 
         #[cxx_name = "test_only_invalid_bundle"]
         fn test_only_invalid_sapling_bundle(
@@ -144,27 +166,14 @@ pub(crate) mod ffi {
         type BundleAssembler;
 
         fn new_bundle_assembler() -> Box<SaplingBundleAssembler>;
-        fn add_spend(
-            self: &mut SaplingBundleAssembler,
-            cv: &[u8; 32],
-            anchor: &[u8; 32],
-            nullifier: [u8; 32],
-            rk: &[u8; 32],
-            zkproof: [u8; 192], // GROTH_PROOF_SIZE
-            spend_auth_sig: &[u8; 64],
-        ) -> bool;
-        fn add_output(
-            self: &mut SaplingBundleAssembler,
-            cv: &[u8; 32],
-            cmu: &[u8; 32],
-            ephemeral_key: [u8; 32],
-            enc_ciphertext: [u8; 580],
-            out_ciphertext: [u8; 80],
-            zkproof: [u8; 192], // GROTH_PROOF_SIZE
-        ) -> bool;
+        #[cxx_name = "parse_v4_components"]
+        fn parse_v4_sapling_components(
+            stream: &mut CppStream<'_>,
+            has_sapling: bool,
+        ) -> Result<Box<SaplingBundleAssembler>>;
+        fn have_actions(self: &SaplingBundleAssembler) -> bool;
         fn finish_bundle_assembly(
             assembler: Box<SaplingBundleAssembler>,
-            value_balance: i64,
             binding_sig: [u8; 64],
         ) -> Box<SaplingBundle>;
 
@@ -356,6 +365,7 @@ pub(crate) mod ffi {
             consensus_branch_id: u32,
             tx_bytes: &[u8],
             all_prev_outputs: &[u8],
+            sapling_bundle: &SaplingUnauthorizedBundle,
             orchard_bundle: *const OrchardUnauthorizedBundlePtr,
         ) -> Result<[u8; 32]>;
     }

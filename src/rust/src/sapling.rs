@@ -3,11 +3,14 @@
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 use std::convert::TryInto;
+use std::io::{self, Read, Write};
+use std::mem;
 
 use bellman::groth16::{prepare_verifying_key, Proof};
 use group::{cofactor::CofactorGroup, GroupEncoding};
+use memuse::DynamicUsage;
 use rand_core::OsRng;
-use zcash_note_encryption::EphemeralKeyBytes;
+use zcash_encoding::Vector;
 use zcash_primitives::{
     keys::OutgoingViewingKey,
     memo::MemoBytes,
@@ -17,12 +20,12 @@ use zcash_primitives::{
         prover::TxProver,
         redjubjub::{self, Signature},
         value::{NoteValue, ValueCommitment},
-        Diversifier, Node, Note, Nullifier, PaymentAddress, ProofGenerationKey, Rseed,
+        Diversifier, Node, Note, PaymentAddress, ProofGenerationKey, Rseed,
     },
     transaction::{
         components::{sapling, Amount},
         txid::{BlockTxCommitmentDigester, TxIdDigester},
-        Authorized, TransactionDigest,
+        Authorized, Transaction, TransactionDigest,
     },
     zip32::ExtendedSpendingKey,
 };
@@ -108,124 +111,225 @@ impl Output {
     }
 }
 
-pub(crate) struct Bundle(pub(crate) sapling::Bundle<sapling::Authorized>);
+#[derive(Clone)]
+pub(crate) struct Bundle(pub(crate) Option<sapling::Bundle<sapling::Authorized>>);
+
+pub(crate) fn none_sapling_bundle() -> Box<Bundle> {
+    Box::new(Bundle(None))
+}
+
+/// Parses an authorized Sapling bundle from the given stream.
+pub(crate) fn parse_v5_sapling_bundle(reader: &mut CppStream<'_>) -> Result<Box<Bundle>, String> {
+    Bundle::parse_v5(reader)
+}
 
 impl Bundle {
+    /// Returns a copy of the value.
+    pub(crate) fn box_clone(&self) -> Box<Self> {
+        Box::new(self.clone())
+    }
+
+    /// Parses an authorized Sapling bundle from the given stream.
+    fn parse_v5(reader: &mut CppStream<'_>) -> Result<Box<Self>, String> {
+        match Transaction::temporary_zcashd_read_v5_sapling(reader) {
+            Ok(parsed) => Ok(Box::new(Bundle(parsed))),
+            Err(e) => Err(format!("Failed to parse v5 Sapling bundle: {}", e)),
+        }
+    }
+
+    pub(crate) fn serialize_v4_components(
+        &self,
+        mut writer: &mut CppStream<'_>,
+        has_sapling: bool,
+    ) -> Result<(), String> {
+        if has_sapling {
+            let mut write_v4 = || {
+                writer.write_all(
+                    &self
+                        .0
+                        .as_ref()
+                        .map_or(Amount::zero(), |b| *b.value_balance())
+                        .to_i64_le_bytes(),
+                )?;
+                Vector::write(
+                    &mut writer,
+                    self.0.as_ref().map_or(&[], |b| b.shielded_spends()),
+                    |w, e| e.write_v4(w),
+                )?;
+                Vector::write(
+                    &mut writer,
+                    self.0.as_ref().map_or(&[], |b| b.shielded_outputs()),
+                    |w, e| e.write_v4(w),
+                )
+            };
+            write_v4().map_err(|e| format!("{}", e))?;
+        } else if self.0.is_some() {
+            return Err(
+                "Sapling components may not be present if Sapling is not active.".to_string(),
+            );
+        }
+
+        Ok(())
+    }
+
+    /// Serializes an authorized Sapling bundle to the given stream.
+    ///
+    /// If `bundle == None`, this serializes `nSpendsSapling = nOutputsSapling = 0`.
+    pub(crate) fn serialize_v5(&self, writer: &mut CppStream<'_>) -> Result<(), String> {
+        Transaction::temporary_zcashd_write_v5_sapling(self.inner(), writer)
+            .map_err(|e| format!("Failed to serialize Sapling bundle: {}", e))
+    }
+
+    pub(crate) fn inner(&self) -> Option<&sapling::Bundle<sapling::Authorized>> {
+        self.0.as_ref()
+    }
+
+    /// Returns the amount of dynamically-allocated memory used by this bundle.
+    pub(crate) fn recursive_dynamic_usage(&self) -> usize {
+        self.inner()
+            // Bundles are boxed on the heap, so we count their own size as well as the size
+            // of `Vec`s they allocate.
+            .map(|bundle| mem::size_of_val(bundle) + bundle.dynamic_usage())
+            // If the transaction has no Sapling component, nothing is allocated for it.
+            .unwrap_or(0)
+    }
+
+    /// Returns whether the Sapling bundle is present.
+    pub(crate) fn is_present(&self) -> bool {
+        self.0.is_some()
+    }
+
+    pub(crate) fn spends(&self) -> Vec<Spend> {
+        self.0
+            .iter()
+            .flat_map(|b| b.shielded_spends().iter())
+            .cloned()
+            .map(Spend)
+            .collect()
+    }
+
+    pub(crate) fn outputs(&self) -> Vec<Output> {
+        self.0
+            .iter()
+            .flat_map(|b| b.shielded_outputs().iter())
+            .cloned()
+            .map(Output)
+            .collect()
+    }
+
+    pub(crate) fn num_spends(&self) -> usize {
+        self.inner().map(|b| b.shielded_spends().len()).unwrap_or(0)
+    }
+
+    pub(crate) fn num_outputs(&self) -> usize {
+        self.inner()
+            .map(|b| b.shielded_outputs().len())
+            .unwrap_or(0)
+    }
+
+    /// Returns the value balance for this Sapling bundle.
+    ///
+    /// A transaction with no Sapling component has a value balance of zero.
+    pub(crate) fn value_balance_zat(&self) -> i64 {
+        self.inner()
+            .map(|b| b.value_balance().into())
+            // From section 7.1 of the Zcash prototol spec:
+            // If valueBalanceSapling is not present, then v^balanceSapling is defined to be 0.
+            .unwrap_or(0)
+    }
+
+    /// Returns the binding signature for the bundle.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the bundle is not present.
+    pub(crate) fn binding_sig(&self) -> [u8; 64] {
+        let mut ret = [0; 64];
+        self.inner()
+            .expect("Bundle actions should have been checked to be non-empty")
+            .authorization()
+            .binding_sig
+            .write(&mut ret[..])
+            .expect("correct length");
+        ret
+    }
+
     fn commitment<D: TransactionDigest<Authorized>>(&self, digester: D) -> D::SaplingDigest {
-        digester.digest_sapling(Some(&self.0))
+        digester.digest_sapling(self.inner())
     }
 }
 
 pub(crate) struct BundleAssembler {
+    value_balance: Amount,
     shielded_spends: Vec<sapling::SpendDescription<sapling::Authorized>>,
     shielded_outputs: Vec<sapling::OutputDescription<[u8; 192]>>, // GROTH_PROOF_SIZE
 }
 
 pub(crate) fn new_bundle_assembler() -> Box<BundleAssembler> {
     Box::new(BundleAssembler {
+        value_balance: Amount::zero(),
         shielded_spends: vec![],
         shielded_outputs: vec![],
     })
 }
 
+pub(crate) fn parse_v4_sapling_components(
+    reader: &mut CppStream<'_>,
+    has_sapling: bool,
+) -> Result<Box<BundleAssembler>, String> {
+    BundleAssembler::parse_v4_components(reader, has_sapling)
+        .map_err(|e| format!("Failed to parse v4 Sapling bundle: {}", e))
+}
+
 impl BundleAssembler {
-    pub(crate) fn add_spend(
-        self: &mut BundleAssembler,
-        cv: &[u8; 32],
-        anchor: &[u8; 32],
-        nullifier: [u8; 32],
-        rk: &[u8; 32],
-        zkproof: [u8; 192], // GROTH_PROOF_SIZE
-        spend_auth_sig: &[u8; 64],
-    ) -> bool {
-        // Deserialize the value commitment
-        let cv = match Option::from(ValueCommitment::from_bytes_not_small_order(cv)) {
-            Some(p) => p,
-            None => return false,
+    pub(crate) fn parse_v4_components(
+        mut reader: &mut CppStream<'_>,
+        has_sapling: bool,
+    ) -> io::Result<Box<Self>> {
+        let (value_balance, shielded_spends, shielded_outputs) = if has_sapling {
+            let vb = {
+                let mut tmp = [0; 8];
+                reader.read_exact(&mut tmp)?;
+                Amount::from_i64_le_bytes(tmp).map_err(|_| {
+                    io::Error::new(io::ErrorKind::InvalidData, "valueBalance out of range")
+                })?
+            };
+            #[allow(clippy::redundant_closure)]
+            let ss: Vec<sapling::SpendDescription<sapling::Authorized>> =
+                Vector::read(&mut reader, |r| sapling::SpendDescription::read(r))?;
+            #[allow(clippy::redundant_closure)]
+            let so: Vec<sapling::OutputDescription<sapling::GrothProofBytes>> =
+                Vector::read(&mut reader, |r| sapling::OutputDescription::read(r))?;
+            (vb, ss, so)
+        } else {
+            (Amount::zero(), vec![], vec![])
         };
 
-        // Deserialize the anchor, which should be an element
-        // of Fr.
-        let anchor = match de_ct(bls12_381::Scalar::from_bytes(anchor)) {
-            Some(a) => a,
-            None => return false,
-        };
-
-        // Deserialize rk
-        let rk = match redjubjub::PublicKey::read(&rk[..]) {
-            Ok(p) => p,
-            Err(_) => return false,
-        };
-
-        // Deserialize the signature
-        let spend_auth_sig = match Signature::read(&spend_auth_sig[..]) {
-            Ok(sig) => sig,
-            Err(_) => return false,
-        };
-
-        self.shielded_spends
-            .push(sapling::SpendDescription::temporary_zcashd_from_parts(
-                cv,
-                anchor,
-                Nullifier(nullifier),
-                rk,
-                zkproof,
-                spend_auth_sig,
-            ));
-
-        true
+        Ok(Box::new(Self {
+            value_balance,
+            shielded_spends,
+            shielded_outputs,
+        }))
     }
 
-    pub(crate) fn add_output(
-        self: &mut BundleAssembler,
-        cv: &[u8; 32],
-        cm: &[u8; 32],
-        ephemeral_key: [u8; 32],
-        enc_ciphertext: [u8; 580],
-        out_ciphertext: [u8; 80],
-        zkproof: [u8; 192], // GROTH_PROOF_SIZE
-    ) -> bool {
-        // Deserialize the value commitment
-        let cv = match Option::from(ValueCommitment::from_bytes_not_small_order(cv)) {
-            Some(p) => p,
-            None => return false,
-        };
-
-        // Deserialize the extracted note commitment.
-        let cmu = match Option::from(ExtractedNoteCommitment::from_bytes(cm)) {
-            Some(a) => a,
-            None => return false,
-        };
-
-        self.shielded_outputs
-            .push(sapling::OutputDescription::temporary_zcashd_from_parts(
-                cv,
-                cmu,
-                EphemeralKeyBytes(ephemeral_key),
-                enc_ciphertext,
-                out_ciphertext,
-                zkproof,
-            ));
-
-        true
+    pub(crate) fn have_actions(&self) -> bool {
+        !(self.shielded_spends.is_empty() && self.shielded_outputs.is_empty())
     }
 }
 
 #[allow(clippy::boxed_local)]
 pub(crate) fn finish_bundle_assembly(
     assembler: Box<BundleAssembler>,
-    value_balance: i64,
     binding_sig: [u8; 64],
 ) -> Box<Bundle> {
-    let value_balance = Amount::from_i64(value_balance).expect("parsed elsewhere");
     let binding_sig = redjubjub::Signature::read(&binding_sig[..]).expect("parsed elsewhere");
 
-    Box::new(Bundle(sapling::Bundle::temporary_zcashd_from_parts(
+    Box::new(Bundle(Some(sapling::Bundle::temporary_zcashd_from_parts(
         assembler.shielded_spends,
         assembler.shielded_outputs,
-        value_balance,
+        assembler.value_balance,
         sapling::Authorized { binding_sig },
-    )))
+    ))))
 }
 
 pub(crate) struct StaticTxProver;
@@ -417,9 +521,7 @@ impl SaplingUnauthorizedBundle {
             None
         };
 
-        Ok(crate::sapling::Bundle(
-            authorized.expect("Fixed in next commit"),
-        ))
+        Ok(crate::sapling::Bundle(authorized))
     }
 }
 
@@ -767,32 +869,40 @@ impl BatchValidator {
     /// return `true`).
     #[allow(clippy::boxed_local)]
     pub(crate) fn check_bundle(&mut self, bundle: Box<Bundle>, sighash: [u8; 32]) -> bool {
-        if let Some(inner) = &mut self.0 {
-            let cache = sapling_bundle_validity_cache();
+        match (&mut self.0, bundle.inner()) {
+            (Some(inner), Some(_)) => {
+                let cache = sapling_bundle_validity_cache();
 
-            // Compute the cache entry for this bundle.
-            let cache_entry = {
-                let bundle_commitment = bundle.commitment(TxIdDigester).unwrap();
-                let bundle_authorizing_commitment = bundle.commitment(BlockTxCommitmentDigester);
-                cache.compute_entry(
-                    bundle_commitment.as_bytes().try_into().unwrap(),
-                    bundle_authorizing_commitment.as_bytes().try_into().unwrap(),
-                    &sighash,
-                )
-            };
+                // Compute the cache entry for this bundle.
+                let cache_entry = {
+                    let bundle_commitment = bundle.commitment(TxIdDigester).unwrap();
+                    let bundle_authorizing_commitment =
+                        bundle.commitment(BlockTxCommitmentDigester);
+                    cache.compute_entry(
+                        bundle_commitment.as_bytes().try_into().unwrap(),
+                        bundle_authorizing_commitment.as_bytes().try_into().unwrap(),
+                        &sighash,
+                    )
+                };
 
-            // Check if this bundle's validation result exists in the cache.
-            if cache.contains(cache_entry, &mut inner.queued_entries) {
-                true
-            } else {
-                // The bundle has been added to `inner.queued_entries` because it was not
-                // in the cache. We now check the bundle against the Sapling-specific
-                // consensus rules, and add its authorization to the validation batch.
-                inner.validator.check_bundle(bundle.0, sighash)
+                // Check if this bundle's validation result exists in the cache.
+                if cache.contains(cache_entry, &mut inner.queued_entries) {
+                    true
+                } else {
+                    // The bundle has been added to `inner.queued_entries` because it was not
+                    // in the cache. We now check the bundle against the Sapling-specific
+                    // consensus rules, and add its authorization to the validation batch.
+                    inner.validator.check_bundle(bundle.0.unwrap(), sighash)
+                }
             }
-        } else {
-            tracing::error!("sapling::BatchValidator has already been used");
-            false
+            (Some(_), None) => {
+                tracing::debug!("Tx has no Sapling component");
+                true
+            }
+            (None, _) => {
+                tracing::error!("sapling::BatchValidator has already been used");
+                false
+            }
         }
     }
 

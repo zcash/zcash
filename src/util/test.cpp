@@ -65,7 +65,7 @@ CMutableTransaction GetValidSproutReceiveTransaction(
     // depend on this happening.
     if (version >= 4) {
         // Shielded Output
-        mtx.vShieldedOutput.push_back(RandomInvalidOutputDescription());
+        mtx.saplingBundle = sapling::test_only_invalid_bundle(0, 1, 0);
     }
 
     // Empty output script.

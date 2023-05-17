@@ -994,9 +994,9 @@ bool ContextualCheckTransaction(
                         nHeight,
                         ovk.GetRawBytes(),
                         {
-                            output.cv().GetRawBytes(),
-                            output.cmu().GetRawBytes(),
-                            output.ephemeral_key().GetRawBytes(),
+                            output.cv(),
+                            output.cmu(),
+                            output.ephemeral_key(),
                             output.enc_ciphertext(),
                             output.out_ciphertext(),
                         });
@@ -1013,7 +1013,11 @@ bool ContextualCheckTransaction(
                 }
               } else {
                 auto outPlaintext = SaplingOutgoingPlaintext::decrypt(
-                    output.out_ciphertext(), ovk, output.cv(), output.cmu(), output.ephemeral_key());
+                    output.out_ciphertext(),
+                    ovk,
+                    uint256::FromRawBytes(output.cv()),
+                    uint256::FromRawBytes(output.cmu()),
+                    uint256::FromRawBytes(output.ephemeral_key()));
                 if (!outPlaintext) {
                     return state.DoS(
                         DOS_LEVEL_BLOCK,
@@ -1026,10 +1030,10 @@ bool ContextualCheckTransaction(
                     consensus,
                     nHeight,
                     output.enc_ciphertext(),
-                    output.ephemeral_key(),
+                    uint256::FromRawBytes(output.ephemeral_key()),
                     outPlaintext->esk,
                     outPlaintext->pk_d,
-                    output.cmu());
+                    uint256::FromRawBytes(output.cmu()));
 
                 if (!encPlaintext) {
                     return state.DoS(
@@ -1314,8 +1318,7 @@ bool ContextualCheckShieldedInputs(
 
     // Create signature hashes for shielded components.
     if (!tx.vJoinSplit.empty() ||
-        tx.GetSaplingSpendsCount() > 0 ||
-        tx.GetSaplingOutputsCount() > 0 ||
+        tx.GetSaplingBundle().IsPresent() ||
         tx.GetOrchardBundle().IsPresent())
     {
         // Empty output script.
@@ -1355,57 +1358,13 @@ bool ContextualCheckShieldedInputs(
         }
     }
 
-    if (tx.GetSaplingSpendsCount() > 0 ||
-        tx.GetSaplingOutputsCount() > 0)
-    {
-        auto assembler = sapling::new_bundle_assembler();
-
-        for (const auto& spend : tx.GetSaplingSpends()) {
-            if (!assembler->add_spend(
-                spend.cv().GetRawBytes(),
-                spend.anchor().GetRawBytes(),
-                spend.nullifier().GetRawBytes(),
-                spend.rk().GetRawBytes(),
-                spend.zkproof(),
-                spend.spend_auth_sig()
-            )) {
-                return state.DoS(
-                    dosLevelPotentiallyRelaxing,
-                    error("ContextualCheckShieldedInputs(): Sapling spend description invalid"),
-                    REJECT_INVALID, "bad-txns-sapling-spend-description-invalid");
-            }
-        }
-
-        for (const auto& output : tx.GetSaplingOutputs()) {
-            if (!assembler->add_output(
-                output.cv().GetRawBytes(),
-                output.cmu().GetRawBytes(),
-                output.ephemeral_key().GetRawBytes(),
-                output.enc_ciphertext(),
-                output.out_ciphertext(),
-                output.zkproof()
-            )) {
-                // This should be a non-contextual check, but we check it here
-                // as we need to pass over the outputs anyway in order to then
-                // call ctx->final_check().
-                return state.DoS(100, error("ContextualCheckShieldedInputs(): Sapling output description invalid"),
-                                      REJECT_INVALID, "bad-txns-sapling-output-description-invalid");
-            }
-        }
-
-        auto bundle = sapling::finish_bundle_assembly(
-            std::move(assembler),
-            tx.GetValueBalanceSapling(),
-            tx.bindingSig);
-
-        // Queue Sapling bundle to be batch-validated. This also checks some consensus rules.
-        if (saplingAuth.has_value()) {
-            if (!saplingAuth.value()->check_bundle(std::move(bundle), dataToBeSigned.GetRawBytes())) {
-                return state.DoS(
-                    dosLevelPotentiallyRelaxing,
-                    error("ContextualCheckShieldedInputs(): Sapling bundle invalid"),
-                    REJECT_INVALID, "bad-txns-sapling-bundle-invalid");
-            }
+    // Queue Sapling bundle to be batch-validated. This also checks some consensus rules.
+    if (saplingAuth.has_value()) {
+        if (!tx.GetSaplingBundle().QueueAuthValidation(*saplingAuth.value(), dataToBeSigned)) {
+            return state.DoS(
+                dosLevelPotentiallyRelaxing,
+                error("ContextualCheckShieldedInputs(): Sapling bundle invalid"),
+                REJECT_INVALID, "bad-txns-sapling-bundle-invalid");
         }
     }
 
@@ -1720,7 +1679,7 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
 
     // Check for duplicate sapling nullifiers in this transaction
     {
-        set<uint256> vSaplingNullifiers;
+        std::set<libzcash::nullifier_t> vSaplingNullifiers;
         for (const auto& spend_desc : tx.GetSaplingSpends())
         {
             if (vSaplingNullifiers.count(spend_desc.nullifier()))
@@ -3412,7 +3371,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         }
 
         for (const auto &outputDescription : tx.GetSaplingOutputs()) {
-            sapling_tree.append(outputDescription.cmu());
+            sapling_tree.append(uint256::FromRawBytes(outputDescription.cmu()));
         }
 
         if (!orchard_tree.AppendBundle(tx.GetOrchardBundle())) {
@@ -3425,7 +3384,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             transparentValueDelta += out.nValue;
         }
 
-        if (!(tx.GetSaplingSpendsCount() == 0 && tx.GetSaplingOutputsCount() == 0)) {
+        if (tx.GetSaplingBundle().IsPresent()) {
             total_sapling_tx += 1;
         }
 
@@ -7178,8 +7137,7 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
         // TODO: currently, prohibit joinsplits and shielded spends/outputs/actions from entering mapOrphans
         else if (fMissingInputs &&
                  tx.vJoinSplit.empty() &&
-                 tx.GetSaplingSpendsCount() == 0 &&
-                 tx.GetSaplingOutputsCount() == 0 &&
+                 !tx.GetSaplingBundle().IsPresent() &&
                  !tx.GetOrchardBundle().IsPresent())
         {
             AddOrphanTx(tx, pfrom->GetId());

@@ -705,7 +705,7 @@ void CTxMemPool::removeWithAnchor(const uint256 &invalidRoot, ShieldedType type)
             break;
             case SAPLING:
                 for (const auto& spendDescription : tx.GetSaplingSpends()) {
-                    if (spendDescription.anchor() == invalidRoot) {
+                    if (uint256::FromRawBytes(spendDescription.anchor()) == invalidRoot) {
                         transactionsToRemove.push_back(tx);
                         break;
                     }
@@ -1135,7 +1135,7 @@ bool CTxMemPool::nullifierExists(const uint256& nullifier, ShieldedType type) co
         case SPROUT:
             return mapSproutNullifiers.count(nullifier);
         case SAPLING:
-            return mapSaplingNullifiers.count(nullifier);
+            return mapSaplingNullifiers.count(nullifier.GetRawBytes());
         case ORCHARD:
             return mapOrchardNullifiers.count(nullifier);
         default:

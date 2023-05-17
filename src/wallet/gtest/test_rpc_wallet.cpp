@@ -195,40 +195,46 @@ TEST(WalletRPCTests, RPCZsendmanyTaddrToSapling)
     CDataStream ss(ParseHex(hexTx), SER_NETWORK, PROTOCOL_VERSION);
     CTransaction tx;
     ss >> tx;
-    ASSERT_FALSE(tx.GetSaplingOutputsCount() == 0);
+    ASSERT_NE(tx.GetSaplingOutputsCount(), 0);
+
+    auto outputs = tx.GetSaplingOutputs();
+    auto out_ciphertext = outputs[0].out_ciphertext();
+    auto cv = uint256::FromRawBytes(outputs[0].cv());
+    auto cmu = uint256::FromRawBytes(outputs[0].cmu());
+    auto ephemeral_key = uint256::FromRawBytes(outputs[0].ephemeral_key());
 
     // We shouldn't be able to decrypt with the empty ovk
     EXPECT_FALSE(AttemptSaplingOutDecryption(
-        tx.GetSaplingOutputs()[0].out_ciphertext(),
+        out_ciphertext,
         uint256(),
-        tx.GetSaplingOutputs()[0].cv(),
-        tx.GetSaplingOutputs()[0].cmu(),
-        tx.GetSaplingOutputs()[0].ephemeral_key()));
+        cv,
+        cmu,
+        ephemeral_key));
 
     // We shouldn't be able to decrypt with a random ovk
     EXPECT_FALSE(AttemptSaplingOutDecryption(
-        tx.GetSaplingOutputs()[0].out_ciphertext(),
+        out_ciphertext,
         random_uint256(),
-        tx.GetSaplingOutputs()[0].cv(),
-        tx.GetSaplingOutputs()[0].cmu(),
-        tx.GetSaplingOutputs()[0].ephemeral_key()));
+        cv,
+        cmu,
+        ephemeral_key));
 
     auto accountKey = pwalletMain->GetLegacyAccountKey().ToAccountPubKey();
     auto ovks = accountKey.GetOVKsForShielding();
     // We should not be able to decrypt with the internal change OVK for shielding
     EXPECT_FALSE(AttemptSaplingOutDecryption(
-        tx.GetSaplingOutputs()[0].out_ciphertext(),
+        out_ciphertext,
         ovks.first,
-        tx.GetSaplingOutputs()[0].cv(),
-        tx.GetSaplingOutputs()[0].cmu(),
-        tx.GetSaplingOutputs()[0].ephemeral_key()));
+        cv,
+        cmu,
+        ephemeral_key));
     // We should be able to decrypt with the external OVK for shielding
     EXPECT_TRUE(AttemptSaplingOutDecryption(
-        tx.GetSaplingOutputs()[0].out_ciphertext(),
+        out_ciphertext,
         ovks.second,
-        tx.GetSaplingOutputs()[0].cv(),
-        tx.GetSaplingOutputs()[0].cmu(),
-        tx.GetSaplingOutputs()[0].ephemeral_key()));
+        cv,
+        cmu,
+        ephemeral_key));
 
     // Tear down
     chainActive.SetTip(NULL);

@@ -124,8 +124,6 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle, uint32_t co
     }
     tx.vin.clear();
     tx.vout.clear();
-    tx.vShieldedSpend.clear();
-    tx.vShieldedOutput.clear();
     tx.vJoinSplit.clear();
     tx.nLockTime = (InsecureRandBool()) ? InsecureRand32() : 0;
     int ins = (InsecureRandBits(2)) + 1;
@@ -148,13 +146,10 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle, uint32_t co
         RandomScript(txout.scriptPubKey);
     }
     if (tx.nVersionGroupId == SAPLING_VERSION_GROUP_ID) {
-        tx.valueBalanceSapling = InsecureRandRange(100000000);
-        for (int spend = 0; spend < shielded_spends; spend++) {
-            tx.vShieldedSpend.push_back(RandomInvalidSpendDescription());
-        }
-        for (int out = 0; out < shielded_outs; out++) {
-            tx.vShieldedOutput.push_back(RandomInvalidOutputDescription());
-        }
+        tx.saplingBundle = sapling::test_only_invalid_bundle(
+            shielded_spends,
+            shielded_outs,
+            InsecureRandRange(100000000));
     }
     // We have removed pre-Sapling Sprout support.
     if (tx.fOverwintered && tx.nVersion >= SAPLING_TX_VERSION) {
