@@ -402,7 +402,8 @@ private:
             CAmount dustThreshold,
             const SpendableInputs& spendable,
             Payments& resolved,
-            bool afterNU5) const;
+            bool afterNU5,
+            uint32_t consensusBranchId) const;
 
     /**
      * Select inputs sufficient to fulfill the specified requested payments,
@@ -415,10 +416,10 @@ private:
             const ZTXOSelector& selector,
             const SpendableInputs& spendable,
             const std::vector<Payment>& payments,
-            const CChain& chain,
             const TransactionStrategy& strategy,
             const std::optional<CAmount>& fee,
-            bool afterNU5) const;
+            bool afterNU5,
+            uint32_t consensusBranchId) const;
     /**
      * Compute the internal and external OVKs to use in transaction construction, given
      * the spendable inputs.

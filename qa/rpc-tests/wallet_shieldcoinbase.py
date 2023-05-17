@@ -111,7 +111,7 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
         # Confirm balances and that do_not_shield_taddr containing funds of 10 was left alone
         assert_equal(self.nodes[0].getbalance(), 10)
         assert_equal(self.nodes[0].z_getbalance(do_not_shield_taddr), Decimal('10.0'))
-        self.test_check_balance_zaddr(self.nodes[0], Decimal('40.0') - conventional_fee(4))
+        self.test_check_balance_zaddr(self.nodes[0], Decimal('40.0') - conventional_fee(6))
         assert_equal(self.nodes[1].getbalance(), 20)
         assert_equal(self.nodes[2].getbalance(), 30)
 
@@ -123,7 +123,7 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
         self.sync_all()
 
         assert_equal(self.nodes[0].getbalance(), 10)
-        self.test_check_balance_zaddr(self.nodes[0], Decimal('70.0') - conventional_fee(4))
+        self.test_check_balance_zaddr(self.nodes[0], Decimal('70.0') - conventional_fee(6))
         assert_equal(self.nodes[1].getbalance(), 30)
         assert_equal(self.nodes[2].getbalance(), 0)
 
