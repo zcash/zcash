@@ -1548,9 +1548,9 @@ std::set<std::pair<libzcash::SproutPaymentAddress, uint256>> CWallet::GetSproutN
     return nullifierSet;
 }
 
-std::set<std::pair<libzcash::SaplingPaymentAddress, uint256>> CWallet::GetSaplingNullifiers(
+std::set<std::pair<libzcash::SaplingPaymentAddress, libzcash::nullifier_t>> CWallet::GetSaplingNullifiers(
         const std::set<libzcash::SaplingPaymentAddress>& addresses) {
-    std::set<std::pair<libzcash::SaplingPaymentAddress, uint256>> nullifierSet;
+    std::set<std::pair<libzcash::SaplingPaymentAddress, libzcash::nullifier_t>> nullifierSet;
     if (!addresses.empty()) {
         // Sapling ivk -> list of addrs map
         // (There may be more than one diversified address for a given ivk.)
@@ -1603,7 +1603,7 @@ bool CWallet::IsNoteSproutChange(
 }
 
 bool CWallet::IsNoteSaplingChange(
-        const std::set<std::pair<libzcash::SaplingPaymentAddress, uint256>> & nullifierSet,
+        const std::set<std::pair<libzcash::SaplingPaymentAddress, libzcash::nullifier_t>> & nullifierSet,
         const libzcash::SaplingPaymentAddress& address,
         const SaplingOutPoint & op)
 {
@@ -3656,10 +3656,12 @@ void CWallet::MarkAffectedTransactionsDirty(const CTransaction& tx)
     }
 
     for (const auto& spend : tx.GetSaplingSpends()) {
-        const uint256& nullifier = spend.nullifier();
-        if (mapSaplingNullifiersToNotes.count(nullifier) &&
-            mapWallet.count(mapSaplingNullifiersToNotes[nullifier].hash)) {
-            mapWallet[mapSaplingNullifiersToNotes[nullifier].hash].MarkDirty();
+        auto it = mapSaplingNullifiersToNotes.find(spend.nullifier());
+        if (it != mapSaplingNullifiersToNotes.end()) {
+            auto itTx = mapWallet.find(it->second.hash);
+            if (itTx != mapWallet.end()) {
+                itTx->second.MarkDirty();
+            }
         }
     }
 }
@@ -3835,12 +3837,12 @@ bool CWallet::IsSproutNullifierFromMe(const uint256& nullifier) const
     return false;
 }
 
-bool CWallet::IsSaplingNullifierFromMe(const uint256& nullifier) const
+bool CWallet::IsSaplingNullifierFromMe(const libzcash::nullifier_t& nullifier) const
 {
     {
         LOCK(cs_wallet);
-        if (mapSaplingNullifiersToNotes.count(nullifier) &&
-                mapWallet.count(mapSaplingNullifiersToNotes.at(nullifier).hash)) {
+        auto it = mapSaplingNullifiersToNotes.find(nullifier);
+        if (it != mapSaplingNullifiersToNotes.end() && mapWallet.count(it->second.hash)) {
             return true;
         }
     }

@@ -16,6 +16,8 @@
 
 namespace libzcash {
 
+typedef uint256 nullifier_t;
+
 class BaseNote {
 protected:
     uint64_t value_ = 0;

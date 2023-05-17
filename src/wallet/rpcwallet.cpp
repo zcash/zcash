@@ -2768,7 +2768,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
 
     std::optional<NoteFilter> noteFilter = std::nullopt;
     std::set<std::pair<libzcash::SproutPaymentAddress, uint256>> sproutNullifiers;
-    std::set<std::pair<libzcash::SaplingPaymentAddress, uint256>> saplingNullifiers;
+    std::set<std::pair<libzcash::SaplingPaymentAddress, libzcash::nullifier_t>> saplingNullifiers;
 
     KeyIO keyIO(Params());
     // User has supplied zaddrs to filter on
@@ -3787,7 +3787,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
 
     auto push_sapling_result = [&](const libzcash::SaplingPaymentAddress& addr) -> void {
         bool hasSpendingKey = pwalletMain->HaveSaplingSpendingKeyForAddress(addr);
-        std::set<std::pair<libzcash::SaplingPaymentAddress, uint256>> nullifierSet;
+        std::set<std::pair<libzcash::SaplingPaymentAddress, libzcash::nullifier_t>> nullifierSet;
         if (hasSpendingKey) {
             nullifierSet = pwalletMain->GetSaplingNullifiers({addr});
         }

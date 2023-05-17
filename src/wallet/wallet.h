@@ -1492,7 +1492,7 @@ public:
      */
     std::map<uint256, JSOutPoint> mapSproutNullifiersToNotes;
 
-    std::map<uint256, SaplingOutPoint> mapSaplingNullifiersToNotes;
+    std::map<libzcash::nullifier_t, SaplingOutPoint> mapSaplingNullifiersToNotes;
 
     std::map<uint256, CWalletTx> mapWallet;
 
@@ -1987,7 +1987,7 @@ public:
         const CTransaction& tx,
         int height) const;
     bool IsSproutNullifierFromMe(const uint256& nullifier) const;
-    bool IsSaplingNullifierFromMe(const uint256& nullifier) const;
+    bool IsSaplingNullifierFromMe(const libzcash::nullifier_t& nullifier) const;
 
     bool GetSproutNoteWitnesses(
          const std::vector<JSOutPoint>& notes,
@@ -2042,10 +2042,10 @@ public:
             const libzcash::SproutPaymentAddress& address,
             const JSOutPoint & entry);
 
-    std::set<std::pair<libzcash::SaplingPaymentAddress, uint256>> GetSaplingNullifiers(
+    std::set<std::pair<libzcash::SaplingPaymentAddress, libzcash::nullifier_t>> GetSaplingNullifiers(
             const std::set<libzcash::SaplingPaymentAddress>& addresses);
     bool IsNoteSaplingChange(
-            const std::set<std::pair<libzcash::SaplingPaymentAddress, uint256>> & nullifierSet,
+            const std::set<std::pair<libzcash::SaplingPaymentAddress, libzcash::nullifier_t>> & nullifierSet,
             const libzcash::SaplingPaymentAddress& address,
             const SaplingOutPoint & entry);
 
