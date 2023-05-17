@@ -27,10 +27,6 @@
 #include <ws2tcpip.h>
 #include <stdint.h>
 
-#ifdef __MINGW32__
-// Needed for isatty.
-#include <unistd.h>
-#endif
 #else
 #include <fcntl.h>
 #include <sys/mman.h>
@@ -43,6 +39,9 @@
 #include <ifaddrs.h>
 #include <limits.h>
 #include <netdb.h>
+#endif
+#if defined(__MINGW32__) || !defined(WIN32)
+// MinGW needs this for isatty.
 #include <unistd.h>
 #endif
 

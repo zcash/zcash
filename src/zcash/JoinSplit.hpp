@@ -37,7 +37,7 @@ class JSOutput {
 public:
     SproutPaymentAddress addr;
     uint64_t value;
-    std::array<unsigned char, ZC_MEMO_SIZE> memo = {{0xF6}};  // 0xF6 is invalid UTF8 as per spec, rest of array is 0x00
+    std::optional<Memo> memo;
 
     JSOutput();
     JSOutput(SproutPaymentAddress addr, uint64_t value) : addr(addr), value(value) { }

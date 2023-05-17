@@ -7,7 +7,7 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, initialize_chain_clean, \
     start_nodes, stop_nodes, connect_nodes_bi, \
     wait_and_assert_operationid_status, wait_bitcoinds, get_coinbase_address, \
-    sync_blocks, sync_mempools, DEFAULT_FEE
+    sync_blocks, sync_mempools, LEGACY_DEFAULT_FEE
 from decimal import Decimal
 
 class WalletAnchorForkTest (BitcoinTestFramework):
@@ -52,8 +52,8 @@ class WalletAnchorForkTest (BitcoinTestFramework):
         mytaddr0 = get_coinbase_address(self.nodes[0])
         myzaddr0 = self.nodes[0].z_getnewaddress()
         recipients = []
-        recipients.append({"address":myzaddr0, "amount": Decimal('10.0') - DEFAULT_FEE})
-        myopid = self.nodes[0].z_sendmany(mytaddr0, recipients, 1, DEFAULT_FEE, 'AllowRevealedSenders')
+        recipients.append({"address":myzaddr0, "amount": Decimal('10.0') - LEGACY_DEFAULT_FEE})
+        myopid = self.nodes[0].z_sendmany(mytaddr0, recipients, 1, LEGACY_DEFAULT_FEE, 'AllowRevealedSenders')
         wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         # Sync up mempools and mine the transaction.  All nodes have the same anchor.
@@ -76,8 +76,8 @@ class WalletAnchorForkTest (BitcoinTestFramework):
 
         # Partition A, node 0 creates a joinsplit transaction
         recipients = []
-        recipients.append({"address":myzaddr0, "amount": Decimal('10.0') - DEFAULT_FEE})
-        myopid = self.nodes[0].z_sendmany(mytaddr0, recipients, 1, DEFAULT_FEE, 'AllowRevealedSenders')
+        recipients.append({"address":myzaddr0, "amount": Decimal('10.0') - LEGACY_DEFAULT_FEE})
+        myopid = self.nodes[0].z_sendmany(mytaddr0, recipients, 1, LEGACY_DEFAULT_FEE, 'AllowRevealedSenders')
         txid = wait_and_assert_operationid_status(self.nodes[0], myopid)
         rawhex = self.nodes[0].getrawtransaction(txid)
 

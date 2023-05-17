@@ -1180,7 +1180,7 @@ TEST(ChecktransactionTests, HeartwoodAcceptsSaplingShieldedCoinbase) {
     uint256 ovk;
     auto note = libzcash::SaplingNote(
         libzcash::SaplingSpendingKey::random().default_address(), CAmount(123456), libzcash::Zip212Enabled::BeforeZip212);
-    auto output = OutputDescriptionInfo(ovk, note, {{0xF6}});
+    auto output = OutputDescriptionInfo(ovk, note, std::nullopt);
 
     auto ctx = sapling::init_prover();
     auto odesc = output.Build(ctx).value();
@@ -1197,8 +1197,13 @@ TEST(ChecktransactionTests, HeartwoodAcceptsSaplingShieldedCoinbase) {
 
     // Transaction should fail with a bad public cmu.
     {
-        auto cmOrig = mtx.vShieldedOutput[0].cmu;
-        mtx.vShieldedOutput[0].cmu = uint256S("1234");
+        mtx.vShieldedOutput[0] = OutputDescription(
+            odesc.cv(),
+            uint256S("1234"),
+            odesc.ephemeral_key(),
+            odesc.enc_ciphertext(),
+            odesc.out_ciphertext(),
+            odesc.zkproof());
         CTransaction tx(mtx);
         EXPECT_TRUE(tx.IsCoinBase());
 
@@ -1206,13 +1211,18 @@ TEST(ChecktransactionTests, HeartwoodAcceptsSaplingShieldedCoinbase) {
         EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-output-desc-invalid-outct", false, "")).Times(1);
         ContextualCheckTransaction(tx, state, chainparams, 10, 57);
 
-        mtx.vShieldedOutput[0].cmu = cmOrig;
+        mtx.vShieldedOutput[0] = odesc;
     }
 
     // Transaction should fail with a bad outCiphertext.
     {
-        auto outCtOrig = mtx.vShieldedOutput[0].outCiphertext;
-        mtx.vShieldedOutput[0].outCiphertext = {{}};
+        mtx.vShieldedOutput[0] = OutputDescription(
+            odesc.cv(),
+            odesc.cmu(),
+            odesc.ephemeral_key(),
+            odesc.enc_ciphertext(),
+            {{}},
+            odesc.zkproof());
         CTransaction tx(mtx);
         EXPECT_TRUE(tx.IsCoinBase());
 
@@ -1220,13 +1230,18 @@ TEST(ChecktransactionTests, HeartwoodAcceptsSaplingShieldedCoinbase) {
         EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-output-desc-invalid-outct", false, "")).Times(1);
         ContextualCheckTransaction(tx, state, chainparams, 10, 57);
 
-        mtx.vShieldedOutput[0].outCiphertext = outCtOrig;
+        mtx.vShieldedOutput[0] = odesc;
     }
 
     // Transaction should fail with a bad encCiphertext.
     {
-        auto encCtOrig = mtx.vShieldedOutput[0].encCiphertext;
-        mtx.vShieldedOutput[0].encCiphertext = {{}};
+        mtx.vShieldedOutput[0] = OutputDescription(
+            odesc.cv(),
+            odesc.cmu(),
+            odesc.ephemeral_key(),
+            {{}},
+            odesc.out_ciphertext(),
+            odesc.zkproof());
         CTransaction tx(mtx);
         EXPECT_TRUE(tx.IsCoinBase());
 
@@ -1234,7 +1249,7 @@ TEST(ChecktransactionTests, HeartwoodAcceptsSaplingShieldedCoinbase) {
         EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-output-desc-invalid-encct", false, "")).Times(1);
         ContextualCheckTransaction(tx, state, chainparams, 10, 57);
 
-        mtx.vShieldedOutput[0].encCiphertext = encCtOrig;
+        mtx.vShieldedOutput[0] = odesc;
     }
 
     // Test the success case.
@@ -1261,7 +1276,7 @@ TEST(ChecktransactionTests, HeartwoodEnforcesSaplingRulesOnShieldedCoinbase) {
     uint256 ovk;
     auto note = libzcash::SaplingNote(
         libzcash::SaplingSpendingKey::random().default_address(), CAmount(123456), libzcash::Zip212Enabled::BeforeZip212);
-    auto output = OutputDescriptionInfo(ovk, note, {{0xF6}});
+    auto output = OutputDescriptionInfo(ovk, note, std::nullopt);
 
     CMutableTransaction mtx = GetValidTransaction();
     mtx.fOverwintered = true;
@@ -1512,7 +1527,7 @@ TEST(ChecktransactionTests, NU5AcceptsOrchardShieldedCoinbase) {
     // Transaction should fail with a bad encCiphertext.
     {
         std::vector<char> txBytes(ss.begin(), ss.end());
-        for (int i = 0; i < ZC_SAPLING_ENCCIPHERTEXT_SIZE; i++) {
+        for (int i = 0; i < libzcash::SAPLING_ENCCIPHERTEXT_SIZE; i++) {
             txBytes[ORCHARD_BUNDLE_CMX_OFFSET + ORCHARD_CMX_SIZE + i] = 0;
         }
 
@@ -1529,8 +1544,10 @@ TEST(ChecktransactionTests, NU5AcceptsOrchardShieldedCoinbase) {
     // Transaction should fail with a bad outCiphertext.
     {
         std::vector<char> txBytes(ss.begin(), ss.end());
-        for (int i = 0; i < ZC_SAPLING_OUTCIPHERTEXT_SIZE; i++) {
-            txBytes[ORCHARD_BUNDLE_CMX_OFFSET + ORCHARD_CMX_SIZE + ZC_SAPLING_ENCCIPHERTEXT_SIZE + i] = 0;
+        auto byteOffset =
+            ORCHARD_BUNDLE_CMX_OFFSET + ORCHARD_CMX_SIZE + libzcash::SAPLING_ENCCIPHERTEXT_SIZE;
+        for (int i = 0; i < libzcash::SAPLING_OUTCIPHERTEXT_SIZE; i++) {
+            txBytes[byteOffset + i] = 0;
         }
 
         CDataStream ssBad(txBytes, SER_DISK, PROTOCOL_VERSION);

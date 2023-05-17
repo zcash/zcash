@@ -286,8 +286,7 @@ UniValue z_validatepaymentdisclosure(const UniValue& params, bool fHelp)
             SproutNotePlaintext npt;
             ssPlain >> npt;
 
-            string memoHexString = HexStr(npt.memo().data(), npt.memo().data() + npt.memo().size());
-            o.pushKV("memo", memoHexString);
+            AddMemo(o, npt.memo());
             o.pushKV("value", ValueFromAmount(npt.value()));
 
             // Check the blockchain commitment matches decrypted note commitment

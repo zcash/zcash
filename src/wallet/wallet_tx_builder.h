@@ -7,8 +7,8 @@
 
 #include "consensus/params.h"
 #include "transaction_builder.h"
-#include "wallet/memo.h"
 #include "wallet/wallet.h"
+#include "zcash/memo.h"
 
 using namespace libzcash;
 

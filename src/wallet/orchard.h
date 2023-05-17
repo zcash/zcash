@@ -25,14 +25,14 @@ private:
     OrchardOutPoint op;
     libzcash::OrchardRawAddress address;
     CAmount noteValue;
-    std::array<uint8_t, ZC_MEMO_SIZE> memo;
+    std::optional<libzcash::Memo> memo;
     int confirmations;
 public:
     OrchardNoteMetadata(
         OrchardOutPoint op,
         const libzcash::OrchardRawAddress& address,
         CAmount noteValue,
-        const std::array<unsigned char, ZC_MEMO_SIZE>& memo):
+        const std::optional<libzcash::Memo>& memo):
         op(op), address(address), noteValue(noteValue), memo(memo), confirmations(0) {}
 
     const OrchardOutPoint& GetOutPoint() const {
@@ -55,7 +55,7 @@ public:
         return noteValue;
     }
 
-    const std::array<uint8_t, ZC_MEMO_SIZE>& GetMemo() const {
+    const std::optional<libzcash::Memo>& GetMemo() const {
         return memo;
     }
 };
@@ -137,11 +137,14 @@ class OrchardActionOutput {
 private:
     libzcash::OrchardRawAddress recipient;
     CAmount noteValue;
-    std::array<unsigned char, 512> memo;
+    std::optional<libzcash::Memo> memo;
     bool isOutgoing;
 public:
     OrchardActionOutput(
-            libzcash::OrchardRawAddress recipient, CAmount noteValue, std::array<unsigned char, 512> memo, bool isOutgoing):
+            libzcash::OrchardRawAddress recipient,
+            CAmount noteValue,
+            std::optional<libzcash::Memo> memo,
+            bool isOutgoing):
             recipient(recipient), noteValue(noteValue), memo(memo), isOutgoing(isOutgoing) { }
 
     const libzcash::OrchardRawAddress& GetRecipient() const {
@@ -152,7 +155,7 @@ public:
         return noteValue;
     }
 
-    const std::array<unsigned char, 512>& GetMemo() const {
+    const std::optional<libzcash::Memo>& GetMemo() const {
         return memo;
     }
 
@@ -386,13 +389,11 @@ public:
         uint256 txid;
         std::move(std::begin(rawNoteMeta.txid), std::end(rawNoteMeta.txid), txid.begin());
         OrchardOutPoint op(txid, rawNoteMeta.actionIdx);
-        std::array<uint8_t, ZC_MEMO_SIZE> memo;
-        std::move(std::begin(rawNoteMeta.memo), std::end(rawNoteMeta.memo), memo.begin());
         OrchardNoteMetadata noteMeta(
                 op,
                 libzcash::OrchardRawAddress(rawNoteMeta.addr),
                 rawNoteMeta.noteValue,
-                memo);
+                libzcash::Memo::FromBytes(rawNoteMeta.memo));
 
         reinterpret_cast<std::vector<OrchardNoteMetadata>*>(orchardNotesRet)->push_back(noteMeta);
     }
@@ -461,12 +462,10 @@ public:
     }
 
     static void PushOutputAction(void* receiver, RawOrchardActionOutput rawOutput) {
-        std::array<unsigned char, 512> memo;
-        std::move(std::begin(rawOutput.memo), std::end(rawOutput.memo), memo.begin());
         auto output = OrchardActionOutput(
                 libzcash::OrchardRawAddress(rawOutput.recipient),
                 rawOutput.noteValue,
-                memo,
+                libzcash::Memo::FromBytes(rawOutput.memo),
                 rawOutput.isOutgoing);
 
         reinterpret_cast<OrchardActions*>(receiver)->AddOutput(rawOutput.outputActionIdx, output);

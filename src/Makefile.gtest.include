@@ -50,6 +50,7 @@ zcash_gtest_SOURCES = \
 	gtest/test_transaction_builder.h \
 	gtest/test_txid.cpp \
 	gtest/test_upgrades.cpp \
+	gtest/test_util_string.cpp \
 	gtest/test_validation.cpp \
 	gtest/test_weightedmap.cpp \
 	gtest/test_zip32.cpp \
@@ -75,6 +76,8 @@ zcash_gtest_LDADD = \
   $(LIBBITCOIN_WALLET) \
   $(LIBBITCOIN_COMMON) \
   $(LIBBITCOIN_UTIL) \
+  $(LIBBITCOIN_CONSENSUS) \
+  $(LIBBITCOIN_SCRIPT) \
   $(LIBBITCOIN_ZMQ) \
   $(LIBBITCOIN_PROTON) \
   $(LIBBITCOIN_CRYPTO) \

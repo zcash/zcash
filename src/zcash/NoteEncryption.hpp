@@ -9,21 +9,38 @@ https://github.com/zcash/zips/blob/master/protocol/protocol.pdf
 #include "uint256.h"
 #include "uint252.h"
 
-#include "zcash/Zcash.h"
 #include "zcash/Address.hpp"
+#include "zcash/memo.h"
 
 #include <array>
 #include <optional>
 
 namespace libzcash {
 
+constexpr size_t NOTEENCRYPTION_AUTH_BYTES{16};
+
+constexpr size_t NOTEPLAINTEXT_LEADING{1};
+constexpr size_t V_SIZE{8};
+constexpr size_t RHO_SIZE{32};
+constexpr size_t R_SIZE{32};
+constexpr size_t JUBJUB_POINT_SIZE{32};
+constexpr size_t JUBJUB_SCALAR_SIZE{32};
+
+constexpr size_t NOTEPLAINTEXT_SIZE{NOTEPLAINTEXT_LEADING + V_SIZE + RHO_SIZE + R_SIZE + Memo::SIZE};
+
+constexpr size_t SAPLING_ENCPLAINTEXT_SIZE{NOTEPLAINTEXT_LEADING + SAPLING_DIVERSIFIER_SIZE + V_SIZE + R_SIZE + Memo::SIZE};
+constexpr size_t SAPLING_OUTPLAINTEXT_SIZE{JUBJUB_POINT_SIZE + JUBJUB_SCALAR_SIZE};
+
+constexpr size_t SAPLING_ENCCIPHERTEXT_SIZE{SAPLING_ENCPLAINTEXT_SIZE + NOTEENCRYPTION_AUTH_BYTES};
+constexpr size_t SAPLING_OUTCIPHERTEXT_SIZE{SAPLING_OUTPLAINTEXT_SIZE + NOTEENCRYPTION_AUTH_BYTES};
+
 // Ciphertext for the recipient to decrypt
-typedef std::array<unsigned char, ZC_SAPLING_ENCCIPHERTEXT_SIZE> SaplingEncCiphertext;
-typedef std::array<unsigned char, ZC_SAPLING_ENCPLAINTEXT_SIZE> SaplingEncPlaintext;
+typedef std::array<unsigned char, SAPLING_ENCCIPHERTEXT_SIZE> SaplingEncCiphertext;
+typedef std::array<unsigned char, SAPLING_ENCPLAINTEXT_SIZE> SaplingEncPlaintext;
 
 // Ciphertext for outgoing viewing key to decrypt
-typedef std::array<unsigned char, ZC_SAPLING_OUTCIPHERTEXT_SIZE> SaplingOutCiphertext;
-typedef std::array<unsigned char, ZC_SAPLING_OUTPLAINTEXT_SIZE> SaplingOutPlaintext;
+typedef std::array<unsigned char, SAPLING_OUTCIPHERTEXT_SIZE> SaplingOutCiphertext;
+typedef std::array<unsigned char, SAPLING_OUTPLAINTEXT_SIZE> SaplingOutPlaintext;
 
 //! This is not a thread-safe API.
 class SaplingNoteEncryption {
@@ -119,7 +136,7 @@ public:
     }
 
     // Encrypts `message` with `pk_enc` and returns the ciphertext.
-    // This is only called ZC_NUM_JS_OUTPUTS times for a given instantiation; 
+    // This is only called ZC_NUM_JS_OUTPUTS times for a given instantiation;
     // but can be called 255 times before the nonce-space runs out.
     Ciphertext encrypt(const uint256 &pk_enc,
                        const Plaintext &message
@@ -194,9 +211,10 @@ public:
 
 }
 
-typedef libzcash::NoteEncryption<ZC_NOTEPLAINTEXT_SIZE> ZCNoteEncryption;
-typedef libzcash::NoteDecryption<ZC_NOTEPLAINTEXT_SIZE> ZCNoteDecryption;
+typedef libzcash::NoteEncryption<libzcash::NOTEPLAINTEXT_SIZE> ZCNoteEncryption;
+typedef libzcash::NoteDecryption<libzcash::NOTEPLAINTEXT_SIZE> ZCNoteDecryption;
 
-typedef libzcash::PaymentDisclosureNoteDecryption<ZC_NOTEPLAINTEXT_SIZE> ZCPaymentDisclosureNoteDecryption;
+typedef libzcash::PaymentDisclosureNoteDecryption<libzcash::NOTEPLAINTEXT_SIZE>
+    ZCPaymentDisclosureNoteDecryption;
 
 #endif /* ZC_NOTE_ENCRYPTION_H_ */

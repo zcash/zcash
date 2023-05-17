@@ -124,14 +124,14 @@ UniValue TxJoinSplitToJSON(const CTransaction& tx) {
 
 UniValue TxShieldedSpendsToJSON(const CTransaction& tx) {
     UniValue vdesc(UniValue::VARR);
-    for (const SpendDescription& spendDesc : tx.vShieldedSpend) {
+    for (const auto& spendDesc : tx.GetSaplingSpends()) {
         UniValue obj(UniValue::VOBJ);
-        obj.pushKV("cv", spendDesc.cv.GetHex());
-        obj.pushKV("anchor", spendDesc.anchor.GetHex());
-        obj.pushKV("nullifier", spendDesc.nullifier.GetHex());
-        obj.pushKV("rk", spendDesc.rk.GetHex());
-        obj.pushKV("proof", HexStr(spendDesc.zkproof.begin(), spendDesc.zkproof.end()));
-        obj.pushKV("spendAuthSig", HexStr(spendDesc.spendAuthSig.begin(), spendDesc.spendAuthSig.end()));
+        obj.pushKV("cv", spendDesc.cv().GetHex());
+        obj.pushKV("anchor", spendDesc.anchor().GetHex());
+        obj.pushKV("nullifier", spendDesc.nullifier().GetHex());
+        obj.pushKV("rk", spendDesc.rk().GetHex());
+        obj.pushKV("proof", HexStr(spendDesc.zkproof().begin(), spendDesc.zkproof().end()));
+        obj.pushKV("spendAuthSig", HexStr(spendDesc.spend_auth_sig().begin(), spendDesc.spend_auth_sig().end()));
         vdesc.push_back(obj);
     }
     return vdesc;
@@ -139,14 +139,14 @@ UniValue TxShieldedSpendsToJSON(const CTransaction& tx) {
 
 UniValue TxShieldedOutputsToJSON(const CTransaction& tx) {
     UniValue vdesc(UniValue::VARR);
-    for (const OutputDescription& outputDesc : tx.vShieldedOutput) {
+    for (const auto& outputDesc : tx.GetSaplingOutputs()) {
         UniValue obj(UniValue::VOBJ);
-        obj.pushKV("cv", outputDesc.cv.GetHex());
-        obj.pushKV("cmu", outputDesc.cmu.GetHex());
-        obj.pushKV("ephemeralKey", outputDesc.ephemeralKey.GetHex());
-        obj.pushKV("encCiphertext", HexStr(outputDesc.encCiphertext.begin(), outputDesc.encCiphertext.end()));
-        obj.pushKV("outCiphertext", HexStr(outputDesc.outCiphertext.begin(), outputDesc.outCiphertext.end()));
-        obj.pushKV("proof", HexStr(outputDesc.zkproof.begin(), outputDesc.zkproof.end()));
+        obj.pushKV("cv", outputDesc.cv().GetHex());
+        obj.pushKV("cmu", outputDesc.cmu().GetHex());
+        obj.pushKV("ephemeralKey", outputDesc.ephemeral_key().GetHex());
+        obj.pushKV("encCiphertext", HexStr(outputDesc.enc_ciphertext().begin(), outputDesc.enc_ciphertext().end()));
+        obj.pushKV("outCiphertext", HexStr(outputDesc.out_ciphertext().begin(), outputDesc.out_ciphertext().end()));
+        obj.pushKV("proof", HexStr(outputDesc.zkproof().begin(), outputDesc.zkproof().end()));
         vdesc.push_back(obj);
     }
     return vdesc;

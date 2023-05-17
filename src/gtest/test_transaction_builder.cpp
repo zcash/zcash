@@ -48,8 +48,8 @@ TEST(TransactionBuilder, TransparentToSapling)
     EXPECT_EQ(tx.vin.size(), 1);
     EXPECT_EQ(tx.vout.size(), 0);
     EXPECT_EQ(tx.vJoinSplit.size(), 0);
-    EXPECT_EQ(tx.vShieldedSpend.size(), 0);
-    EXPECT_EQ(tx.vShieldedOutput.size(), 1);
+    EXPECT_EQ(tx.GetSaplingSpendsCount(), 0);
+    EXPECT_EQ(tx.GetSaplingOutputsCount(), 1);
     EXPECT_EQ(tx.GetValueBalanceSapling(), -4000);
 
     CValidationState state;
@@ -87,8 +87,8 @@ TEST(TransactionBuilder, SaplingToSapling) {
     EXPECT_EQ(tx.vin.size(), 0);
     EXPECT_EQ(tx.vout.size(), 0);
     EXPECT_EQ(tx.vJoinSplit.size(), 0);
-    EXPECT_EQ(tx.vShieldedSpend.size(), 1);
-    EXPECT_EQ(tx.vShieldedOutput.size(), 2);
+    EXPECT_EQ(tx.GetSaplingSpendsCount(), 1);
+    EXPECT_EQ(tx.GetSaplingOutputsCount(), 2);
     EXPECT_EQ(tx.GetValueBalanceSapling(), 1000);
 
     CValidationState state;
@@ -119,7 +119,7 @@ TEST(TransactionBuilder, SaplingToSprout) {
     //                              - default t-ZEC fee
     auto builder = TransactionBuilder(consensusParams, 2, std::nullopt, nullptr);
     builder.AddSaplingSpend(expsk, testNote.note, testNote.tree.root(), testNote.tree.witness());
-    builder.AddSproutOutput(sproutAddr, 2500);
+    builder.AddSproutOutput(sproutAddr, 2500, std::nullopt);
     auto tx = builder.Build().GetTxOrThrow();
 
     EXPECT_EQ(tx.vin.size(), 0);
@@ -127,8 +127,8 @@ TEST(TransactionBuilder, SaplingToSprout) {
     EXPECT_EQ(tx.vJoinSplit.size(), 1);
     EXPECT_EQ(tx.vJoinSplit[0].vpub_old, 2500);
     EXPECT_EQ(tx.vJoinSplit[0].vpub_new, 0);
-    EXPECT_EQ(tx.vShieldedSpend.size(), 1);
-    EXPECT_EQ(tx.vShieldedOutput.size(), 1);
+    EXPECT_EQ(tx.GetSaplingSpendsCount(), 1);
+    EXPECT_EQ(tx.GetSaplingOutputsCount(), 1);
     EXPECT_EQ(tx.GetValueBalanceSapling(), 3500);
 
     CValidationState state;
@@ -174,9 +174,9 @@ TEST(TransactionBuilder, SproutToSproutAndSapling) {
     auto builder = TransactionBuilder(consensusParams, 2, std::nullopt, nullptr, &view);
     builder.SetFee(5000);
     builder.AddSproutInput(sproutSk, sproutNote, sproutWitness);
-    builder.AddSproutOutput(sproutAddr, 6000);
-    builder.AddSproutOutput(sproutAddr, 4000);
-    builder.AddSaplingOutput(fvk.ovk, pa, 5000);
+    builder.AddSproutOutput(sproutAddr, 6000, std::nullopt);
+    builder.AddSproutOutput(sproutAddr, 4000, std::nullopt);
+    builder.AddSaplingOutput(fvk.ovk, pa, 5000, std::nullopt);
     auto tx = builder.Build().GetTxOrThrow();
 
     EXPECT_EQ(tx.vin.size(), 0);
@@ -190,8 +190,8 @@ TEST(TransactionBuilder, SproutToSproutAndSapling) {
     EXPECT_EQ(tx.vJoinSplit[1].vpub_new, 0);
     EXPECT_EQ(tx.vJoinSplit[2].vpub_old, 0);
     EXPECT_EQ(tx.vJoinSplit[2].vpub_new, 10000);
-    EXPECT_EQ(tx.vShieldedSpend.size(), 0);
-    EXPECT_EQ(tx.vShieldedOutput.size(), 1);
+    EXPECT_EQ(tx.GetSaplingSpendsCount(), 0);
+    EXPECT_EQ(tx.GetSaplingOutputsCount(), 1);
     EXPECT_EQ(tx.GetValueBalanceSapling(), -5000);
 
     CValidationState state;
@@ -259,8 +259,8 @@ TEST(TransactionBuilder, TransparentToOrchard)
     EXPECT_EQ(tx.vin.size(), 1);
     EXPECT_EQ(tx.vout.size(), 0);
     EXPECT_EQ(tx.vJoinSplit.size(), 0);
-    EXPECT_EQ(tx.vShieldedSpend.size(), 0);
-    EXPECT_EQ(tx.vShieldedOutput.size(), 0);
+    EXPECT_EQ(tx.GetSaplingSpendsCount(), 0);
+    EXPECT_EQ(tx.GetSaplingOutputsCount(), 0);
     EXPECT_TRUE(tx.GetOrchardBundle().IsPresent());
     EXPECT_EQ(tx.GetOrchardBundle().GetValueBalance(), -4000);
 
@@ -379,8 +379,8 @@ TEST(TransactionBuilder, ChangeOutput)
         EXPECT_EQ(tx.vin.size(), 1);
         EXPECT_EQ(tx.vout.size(), 0);
         EXPECT_EQ(tx.vJoinSplit.size(), 0);
-        EXPECT_EQ(tx.vShieldedSpend.size(), 1);
-        EXPECT_EQ(tx.vShieldedOutput.size(), 1);
+        EXPECT_EQ(tx.GetSaplingSpendsCount(), 1);
+        EXPECT_EQ(tx.GetSaplingOutputsCount(), 1);
         EXPECT_EQ(tx.GetValueBalanceSapling(), -1500);
     }
 
@@ -394,8 +394,8 @@ TEST(TransactionBuilder, ChangeOutput)
         EXPECT_EQ(tx.vin.size(), 1);
         EXPECT_EQ(tx.vout.size(), 0);
         EXPECT_EQ(tx.vJoinSplit.size(), 0);
-        EXPECT_EQ(tx.vShieldedSpend.size(), 0);
-        EXPECT_EQ(tx.vShieldedOutput.size(), 1);
+        EXPECT_EQ(tx.GetSaplingSpendsCount(), 0);
+        EXPECT_EQ(tx.GetSaplingOutputsCount(), 1);
         EXPECT_EQ(tx.GetValueBalanceSapling(), -1500);
     }
 
@@ -409,8 +409,8 @@ TEST(TransactionBuilder, ChangeOutput)
         EXPECT_EQ(tx.vin.size(), 1);
         EXPECT_EQ(tx.vout.size(), 1);
         EXPECT_EQ(tx.vJoinSplit.size(), 0);
-        EXPECT_EQ(tx.vShieldedSpend.size(), 0);
-        EXPECT_EQ(tx.vShieldedOutput.size(), 0);
+        EXPECT_EQ(tx.GetSaplingSpendsCount(), 0);
+        EXPECT_EQ(tx.GetSaplingOutputsCount(), 0);
         EXPECT_EQ(tx.GetValueBalanceSapling(), 0);
         EXPECT_EQ(tx.vout[0].nValue, 1500);
     }
@@ -443,8 +443,8 @@ TEST(TransactionBuilder, SetFee)
         EXPECT_EQ(tx.vin.size(), 0);
         EXPECT_EQ(tx.vout.size(), 0);
         EXPECT_EQ(tx.vJoinSplit.size(), 0);
-        EXPECT_EQ(tx.vShieldedSpend.size(), 1);
-        EXPECT_EQ(tx.vShieldedOutput.size(), 2);
+        EXPECT_EQ(tx.GetSaplingSpendsCount(), 1);
+        EXPECT_EQ(tx.GetSaplingOutputsCount(), 2);
         // the value balance is just the amount exposed as the miner fee
         EXPECT_EQ(tx.GetValueBalanceSapling(), 1000);
     }
@@ -460,8 +460,8 @@ TEST(TransactionBuilder, SetFee)
         EXPECT_EQ(tx.vin.size(), 0);
         EXPECT_EQ(tx.vout.size(), 0);
         EXPECT_EQ(tx.vJoinSplit.size(), 0);
-        EXPECT_EQ(tx.vShieldedSpend.size(), 1);
-        EXPECT_EQ(tx.vShieldedOutput.size(), 2);
+        EXPECT_EQ(tx.GetSaplingSpendsCount(), 1);
+        EXPECT_EQ(tx.GetSaplingOutputsCount(), 2);
         // the value balance is just the amount exposed as the miner fee
         EXPECT_EQ(tx.GetValueBalanceSapling(), 20000);
     }

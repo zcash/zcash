@@ -36,7 +36,7 @@ CRC32C_CPPFLAGS_INT += -DBYTE_ORDER_BIG_ENDIAN=0
 endif
 
 crc32c_libcrc32c_a_CPPFLAGS = $(AM_CPPFLAGS) $(CRC32C_CPPFLAGS_INT) $(CRC32C_CPPFLAGS)
-crc32c_libcrc32c_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+crc32c_libcrc32c_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS) -Wno-error
 
 crc32c_libcrc32c_a_SOURCES =
 crc32c_libcrc32c_a_SOURCES += crc32c/include/crc32c/crc32c.h

@@ -11,8 +11,8 @@
 #include "wallet/asyncrpcoperation_common.h"
 #include "wallet/asyncrpcoperation_shieldcoinbase.h"
 #include "wallet/asyncrpcoperation_sendmany.h"
-#include "wallet/memo.h"
 #include "zcash/JoinSplit.hpp"
+#include "zcash/memo.h"
 #include "zip317.h"
 
 #include <librustzcash.h>
@@ -184,12 +184,12 @@ TEST(WalletRPCTests, RPCZMergeToAddressInternals)
     auto taddr = pwalletMain->GenerateNewKey(true).GetID();
     std::string taddr_string = keyIO.EncodeDestination(taddr);
 
-    NetAmountRecipient taddr1(keyIO.DecodePaymentAddress(taddr_string).value(), Memo());
+    NetAmountRecipient taddr1(keyIO.DecodePaymentAddress(taddr_string).value(), std::nullopt);
     auto sproutKey = pwalletMain->GenerateNewSproutZKey();
-    NetAmountRecipient zaddr1(sproutKey, Memo());
+    NetAmountRecipient zaddr1(sproutKey, std::nullopt);
 
     auto saplingKey = pwalletMain->GenerateNewLegacySaplingZKey();
-    NetAmountRecipient zaddr2(saplingKey, Memo());
+    NetAmountRecipient zaddr2(saplingKey, std::nullopt);
 
     WalletTxBuilder builder(Params(), minRelayTxFee);
     auto selector = CWallet::LegacyTransparentZTXOSelector(
@@ -306,7 +306,7 @@ TEST(WalletRPCTests, RPCZsendmanyTaddrToSapling)
             true,
             TransparentCoinbasePolicy::Disallow,
             false).value();
-    std::vector<Payment> recipients = { Payment(pa, 1*COIN, Memo::FromHexOrThrow("ABCD")) };
+    std::vector<Payment> recipients = { Payment(pa, 1*COIN, Memo::FromBytes({0xAB, 0xCD})) };
     std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 0, 0, strategy, std::nullopt));
     std::shared_ptr<AsyncRPCOperation_sendmany> ptr = std::dynamic_pointer_cast<AsyncRPCOperation_sendmany> (operation);
 
@@ -326,40 +326,40 @@ TEST(WalletRPCTests, RPCZsendmanyTaddrToSapling)
     CDataStream ss(ParseHex(hexTx), SER_NETWORK, PROTOCOL_VERSION);
     CTransaction tx;
     ss >> tx;
-    ASSERT_FALSE(tx.vShieldedOutput.empty());
+    ASSERT_FALSE(tx.GetSaplingOutputsCount() == 0);
 
     // We shouldn't be able to decrypt with the empty ovk
     EXPECT_FALSE(AttemptSaplingOutDecryption(
-        tx.vShieldedOutput[0].outCiphertext,
+        tx.GetSaplingOutputs()[0].out_ciphertext(),
         uint256(),
-        tx.vShieldedOutput[0].cv,
-        tx.vShieldedOutput[0].cmu,
-        tx.vShieldedOutput[0].ephemeralKey));
+        tx.GetSaplingOutputs()[0].cv(),
+        tx.GetSaplingOutputs()[0].cmu(),
+        tx.GetSaplingOutputs()[0].ephemeral_key()));
 
     // We shouldn't be able to decrypt with a random ovk
     EXPECT_FALSE(AttemptSaplingOutDecryption(
-        tx.vShieldedOutput[0].outCiphertext,
+        tx.GetSaplingOutputs()[0].out_ciphertext(),
         random_uint256(),
-        tx.vShieldedOutput[0].cv,
-        tx.vShieldedOutput[0].cmu,
-        tx.vShieldedOutput[0].ephemeralKey));
+        tx.GetSaplingOutputs()[0].cv(),
+        tx.GetSaplingOutputs()[0].cmu(),
+        tx.GetSaplingOutputs()[0].ephemeral_key()));
 
     auto accountKey = pwalletMain->GetLegacyAccountKey().ToAccountPubKey();
     auto ovks = accountKey.GetOVKsForShielding();
     // We should not be able to decrypt with the internal change OVK for shielding
     EXPECT_FALSE(AttemptSaplingOutDecryption(
-        tx.vShieldedOutput[0].outCiphertext,
+        tx.GetSaplingOutputs()[0].out_ciphertext(),
         ovks.first,
-        tx.vShieldedOutput[0].cv,
-        tx.vShieldedOutput[0].cmu,
-        tx.vShieldedOutput[0].ephemeralKey));
+        tx.GetSaplingOutputs()[0].cv(),
+        tx.GetSaplingOutputs()[0].cmu(),
+        tx.GetSaplingOutputs()[0].ephemeral_key()));
     // We should be able to decrypt with the external OVK for shielding
     EXPECT_TRUE(AttemptSaplingOutDecryption(
-        tx.vShieldedOutput[0].outCiphertext,
+        tx.GetSaplingOutputs()[0].out_ciphertext(),
         ovks.second,
-        tx.vShieldedOutput[0].cv,
-        tx.vShieldedOutput[0].cmu,
-        tx.vShieldedOutput[0].ephemeralKey));
+        tx.GetSaplingOutputs()[0].cv(),
+        tx.GetSaplingOutputs()[0].cmu(),
+        tx.GetSaplingOutputs()[0].ephemeral_key()));
 
     // Tear down
     chainActive.SetTip(NULL);

@@ -157,8 +157,6 @@ EXTENDED_SCRIPTS = [
     # These tests are not run by the travis build process.
     # Longest test should go first, to favor running tests in parallel
     'pruning.py',
-    # vv Tests less than 20m vv
-    'smartfees.py',
     # vv Tests less than 5m vv
     # vv Tests less than 2m vv
     'getblocktemplate_longpoll.py',
@@ -330,18 +328,18 @@ def run_tests(test_handler, test_list, src_dir, build_dir, exeext, jobs=1, enabl
         subprocess.check_output([tests_dir + 'create_cache.py'] + flags)
 
     #Run Tests
-    all_passed = True
     time_sum = 0
     time0 = time.time()
 
     job_queue = test_handler(jobs, tests_dir, test_list, flags)
 
     max_len_name = len(max(test_list, key=len))
+    total_count = 0
+    passed_count = 0
     results = []
     try:
         for _ in range(len(test_list)):
             (name, stdout, stderr, passed, duration) = job_queue.get_next(deterministic)
-            all_passed = all_passed and passed
             time_sum += duration
 
             print('\n' + BOLD[1] + name + BOLD[0] + ":")
@@ -352,6 +350,9 @@ def run_tests(test_handler, test_list, src_dir, build_dir, exeext, jobs=1, enabl
                 print("\n", end='')
             else:
                 print(", Duration: %s s" % (duration,))
+            total_count += 1
+            if passed:
+                passed_count += 1
 
             new_result = "%s | %s" % (name.ljust(max_len_name), str(passed).ljust(6))
             if not deterministic:
@@ -363,8 +364,14 @@ def run_tests(test_handler, test_list, src_dir, build_dir, exeext, jobs=1, enabl
             print("•", j[0])
         print('\n', end='')
 
+    all_passed = passed_count == total_count
+
+    if all_passed:
+        success_rate = "True"
+    else:
+        success_rate = "%d/%d" % (passed_count, total_count)
     header = "%s | PASSED" % ("TEST".ljust(max_len_name),)
-    footer = "%s | %s" % ("ALL".ljust(max_len_name), str(all_passed).ljust(6))
+    footer = "%s | %s" % ("ALL".ljust(max_len_name), str(success_rate).ljust(6))
     if not deterministic:
         header += " | DURATION"
         footer += " | %s s (accumulated)\nRuntime: %s s" % (time_sum, int(time.time() - time0))

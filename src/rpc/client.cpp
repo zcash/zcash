@@ -15,7 +15,7 @@
 #include <univalue.h>
 
 enum class Conversion {
-    ///< passed as a JSON string, verbatim
+    /// passed as a JSON string, verbatim
     None,
     /// the literal string `null` is passed as JSON `null`, otherwise passed as a verbatim string
     /// NB: This needs to be used carefully, as it could discard the valid string “null”.
@@ -68,7 +68,6 @@ static const CRPCConvertTable rpcCvtTable =
     // NB: The second argument _should_ be an object, but upstream treats it as a string, so we
     //     preserve that here.
     { "submitblock",                 {{s}, {s}} },
-    { "estimatefee",                 {{o}, {}} },
     { "getblocksubsidy",             {{o}, {}} },
     // misc
     { "getinfo",                     {{}, {}} },
@@ -248,28 +247,27 @@ RPCConvertValues(const std::string &strMethod, const std::vector<std::string> &s
     for (std::vector<std::string>::size_type idx = 0; idx < strParams.size(); idx++) {
         const Conversion conversion = allParams[idx];
         const std::string& strVal = strParams[idx];
-        auto parsedParam = ParseNonRFCJSONValue(strVal);
 
-        switch (conversion) {
-            case Conversion::None:
-                params.push_back(strVal);
-                break;
-            case Conversion::NullableString:
+        if (conversion == Conversion::None) {
+            params.push_back(strVal);
+        } else {
+            auto parsedParam = ParseNonRFCJSONValue(strVal);
+
+            if (conversion == Conversion::NullableString) {
                 if (parsedParam.has_value() && parsedParam.value().isNull()) {
                     params.push_back(parsedParam.value());
                 } else {
                     params.push_back(strVal);
                 }
-                break;
-            case Conversion::JSON:
+            } else if (conversion == Conversion::JSON) {
                 if (parsedParam.has_value()) {
                     params.push_back(parsedParam.value());
                 } else {
                     return tl::make_unexpected(UnparseableParam(strVal));
                 }
-                break;
-            default:
+            } else {
                 assert(false);
+            }
         }
     }
 

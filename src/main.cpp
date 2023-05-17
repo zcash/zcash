@@ -980,7 +980,7 @@ bool ContextualCheckTransaction(
             // when recovered using a 32-byte array of zeroes as the outgoing viewing key.
             // https://zips.z.cash/zip-0213#specification
             uint256 ovk;
-            for (const OutputDescription &output : tx.vShieldedOutput) {
+            for (const auto& output : tx.GetSaplingOutputs()) {
               bool zip_212_enabled;
               libzcash::SaplingPaymentAddress zaddr;
               CAmount value;
@@ -994,11 +994,11 @@ bool ContextualCheckTransaction(
                         nHeight,
                         ovk.GetRawBytes(),
                         {
-                            output.cv.GetRawBytes(),
-                            output.cmu.GetRawBytes(),
-                            output.ephemeralKey.GetRawBytes(),
-                            output.encCiphertext,
-                            output.outCiphertext,
+                            output.cv().GetRawBytes(),
+                            output.cmu().GetRawBytes(),
+                            output.ephemeral_key().GetRawBytes(),
+                            output.enc_ciphertext(),
+                            output.out_ciphertext(),
                         });
                     zip_212_enabled = decrypted->zip_212_enabled();
 
@@ -1013,7 +1013,7 @@ bool ContextualCheckTransaction(
                 }
               } else {
                 auto outPlaintext = SaplingOutgoingPlaintext::decrypt(
-                    output.outCiphertext, ovk, output.cv, output.cmu, output.ephemeralKey);
+                    output.out_ciphertext(), ovk, output.cv(), output.cmu(), output.ephemeral_key());
                 if (!outPlaintext) {
                     return state.DoS(
                         DOS_LEVEL_BLOCK,
@@ -1025,11 +1025,11 @@ bool ContextualCheckTransaction(
                 auto encPlaintext = SaplingNotePlaintext::decrypt(
                     consensus,
                     nHeight,
-                    output.encCiphertext,
-                    output.ephemeralKey,
+                    output.enc_ciphertext(),
+                    output.ephemeral_key(),
                     outPlaintext->esk,
                     outPlaintext->pk_d,
-                    output.cmu);
+                    output.cmu());
 
                 if (!encPlaintext) {
                     return state.DoS(
@@ -1080,7 +1080,7 @@ bool ContextualCheckTransaction(
 
         if (tx.IsCoinBase()) {
             // A coinbase transaction cannot have shielded outputs
-            if (tx.vShieldedOutput.size() > 0)
+            if (tx.GetSaplingOutputsCount() > 0)
                 return state.DoS(
                     dosLevelPotentiallyRelaxing,
                     error("ContextualCheckTransaction(): coinbase has output descriptions"),
@@ -1314,8 +1314,8 @@ bool ContextualCheckShieldedInputs(
 
     // Create signature hashes for shielded components.
     if (!tx.vJoinSplit.empty() ||
-        !tx.vShieldedSpend.empty() ||
-        !tx.vShieldedOutput.empty() ||
+        tx.GetSaplingSpendsCount() > 0 ||
+        tx.GetSaplingOutputsCount() > 0 ||
         tx.GetOrchardBundle().IsPresent())
     {
         // Empty output script.
@@ -1355,19 +1355,19 @@ bool ContextualCheckShieldedInputs(
         }
     }
 
-    if (!tx.vShieldedSpend.empty() ||
-        !tx.vShieldedOutput.empty())
+    if (tx.GetSaplingSpendsCount() > 0 ||
+        tx.GetSaplingOutputsCount() > 0)
     {
         auto assembler = sapling::new_bundle_assembler();
 
-        for (const SpendDescription &spend : tx.vShieldedSpend) {
+        for (const auto& spend : tx.GetSaplingSpends()) {
             if (!assembler->add_spend(
-                spend.cv.GetRawBytes(),
-                spend.anchor.GetRawBytes(),
-                spend.nullifier.GetRawBytes(),
-                spend.rk.GetRawBytes(),
-                spend.zkproof,
-                spend.spendAuthSig
+                spend.cv().GetRawBytes(),
+                spend.anchor().GetRawBytes(),
+                spend.nullifier().GetRawBytes(),
+                spend.rk().GetRawBytes(),
+                spend.zkproof(),
+                spend.spend_auth_sig()
             )) {
                 return state.DoS(
                     dosLevelPotentiallyRelaxing,
@@ -1376,14 +1376,14 @@ bool ContextualCheckShieldedInputs(
             }
         }
 
-        for (const OutputDescription &output : tx.vShieldedOutput) {
+        for (const auto& output : tx.GetSaplingOutputs()) {
             if (!assembler->add_output(
-                output.cv.GetRawBytes(),
-                output.cmu.GetRawBytes(),
-                output.ephemeralKey.GetRawBytes(),
-                output.encCiphertext,
-                output.outCiphertext,
-                output.zkproof
+                output.cv().GetRawBytes(),
+                output.cmu().GetRawBytes(),
+                output.ephemeral_key().GetRawBytes(),
+                output.enc_ciphertext(),
+                output.out_ciphertext(),
+                output.zkproof()
             )) {
                 // This should be a non-contextual check, but we check it here
                 // as we need to pass over the outputs anyway in order to then
@@ -1507,7 +1507,7 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     // Orchard bundle is present, i.e. when nActionsOrchard == 0.
     if (tx.vin.empty() &&
         tx.vJoinSplit.empty() &&
-        tx.vShieldedSpend.empty() &&
+        tx.GetSaplingSpendsCount() == 0 &&
         !orchard_bundle.SpendsEnabled())
     {
         return state.DoS(10, false, REJECT_INVALID, "bad-txns-no-source-of-funds");
@@ -1522,7 +1522,7 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     // Orchard bundle is present, i.e. when nActionsOrchard == 0.
     if (tx.vout.empty() &&
         tx.vJoinSplit.empty() &&
-        tx.vShieldedOutput.empty() &&
+        tx.GetSaplingOutputsCount() == 0 &&
         !orchard_bundle.OutputsEnabled())
     {
         return state.DoS(10, false, REJECT_INVALID, "bad-txns-no-sink-of-funds");
@@ -1548,7 +1548,8 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     }
 
     // Check for non-zero valueBalanceSapling when there are no Sapling inputs or outputs
-    if (tx.vShieldedSpend.empty() && tx.vShieldedOutput.empty() && tx.GetValueBalanceSapling() != 0) {
+    if (tx.GetSaplingSpendsCount() == 0 && tx.GetSaplingOutputsCount() == 0 && tx.GetValueBalanceSapling() != 0)
+    {
         return state.DoS(100, error("CheckTransaction(): tx.valueBalanceSapling has no sources or sinks"),
                             REJECT_INVALID, "bad-txns-valuebalance-nonzero");
     }
@@ -1571,13 +1572,13 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
 
     // nSpendsSapling, nOutputsSapling, and nActionsOrchard MUST all be less than 2^16
     size_t max_elements = (1 << 16) - 1;
-    if (tx.vShieldedSpend.size() > max_elements) {
+    if (tx.GetSaplingSpendsCount() > max_elements) {
         return state.DoS(
             100,
             error("CheckTransaction(): 2^16 or more Sapling spends"),
             REJECT_INVALID, "bad-tx-too-many-sapling-spends");
     }
-    if (tx.vShieldedOutput.size() > max_elements) {
+    if (tx.GetSaplingOutputsCount() > max_elements) {
         return state.DoS(
             100,
             error("CheckTransaction(): 2^16 or more Sapling outputs"),
@@ -1720,13 +1721,13 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     // Check for duplicate sapling nullifiers in this transaction
     {
         set<uint256> vSaplingNullifiers;
-        for (const SpendDescription& spend_desc : tx.vShieldedSpend)
+        for (const auto& spend_desc : tx.GetSaplingSpends())
         {
-            if (vSaplingNullifiers.count(spend_desc.nullifier))
+            if (vSaplingNullifiers.count(spend_desc.nullifier()))
                 return state.DoS(100, error("CheckTransaction(): duplicate nullifiers"),
                             REJECT_INVALID, "bad-spend-description-nullifiers-duplicate");
 
-            vSaplingNullifiers.insert(spend_desc.nullifier);
+            vSaplingNullifiers.insert(spend_desc.nullifier());
         }
     }
 
@@ -1751,7 +1752,7 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
                              REJECT_INVALID, "bad-cb-has-joinsplits");
 
         // A coinbase transaction cannot have spend descriptions
-        if (tx.vShieldedSpend.size() > 0)
+        if (tx.GetSaplingSpendsCount() > 0)
             return state.DoS(100, error("CheckTransaction(): coinbase has spend descriptions"),
                              REJECT_INVALID, "bad-cb-has-spend-description");
         // See ContextualCheckTransaction for consensus rules on coinbase output descriptions.
@@ -1937,7 +1938,7 @@ bool AcceptToMemoryPool(
 
         // No transactions are allowed with modified fee below the minimum relay fee,
         // except from disconnected blocks. The minimum relay fee will never be more
-        // than DEFAULT_FEE zatoshis.
+        // than LEGACY_DEFAULT_FEE zatoshis.
         CAmount minRelayFee = ::minRelayTxFee.GetFeeForRelay(nSize);
         if (fLimitFree && nModifiedFees < minRelayFee) {
             LogPrint("mempool",
@@ -2028,7 +2029,7 @@ bool AcceptToMemoryPool(
 
         {
             // Store transaction in memory
-            pool.addUnchecked(hash, entry, setAncestors, !IsInitialBlockDownload(chainparams.GetConsensus()));
+            pool.addUnchecked(hash, entry, setAncestors);
 
             // Add memory address index
             if (fAddressIndex) {
@@ -3410,8 +3411,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             }
         }
 
-        for (const OutputDescription &outputDescription : tx.vShieldedOutput) {
-            sapling_tree.append(outputDescription.cmu);
+        for (const auto &outputDescription : tx.GetSaplingOutputs()) {
+            sapling_tree.append(outputDescription.cmu());
         }
 
         if (!orchard_tree.AppendBundle(tx.GetOrchardBundle())) {
@@ -3424,7 +3425,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             transparentValueDelta += out.nValue;
         }
 
-        if (!(tx.vShieldedSpend.empty() && tx.vShieldedOutput.empty())) {
+        if (!(tx.GetSaplingSpendsCount() == 0 && tx.GetSaplingOutputsCount() == 0)) {
             total_sapling_tx += 1;
         }
 
@@ -4090,7 +4091,7 @@ bool static ConnectTip(CValidationState& state, const CChainParams& chainparams,
     LogPrint("bench", "  - Writing chainstate: %.2fms [%.2fs]\n", (nTime5 - nTime4) * 0.001, nTimeChainState * 0.000001);
     // Remove conflicting transactions from the mempool.
     std::list<CTransaction> txConflicted;
-    mempool.removeForBlock(pblock->vtx, pindexNew->nHeight, txConflicted, !IsInitialBlockDownload(chainparams.GetConsensus()));
+    mempool.removeForBlock(pblock->vtx, pindexNew->nHeight, txConflicted);
 
     // Remove transactions that expire at new block height from mempool
     auto ids = mempool.removeExpired(pindexNew->nHeight);
@@ -7177,8 +7178,8 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
         // TODO: currently, prohibit joinsplits and shielded spends/outputs/actions from entering mapOrphans
         else if (fMissingInputs &&
                  tx.vJoinSplit.empty() &&
-                 tx.vShieldedSpend.empty() &&
-                 tx.vShieldedOutput.empty() &&
+                 tx.GetSaplingSpendsCount() == 0 &&
+                 tx.GetSaplingOutputsCount() == 0 &&
                  !tx.GetOrchardBundle().IsPresent())
         {
             AddOrphanTx(tx, pfrom->GetId());

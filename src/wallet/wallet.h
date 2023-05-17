@@ -371,7 +371,7 @@ struct SproutNoteEntry
     JSOutPoint jsop;
     libzcash::SproutPaymentAddress address;
     libzcash::SproutNote note;
-    std::array<unsigned char, ZC_MEMO_SIZE> memo;
+    std::optional<libzcash::Memo> memo;
     int confirmations;
 };
 
@@ -381,7 +381,7 @@ struct SaplingNoteEntry
     SaplingOutPoint op;
     libzcash::SaplingPaymentAddress address;
     libzcash::SaplingNote note;
-    std::array<unsigned char, ZC_MEMO_SIZE> memo;
+    std::optional<libzcash::Memo> memo;
     int confirmations;
 };
 
@@ -1958,7 +1958,7 @@ public:
     static CAmount ConstrainFee(CAmount requestedFee, unsigned int nTxBytes);
 
     /**
-     * Estimate the minimum fee considering user set parameters
+     * Decide on the minimum fee considering user set parameters
      * and the required fee.
      */
     static CAmount GetMinimumFee(const CTransaction& tx, unsigned int nTxBytes);

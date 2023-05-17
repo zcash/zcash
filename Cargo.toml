@@ -51,7 +51,7 @@ jubjub = "0.10"
 memuse = "0.2"
 nonempty = "0.7"
 orchard = "0.4"
-secp256k1 = "0.21"
+secp256k1 = "0.26"
 subtle = "2.2"
 rand_core = "0.6"
 tracing = "0.1"
@@ -112,3 +112,12 @@ features = ["ansi", "env-filter", "fmt", "time"]
 lto = 'thin'
 panic = 'abort'
 codegen-units = 1
+
+[patch.crates-io]
+equihash = { git = "https://github.com/zcash/librustzcash.git", rev = "ec1c1bcf21c43b0736d298d3a437162253946a8a" }
+zcash_address = { git = "https://github.com/zcash/librustzcash.git", rev = "ec1c1bcf21c43b0736d298d3a437162253946a8a" }
+zcash_encoding = { git = "https://github.com/zcash/librustzcash.git", rev = "ec1c1bcf21c43b0736d298d3a437162253946a8a" }
+zcash_history = { git = "https://github.com/zcash/librustzcash.git", rev = "ec1c1bcf21c43b0736d298d3a437162253946a8a" }
+zcash_note_encryption = { git = "https://github.com/zcash/librustzcash.git", rev = "ec1c1bcf21c43b0736d298d3a437162253946a8a" }
+zcash_primitives = { git = "https://github.com/zcash/librustzcash.git", rev = "ec1c1bcf21c43b0736d298d3a437162253946a8a" }
+zcash_proofs = { git = "https://github.com/zcash/librustzcash.git", rev = "ec1c1bcf21c43b0736d298d3a437162253946a8a" }

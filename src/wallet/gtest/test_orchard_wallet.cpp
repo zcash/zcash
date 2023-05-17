@@ -143,8 +143,8 @@ TEST(TransactionBuilder, OrchardToOrchard) {
     EXPECT_EQ(tx.vin.size(), 0);
     EXPECT_EQ(tx.vout.size(), 0);
     EXPECT_EQ(tx.vJoinSplit.size(), 0);
-    EXPECT_EQ(tx.vShieldedSpend.size(), 0);
-    EXPECT_EQ(tx.vShieldedOutput.size(), 0);
+    EXPECT_EQ(tx.GetSaplingSpendsCount(), 0);
+    EXPECT_EQ(tx.GetSaplingOutputsCount(), 0);
     EXPECT_TRUE(tx.GetOrchardBundle().IsPresent());
     EXPECT_EQ(tx.GetOrchardBundle().GetValueBalance(), 1000);
 

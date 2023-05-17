@@ -15,6 +15,7 @@
 #include "wallet/wallet_tx_builder.h"
 #include "zcash/Address.hpp"
 #include "zcash/JoinSplit.hpp"
+#include "zcash/memo.h"
 
 #include <array>
 #include <optional>

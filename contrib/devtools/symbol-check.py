@@ -18,15 +18,15 @@ import re
 import sys
 import os
 
-# Ubuntu 16.04 LTS (Xenial Xerus; End of Standard Support April 2021, EOL April 2022) has:
+# Ubuntu 20.04 LTS (Focal Fossa; End of Support April 2025) has:
 #
-# - g++ version 4.5.3 (https://packages.ubuntu.com/search?suite=all&searchon=names&keywords=g%2B%2B)
-# - libc6 version 2.23 (https://packages.ubuntu.com/search?suite=all&searchon=names&keywords=libc6)
+# - g++ version 9.3.0 (https://packages.ubuntu.com/search?suite=all&searchon=names&keywords=g%2B%2B)
+# - libc6 version 2.31 (https://packages.ubuntu.com/search?suite=all&searchon=names&keywords=libc6)
 #
-# Debian 9 (Stretch; EOL 2020-07-06, LTS EOL in 2022) has:
+# Debian 10 (Buster; LTS EOL June 2024) has:
 #
-# - g++ version 6.3.0 (https://packages.debian.org/search?suite=default&section=all&arch=any&searchon=names&keywords=g%2B%2B)
-# - libc6 version 2.24 (https://packages.debian.org/search?suite=default&section=all&arch=any&searchon=names&keywords=libc6)
+# - g++ version 8.3.0 (https://packages.debian.org/search?suite=default&section=all&arch=any&searchon=names&keywords=g%2B%2B)
+# - libc6 version 2.28 (https://packages.debian.org/search?suite=default&section=all&arch=any&searchon=names&keywords=libc6)
 #
 # RedHat Enterprise Linux 8 (EOL: long and complicated) is based on Fedora 28 (EOL 2019-05-28) and uses the same base packages:
 #
@@ -43,20 +43,20 @@ import os
 # - g++ version 8.4.0 / 9.3.0 / 10.2.0 (https://www.archlinux.org/packages/?q=gcc)
 # - libc6 version 2.32 (https://www.archlinux.org/packages/?q=glibc)
 #
-# We take the minimum of these as our target. In practice, if we build on Xenial without
+# We take the minimum of these as our target. In practice, if we build on Buster without
 # upgrading GCC or libc, then we should get a binary that works for all these systems, and
 # later ones.
 #
 # According to the GNU ABI document (https://gcc.gnu.org/onlinedocs/libstdc++/manual/abi.html) this corresponds to:
-#   GCC 4.5.3: GCC_4.5.0, GLIBCXX_3.4.14, CXXABI_1.3.4
-#   libc6:     GLIBC_2_23
+#   GCC 8.0.0: GCC_8.0.0, GLIBCXX_3.4.24, CXXABI_1.3.11
+#   libc6:     GLIBC_2_27
 
 # We statically link libc++ and libc++abi in our builds. Set this to allow dynamic linking to libstdc++.
 ALLOW_DYNAMIC_LIBSTDCXX = False
 
 MAX_VERSIONS = {
-    'GCC':   (4,5,0),
-    'GLIBC': (2,23),
+    'GCC':   (8,0,0),
+    'GLIBC': (2,27),
 }
 if ALLOW_DYNAMIC_LIBSTDCXX:
     MAX_VERSIONS.update({

@@ -324,12 +324,24 @@ void test_simple_sapling_invalidity(uint32_t consensusBranchId, CMutableTransact
         newTx.vShieldedOutput.push_back(RandomInvalidOutputDescription());
 
         newTx.vShieldedSpend.push_back(RandomInvalidSpendDescription());
-        newTx.vShieldedSpend[1].nullifier = newTx.vShieldedSpend[0].nullifier;
+        newTx.vShieldedSpend[1] = SpendDescription(
+            newTx.vShieldedSpend[1].cv(),
+            newTx.vShieldedSpend[1].anchor(),
+            newTx.vShieldedSpend[0].nullifier(),
+            newTx.vShieldedSpend[1].rk(),
+            newTx.vShieldedSpend[1].zkproof(),
+            newTx.vShieldedSpend[1].spend_auth_sig());
 
         BOOST_CHECK(!CheckTransactionWithoutProofVerification(newTx, state));
         BOOST_CHECK(state.GetRejectReason() == "bad-spend-description-nullifiers-duplicate");
 
-        newTx.vShieldedSpend[1].nullifier = InsecureRand256();
+        newTx.vShieldedSpend[1] = SpendDescription(
+            newTx.vShieldedSpend[1].cv(),
+            newTx.vShieldedSpend[1].anchor(),
+            InsecureRand256(),
+            newTx.vShieldedSpend[1].rk(),
+            newTx.vShieldedSpend[1].zkproof(),
+            newTx.vShieldedSpend[1].spend_auth_sig());
 
         BOOST_CHECK(CheckTransactionWithoutProofVerification(newTx, state));
     }

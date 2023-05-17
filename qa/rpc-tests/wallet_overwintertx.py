@@ -11,7 +11,7 @@ from test_framework.util import (
     get_coinbase_address,
     start_nodes,
     wait_and_assert_operationid_status,
-    DEFAULT_FEE
+    LEGACY_DEFAULT_FEE
 )
 from test_framework.authproxy import JSONRPCException
 
@@ -70,12 +70,12 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
         # Node 2 sends the zero-confirmation transparent funds to Node 1 using z_sendmany
         recipients = []
         recipients.append({"address":taddr1, "amount": Decimal('0.5')})
-        myopid = self.nodes[2].z_sendmany(taddr2, recipients, 0, DEFAULT_FEE, 'AllowFullyTransparent')
+        myopid = self.nodes[2].z_sendmany(taddr2, recipients, 0, LEGACY_DEFAULT_FEE, 'AllowFullyTransparent')
         txid_zsendmany = wait_and_assert_operationid_status(self.nodes[2], myopid)
 
         # Node 0 shields to Node 2, a coinbase utxo of value 10.0 less default fee
-        zsendamount = Decimal('10.0') - DEFAULT_FEE
-        result = self.nodes[0].z_shieldcoinbase(taddr0, zaddr2, DEFAULT_FEE, 1)
+        zsendamount = Decimal('10.0') - LEGACY_DEFAULT_FEE
+        result = self.nodes[0].z_shieldcoinbase(taddr0, zaddr2, LEGACY_DEFAULT_FEE, 1)
         txid_shielded = wait_and_assert_operationid_status(self.nodes[0], result['opid'])
 
         # Skip over the three blocks prior to activation; no transactions can be mined
@@ -86,7 +86,7 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
 
         # Verify balance
         assert_equal(self.nodes[1].z_getbalance(taddr1), Decimal('0.5'))
-        assert_equal(self.nodes[2].getbalance(), Decimal('0.5') - DEFAULT_FEE)
+        assert_equal(self.nodes[2].getbalance(), Decimal('0.5') - LEGACY_DEFAULT_FEE)
         assert_equal(self.nodes[2].z_getbalance(zaddr2), zsendamount)
 
         # Verify transaction version is 4 (intended for Sapling+)
@@ -139,12 +139,12 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
         # Node 3 sends the zero-confirmation transparent funds to Node 1 using z_sendmany
         recipients = []
         recipients.append({"address":taddr1, "amount": Decimal('0.5')})
-        myopid = self.nodes[3].z_sendmany(taddr3, recipients, 0, DEFAULT_FEE, 'AllowFullyTransparent')
+        myopid = self.nodes[3].z_sendmany(taddr3, recipients, 0, LEGACY_DEFAULT_FEE, 'AllowFullyTransparent')
         txid_zsendmany = wait_and_assert_operationid_status(self.nodes[3], myopid)
 
         # Node 0 shields to Node 3, a coinbase utxo of value 10.0 less default fee
-        zsendamount = Decimal('10.0') - DEFAULT_FEE
-        result = self.nodes[0].z_shieldcoinbase(taddr0, zaddr3, DEFAULT_FEE, 1)
+        zsendamount = Decimal('10.0') - LEGACY_DEFAULT_FEE
+        result = self.nodes[0].z_shieldcoinbase(taddr0, zaddr3, LEGACY_DEFAULT_FEE, 1)
         txid_shielded = wait_and_assert_operationid_status(self.nodes[0], result['opid'])
 
         # Mine the first Blossom block
@@ -162,7 +162,7 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
 
         # Verify balance
         assert_equal(self.nodes[1].z_getbalance(taddr1), Decimal('1.0'))
-        assert_equal(self.nodes[3].getbalance(), Decimal('0.5') - DEFAULT_FEE)
+        assert_equal(self.nodes[3].getbalance(), Decimal('0.5') - LEGACY_DEFAULT_FEE)
         assert_equal(self.nodes[3].z_getbalance(zaddr3), zsendamount)
 
         # Verify transaction version is 4 (intended for Sapling+)

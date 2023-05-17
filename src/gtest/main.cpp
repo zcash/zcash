@@ -20,13 +20,6 @@ const std::function<std::string(const char*)> G_TRANSLATION_FUN = nullptr;
 uint256 insecure_rand_seed = GetRandHash();
 FastRandomContext insecure_rand_ctx(insecure_rand_seed);
 
-struct ECCryptoClosure
-{
-    ECCVerifyHandle handle;
-};
-
-ECCryptoClosure instance_of_eccryptoclosure;
-
 class LogGrabber : public ::testing::EmptyTestEventListener {
     fs::path logPath;
 

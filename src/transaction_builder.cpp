@@ -63,7 +63,7 @@ void Builder::AddOutput(
     const std::optional<uint256>& ovk,
     const libzcash::OrchardRawAddress& to,
     CAmount value,
-    const std::optional<std::array<unsigned char, ZC_MEMO_SIZE>>& memo)
+    const std::optional<libzcash::Memo>& memo)
 {
     if (!inner) {
         throw std::logic_error("orchard::Builder has already been used");
@@ -74,7 +74,7 @@ void Builder::AddOutput(
         ovk.has_value() ? ovk->begin() : nullptr,
         to.inner.get(),
         value,
-        memo.has_value() ? memo->data() : nullptr);
+        memo.has_value() ? memo.value().ToBytes().data() : nullptr);
 
     hasActions = true;
 }
@@ -147,7 +147,7 @@ std::optional<OutputDescription> OutputDescriptionInfo::Build(rust::Box<sapling:
     std::move(ss.begin(), ss.end(), addressBytes.begin());
 
     std::array<unsigned char, 32> cvBytes;
-    OutputDescription odesc;
+    libzcash::GrothProof zkproof;
     uint256 rcm = this->note.rcm();
     if (!ctx->create_output_proof(
             encryptor.get_esk().GetRawBytes(),
@@ -155,23 +155,22 @@ std::optional<OutputDescription> OutputDescriptionInfo::Build(rust::Box<sapling:
             rcm.GetRawBytes(),
             this->note.value(),
             cvBytes,
-            odesc.zkproof)) {
+            zkproof)) {
         return std::nullopt;
     }
 
-    odesc.cv = uint256::FromRawBytes(cvBytes);
-    odesc.cmu = *cmu;
-    odesc.ephemeralKey = encryptor.get_epk();
-    odesc.encCiphertext = enc.first;
+    auto cv = uint256::FromRawBytes(cvBytes);
+    auto ephemeralKey = encryptor.get_epk();
+    auto encCiphertext = enc.first;
 
     libzcash::SaplingOutgoingPlaintext outPlaintext(this->note.pk_d, encryptor.get_esk());
-    odesc.outCiphertext = outPlaintext.encrypt(
+    auto outCiphertext = outPlaintext.encrypt(
         this->ovk,
-        odesc.cv,
-        odesc.cmu,
+        cv,
+        *cmu,
         encryptor);
 
-    return odesc;
+    return OutputDescription(cv, *cmu, ephemeralKey, encCiphertext, outCiphertext, zkproof);
 }
 
 JSDescription JSDescriptionInfo::BuildDeterministic(
@@ -334,7 +333,7 @@ void TransactionBuilder::AddOrchardOutput(
     const std::optional<uint256>& ovk,
     const libzcash::OrchardRawAddress& to,
     CAmount value,
-    const std::optional<std::array<unsigned char, ZC_MEMO_SIZE>>& memo)
+    const std::optional<libzcash::Memo>& memo)
 {
     if (!orchardBuilder.has_value()) {
         // Try to give a useful error.
@@ -373,9 +372,9 @@ void TransactionBuilder::AddSaplingSpend(
 
 void TransactionBuilder::AddSaplingOutput(
     uint256 ovk,
-    libzcash::SaplingPaymentAddress to,
+    const libzcash::SaplingPaymentAddress& to,
     CAmount value,
-    std::array<unsigned char, ZC_MEMO_SIZE> memo)
+    const std::optional<libzcash::Memo>& memo)
 {
     // Sanity check: cannot add Sapling output to pre-Sapling transaction
     if (mtx.nVersion < SAPLING_TX_VERSION) {
@@ -411,9 +410,9 @@ void TransactionBuilder::AddSproutInput(
 }
 
 void TransactionBuilder::AddSproutOutput(
-    libzcash::SproutPaymentAddress to,
+    const libzcash::SproutPaymentAddress& to,
     CAmount value,
-    std::array<unsigned char, ZC_MEMO_SIZE> memo)
+    const std::optional<libzcash::Memo>& memo)
 {
     CheckOrSetUsingSprout();
 
@@ -517,9 +516,9 @@ TransactionBuilderResult TransactionBuilder::Build()
         if (orchardChangeAddr) {
             AddOrchardOutput(orchardChangeAddr->first, orchardChangeAddr->second, change, std::nullopt);
         } else if (saplingChangeAddr) {
-            AddSaplingOutput(saplingChangeAddr->first, saplingChangeAddr->second, change);
+            AddSaplingOutput(saplingChangeAddr->first, saplingChangeAddr->second, change, std::nullopt);
         } else if (sproutChangeAddr) {
-            AddSproutOutput(sproutChangeAddr.value(), change);
+            AddSproutOutput(sproutChangeAddr.value(), change, std::nullopt);
         } else if (tChangeAddr) {
             // tChangeAddr has already been validated.
             AddTransparentOutput(tChangeAddr.value(), change);
@@ -530,10 +529,10 @@ TransactionBuilderResult TransactionBuilder::Build()
             auto fvk = spends[0].expsk.full_viewing_key();
             auto note = spends[0].note;
             libzcash::SaplingPaymentAddress changeAddr(note.d, note.pk_d);
-            AddSaplingOutput(fvk.ovk, changeAddr, change);
+            AddSaplingOutput(fvk.ovk, changeAddr, change, std::nullopt);
         } else if (!jsInputs.empty()) {
             auto changeAddr = jsInputs[0].key.address();
-            AddSproutOutput(changeAddr, change);
+            AddSproutOutput(changeAddr, change, std::nullopt);
         } else {
             return TransactionBuilderResult("Could not determine change address");
         }
@@ -575,7 +574,7 @@ TransactionBuilderResult TransactionBuilder::Build()
 
         std::array<unsigned char, 32> cv;
         std::array<unsigned char, 32> rk;
-        SpendDescription sdesc;
+        libzcash::GrothProof zkproof;
         uint256 rcm = spend.note.rcm();
         if (!ctx->create_spend_proof(
                 spend.expsk.full_viewing_key().ak.GetRawBytes(),
@@ -588,15 +587,18 @@ TransactionBuilderResult TransactionBuilder::Build()
                 witness,
                 cv,
                 rk,
-                sdesc.zkproof)) {
+                zkproof)) {
             return TransactionBuilderResult("Spend proof failed");
         }
 
-        sdesc.cv = uint256::FromRawBytes(cv);
-        sdesc.rk = uint256::FromRawBytes(rk);
-        sdesc.anchor = spend.anchor;
-        sdesc.nullifier = *nf;
-        mtx.vShieldedSpend.push_back(sdesc);
+        SpendDescription::spend_auth_sig_t spendAuthSig;
+        mtx.vShieldedSpend.push_back(SpendDescription(
+            uint256::FromRawBytes(cv),
+            spend.anchor,
+            *nf,
+            uint256::FromRawBytes(rk),
+            zkproof,
+            spendAuthSig));
     }
 
     // Create Sapling OutputDescriptions
@@ -669,7 +671,7 @@ TransactionBuilderResult TransactionBuilder::Build()
             spends[i].expsk.ask.begin(),
             spends[i].alpha.begin(),
             dataToBeSigned.begin(),
-            mtx.vShieldedSpend[i].spendAuthSig.data());
+            mtx.vShieldedSpend[i].spend_auth_sig_mut().data());
     }
     ctx->binding_sig(
         mtx.valueBalanceSapling,
