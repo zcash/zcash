@@ -14,6 +14,7 @@
 # ************************************************************************/
 
 from cmath import log
+import inspect
 import json
 import logging
 import time
@@ -61,6 +62,10 @@ class ZcashExporter:
         self.ZCASH_CHAINWORK = Info('zcash_chainwork', 'total amount of work in active chain, in hexadecimal')
         self.ZCASH_CHAIN_DISK_SIZE = Gauge('zcash_chain_size_on_disk', 'the estimated size of the block and undo files on disk')
         self.ZCASH_COMMITMENTS = Gauge('zcash_commitments', 'the current number of note commitments in the commitment tree')
+        self.ZCASH_SPROUT_BALANCE = Gauge('zcash_sprout_bal', 'the current sprout pool balance')
+        self.ZCASH_SAPLING_BALANCE = Gauge('zcash_sapling_bal', 'the current sapling pool balance')
+        self.ZCASH_ORCHARD_BALANCE = Gauge('zcash_orchard_bal', 'the current orchard pool balance')
+
         
         # getmempoolinfo
         self.ZCASH_MEMPOOL_SIZE = Gauge('zcash_mempool_size', 'Zcash current mempool tx count')
@@ -85,12 +90,41 @@ class ZcashExporter:
         self.ZCASH_MEM_CHUNKS_USED = Gauge("zcash_mem_chunks_used", 'Number allocated chunks')
         self.ZCASH_MEM_CHUNKS_FREE = Gauge("zcash_mem_chunks_free", 'Number unused chunks')
 
+        #gettxoutsetinfo
+        self.ZCASH_TXOUT_HEIGHT = Gauge("zcash_txout_height", "The current block height(index)")
+        self.ZCASH_TXOUT_BESTBLOCK = Info("zcash_txout_bestblock", "the best block hash hex")
+        self.ZCASH_TXOUT_TRANSACTIONS = Gauge("zcash_txout_transactions", "The number of transactions")
+        self.ZCASH_TXOUT_TXOUTS = Gauge("zcash_txout_txouts", "The number of output transactions")
+        self.ZCASH_TXOUT_BYTES_SERIALIZED = Gauge("zcash_txout_bytes_serialized", "The serialized size") 
+        self.ZCASH_TXOUT_HASH_SERIALIZED = Info("zcash_txout_hash_serialized", "The serialized hash")
+        self.ZCASH_TXOUT_TOTAL_AMOUNT = Gauge("zcash_txout_total_amount", "The total amount")
+
+        """
+        RPC Mining
+        """
+        self.ZCASH_MINING_BLOCKS = Gauge("zcash_mining_blocks", "The current block")
+        self.ZCASH_MINING_DIFFICULTY = Gauge("zcash_mining_difficulty", "The current difficulty")
+        self.ZCASH_MINING_ERRORS = Info("zcash_mining_errors", "The current errors")
+        self.ZCASH_MINING_ERROR_TIMESTAMP = Gauge("zcash_mining_error_timestamp", "The current error timestamp")
+        self.ZCASH_MINING_GEN_PROC_LIMIT = Gauge("zcash_mining_gen_proc_limit", "The processor limit for generation. -1 if no generation. (see getgenerate or setgenerate calls)")
+        self.ZCASH_MINING_LOCAL_SOLPS = Gauge("zcash_mining_local_solps", "The average local solution rate in Sol/s since this node was started")
+        self.ZCASH_MINING_NETWORK_SOLPS = Gauge("zcash_mining_network_solps", "The estimated network solution rate in Sol/s")
+        self.ZCASH_MINING_NETWORK_HASHPS = Gauge("zcash_mining_network_hashps", "The estimated netework hash ps")    
+        self.ZCASH_MINING_POOLEDTX = Gauge("zcash_mining_pooledtx",  "The size of the mem pool")
+        self.ZCASH_MINING_TESTNET = Gauge("zcash_mining_testnet", "If using testnet or not")
+        self.ZCASH_MINING_CHAIN = Info("zcash_mining_chain", "current network name as defined in BIP70 (main, test, regtest)" )
+        self.ZCASH_MINING_GENERATE = Gauge("zcash_mining_generate", "If the generation is on or off (see getgenerate or setgenerate calls)")
+
         """
          RPC Network
         """
         # getdeprecationinfo
         self.ZCASH_DEPRECATION_HEIGHT= Gauge('zcash_deprecation', 'Zcash mainnet block height at which this version will deprecate and shut down')
-
+        self.ZCASH_DEPRECATION_TIME= Gauge('zcash_deprecation_time', 'the approximate time at which this version is expected to reach the end-of-service height, \
+                                             in seconds since epoch (midnight Jan 1 1970 GMT). Please note that given the variability of block times, \
+                                             the actual end-of-service halt may vary from this time by hours or even days; this value is provided \
+                                             solely for informational purposes and should not be relied upon to remain accurate. If the end-of-service \
+                                             height for this node has already been reached, this timestamp may be in the past.')
         # getnettotals
         self.ZCASH_TOTAL_BYTES_RECV = Gauge("zcash_total_bytes_recv", "Total bytes received")
         self.ZCASH_TOTAL_BYTES_SENT = Gauge("zcash_total_bytes_sent", "Total bytes sent")
@@ -139,15 +173,8 @@ class ZcashExporter:
         while True:
             self.fetch()
             time.sleep(self.polling_interval_startup_seconds)
-
-    def fetch(self):
-        """
-        Get metrics from zcashd and refresh Prometheus metrics with new data.
-        @TODO Change this to be a command set relative to env loaded 
-              (e.g. don't call miner RPCs for none miner configs;
-              regression testing for RPCs; combos/perm of RPCS on none wallet configs)
-              - make these into functions later so we can version RPCs
-        """
+    
+    def rpc_getinfo(self):
         api = Proxy(f"http://{self.rpc_user}:{self.rpc_password}@{self.rpc_host}:{self.rpc_port}")
         logging.info("calling zcash RPC API endpoint")
         try:
@@ -156,7 +183,13 @@ class ZcashExporter:
             self.ZCASH_PROTOCOL_VERSION.info({'protocolversion': str(zcash_info['protocolversion'])})
             self.ZCASH_WALLET_VERSION.info({'walletversion': str(zcash_info['walletversion'])})
         except Exception as e:
-            logging.info("missed zcash RPC endpoint call getinfo()")
+            frame = inspect.currentframe()
+            logging.info("missed zcash RPC endpoint call: %s", frame.f_code.co_name)
+    
+    def rpc_getblockchaininfo(self):
+        api = Proxy(f"http://{self.rpc_user}:{self.rpc_password}@{self.rpc_host}:{self.rpc_port}")
+        logging.info("calling zcash RPC API endpoint")
+
         try:
             zcash_info = api.getblockchaininfo()
             logging.info("return from rpc")
@@ -171,15 +204,133 @@ class ZcashExporter:
             self.ZCASH_CHAINWORK.info({'zcash_chainwork': str(zcash_info['chainwork'])})
             self.ZCASH_CHAIN_DISK_SIZE.set(zcash_info['size_on_disk'])
             self.ZCASH_COMMITMENTS.set(zcash_info['commitments'])
-            logging.info("parse complete")
             #@todo
             # softfork
             # upgrades
-            # consensues        
+            # consensues
+            for i in zcash_info['valuePools']:
+                if i["id"] == "orchard":
+                    self.ZCASH_ORCHARD_BALANCE.set(i["chainValue"])
+                if i["id"] == "sapling":
+                    self.ZCASH_SAPLING_BALANCE.set(i["chainValue"])
+                if i["id"] == "sprout":
+                    self.ZCASH_SPROUT_BALANCE.set(i["chainValue"])           
         except Exception as e:
-            logging.info("missed zcash RPC endpoint call getblockchaininfo()")
+            frame = inspect.currentframe()
+            logging.info("missed zcash RPC endpoint call: %s", frame.f_code.co_name)
 
-        #self.ZCASH_NETWORK_TYPE.state(str(self.node_network))
+    def rpc_getmempoolinfo(self):
+        api = Proxy(f"http://{self.rpc_user}:{self.rpc_password}@{self.rpc_host}:{self.rpc_port}")
+        logging.info("calling zcash RPC API endpoint")
+
+        try:
+            zcash_info = api.getmempoolinfo()
+            logging.info("return from rpc")
+            self.ZCASH_MEMPOOL_SIZE.set(zcash_info["size"])
+            self.ZCASH_MEMPOOL_BYTES.set(zcash_info["bytes"])
+            self.ZCASH_MEMPOOL_USAGE.set(zcash_info["usage"])
+        except Exception as e:
+            frame = inspect.currentframe()
+            logging.info("missed zcash RPC endpoint call: ", frame.f_code.co_name)
+
+    def rpc_gettxoutsetinfo(self):
+        api = Proxy(f"http://{self.rpc_user}:{self.rpc_password}@{self.rpc_host}:{self.rpc_port}")
+        logging.info("calling zcash RPC API endpoint")
+
+        try:
+            zcash_info = api.gettxoutsetinfo()
+            logging.info("return from rpc")
+            self.ZCASH_TXOUT_HEIGHT.set(zcash_info["height"])
+            self.ZCASH_TXOUT_BESTBLOCK.info({"zcash_txout_bestblock" : str(zcash_info['bestblock'])})
+            self.ZCASH_TXOUT_TRANSACTIONS.set(zcash_info["transactions"])
+            self.ZCASH_TXOUT_TXOUTS.set(zcash_info["txouts"])
+            self.ZCASH_TXOUT_BYTES_SERIALIZED.set(zcash_info["bytes_serialized"])
+            self.ZCASH_TXOUT_HASH_SERIALIZED.info({"zcash_txout_hash_serialized" : str(zcash_info['hash_serialized'])})
+            self.ZCASH_TXOUT_TOTAL_AMOUNT.set(zcash_info["total_amount"])
+        except Exception as e:
+            frame = inspect.currentframe()
+            logging.info("missed zcash RPC endpoint call: %s", frame.f_code.co_name)
+
+    def rpc_getmemoryinfo(self):
+        api = Proxy(f"http://{self.rpc_user}:{self.rpc_password}@{self.rpc_host}:{self.rpc_port}")
+        logging.info("calling zcash RPC API endpoint")
+
+        try:
+            zcash_info = api.getmemoryinfo()
+            logging.info("return from rpc")
+            self.ZCASH_MEM_USED.set(zcash_info["locked"]["used"])
+            self.ZCASH_MEM_FREE.set(zcash_info["locked"]["free"])
+            self.ZCASH_MEM_TOTAL.set(zcash_info["locked"]["total"])
+            self.ZCASH_MEM_LOCKED.set(zcash_info["locked"]["locked"])
+            self.ZCASH_MEM_CHUNKS_USED.set(zcash_info["locked"]["chunks_used"])
+            self.ZCASH_MEM_CHUNKS_FREE.set(zcash_info["locked"]["chunks_free"])
+        except Exception as e:
+            frame = inspect.currentframe()
+            logging.info("missed zcash RPC endpoint call: %s", frame.f_code.co_name)
+    
+    def rpc_getmininginfo(self):
+        api = Proxy(f"http://{self.rpc_user}:{self.rpc_password}@{self.rpc_host}:{self.rpc_port}")
+        logging.info("calling zcash RPC API endpoint")
+
+        try:
+            zcash_info = api.getmininginfo()
+            logging.info("return from rpc")
+            self.ZCASH_MINING_BLOCKS.set(zcash_info["blocks"])
+            self.ZCASH_MINING_DIFFICULTY.set(zcash_info["difficulty"])
+            #self.ZCASH_MINING_ERRORS.info()
+            self.ZCASH_MINING_ERROR_TIMESTAMP.set(zcash_info["errorstimestamp"])
+            self.ZCASH_MINING_GEN_PROC_LIMIT.set(zcash_info["genproclimit"])
+            self.ZCASH_MINING_LOCAL_SOLPS.set(zcash_info["localsolps"])
+            self.ZCASH_MINING_NETWORK_SOLPS.set(zcash_info["networksolps"])
+            self.ZCASH_MINING_NETWORK_HASHPS.set(zcash_info["networkhashps"])
+            self.ZCASH_MINING_POOLEDTX.set(zcash_info["pooledtx"])
+            if zcash_info["testnet"] == "True":
+                self.ZCASH_MINING_TESTNET.set(1)
+                #SET EXPORTER VAR NOT TO GET DEPINFO
+            else:
+                self.ZCASH_MINING_TESTNET.set(0)
+            self.ZCASH_MINING_CHAIN.info({"zcash_mining_chain" : str(zcash_info['chain'])})
+            if zcash_info["generate"] == "True":
+                self.ZCASH_MINING_GENERATE.set(1)
+            else:
+                self.ZCASH_MINING_GENERATE.set(0)
+        except Exception as e:
+            frame = inspect.currentframe()
+            logging.info("missed zcash RPC endpoint call: %s", frame.f_code.co_name)
+    
+    def rpc_getdeprecationinfo(self):
+        api = Proxy(f"http://{self.rpc_user}:{self.rpc_password}@{self.rpc_host}:{self.rpc_port}")
+        logging.info("calling zcash RPC API endpoint")
+
+        try:
+            zcash_info = api.getdeprecationinfo()
+            logging.info("return from rpc")
+            for i in zcash_info["end_of_service"]:
+                ZCASH_DEPRECATION_HEIGHT.set(i["block_height"])
+                ZCASH_DEPRECATION_TIME.set(i["estimated_time"])
+        except Exception as e:
+            frame = inspect.currentframe()
+            logging.info("missed zcash RPC endpoint call: %s", frame.f_code.co_name)
+
+
+    def fetch(self):
+        """
+        Get metrics from zcashd and refresh Prometheus metrics with new data.
+        @TODO Change this to be a command set relative to env loaded 
+              (e.g. don't call miner RPCs for none miner configs;
+              regression testing for RPCs; combos/perm of RPCS on none wallet configs)
+              - make these into functions later so we can version RPCs
+        """
+        self.rpc_getinfo()
+        self.rpc_getblockchaininfo()
+
+        self.rpc_getmempoolinfo() #todo might need to check if only for synced node
+        #self.rpc_gettxoutsetinfo() #takes 4 seconds on synced node
+        self.rpc_getmemoryinfo()
+        self.rpc_getmininginfo()
+        #check if on mainnet
+        self.rpc_getdeprecationinfo()
+
         
 def main():
     logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
