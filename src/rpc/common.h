@@ -59,6 +59,7 @@ static const CRPCConvertTable rpcCvtTable =
     { "getblockchaininfo",           {{}, {}} },
     { "getchaintips",                {{}, {}} },
     { "z_gettreestate",              {{s}, {}} },
+    { "z_getsubtreesbyindex",        {{s, o}, {o}} },
     { "getmempoolinfo",              {{}, {}} },
     { "invalidateblock",             {{s}, {}} },
     { "reconsiderblock",             {{s}, {}} },

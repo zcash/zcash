@@ -1423,6 +1423,77 @@ UniValue z_gettreestate(const UniValue& params, bool fHelp)
     return res;
 }
 
+UniValue z_getsubtreesbyindex(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() < 2 || params.size() > 3)
+        throw runtime_error(
+            "z_getsubtreesbyindex \"pool\" start_index ( end_index )\n"
+            "Return information about the given block's tree state.\n"
+            "\nArguments:\n"
+            "1. \"pool\"        (string, required) The pool from which subtrees should be returned. Either \"sapling\" or \"orchard\".\n"
+            "2. start_index   (numeric, required) The index of the first subtree to return.\n"
+            "2. end_index     (numeric, optional) The index of the last subtree to return.\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"pool\" : \"sapling|orchard\", (string) The shielded pool to which the subtrees belong\n"
+            "  \"depth\": n,            (numeric) The depth of the subtrees within the pool's note commitment tree\n"
+            "  \"start_index\": n,      (numeric) The index of the first subtree\n"
+            "  \"subtrees\": [          (array) A sequential list of complete subtrees\n"
+            "    {\n"
+            "      \"root\": \"hash\",    (string) hash of most recent block with more information\n"
+            "      \"end_height\": n,   (numeric) height of the block containing the note that completed this subtree\n"
+            "    }, ...\n"
+            "  ]\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("z_getsubtreesbyindex", "\"sapling\", 0")
+            + HelpExampleRpc("z_getsubtreesbyindex", "\"orchard\", 3, 7")
+        );
+
+    auto strPool = params[0].get_str();
+    ShieldedType pool;
+    if (strPool == "sapling") {
+        pool = SAPLING;
+    } else if (strPool == "orchard") {
+        pool = ORCHARD;
+    } else {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Requested pool must be \"sapling\" or \"orchard\"");
+    }
+
+    libzcash::SubtreeIndex startIndex = params[1].get_int();
+    std::optional<libzcash::SubtreeIndex> endIndex = std::nullopt;
+    if (params.size() > 2) {
+        endIndex = params[2].get_int();
+    }
+
+    LOCK(cs_main);
+
+    UniValue subtrees(UniValue::VARR);
+    for (libzcash::SubtreeIndex index = startIndex; ; index++) {
+        if (endIndex.has_value() && endIndex.value() < index) {
+            break;
+        }
+
+        auto subtreeData = pcoinsTip->GetSubtreeData(pool, index);
+        if (!subtreeData.has_value()) {
+            break;
+        }
+
+        UniValue subtree(UniValue::VOBJ);
+        subtree.pushKV("root", HexStr(subtreeData->root));
+        subtree.pushKV("end_height", subtreeData->nHeight);
+        subtrees.push_back(subtree);
+    }
+
+    UniValue res(UniValue::VOBJ);
+    res.pushKV("pool", strPool);
+    res.pushKV("depth", libzcash::TRACKED_SUBTREE_HEIGHT);
+    res.pushKV("start_index", startIndex);
+    res.pushKV("subtrees", subtrees);
+
+    return res;
+}
+
 UniValue mempoolInfoToJSON()
 {
     UniValue ret(UniValue::VOBJ);
@@ -1545,6 +1616,7 @@ static const CRPCCommand commands[] =
     { "blockchain",         "getblockheader",         &getblockheader,         true  },
     { "blockchain",         "getchaintips",           &getchaintips,           true  },
     { "blockchain",         "z_gettreestate",         &z_gettreestate,         true  },
+    { "blockchain",         "z_getsubtreesbyindex",   &z_getsubtreesbyindex,   true  },
     { "blockchain",         "getdifficulty",          &getdifficulty,          true  },
     { "blockchain",         "getmempoolinfo",         &getmempoolinfo,         true  },
     { "blockchain",         "getrawmempool",          &getrawmempool,          true  },

@@ -92,6 +92,13 @@ class FinalSaplingRootTest(BitcoinTestFramework):
             assert "skipHash" not in treestate["orchard"]
             assert_equal(treestate["orchard"]["commitments"]["finalRoot"], NULL_FIELD)
 
+        # Verify that there are no complete Sapling subtrees.
+        subtrees = self.nodes[0].z_getsubtreesbyindex('sapling', 0)
+        assert_equal(subtrees['pool'], 'sapling')
+        assert_equal(subtrees['depth'], 16)
+        assert_equal(subtrees['start_index'], 0)
+        assert_equal(len(subtrees['subtrees']), 0)
+
         # Node 0 shields some funds
         taddr0 = get_coinbase_address(self.nodes[0])
         saplingAddr0 = self.nodes[0].z_getnewaddress('sapling')
@@ -240,6 +247,13 @@ class FinalSaplingRootTest(BitcoinTestFramework):
         assert_equal(new_treestate["orchard"]["commitments"]["finalRoot"], ORCHARD_TREE_EMPTY_ROOT)
         assert_equal(new_treestate["orchard"]["commitments"]["finalState"], "000000")
         pass
+
+        # Verify that there are still no complete subtrees (as we have not created 2^16 notes).
+        subtrees = self.nodes[0].z_getsubtreesbyindex('sapling', 0)
+        assert_equal(subtrees['pool'], 'sapling')
+        assert_equal(subtrees['depth'], 16)
+        assert_equal(subtrees['start_index'], 0)
+        assert_equal(len(subtrees['subtrees']), 0)
 
 
 if __name__ == '__main__':

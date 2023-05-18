@@ -120,6 +120,12 @@ class FinalOrchardRootTest(BitcoinTestFramework):
             assert_equal(treestate["orchard"]["commitments"]["finalRoot"], ORCHARD_TREE_EMPTY_ROOT)
             assert_equal(treestate["orchard"]["commitments"]["finalState"], "000000")
 
+        # Verify that there are no complete Orchard subtrees.
+        subtrees = self.nodes[0].z_getsubtreesbyindex('orchard', 0)
+        assert_equal(subtrees['pool'], 'orchard')
+        assert_equal(subtrees['depth'], 16)
+        assert_equal(subtrees['start_index'], 0)
+        assert_equal(len(subtrees['subtrees']), 0)
 
         # Node 0 shields some funds
         taddr0 = get_coinbase_address(self.nodes[0])
@@ -281,6 +287,12 @@ class FinalOrchardRootTest(BitcoinTestFramework):
         assert_equal(len(new_treestate["orchard"]["commitments"]["finalRoot"]), 64)
         assert_equal(len(new_treestate["orchard"]["commitments"]["finalState"]), 260)
 
+        # Verify that there are still no complete subtrees (as we have not created 2^16 notes).
+        subtrees = self.nodes[0].z_getsubtreesbyindex('orchard', 0)
+        assert_equal(subtrees['pool'], 'orchard')
+        assert_equal(subtrees['depth'], 16)
+        assert_equal(subtrees['start_index'], 0)
+        assert_equal(len(subtrees['subtrees']), 0)
 
 
 if __name__ == '__main__':
