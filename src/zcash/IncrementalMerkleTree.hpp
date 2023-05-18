@@ -31,7 +31,8 @@ class LatestSubtree {
     SubtreeIndex index;
     //! The latest complete subtree root at level TRACKED_SUBTREE_HEIGHT
     SubtreeRoot root;
-    //! The height of the block that completed the latest complete subtree
+    //! The height of the block that contains the note commitment that is
+    //! the rightmost leaf of the most recently completed subtree.
     int nHeight;
 
     LatestSubtree() { }
@@ -57,7 +58,8 @@ class SubtreeData {
     uint8_t leadbyte = 0x00;
     //! The root of the subtree at level TRACKED_SUBTREE_HEIGHT
     SubtreeRoot root;
-    //! The height of the block that completed this subtree
+    //! The height of the block that contains the note commitment
+    //! that completed this subtree.
     int nHeight;
 
     SubtreeData() { }

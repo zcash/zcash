@@ -409,8 +409,9 @@ public:
             ShieldedType type,
             libzcash::SubtreeIndex index) const = 0;
 
-    //! Do a bulk modification (multiple CCoins changes + BestBlock change).
-    //! The passed mapCoins can be modified.
+    //! Do a bulk modification onto this cache. All of the provided
+    //! caches may be modified and should be cleared by the caller
+    //! after this batch write.
     virtual bool BatchWrite(CCoinsMap &mapCoins,
                             const uint256 &hashBlock,
                             const uint256 &hashSproutAnchor,
@@ -433,46 +434,48 @@ public:
     virtual ~CCoinsView() {}
 };
 
-// This class is used by `CCoinsViewCache` to interally store, for each
-// shielded type, the complete subtrees that have not yet been flushed
-// to the backing `CCoinsView`. This allows the cache to both store new
-// subtrees and handle removing subtrees from the backing view when the
-// cache is flushed.
+//! This class is used by `CCoinsViewCache` to interally store, for each
+//! shielded type, the complete subtrees that have not yet been flushed
+//! to the backing `CCoinsView`. This allows the cache to both store new
+//! subtrees and handle removing subtrees from the backing view when the
+//! cache is flushed.
 class SubtreeCache {
     public:
 
     bool initialized = false;
-    // We store in `parentLatestSubtree` our perspective of what the latest
-    // subtree aught to be in the backing `CCoinsView`. If subtrees are
-    // removed from this subtree cache but no new complete subtrees exist,
-    // they must be removed from the backing view later when it is flushed.
+    //! We store in `parentLatestSubtree` our perspective of what the latest
+    //! subtree aught to be in the backing `CCoinsView`. If subtrees are
+    //! removed from this subtree cache but no new complete subtrees exist,
+    //! they must be removed from the backing view later when it is flushed.
     std::optional<libzcash::LatestSubtree> parentLatestSubtree;
-    // New subtrees slated to be written to the backing `CCoinsView`.
+    //! New subtrees slated to be written to the backing `CCoinsView`.
     std::vector<libzcash::SubtreeData> newSubtrees;
     ShieldedType type;
 
     SubtreeCache(ShieldedType type) : type(type) { };
 
-    // Initialize the subtree cache so that the `parentLatestSubtree`
-    // stored internally is consistent with the parent view.
+    //! Initialize the subtree cache so that the `parentLatestSubtree`
+    //! stored internally is consistent with the parent view.
     void Initialize(CCoinsView *parentView);
+
+    //! Resets this cache to its original uninitialized state
     void clear();
 
-    // Gets the latest subtree for this cache, using the parent view
-    // as a reference if needed.
+    //! Gets the latest subtree for this cache, using the parent view
+    //! as a reference if needed.
     std::optional<libzcash::LatestSubtree> GetLatestSubtree(CCoinsView *parentView);
 
-    // Gets the subtree data for a given index, if available.
+    //! Gets the subtree data for a given index, if available.
     std::optional<libzcash::SubtreeData> GetSubtreeData(CCoinsView *parentView, libzcash::SubtreeIndex index);
 
-    // Inserts a new subtree into the view.
+    //! Inserts a new subtree into the view.
     void PushSubtree(CCoinsView *parentView, libzcash::SubtreeData subtree);
 
-    // Removes the last subtree added to the view; this will throw an
-    // exception if the view has no subtrees.
+    //! Removes the last subtree added to the view; this will throw an
+    //! exception if the view has no subtrees.
     void PopSubtree(CCoinsView *parentView);
 
-    // Writes a child map to this cache; this clears the child map.
+    //! Writes a child map to this cache; this clears the child map.
     void BatchWrite(CCoinsView *parentView, SubtreeCache &childMap);
 };
 

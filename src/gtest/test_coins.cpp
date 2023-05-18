@@ -415,7 +415,7 @@ libzcash::SubtreeData RandomSubtree(libzcash::SubtreeIndex index) {
     }
 
     // We store the intended index in the nHeight field
-    // so that the mock database can exercise tests. (Indexes
+    // so that the mock database can exercise tests. (Indices
     // are not stored in the SubtreeData struct because they
     // are already known by the caller of GetSubtreeData)
     return libzcash::SubtreeData(root, index);
