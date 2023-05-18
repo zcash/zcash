@@ -40,6 +40,14 @@ if [ -z "${CONFIGURE_FLAGS-}" ]; then
     CONFIGURE_FLAGS=""
 fi
 
+case "$@" in
+    *"V=1"*)
+        ;;
+    *)
+        CONFIGURE_FLAGS="--quiet $CONFIGURE_FLAGS"
+        ;;
+esac
+
 if [ "$*" = '--help' ]
 then
     cat <<EOF
