@@ -15,7 +15,7 @@
           default: ""
           type: string
         - name: BUILD_CONTAINER
-          default: electriccoinco/zcashd-bench-debian10
+          default: electriccoinco/zcashd-bench-ubuntu2004
           type: string
         - name: TEST_TARGET
           default: ""
@@ -52,9 +52,11 @@
             set -o pipefail
             cp -a /home/.zcash-params $HOME/
             cp /home/mem_metrics.py /workspace/source
+            cp -a /home/.zcash-params $HOME/
             cd /workspace/source
     
-            ./qa/zcash/performance-measurements.sh memory sleep | tail -n 7 | python ./mem_metrics.py
+            ./qa/zcash/performance-measurements.sh memory sleep
+            heaptrack -a sleep.gz | tail -n 7 | python ./mem_metrics.py
     
         - name: bench-createsaplingspend
           image: $(params.BUILD_CONTAINER)
@@ -65,7 +67,8 @@
             cp /home/mem_metrics.py /workspace/source
             cd /workspace/source
     
-            ./qa/zcash/performance-measurements.sh memory createsaplingspend | tail -n 7 | python ./mem_metrics.py
+            ./qa/zcash/performance-measurements.sh memory createsaplingspend
+            heaptrack -a createsaplingspend.gz | tail -n 7 | python ./mem_metrics.py
     
         - name: bench-verifysaplingspend
           image: $(params.BUILD_CONTAINER)
@@ -76,7 +79,8 @@
             cp /home/mem_metrics.py /workspace/source
             cd /workspace/source
     
-            ./qa/zcash/performance-measurements.sh memory verifysaplingspend | tail -n 7 | python ./mem_metrics.py
+            ./qa/zcash/performance-measurements.sh memory verifysaplingspend
+            heaptrack -a verifysaplingspend.gz | tail -n 7 | python ./mem_metrics.py
     
         - name: bench-createsaplingoutput
           image: $(params.BUILD_CONTAINER)
@@ -87,7 +91,8 @@
             cp /home/mem_metrics.py /workspace/source
             cd /workspace/source
     
-            ./qa/zcash/performance-measurements.sh memory createsaplingoutput | tail -n 7 | python ./mem_metrics.py
+            ./qa/zcash/performance-measurements.sh memory createsaplingoutput
+            heaptrack -a createsaplingoutput.gz  | tail -n 7 | python ./mem_metrics.py
     
         - name: bench-verifysaplingoutput
           image: $(params.BUILD_CONTAINER)
@@ -98,7 +103,8 @@
             cp /home/mem_metrics.py /workspace/source
             cd /workspace/source
     
-            ./qa/zcash/performance-measurements.sh memory verifysaplingoutput | tail -n 7 | python ./mem_metrics.py
+            ./qa/zcash/performance-measurements.sh memory verifysaplingoutput
+            heaptrack -a verifysaplingoutput.gz  | tail -n 7 | python ./mem_metrics.py
     
         - name: bench-createjoinsplit
           image: $(params.BUILD_CONTAINER)
@@ -109,7 +115,8 @@
             cp /home/mem_metrics.py /workspace/source
             cd /workspace/source
     
-            ./qa/zcash/performance-measurements.sh memory createjoinsplit | tail -n 7 | python ./mem_metrics.py
+            ./qa/zcash/performance-measurements.sh memory createjoinsplit
+            heaptrack -a createjoinsplit.gz | tail -n 7 | python ./mem_metrics.py
     
         - name: bench-verifyjoinsplit
           image: $(params.BUILD_CONTAINER)
@@ -120,7 +127,8 @@
             cp /home/mem_metrics.py /workspace/source
             cd /workspace/source
     
-            ./qa/zcash/performance-measurements.sh memory verifyjoinsplit | tail -n 7 | python ./mem_metrics.py
+            ./qa/zcash/performance-measurements.sh memory verifyjoinsplit
+            heaptrack -a verifyjoinsplit.gz | tail -n 7 | python ./mem_metrics.py
     
         - name: bench-verifyequihash
           image: $(params.BUILD_CONTAINER)
@@ -131,7 +139,8 @@
             cp /home/mem_metrics.py /workspace/source
             cd /workspace/source
     
-            ./qa/zcash/performance-measurements.sh memory verifyequihash | tail -n 7 | python ./mem_metrics.py
+            ./qa/zcash/performance-measurements.sh memory verifyequihash
+            heaptrack -a verifyequihash.gz | tail -n 7 | python ./mem_metrics.py
     
         - name: bench-loadwallet-200k-recv
           image: $(params.BUILD_CONTAINER)
@@ -143,7 +152,8 @@
             cp /home/mem_metrics.py /workspace/source
             cd /workspace/source
     
-            ./qa/zcash/performance-measurements.sh memory loadwallet 200k-recv | tail -n 7 | python ./mem_metrics.py
+            ./qa/zcash/performance-measurements.sh memory loadwallet 200k-recv
+            heaptrack -a loadwallet-200k-recv.gz | tail -n 7 | python ./mem_metrics.py
     
         - name: bench-loadwallet-200k-send
           image: $(params.BUILD_CONTAINER)
@@ -155,7 +165,8 @@
             cp /home/mem_metrics.py /workspace/source
             cd /workspace/source
     
-            ./qa/zcash/performance-measurements.sh memory loadwallet 200k-send | tail -n 7 | python ./mem_metrics.py
+            ./qa/zcash/performance-measurements.sh memory loadwallet 200k-send
+            heaptrack -a loadwallet-200k-send.gz | tail -n 7 | python ./mem_metrics.py
     
         - name: bench-listunspent-200k-recv
           image: $(params.BUILD_CONTAINER)
@@ -167,7 +178,8 @@
             cp /home/mem_metrics.py /workspace/source
             cd /workspace/source
     
-            ./qa/zcash/performance-measurements.sh memory listunspent 200k-recv | tail -n 7 | python ./mem_metrics.py
+            ./qa/zcash/performance-measurements.sh memory listunspent 200k-recv
+            heaptrack -a listunspent-200k-recv.gz | tail -n 7 | python ./mem_metrics.py
     
         - name: bench-listunspent-200k-send
           image: $(params.BUILD_CONTAINER)
@@ -179,7 +191,8 @@
             cp /home/mem_metrics.py /workspace/source
             cd /workspace/source
     
-            ./qa/zcash/performance-measurements.sh memory listunspent 200k-send | tail -n 7 | python ./mem_metrics.py
+            ./qa/zcash/performance-measurements.sh memory listunspent 200k-send
+            heaptrack -a listunspent-200k-send.gz  | tail -n 7 | python ./mem_metrics.py
     
         - name: bench-connectblocksapling
           image: $(params.BUILD_CONTAINER)
@@ -191,7 +204,8 @@
             cp /home/mem_metrics.py /workspace/source
             cd /workspace/source
     
-            ./qa/zcash/performance-measurements.sh memory connectblocksapling | tail -n 7 | python ./mem_metrics.py
+            ./qa/zcash/performance-measurements.sh memory connectblocksapling
+            heaptrack -a connectblocksapling.gz | tail -n 7 | python ./mem_metrics.py
     
         - name: bench-connectblockorchard
           image: $(params.BUILD_CONTAINER)
@@ -203,7 +217,8 @@
             cp /home/mem_metrics.py /workspace/source
             cd /workspace/source
     
-            ./qa/zcash/performance-measurements.sh memory connectblockorchard | tail -n 7 | python ./mem_metrics.py
+            ./qa/zcash/performance-measurements.sh memory connectblockorchard
+            heaptrack -a connectblockorchard.gz | tail -n 7 | python ./mem_metrics.py
     
         - name: bench-connectblockslow
           image: $(params.BUILD_CONTAINER)
@@ -215,4 +230,5 @@
             cp /home/mem_metrics.py /workspace/source
             cd /workspace/source
     
-            ./qa/zcash/performance-measurements.sh memory connectblockslow | tail -n 7 | python ./mem_metrics.py
+            ./qa/zcash/performance-measurements.sh memory connectblockslow
+            heaptrack -a connectblockslow.gz | tail -n 7 | python ./mem_metrics.py
