@@ -7,13 +7,12 @@
 #include "NoteEncryption.hpp"
 #include "Proof.hpp"
 #include "Zcash.h"
-
 #include "uint252.h"
 #include "uint256.h"
 
-#include <array>
-
 #include <rust/ed25519.h>
+
+#include <array>
 
 namespace libzcash
 {
@@ -26,8 +25,8 @@ public:
     SproutSpendingKey key;
 
     JSInput();
-    JSInput(SproutWitness witness, SproutNote note, SproutSpendingKey key) :
-        witness(witness), note(note), key(key)
+    JSInput(SproutWitness witness, SproutNote note, SproutSpendingKey key)
+        : witness(witness), note(note), key(key)
     {
     }
 

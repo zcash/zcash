@@ -259,8 +259,8 @@ private:
     ZcashdUnifiedSpendingKey(
         transparent::AccountKey tkey,
         SaplingExtendedSpendingKey skey,
-        OrchardSpendingKey okey) :
-        transparentKey(tkey), saplingKey(skey), orchardKey(okey)
+        OrchardSpendingKey okey)
+        : transparentKey(tkey), saplingKey(skey), orchardKey(okey)
     {
     }
 

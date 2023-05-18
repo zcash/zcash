@@ -3,6 +3,7 @@
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "unified.h"
+
 #include "tinyformat.h"
 #include "util/match.h"
 #include "util/strencodings.h"
@@ -22,8 +23,8 @@ bool libzcash::HasShielded(const std::set<ReceiverType>& receiverTypes)
         // TODO: update this as support for new shielded protocols is added.
         return r == ReceiverType::Sapling || r == ReceiverType::Orchard;
     };
-    return std::find_if(receiverTypes.begin(), receiverTypes.end(), has_shielded) !=
-           receiverTypes.end();
+    return std::find_if(receiverTypes.begin(), receiverTypes.end(), has_shielded)
+           != receiverTypes.end();
 }
 
 bool libzcash::HasTransparent(const std::set<ReceiverType>& receiverTypes)
@@ -32,8 +33,8 @@ bool libzcash::HasTransparent(const std::set<ReceiverType>& receiverTypes)
         // TODO: update this as support for new transparent protocols is added.
         return r == ReceiverType::P2PKH || r == ReceiverType::P2SH;
     };
-    return std::find_if(receiverTypes.begin(), receiverTypes.end(), has_transparent) !=
-           receiverTypes.end();
+    return std::find_if(receiverTypes.begin(), receiverTypes.end(), has_transparent)
+           != receiverTypes.end();
 }
 
 Receiver libzcash::RecipientAddressToReceiver(const RecipientAddress& recipient)
@@ -85,7 +86,9 @@ std::optional<ZcashdUnifiedSpendingKey> ZcashdUnifiedSpendingKey::ForAccount(
     AccountId accountId)
 {
     auto transparentKey = transparent::AccountKey::ForAccount(seed, bip44CoinType, accountId);
-    if (!transparentKey.has_value()) return std::nullopt;
+    if (!transparentKey.has_value()) {
+        return std::nullopt;
+    }
 
     auto saplingKey = SaplingExtendedSpendingKey::ForAccount(seed, bip44CoinType, accountId);
 
@@ -171,12 +174,14 @@ UnifiedAddressGenerationResult ZcashdUnifiedFullViewingKey::Address(
             const auto& tkey = transparentKey.value();
 
             auto childIndex = j.ToTransparentChildIndex();
-            if (!childIndex.has_value())
+            if (!childIndex.has_value()) {
                 return UnifiedAddressGenerationError::InvalidTransparentChildIndex;
+            }
 
             auto externalPubkey = tkey.DeriveExternal(childIndex.value());
-            if (!externalPubkey.has_value())
+            if (!externalPubkey.has_value()) {
                 return UnifiedAddressGenerationError::NoAddressForDiversifier;
+            }
 
             ua.AddReceiver(externalPubkey.value().GetID());
         } else {
@@ -195,8 +200,9 @@ UnifiedAddressGenerationResult ZcashdUnifiedFullViewingKey::FindAddress(
     bool hasTransparent = HasTransparent(receiverTypes);
     do {
         auto addr = Address(j0, receiverTypes);
-        if (addr != UnifiedAddressGenerationResult(
-                        UnifiedAddressGenerationError::NoAddressForDiversifier)) {
+        if (addr
+            != UnifiedAddressGenerationResult(
+                UnifiedAddressGenerationError::NoAddressForDiversifier)) {
             return addr;
         }
     } while (j0.increment());

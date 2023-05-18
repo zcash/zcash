@@ -1,19 +1,18 @@
 #ifndef ZC_INCREMENTALMERKLETREE_H_
 #define ZC_INCREMENTALMERKLETREE_H_
 
-#include <array>
-#include <deque>
-#include <optional>
-
+#include "Zcash.h"
 #include "serialize.h"
 #include "streams_rust.h"
 #include "uint256.h"
-
-#include "Zcash.h"
 #include "zcash/util.h"
 
 #include <primitives/orchard.h>
 #include <rust/bridge.h>
+
+#include <array>
+#include <deque>
+#include <optional>
 
 namespace libzcash
 {
@@ -56,8 +55,8 @@ public:
 
     MerklePath() {}
 
-    MerklePath(std::vector<std::vector<bool>> authentication_path, std::vector<bool> index) :
-        authentication_path(authentication_path), index(index)
+    MerklePath(std::vector<std::vector<bool>> authentication_path, std::vector<bool> index)
+        : authentication_path(authentication_path), index(index)
     {
     }
 };
@@ -150,8 +149,8 @@ bool operator==(
     const IncrementalMerkleTree<Depth, Hash>& b)
 {
     return (
-        a.emptyroots == b.emptyroots && a.left == b.left && a.right == b.right &&
-        a.parents == b.parents);
+        a.emptyroots == b.emptyroots && a.left == b.left && a.right == b.right
+        && a.parents == b.parents);
 }
 
 template<size_t Depth, typename Hash>
@@ -203,8 +202,8 @@ template<size_t Depth, typename Hash>
 bool operator==(const IncrementalWitness<Depth, Hash>& a, const IncrementalWitness<Depth, Hash>& b)
 {
     return (
-        a.tree == b.tree && a.filled == b.filled && a.cursor == b.cursor &&
-        a.cursor_depth == b.cursor_depth);
+        a.tree == b.tree && a.filled == b.filled && a.cursor == b.cursor
+        && a.cursor_depth == b.cursor_depth);
 }
 
 class SHA256Compress : public uint256
@@ -277,8 +276,8 @@ public:
 
     OrchardMerkleFrontier(OrchardMerkleFrontier&& frontier) : inner(std::move(frontier.inner)) {}
 
-    OrchardMerkleFrontier(const OrchardMerkleFrontier& frontier) :
-        inner(frontier.inner->box_clone())
+    OrchardMerkleFrontier(const OrchardMerkleFrontier& frontier)
+        : inner(frontier.inner->box_clone())
     {
     }
 

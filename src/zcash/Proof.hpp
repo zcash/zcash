@@ -170,9 +170,9 @@ public:
     friend bool operator==(const PHGRProof& a, const PHGRProof& b)
     {
         return (
-            a.g_A == b.g_A && a.g_A_prime == b.g_A_prime && a.g_B == b.g_B &&
-            a.g_B_prime == b.g_B_prime && a.g_C == b.g_C && a.g_C_prime == b.g_C_prime &&
-            a.g_K == b.g_K && a.g_H == b.g_H);
+            a.g_A == b.g_A && a.g_A_prime == b.g_A_prime && a.g_B == b.g_B
+            && a.g_B_prime == b.g_B_prime && a.g_C == b.g_C && a.g_C_prime == b.g_C_prime
+            && a.g_K == b.g_K && a.g_H == b.g_H);
     }
 
     friend bool operator!=(const PHGRProof& a, const PHGRProof& b) { return !(a == b); }

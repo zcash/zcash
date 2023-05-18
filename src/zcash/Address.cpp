@@ -1,12 +1,13 @@
 #include "Address.hpp"
+
 #include "util/strencodings.h"
 #include "zcash/address/unified.h"
+
+#include <rust/address.h>
 
 #include <algorithm>
 #include <iostream>
 #include <vector>
-
-#include <rust/address.h>
 
 const uint8_t ZCASH_UA_TYPECODE_P2PKH = 0x00;
 const uint8_t ZCASH_UA_TYPECODE_P2SH = 0x01;
@@ -111,9 +112,9 @@ bool UnifiedAddress::AddReceiver(Receiver receiver)
     auto typecode = std::visit(TypecodeForReceiver(), receiver);
     for (const auto& r : receivers) {
         auto t = std::visit(TypecodeForReceiver(), r);
-        if ((t == typecode) ||
-            (std::holds_alternative<CKeyID>(r) && std::holds_alternative<CScriptID>(receiver)) ||
-            (std::holds_alternative<CScriptID>(r) && std::holds_alternative<CKeyID>(receiver))) {
+        if ((t == typecode)
+            || (std::holds_alternative<CKeyID>(r) && std::holds_alternative<CScriptID>(receiver))
+            || (std::holds_alternative<CScriptID>(r) && std::holds_alternative<CKeyID>(receiver))) {
             return false;
         }
     }
@@ -186,7 +187,11 @@ UnifiedAddress::GetPreferredRecipientAddress(const Consensus::Params& consensus,
     std::optional<RecipientAddress> result;
     for (const auto& receiver : *this) {
         examine(receiver, match {
-            [&](const OrchardRawAddress& addr) { if (nu5Active) result = addr; },
+            [&](const OrchardRawAddress& addr) {
+              if (nu5Active) {
+                  result = addr;
+              }
+            },
             [&](const SaplingPaymentAddress& addr) { result = addr; },
             [&](const CScriptID& addr) { result = addr; },
             [&](const CKeyID& addr) { result = addr; },
@@ -332,7 +337,9 @@ libzcash::UnifiedFullViewingKey::GetTransparentKey() const
 bool libzcash::UnifiedFullViewingKeyBuilder::AddTransparentKey(
     const transparent::AccountPubKey& key)
 {
-    if (t_bytes.has_value()) return false;
+    if (t_bytes.has_value()) {
+        return false;
+    }
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << key.GetChainablePubKey();
     assert(ss.size() == 65);
@@ -344,7 +351,9 @@ bool libzcash::UnifiedFullViewingKeyBuilder::AddTransparentKey(
 bool libzcash::UnifiedFullViewingKeyBuilder::AddSaplingKey(
     const SaplingDiversifiableFullViewingKey& key)
 {
-    if (sapling_bytes.has_value()) return false;
+    if (sapling_bytes.has_value()) {
+        return false;
+    }
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << key;
     assert(ss.size() == 128);
@@ -355,7 +364,9 @@ bool libzcash::UnifiedFullViewingKeyBuilder::AddSaplingKey(
 
 bool libzcash::UnifiedFullViewingKeyBuilder::AddOrchardKey(const OrchardFullViewingKey& key)
 {
-    if (orchard_bytes.has_value()) return false;
+    if (orchard_bytes.has_value()) {
+        return false;
+    }
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << key;
     assert(ss.size() == 96);

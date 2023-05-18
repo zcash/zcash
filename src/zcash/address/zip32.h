@@ -11,6 +11,7 @@
 #include "uint256.h"
 #include "util/time.h"
 #include "zcash/address/sapling.hpp"
+
 #include <librustzcash.h>
 #include <rust/zip339.h>
 
@@ -162,9 +163,9 @@ public:
     {
         auto addr = Address(j);
         while (!addr.has_value()) {
-            if (!j.increment())
+            if (!j.increment()) {
                 throw std::runtime_error(std::string(__func__) + ": diversifier index overflow.");
-            ;
+            };
             addr = Address(j);
         }
         return std::make_pair(addr.value(), j);
@@ -274,16 +275,15 @@ public:
     operator==(const SaplingExtendedFullViewingKey& a, const SaplingExtendedFullViewingKey& b)
     {
         return (
-            a.depth == b.depth && a.parentFVKTag == b.parentFVKTag &&
-            a.childIndex == b.childIndex && a.chaincode == b.chaincode && a.fvk == b.fvk &&
-            a.dk == b.dk);
+            a.depth == b.depth && a.parentFVKTag == b.parentFVKTag && a.childIndex == b.childIndex
+            && a.chaincode == b.chaincode && a.fvk == b.fvk && a.dk == b.dk);
     }
     friend inline bool
     operator<(const SaplingExtendedFullViewingKey& a, const SaplingExtendedFullViewingKey& b)
     {
         return (
-            a.depth < b.depth || (a.depth == b.depth && a.childIndex < b.childIndex) ||
-            (a.depth == b.depth && a.childIndex == b.childIndex && a.fvk < b.fvk));
+            a.depth < b.depth || (a.depth == b.depth && a.childIndex < b.childIndex)
+            || (a.depth == b.depth && a.childIndex == b.childIndex && a.fvk < b.fvk));
     }
 };
 
@@ -322,9 +322,9 @@ struct SaplingExtendedSpendingKey {
 
     friend bool operator==(const SaplingExtendedSpendingKey& a, const SaplingExtendedSpendingKey& b)
     {
-        return a.depth == b.depth && a.parentFVKTag == b.parentFVKTag &&
-               a.childIndex == b.childIndex && a.chaincode == b.chaincode && a.expsk == b.expsk &&
-               a.dk == b.dk;
+        return a.depth == b.depth && a.parentFVKTag == b.parentFVKTag
+               && a.childIndex == b.childIndex && a.chaincode == b.chaincode && a.expsk == b.expsk
+               && a.dk == b.dk;
     }
 };
 

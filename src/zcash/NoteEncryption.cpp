@@ -1,14 +1,14 @@
 #include "NoteEncryption.hpp"
 
-#include "random.h"
-
 #include "librustzcash.h"
 #include "prf.h"
+#include "random.h"
 #include "sodium.h"
-#include <stdexcept>
 
 #include <rust/blake2b.h>
 #include <rust/constants.h>
+
+#include <stdexcept>
 
 #define NOTEENCRYPTION_CIPHER_KEYSIZE 32
 
@@ -168,7 +168,8 @@ std::optional<SaplingEncPlaintext> AttemptSaplingEncDecryption(
             NULL,
             0,
             cipher_nonce,
-            K) != 0) {
+            K)
+        != 0) {
         return std::nullopt;
     }
 
@@ -204,7 +205,8 @@ std::optional<SaplingEncPlaintext> AttemptSaplingEncDecryption(
             NULL,
             0,
             cipher_nonce,
-            K) != 0) {
+            K)
+        != 0) {
         return std::nullopt;
     }
 
@@ -272,7 +274,8 @@ std::optional<SaplingOutPlaintext> AttemptSaplingOutDecryption(
             NULL,
             0,
             cipher_nonce,
-            K) != 0) {
+            K)
+        != 0) {
         return std::nullopt;
     }
 
@@ -368,7 +371,8 @@ typename NoteDecryption<MLEN>::Plaintext NoteDecryption<MLEN>::decrypt(
             NULL,
             0,
             cipher_nonce,
-            K) != 0) {
+            K)
+        != 0) {
         throw note_decryption_failed();
     }
 
@@ -415,7 +419,8 @@ PaymentDisclosureNoteDecryption<MLEN>::decryptWithEsk(
             NULL,
             0,
             cipher_nonce,
-            K) != 0) {
+            K)
+        != 0) {
         throw note_decryption_failed();
     }
 

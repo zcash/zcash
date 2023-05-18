@@ -1,17 +1,16 @@
 #ifndef ZC_HISTORY_H_
 #define ZC_HISTORY_H_
 
-#include <boost/foreach.hpp>
-#include <stdexcept>
-#include <unordered_map>
-
+#include "librustzcash.h"
 #include "serialize.h"
 #include "streams.h"
 #include "uint256.h"
 
+#include <boost/foreach.hpp>
 #include <rust/history.h>
 
-#include "librustzcash.h"
+#include <stdexcept>
+#include <unordered_map>
 
 namespace libzcash
 {
@@ -33,8 +32,11 @@ public:
     // current epoch of this history state
     uint32_t epoch;
 
-    HistoryCache(HistoryIndex initialLength, uint256 initialRoot, uint32_t initialEpoch) :
-        length(initialLength), updateDepth(initialLength), root(initialRoot), epoch(initialEpoch){};
+    HistoryCache(HistoryIndex initialLength, uint256 initialRoot, uint32_t initialEpoch)
+        : length(initialLength),
+          updateDepth(initialLength),
+          root(initialRoot),
+          epoch(initialEpoch) {};
 
     HistoryCache() {}
 

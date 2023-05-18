@@ -18,7 +18,7 @@ private:
     CChainablePubKey pubkey;
 
 public:
-    AccountPubKey(CChainablePubKey pubkey) : pubkey(pubkey){};
+    AccountPubKey(CChainablePubKey pubkey) : pubkey(pubkey) {};
 
     const CChainablePubKey& GetChainablePubKey() const { return pubkey; }
 
@@ -63,8 +63,8 @@ private:
     CExtKey external;
     CExtKey internal;
 
-    AccountKey(CExtKey accountKeyIn, CExtKey externalIn, CExtKey internalIn) :
-        accountKey(accountKeyIn), external(externalIn), internal(internalIn)
+    AccountKey(CExtKey accountKeyIn, CExtKey externalIn, CExtKey internalIn)
+        : accountKey(accountKeyIn), external(externalIn), internal(internalIn)
     {
     }
 
@@ -83,8 +83,8 @@ public:
         bool external,
         uint32_t childIndex)
     {
-        return AccountKey::KeyPath(bip44CoinType, accountId) + "/" + (external ? "0/" : "1/") +
-               std::to_string(childIndex);
+        return AccountKey::KeyPath(bip44CoinType, accountId) + "/" + (external ? "0/" : "1/")
+               + std::to_string(childIndex);
     }
 
     /**

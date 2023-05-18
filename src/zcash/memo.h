@@ -24,7 +24,7 @@ namespace libzcash
 class Memo
 {
 public:
-    static constexpr size_t SIZE{512};
+    static constexpr size_t SIZE {512};
 
     typedef unsigned char Byte;
 
@@ -58,7 +58,7 @@ public:
 private:
     Bytes value_;
 
-    static constexpr const Bytes noMemo{0xf6};
+    static constexpr const Bytes noMemo {0xf6};
 
     /// This constructor trusts that the Memo is a valid memo, and constructs one even if it’s the
     /// `noMemo` value.

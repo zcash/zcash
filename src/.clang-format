@@ -30,17 +30,17 @@ AllowAllParametersOfDeclarationOnNextLine: false
 AllowShortBlocksOnASingleLine: Empty
 AllowShortCaseLabelsOnASingleLine: true
 AllowShortFunctionsOnASingleLine: Inline
-AllowShortIfStatementsOnASingleLine: true # I’d prefer false
+AllowShortIfStatementsOnASingleLine: false
 AllowShortLambdasOnASingleLine: All
 AllowShortLoopsOnASingleLine: false
 AlwaysBreakBeforeMultilineStrings: false
 AlwaysBreakTemplateDeclarations: true
 BinPackArguments: false
 BinPackParameters: false
-BreakBeforeBinaryOperators: None # I’d prefer NonAssignment
+BreakBeforeBinaryOperators: NonAssignment
 BreakBeforeBraces: Linux
 BreakBeforeTernaryOperators: true
-BreakConstructorInitializers: AfterColon # I’d prefer BeforeColon
+BreakConstructorInitializers: BeforeColon
 ColumnLimit: 100 # match rustfmt, if we don’t define this, then we don’t get Wadler
 CommentPragmas: '^ IWYU pragma:'
 ConstructorInitializerAllOnOneLineOrOnePerLine: false
@@ -49,7 +49,7 @@ ContinuationIndentWidth: 4
 Cpp11BracedListStyle: true
 DerivePointerAlignment: false
 DisableFormat: false
-IncludeBlocks: Preserve # I’d prefer Regroup
+IncludeBlocks: Regroup
 IncludeCategories:
     - Regex:           '<[^/.]+>'
       Priority:        3
@@ -60,7 +60,7 @@ IncludeCategories:
 IndentCaseLabels: true
 IndentFunctionDeclarationAfterType: false
 IndentWidth: 4
-InsertBraces: false # I’d prefer true
+InsertBraces: true
 KeepEmptyLinesAtTheStartOfBlocks: false
 Language: Cpp
 MaxEmptyLinesToKeep: 2
@@ -78,7 +78,7 @@ PenaltyBreakOpenParenthesis: 1
 PenaltyReturnTypeOnItsOwnLine: 0
 PointerAlignment: Left
 SpaceBeforeAssignmentOperators: true
-SpaceBeforeCpp11BracedList: false # Daira would prefer true
+SpaceBeforeCpp11BracedList: true
 SpaceBeforeCtorInitializerColon: true
 SpaceBeforeParens: ControlStatements
 SpaceInEmptyParentheses: false

@@ -2,9 +2,9 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-#include "random.h"
-
 #include "mnemonic.h"
+
+#include "random.h"
 #include "unified.h"
 
 using namespace libzcash;
@@ -27,9 +27,9 @@ MnemonicSeed::FromEntropy(const RawHDSeed& entropy, uint32_t bip44CoinType, Lang
     // account 0x7FFFFFFF because derivation via the legacy path can simply search
     // for a valid diversifier; unlike in the unified spending key case, diversifier
     // indices don't need to line up with anything.
-    if (ZcashdUnifiedSpendingKey::ForAccount(seed, bip44CoinType, 0).has_value() &&
-        transparent::AccountKey::ForAccount(seed, bip44CoinType, ZCASH_LEGACY_ACCOUNT)
-            .has_value()) {
+    if (ZcashdUnifiedSpendingKey::ForAccount(seed, bip44CoinType, 0).has_value()
+        && transparent::AccountKey::ForAccount(seed, bip44CoinType, ZCASH_LEGACY_ACCOUNT)
+               .has_value()) {
         return seed;
     } else {
         return std::nullopt;

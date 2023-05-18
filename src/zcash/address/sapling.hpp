@@ -97,8 +97,8 @@ public:
     friend inline bool operator<(const SaplingFullViewingKey& a, const SaplingFullViewingKey& b)
     {
         return (
-            a.ak < b.ak || (a.ak == b.ak && a.nk < b.nk) ||
-            (a.ak == b.ak && a.nk == b.nk && a.ovk < b.ovk));
+            a.ak < b.ak || (a.ak == b.ak && a.nk < b.nk)
+            || (a.ak == b.ak && a.nk == b.nk && a.ovk < b.ovk));
     }
 };
 
@@ -136,8 +136,8 @@ public:
     operator<(const SaplingExpandedSpendingKey& a, const SaplingExpandedSpendingKey& b)
     {
         return (
-            a.ask < b.ask || (a.ask == b.ask && a.nsk < b.nsk) ||
-            (a.ask == b.ask && a.nsk == b.nsk && a.ovk < b.ovk));
+            a.ask < b.ask || (a.ask == b.ask && a.nsk < b.nsk)
+            || (a.ask == b.ask && a.nsk == b.nsk && a.ovk < b.ovk));
     }
 };
 

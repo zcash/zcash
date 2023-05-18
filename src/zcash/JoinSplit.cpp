@@ -1,21 +1,19 @@
 #include "JoinSplit.hpp"
-#include "prf.h"
-
-#include "zcash/util.h"
-
-#include <memory>
 
 #include "amount.h"
+#include "librustzcash.h"
+#include "prf.h"
+#include "streams.h"
 #include "sync.h"
 #include "tinyformat.h"
-#include <boost/format.hpp>
-#include <fstream>
-
-#include "librustzcash.h"
-#include "streams.h"
 #include "version.h"
+#include "zcash/util.h"
 
+#include <boost/format.hpp>
 #include <rust/blake2b.h>
+
+#include <fstream>
+#include <memory>
 
 namespace libzcash
 {

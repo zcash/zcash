@@ -46,7 +46,7 @@ Memo::FromBytes(const std::vector<Byte>& rawMemo)
     if (rawMemo.size() > SIZE) {
         return tl::unexpected(ConversionError::MemoTooLong);
     } else {
-        Bytes result{};
+        Bytes result {};
         std::move(rawMemo.begin(), rawMemo.end(), result.begin());
         return FromBytes(result);
     }
@@ -58,7 +58,7 @@ tl::expected<Memo, Memo::TextConversionError> Memo::FromText(const std::string& 
         if (memoStr.size() > SIZE) {
             return tl::unexpected(TextConversionError::MemoTooLong);
         } else {
-            Bytes result{};
+            Bytes result {};
             std::copy(memoStr.begin(), memoStr.end(), result.begin());
             return Memo(result);
         }

@@ -1,10 +1,12 @@
 #include "prf.h"
+
 #include "crypto/sha256.h"
 #include "hash.h"
 
 #include <librustzcash.h>
 #include <rust/blake2b.h>
 #include <rust/constants.h>
+
 #include <array>
 
 const unsigned char ZCASH_EXPANDSEED_PERSONALIZATION[blake2b::PERSONALBYTES] =

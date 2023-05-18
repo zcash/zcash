@@ -9,10 +9,10 @@
 #include "uint256.h"
 #include "zcash/memo.h"
 
+#include <rust/bridge.h>
+
 #include <array>
 #include <optional>
-
-#include <rust/bridge.h>
 
 namespace libzcash
 {
@@ -24,8 +24,8 @@ protected:
 
 public:
     BaseNote() {}
-    BaseNote(uint64_t value) : value_(value){};
-    virtual ~BaseNote(){};
+    BaseNote(uint64_t value) : value_(value) {};
+    virtual ~BaseNote() {};
 
     inline uint64_t value() const { return value_; };
 };
@@ -37,14 +37,14 @@ public:
     uint256 rho;
     uint256 r;
 
-    SproutNote(uint256 a_pk, uint64_t value, uint256 rho, uint256 r) :
-        BaseNote(value), a_pk(a_pk), rho(rho), r(r)
+    SproutNote(uint256 a_pk, uint64_t value, uint256 rho, uint256 r)
+        : BaseNote(value), a_pk(a_pk), rho(rho), r(r)
     {
     }
 
     SproutNote();
 
-    virtual ~SproutNote(){};
+    virtual ~SproutNote() {};
 
     uint256 cm() const;
 
@@ -91,8 +91,8 @@ public:
         uint256 pk_d,
         uint64_t value,
         uint256 rseed,
-        Zip212Enabled zip_212_enabled) :
-        BaseNote(value), d(d), pk_d(pk_d), rseed(rseed), zip_212_enabled(zip_212_enabled)
+        Zip212Enabled zip_212_enabled)
+        : BaseNote(value), d(d), pk_d(pk_d), rseed(rseed), zip_212_enabled(zip_212_enabled)
     {
     }
 
@@ -101,7 +101,7 @@ public:
         uint64_t value,
         Zip212Enabled zip_212_enabled);
 
-    virtual ~SaplingNote(){};
+    virtual ~SaplingNote() {};
 
     std::optional<uint256> cmu() const;
     std::optional<uint256>
@@ -121,8 +121,8 @@ protected:
 
 public:
     BaseNotePlaintext() {}
-    BaseNotePlaintext(const BaseNote& note, const std::optional<Memo>& memo) :
-        value_(note.value()), memo_(Memo::ToBytes(memo))
+    BaseNotePlaintext(const BaseNote& note, const std::optional<Memo>& memo)
+        : value_(note.value()), memo_(Memo::ToBytes(memo))
     {
     }
     virtual ~BaseNotePlaintext() {}
@@ -247,7 +247,7 @@ public:
     uint256 pk_d;
     uint256 esk;
 
-    SaplingOutgoingPlaintext(){};
+    SaplingOutgoingPlaintext() {};
 
     SaplingOutgoingPlaintext(uint256 pk_d, uint256 esk) : pk_d(pk_d), esk(esk) {}
 

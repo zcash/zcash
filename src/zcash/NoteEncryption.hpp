@@ -8,7 +8,6 @@ https://github.com/zcash/zips/blob/master/protocol/protocol.pdf
 
 #include "uint252.h"
 #include "uint256.h"
-
 #include "zcash/Address.hpp"
 #include "zcash/memo.h"
 
@@ -18,24 +17,24 @@ https://github.com/zcash/zips/blob/master/protocol/protocol.pdf
 namespace libzcash
 {
 
-constexpr size_t NOTEENCRYPTION_AUTH_BYTES{16};
+constexpr size_t NOTEENCRYPTION_AUTH_BYTES {16};
 
-constexpr size_t NOTEPLAINTEXT_LEADING{1};
-constexpr size_t V_SIZE{8};
-constexpr size_t RHO_SIZE{32};
-constexpr size_t R_SIZE{32};
-constexpr size_t JUBJUB_POINT_SIZE{32};
-constexpr size_t JUBJUB_SCALAR_SIZE{32};
+constexpr size_t NOTEPLAINTEXT_LEADING {1};
+constexpr size_t V_SIZE {8};
+constexpr size_t RHO_SIZE {32};
+constexpr size_t R_SIZE {32};
+constexpr size_t JUBJUB_POINT_SIZE {32};
+constexpr size_t JUBJUB_SCALAR_SIZE {32};
 
-constexpr size_t NOTEPLAINTEXT_SIZE{
+constexpr size_t NOTEPLAINTEXT_SIZE {
     NOTEPLAINTEXT_LEADING + V_SIZE + RHO_SIZE + R_SIZE + Memo::SIZE};
 
-constexpr size_t SAPLING_ENCPLAINTEXT_SIZE{
+constexpr size_t SAPLING_ENCPLAINTEXT_SIZE {
     NOTEPLAINTEXT_LEADING + SAPLING_DIVERSIFIER_SIZE + V_SIZE + R_SIZE + Memo::SIZE};
-constexpr size_t SAPLING_OUTPLAINTEXT_SIZE{JUBJUB_POINT_SIZE + JUBJUB_SCALAR_SIZE};
+constexpr size_t SAPLING_OUTPLAINTEXT_SIZE {JUBJUB_POINT_SIZE + JUBJUB_SCALAR_SIZE};
 
-constexpr size_t SAPLING_ENCCIPHERTEXT_SIZE{SAPLING_ENCPLAINTEXT_SIZE + NOTEENCRYPTION_AUTH_BYTES};
-constexpr size_t SAPLING_OUTCIPHERTEXT_SIZE{SAPLING_OUTPLAINTEXT_SIZE + NOTEENCRYPTION_AUTH_BYTES};
+constexpr size_t SAPLING_ENCCIPHERTEXT_SIZE {SAPLING_ENCPLAINTEXT_SIZE + NOTEENCRYPTION_AUTH_BYTES};
+constexpr size_t SAPLING_OUTCIPHERTEXT_SIZE {SAPLING_OUTPLAINTEXT_SIZE + NOTEENCRYPTION_AUTH_BYTES};
 
 // Ciphertext for the recipient to decrypt
 typedef std::array<unsigned char, SAPLING_ENCCIPHERTEXT_SIZE> SaplingEncCiphertext;
@@ -58,8 +57,8 @@ protected:
     bool already_encrypted_enc;
     bool already_encrypted_out;
 
-    SaplingNoteEncryption(uint256 epk, uint256 esk) :
-        epk(epk), esk(esk), already_encrypted_enc(false), already_encrypted_out(false)
+    SaplingNoteEncryption(uint256 epk, uint256 esk)
+        : epk(epk), esk(esk), already_encrypted_enc(false), already_encrypted_out(false)
     {
     }
 

@@ -15,6 +15,7 @@
 
 #include <rust/constants.h>
 #include <rust/unified_keys.h>
+
 #include <variant>
 
 const unsigned char ZCASH_UFVK_ID_PERSONAL[blake2b::PERSONALBYTES] =
@@ -32,8 +33,8 @@ struct ReceiverIterator {
     using pointer = const Receiver*;
     using reference = const Receiver&;
 
-    ReceiverIterator(std::vector<const Receiver*> sorted, size_t cur) :
-        sortedReceivers(sorted), cur(cur)
+    ReceiverIterator(std::vector<const Receiver*> sorted, size_t cur)
+        : sortedReceivers(sorted), cur(cur)
     {
     }
 
@@ -188,8 +189,8 @@ private:
 public:
     UnifiedFullViewingKey(UnifiedFullViewingKey&& key) : inner(std::move(key.inner)) {}
 
-    UnifiedFullViewingKey(const UnifiedFullViewingKey& key) :
-        inner(unified_full_viewing_key_clone(key.inner.get()), unified_full_viewing_key_free)
+    UnifiedFullViewingKey(const UnifiedFullViewingKey& key)
+        : inner(unified_full_viewing_key_clone(key.inner.get()), unified_full_viewing_key_free)
     {
     }
 
@@ -256,8 +257,8 @@ private:
     std::optional<std::vector<uint8_t>> orchard_bytes;
 
 public:
-    UnifiedFullViewingKeyBuilder() :
-        t_bytes(std::nullopt), sapling_bytes(std::nullopt), orchard_bytes(std::nullopt)
+    UnifiedFullViewingKeyBuilder()
+        : t_bytes(std::nullopt), sapling_bytes(std::nullopt), orchard_bytes(std::nullopt)
     {
     }
 
@@ -293,8 +294,8 @@ class SelectRecipientAddress
     int height;
 
 public:
-    SelectRecipientAddress(const Consensus::Params& consensus, int height) :
-        consensus(consensus), height(height)
+    SelectRecipientAddress(const Consensus::Params& consensus, int height)
+        : consensus(consensus), height(height)
     {
     }
 

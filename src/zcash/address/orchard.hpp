@@ -7,6 +7,7 @@
 
 #include "streams.h"
 #include "zcash/address/zip32.h"
+
 #include <rust/orchard/keys.h>
 
 #include <optional>
@@ -46,8 +47,8 @@ public:
 
     OrchardRawAddress(OrchardRawAddress&& key) : inner(std::move(key.inner)) {}
 
-    OrchardRawAddress(const OrchardRawAddress& key) :
-        inner(orchard_address_clone(key.inner.get()), orchard_address_free)
+    OrchardRawAddress(const OrchardRawAddress& key)
+        : inner(orchard_address_clone(key.inner.get()), orchard_address_free)
     {
     }
 
@@ -113,8 +114,8 @@ private:
     std::unique_ptr<OrchardIncomingViewingKeyPtr, decltype(&orchard_incoming_viewing_key_free)>
         inner;
 
-    OrchardIncomingViewingKey(OrchardIncomingViewingKeyPtr* key) :
-        inner(key, orchard_incoming_viewing_key_free)
+    OrchardIncomingViewingKey(OrchardIncomingViewingKeyPtr* key)
+        : inner(key, orchard_incoming_viewing_key_free)
     {
     }
 
@@ -128,8 +129,8 @@ public:
 
     OrchardIncomingViewingKey(OrchardIncomingViewingKey&& key) : inner(std::move(key.inner)) {}
 
-    OrchardIncomingViewingKey(const OrchardIncomingViewingKey& key) :
-        inner(
+    OrchardIncomingViewingKey(const OrchardIncomingViewingKey& key)
+        : inner(
             orchard_incoming_viewing_key_clone(key.inner.get()),
             orchard_incoming_viewing_key_free)
     {
@@ -224,8 +225,8 @@ private:
 public:
     OrchardFullViewingKey(OrchardFullViewingKey&& key) : inner(std::move(key.inner)) {}
 
-    OrchardFullViewingKey(const OrchardFullViewingKey& key) :
-        inner(orchard_full_viewing_key_clone(key.inner.get()), orchard_full_viewing_key_free)
+    OrchardFullViewingKey(const OrchardFullViewingKey& key)
+        : inner(orchard_full_viewing_key_clone(key.inner.get()), orchard_full_viewing_key_free)
     {
     }
 
@@ -332,8 +333,8 @@ private:
 public:
     OrchardSpendingKey(OrchardSpendingKey&& key) : inner(std::move(key.inner)) {}
 
-    OrchardSpendingKey(const OrchardSpendingKey& key) :
-        inner(orchard_spending_key_clone(key.inner.get()), orchard_spending_key_free)
+    OrchardSpendingKey(const OrchardSpendingKey& key)
+        : inner(orchard_spending_key_clone(key.inner.get()), orchard_spending_key_free)
     {
     }
 

@@ -2,14 +2,12 @@
 
 #include "consensus/consensus.h"
 #include "crypto/sha256.h"
+#include "librustzcash.h"
 #include "logging.h"
 #include "prf.h"
-
 #include "random.h"
 #include "streams.h"
 #include "version.h"
-
-#include "librustzcash.h"
 #include "zcash/util.h"
 
 #include <boost/thread/exceptions.hpp>
@@ -52,8 +50,8 @@ uint256 SproutNote::nullifier(const SproutSpendingKey& a_sk) const
 SaplingNote::SaplingNote(
     const SaplingPaymentAddress& address,
     const uint64_t value,
-    Zip212Enabled zip212Enabled) :
-    BaseNote(value)
+    Zip212Enabled zip212Enabled)
+    : BaseNote(value)
 {
     d = address.d;
     pk_d = address.pk_d;
@@ -108,8 +106,8 @@ SaplingNote::nullifier(const SaplingFullViewingKey& vk, const uint64_t position)
     return result;
 }
 
-SproutNotePlaintext::SproutNotePlaintext(const SproutNote& note, const std::optional<Memo>& memo) :
-    BaseNotePlaintext(note, memo)
+SproutNotePlaintext::SproutNotePlaintext(const SproutNote& note, const std::optional<Memo>& memo)
+    : BaseNotePlaintext(note, memo)
 {
     rho = note.rho;
     r = note.r;
@@ -157,10 +155,8 @@ SproutNotePlaintext::encrypt(ZCNoteEncryption& encryptor, const uint256& pk_enc)
 
 
 // Construct and populate SaplingNotePlaintext for a given note and memo.
-SaplingNotePlaintext::SaplingNotePlaintext(
-    const SaplingNote& note,
-    const std::optional<Memo>& memo) :
-    BaseNotePlaintext(note, memo)
+SaplingNotePlaintext::SaplingNotePlaintext(const SaplingNote& note, const std::optional<Memo>& memo)
+    : BaseNotePlaintext(note, memo)
 {
     d = note.d;
     rseed = note.rseed;

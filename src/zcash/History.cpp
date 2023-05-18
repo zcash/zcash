@@ -1,13 +1,12 @@
 #include "zcash/History.hpp"
 
-#include <stdexcept>
-
-
 #include "consensus/upgrades.h"
 #include "librustzcash.h"
 #include "serialize.h"
 #include "streams.h"
 #include "uint256.h"
+
+#include <stdexcept>
 
 namespace libzcash
 {
@@ -39,7 +38,9 @@ void HistoryCache::Truncate(HistoryIndex newLength)
     // will be H (where H is a final chain height after such operation). So we know that
     // history entries in the range of H-3..H are expected to be pushed into the database
     // to replace/append to the persistent nodes there.
-    if (updateDepth > length) updateDepth = length;
+    if (updateDepth > length) {
+        updateDepth = length;
+    }
 }
 
 HistoryNode NewNode(
@@ -181,12 +182,12 @@ HistoryEntry LeafToEntry(const HistoryNode node)
 bool IsV1HistoryTree(uint32_t epochId)
 {
     return (
-        epochId == NetworkUpgradeInfo[Consensus::BASE_SPROUT].nBranchId ||
-        epochId == NetworkUpgradeInfo[Consensus::UPGRADE_OVERWINTER].nBranchId ||
-        epochId == NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId ||
-        epochId == NetworkUpgradeInfo[Consensus::UPGRADE_BLOSSOM].nBranchId ||
-        epochId == NetworkUpgradeInfo[Consensus::UPGRADE_HEARTWOOD].nBranchId ||
-        epochId == NetworkUpgradeInfo[Consensus::UPGRADE_CANOPY].nBranchId);
+        epochId == NetworkUpgradeInfo[Consensus::BASE_SPROUT].nBranchId
+        || epochId == NetworkUpgradeInfo[Consensus::UPGRADE_OVERWINTER].nBranchId
+        || epochId == NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId
+        || epochId == NetworkUpgradeInfo[Consensus::UPGRADE_BLOSSOM].nBranchId
+        || epochId == NetworkUpgradeInfo[Consensus::UPGRADE_HEARTWOOD].nBranchId
+        || epochId == NetworkUpgradeInfo[Consensus::UPGRADE_CANOPY].nBranchId);
 }
 
 } // namespace libzcash

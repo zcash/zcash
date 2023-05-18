@@ -293,8 +293,8 @@ HDKeyPath Zip32AccountKeyPath(
     if (legacyAddressIndex.has_value()) {
         addrSuffix = "/" + std::to_string(legacyAddressIndex.value()) + "'";
     }
-    return "m/32'/" + std::to_string(bip44CoinType) + "'/" + std::to_string(accountId) + "'" +
-           addrSuffix;
+    return "m/32'/" + std::to_string(bip44CoinType) + "'/" + std::to_string(accountId) + "'"
+           + addrSuffix;
 }
 
 std::optional<unsigned long>
