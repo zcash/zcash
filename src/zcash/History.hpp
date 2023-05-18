@@ -1,9 +1,9 @@
 #ifndef ZC_HISTORY_H_
 #define ZC_HISTORY_H_
 
+#include <boost/foreach.hpp>
 #include <stdexcept>
 #include <unordered_map>
-#include <boost/foreach.hpp>
 
 #include "serialize.h"
 #include "streams.h"
@@ -13,11 +13,13 @@
 
 #include "librustzcash.h"
 
-namespace libzcash {
+namespace libzcash
+{
 
 typedef uint64_t HistoryIndex;
 
-class HistoryCache {
+class HistoryCache
+{
 public:
     // updates to the persistent(db) layer
     std::unordered_map<HistoryIndex, HistoryNode> appends;
@@ -32,12 +34,12 @@ public:
     uint32_t epoch;
 
     HistoryCache(HistoryIndex initialLength, uint256 initialRoot, uint32_t initialEpoch) :
-        length(initialLength), updateDepth(initialLength), root(initialRoot), epoch(initialEpoch) { };
+        length(initialLength), updateDepth(initialLength), root(initialRoot), epoch(initialEpoch){};
 
-    HistoryCache() { }
+    HistoryCache() {}
 
     // Extends current history update by one history node.
-    void Extend(const HistoryNode &leaf);
+    void Extend(const HistoryNode& leaf);
 
     // Truncates current history to the new length.
     void Truncate(HistoryIndex newLength);
@@ -51,8 +53,7 @@ HistoryNode NewV1Leaf(
     uint256 saplingRoot,
     uint256 totalWork,
     uint64_t height,
-    uint64_t saplingTxCount
-);
+    uint64_t saplingTxCount);
 
 // New V2 history node with metadata based on block state.
 HistoryNode NewV2Leaf(
@@ -64,8 +65,7 @@ HistoryNode NewV2Leaf(
     uint256 totalWork,
     uint64_t height,
     uint64_t saplingTxCount,
-    uint64_t orchardTxCount
-);
+    uint64_t orchardTxCount);
 
 // Convert history node to tree node (with children references)
 HistoryEntry NodeToEntry(const HistoryNode node, uint32_t left, uint32_t right);
@@ -76,7 +76,7 @@ HistoryEntry LeafToEntry(const HistoryNode node);
 // Returns true if this epoch used the V1 history tree format.
 bool IsV1HistoryTree(uint32_t epochId);
 
-}
+} // namespace libzcash
 
 typedef libzcash::HistoryCache HistoryCache;
 typedef libzcash::HistoryIndex HistoryIndex;

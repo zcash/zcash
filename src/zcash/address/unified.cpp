@@ -2,11 +2,11 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-#include "tinyformat.h"
-#include "zcash/Address.hpp"
 #include "unified.h"
+#include "tinyformat.h"
 #include "util/match.h"
 #include "util/strencodings.h"
+#include "zcash/Address.hpp"
 
 #include <rust/unified_keys.h>
 
@@ -16,23 +16,28 @@ using namespace libzcash;
 // Unified Keys
 //
 
-bool libzcash::HasShielded(const std::set<ReceiverType>& receiverTypes) {
+bool libzcash::HasShielded(const std::set<ReceiverType>& receiverTypes)
+{
     auto has_shielded = [](ReceiverType r) {
         // TODO: update this as support for new shielded protocols is added.
         return r == ReceiverType::Sapling || r == ReceiverType::Orchard;
     };
-    return std::find_if(receiverTypes.begin(), receiverTypes.end(), has_shielded) != receiverTypes.end();
+    return std::find_if(receiverTypes.begin(), receiverTypes.end(), has_shielded) !=
+           receiverTypes.end();
 }
 
-bool libzcash::HasTransparent(const std::set<ReceiverType>& receiverTypes) {
+bool libzcash::HasTransparent(const std::set<ReceiverType>& receiverTypes)
+{
     auto has_transparent = [](ReceiverType r) {
         // TODO: update this as support for new transparent protocols is added.
         return r == ReceiverType::P2PKH || r == ReceiverType::P2SH;
     };
-    return std::find_if(receiverTypes.begin(), receiverTypes.end(), has_transparent) != receiverTypes.end();
+    return std::find_if(receiverTypes.begin(), receiverTypes.end(), has_transparent) !=
+           receiverTypes.end();
 }
 
-Receiver libzcash::RecipientAddressToReceiver(const RecipientAddress& recipient) {
+Receiver libzcash::RecipientAddressToReceiver(const RecipientAddress& recipient)
+{
     return examine(recipient, match {
         [](const CKeyID& key) { return Receiver(key); },
         [](const CScriptID& scriptId) { return Receiver(scriptId); },
@@ -41,7 +46,8 @@ Receiver libzcash::RecipientAddressToReceiver(const RecipientAddress& recipient)
     });
 }
 
-std::string libzcash::DebugPrintReceiver(const Receiver& receiver) {
+std::string libzcash::DebugPrintReceiver(const Receiver& receiver)
+{
     return examine(receiver, match {
         [&](const OrchardRawAddress &zaddr) {
             CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
@@ -68,15 +74,16 @@ std::string libzcash::DebugPrintReceiver(const Receiver& receiver) {
     });
 };
 
-std::string libzcash::DebugPrintRecipientAddress(const RecipientAddress& addr) {
+std::string libzcash::DebugPrintRecipientAddress(const RecipientAddress& addr)
+{
     return DebugPrintReceiver(RecipientAddressToReceiver(addr));
 }
 
 std::optional<ZcashdUnifiedSpendingKey> ZcashdUnifiedSpendingKey::ForAccount(
-        const HDSeed& seed,
-        uint32_t bip44CoinType,
-        AccountId accountId) {
-
+    const HDSeed& seed,
+    uint32_t bip44CoinType,
+    AccountId accountId)
+{
     auto transparentKey = transparent::AccountKey::ForAccount(seed, bip44CoinType, accountId);
     if (!transparentKey.has_value()) return std::nullopt;
 
@@ -87,7 +94,8 @@ std::optional<ZcashdUnifiedSpendingKey> ZcashdUnifiedSpendingKey::ForAccount(
     return ZcashdUnifiedSpendingKey(transparentKey.value(), saplingKey.first, orchardKey);
 }
 
-UnifiedFullViewingKey ZcashdUnifiedSpendingKey::ToFullViewingKey() const {
+UnifiedFullViewingKey ZcashdUnifiedSpendingKey::ToFullViewingKey() const
+{
     UnifiedFullViewingKeyBuilder builder;
 
     builder.AddTransparentKey(transparentKey.ToAccountPubKey());
@@ -100,8 +108,9 @@ UnifiedFullViewingKey ZcashdUnifiedSpendingKey::ToFullViewingKey() const {
 }
 
 ZcashdUnifiedFullViewingKey ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(
-        const KeyConstants& keyConstants,
-        const UnifiedFullViewingKey& ufvk) {
+    const KeyConstants& keyConstants,
+    const UnifiedFullViewingKey& ufvk)
+{
     ZcashdUnifiedFullViewingKey result;
     result.keyId = ufvk.GetKeyID(keyConstants);
 
@@ -124,8 +133,8 @@ ZcashdUnifiedFullViewingKey ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingK
 }
 
 UnifiedAddressGenerationResult ZcashdUnifiedFullViewingKey::Address(
-        const diversifier_index_t& j,
-        const std::set<ReceiverType>& receiverTypes) const
+    const diversifier_index_t& j,
+    const std::set<ReceiverType>& receiverTypes) const
 {
     if (!HasShielded(receiverTypes)) {
         return UnifiedAddressGenerationError::ShieldedReceiverNotFound;
@@ -162,10 +171,12 @@ UnifiedAddressGenerationResult ZcashdUnifiedFullViewingKey::Address(
             const auto& tkey = transparentKey.value();
 
             auto childIndex = j.ToTransparentChildIndex();
-            if (!childIndex.has_value()) return UnifiedAddressGenerationError::InvalidTransparentChildIndex;
+            if (!childIndex.has_value())
+                return UnifiedAddressGenerationError::InvalidTransparentChildIndex;
 
             auto externalPubkey = tkey.DeriveExternal(childIndex.value());
-            if (!externalPubkey.has_value()) return UnifiedAddressGenerationError::NoAddressForDiversifier;
+            if (!externalPubkey.has_value())
+                return UnifiedAddressGenerationError::NoAddressForDiversifier;
 
             ua.AddReceiver(externalPubkey.value().GetID());
         } else {
@@ -177,13 +188,15 @@ UnifiedAddressGenerationResult ZcashdUnifiedFullViewingKey::Address(
 }
 
 UnifiedAddressGenerationResult ZcashdUnifiedFullViewingKey::FindAddress(
-        const diversifier_index_t& j,
-        const std::set<ReceiverType>& receiverTypes) const {
+    const diversifier_index_t& j,
+    const std::set<ReceiverType>& receiverTypes) const
+{
     diversifier_index_t j0(j);
     bool hasTransparent = HasTransparent(receiverTypes);
     do {
         auto addr = Address(j0, receiverTypes);
-        if (addr != UnifiedAddressGenerationResult(UnifiedAddressGenerationError::NoAddressForDiversifier)) {
+        if (addr != UnifiedAddressGenerationResult(
+                        UnifiedAddressGenerationError::NoAddressForDiversifier)) {
             return addr;
         }
     } while (j0.increment());
@@ -191,12 +204,15 @@ UnifiedAddressGenerationResult ZcashdUnifiedFullViewingKey::FindAddress(
     return UnifiedAddressGenerationError::DiversifierSpaceExhausted;
 }
 
-UnifiedAddressGenerationResult ZcashdUnifiedFullViewingKey::FindAddress(
-        const diversifier_index_t& j) const {
+UnifiedAddressGenerationResult
+ZcashdUnifiedFullViewingKey::FindAddress(const diversifier_index_t& j) const
+{
     return FindAddress(j, {ReceiverType::P2PKH, ReceiverType::Sapling, ReceiverType::Orchard});
 }
 
-std::optional<RecipientAddress> ZcashdUnifiedFullViewingKey::GetChangeAddress(const ChangeRequest& req) const {
+std::optional<RecipientAddress>
+ZcashdUnifiedFullViewingKey::GetChangeAddress(const ChangeRequest& req) const
+{
     std::optional<RecipientAddress> addr;
     examine(req, match {
         [&](const TransparentChangeRequest& req) {
@@ -221,8 +237,9 @@ std::optional<RecipientAddress> ZcashdUnifiedFullViewingKey::GetChangeAddress(co
     return addr;
 }
 
-std::optional<RecipientAddress> ZcashdUnifiedFullViewingKey::GetChangeAddress(
-        const std::set<OutputPool>& allowedPools) const {
+std::optional<RecipientAddress>
+ZcashdUnifiedFullViewingKey::GetChangeAddress(const std::set<OutputPool>& allowedPools) const
+{
     if (orchardKey.has_value() && allowedPools.count(OutputPool::Orchard) > 0) {
         return orchardKey.value().GetChangeAddress();
     }
@@ -238,7 +255,8 @@ std::optional<RecipientAddress> ZcashdUnifiedFullViewingKey::GetChangeAddress(
     return std::nullopt;
 }
 
-UnifiedFullViewingKey ZcashdUnifiedFullViewingKey::ToFullViewingKey() const {
+UnifiedFullViewingKey ZcashdUnifiedFullViewingKey::ToFullViewingKey() const
+{
     UnifiedFullViewingKeyBuilder builder;
 
     if (transparentKey.has_value()) {

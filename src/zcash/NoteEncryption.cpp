@@ -2,10 +2,10 @@
 
 #include "random.h"
 
-#include <stdexcept>
-#include "sodium.h"
-#include "prf.h"
 #include "librustzcash.h"
+#include "prf.h"
+#include "sodium.h"
+#include <stdexcept>
 
 #include <rust/blake2b.h>
 #include <rust/constants.h>
@@ -21,77 +21,77 @@ void clamp_curve25519(unsigned char key[crypto_scalarmult_SCALARBYTES])
 
 void PRF_ock(
     unsigned char K[NOTEENCRYPTION_CIPHER_KEYSIZE],
-    const uint256 &ovk,
-    const uint256 &cv,
-    const uint256 &cm,
-    const uint256 &epk
-)
+    const uint256& ovk,
+    const uint256& cv,
+    const uint256& cm,
+    const uint256& epk)
 {
     unsigned char block[128] = {};
-    memcpy(block+0, ovk.begin(), 32);
-    memcpy(block+32, cv.begin(), 32);
-    memcpy(block+64, cm.begin(), 32);
-    memcpy(block+96, epk.begin(), 32);
+    memcpy(block + 0, ovk.begin(), 32);
+    memcpy(block + 32, cv.begin(), 32);
+    memcpy(block + 64, cm.begin(), 32);
+    memcpy(block + 96, epk.begin(), 32);
 
     unsigned char personalization[blake2b::PERSONALBYTES] = {};
     memcpy(personalization, "Zcash_Derive_ock", 16);
 
-    auto state = blake2b::init(NOTEENCRYPTION_CIPHER_KEYSIZE, {personalization, blake2b::PERSONALBYTES});
+    auto state =
+        blake2b::init(NOTEENCRYPTION_CIPHER_KEYSIZE, {personalization, blake2b::PERSONALBYTES});
     state->update({block, 128});
     state->finalize({K, NOTEENCRYPTION_CIPHER_KEYSIZE});
 }
 
 void KDF_Sapling(
     unsigned char K[NOTEENCRYPTION_CIPHER_KEYSIZE],
-    const uint256 &dhsecret,
-    const uint256 &epk
-)
+    const uint256& dhsecret,
+    const uint256& epk)
 {
     unsigned char block[64] = {};
-    memcpy(block+0, dhsecret.begin(), 32);
-    memcpy(block+32, epk.begin(), 32);
+    memcpy(block + 0, dhsecret.begin(), 32);
+    memcpy(block + 32, epk.begin(), 32);
 
     unsigned char personalization[blake2b::PERSONALBYTES] = {};
     memcpy(personalization, "Zcash_SaplingKDF", 16);
 
-    auto state = blake2b::init(NOTEENCRYPTION_CIPHER_KEYSIZE, {personalization, blake2b::PERSONALBYTES});
+    auto state =
+        blake2b::init(NOTEENCRYPTION_CIPHER_KEYSIZE, {personalization, blake2b::PERSONALBYTES});
     state->update({block, 64});
     state->finalize({K, NOTEENCRYPTION_CIPHER_KEYSIZE});
 }
 
-void KDF(unsigned char K[NOTEENCRYPTION_CIPHER_KEYSIZE],
-    const uint256 &dhsecret,
-    const uint256 &epk,
-    const uint256 &pk_enc,
-    const uint256 &hSig,
-    unsigned char nonce
-   )
+void KDF(
+    unsigned char K[NOTEENCRYPTION_CIPHER_KEYSIZE],
+    const uint256& dhsecret,
+    const uint256& epk,
+    const uint256& pk_enc,
+    const uint256& hSig,
+    unsigned char nonce)
 {
     if (nonce == 0xff) {
         throw std::logic_error("no additional nonce space for KDF");
     }
 
     unsigned char block[128] = {};
-    memcpy(block+0, hSig.begin(), 32);
-    memcpy(block+32, dhsecret.begin(), 32);
-    memcpy(block+64, epk.begin(), 32);
-    memcpy(block+96, pk_enc.begin(), 32);
+    memcpy(block + 0, hSig.begin(), 32);
+    memcpy(block + 32, dhsecret.begin(), 32);
+    memcpy(block + 64, epk.begin(), 32);
+    memcpy(block + 96, pk_enc.begin(), 32);
 
     unsigned char personalization[blake2b::PERSONALBYTES] = {};
     memcpy(personalization, "ZcashKDF", 8);
-    memcpy(personalization+8, &nonce, 1);
+    memcpy(personalization + 8, &nonce, 1);
 
-    auto state = blake2b::init(NOTEENCRYPTION_CIPHER_KEYSIZE, {personalization, blake2b::PERSONALBYTES});
+    auto state =
+        blake2b::init(NOTEENCRYPTION_CIPHER_KEYSIZE, {personalization, blake2b::PERSONALBYTES});
     state->update({block, 128});
     state->finalize({K, NOTEENCRYPTION_CIPHER_KEYSIZE});
 }
 
-namespace libzcash {
+namespace libzcash
+{
 
-std::optional<SaplingNoteEncryption> SaplingNoteEncryption::FromDiversifier(
-    diversifier_t d,
-    uint256 esk
-)
+std::optional<SaplingNoteEncryption>
+SaplingNoteEncryption::FromDiversifier(diversifier_t d, uint256 esk)
 {
     uint256 epk;
 
@@ -103,10 +103,8 @@ std::optional<SaplingNoteEncryption> SaplingNoteEncryption::FromDiversifier(
     return SaplingNoteEncryption(epk, esk);
 }
 
-std::optional<SaplingEncCiphertext> SaplingNoteEncryption::encrypt_to_recipient(
-    const uint256 &pk_d,
-    const SaplingEncPlaintext &message
-)
+std::optional<SaplingEncCiphertext>
+SaplingNoteEncryption::encrypt_to_recipient(const uint256& pk_d, const SaplingEncPlaintext& message)
 {
     if (already_encrypted_enc) {
         throw std::logic_error("already encrypted to the recipient using this key");
@@ -117,12 +115,7 @@ std::optional<SaplingEncCiphertext> SaplingNoteEncryption::encrypt_to_recipient(
     // on pk_d were enabled unconditionally, even before we started to apply them
     // retroactively.
     unsigned char K[NOTEENCRYPTION_CIPHER_KEYSIZE];
-    if (!librustzcash_sapling_ka_derive_symmetric_key(
-        pk_d.begin(),
-        esk.begin(),
-        epk.begin(),
-        K))
-    {
+    if (!librustzcash_sapling_ka_derive_symmetric_key(pk_d.begin(), esk.begin(), epk.begin(), K)) {
         return std::nullopt;
     }
 
@@ -132,11 +125,15 @@ std::optional<SaplingEncCiphertext> SaplingNoteEncryption::encrypt_to_recipient(
     SaplingEncCiphertext ciphertext;
 
     crypto_aead_chacha20poly1305_ietf_encrypt(
-        ciphertext.begin(), NULL,
-        message.begin(), SAPLING_ENCPLAINTEXT_SIZE,
-        NULL, 0, // no "additional data"
-        NULL, cipher_nonce, K
-    );
+        ciphertext.begin(),
+        NULL,
+        message.begin(),
+        SAPLING_ENCPLAINTEXT_SIZE,
+        NULL,
+        0, // no "additional data"
+        NULL,
+        cipher_nonce,
+        K);
 
     already_encrypted_enc = true;
 
@@ -144,21 +141,16 @@ std::optional<SaplingEncCiphertext> SaplingNoteEncryption::encrypt_to_recipient(
 }
 
 std::optional<SaplingEncPlaintext> AttemptSaplingEncDecryption(
-    const SaplingEncCiphertext &ciphertext,
-    const uint256 &ivk,
-    const uint256 &epk
-)
+    const SaplingEncCiphertext& ciphertext,
+    const uint256& ivk,
+    const uint256& epk)
 {
     // Construct the symmetric key.
     // We consider ZIP 216 active all of the time because blocks prior to NU5
     // activation (on mainnet and testnet) did not contain Sapling transactions
     // that violated its canonicity rule.
     unsigned char K[NOTEENCRYPTION_CIPHER_KEYSIZE];
-    if (!librustzcash_sapling_ka_derive_symmetric_key(
-        epk.begin(),
-        ivk.begin(),
-        epk.begin(), K))
-    {
+    if (!librustzcash_sapling_ka_derive_symmetric_key(epk.begin(), ivk.begin(), epk.begin(), K)) {
         return std::nullopt;
     }
 
@@ -168,37 +160,33 @@ std::optional<SaplingEncPlaintext> AttemptSaplingEncDecryption(
     SaplingEncPlaintext plaintext;
 
     if (crypto_aead_chacha20poly1305_ietf_decrypt(
-        plaintext.begin(), NULL,
-        NULL,
-        ciphertext.begin(), SAPLING_ENCCIPHERTEXT_SIZE,
-        NULL,
-        0,
-        cipher_nonce, K) != 0)
-    {
+            plaintext.begin(),
+            NULL,
+            NULL,
+            ciphertext.begin(),
+            SAPLING_ENCCIPHERTEXT_SIZE,
+            NULL,
+            0,
+            cipher_nonce,
+            K) != 0) {
         return std::nullopt;
     }
 
     return plaintext;
 }
 
-std::optional<SaplingEncPlaintext> AttemptSaplingEncDecryption (
-    const SaplingEncCiphertext &ciphertext,
-    const uint256 &epk,
-    const uint256 &esk,
-    const uint256 &pk_d
-)
+std::optional<SaplingEncPlaintext> AttemptSaplingEncDecryption(
+    const SaplingEncCiphertext& ciphertext,
+    const uint256& epk,
+    const uint256& esk,
+    const uint256& pk_d)
 {
     // Construct the symmetric key.
     // We consider ZIP 216 active all of the time because blocks prior to NU5
     // activation (on mainnet and testnet) did not contain Sapling transactions
     // that violated its canonicity rule.
     unsigned char K[NOTEENCRYPTION_CIPHER_KEYSIZE];
-    if (!librustzcash_sapling_ka_derive_symmetric_key(
-        pk_d.begin(),
-        esk.begin(),
-        epk.begin(),
-        K))
-    {
+    if (!librustzcash_sapling_ka_derive_symmetric_key(pk_d.begin(), esk.begin(), epk.begin(), K)) {
         return std::nullopt;
     }
 
@@ -208,13 +196,15 @@ std::optional<SaplingEncPlaintext> AttemptSaplingEncDecryption (
     SaplingEncPlaintext plaintext;
 
     if (crypto_aead_chacha20poly1305_ietf_decrypt(
-        plaintext.begin(), NULL,
-        NULL,
-        ciphertext.begin(), SAPLING_ENCCIPHERTEXT_SIZE,
-        NULL,
-        0,
-        cipher_nonce, K) != 0)
-    {
+            plaintext.begin(),
+            NULL,
+            NULL,
+            ciphertext.begin(),
+            SAPLING_ENCCIPHERTEXT_SIZE,
+            NULL,
+            0,
+            cipher_nonce,
+            K) != 0) {
         return std::nullopt;
     }
 
@@ -223,11 +213,10 @@ std::optional<SaplingEncPlaintext> AttemptSaplingEncDecryption (
 
 
 SaplingOutCiphertext SaplingNoteEncryption::encrypt_to_ourselves(
-    const uint256 &ovk,
-    const uint256 &cv,
-    const uint256 &cm,
-    const SaplingOutPlaintext &message
-)
+    const uint256& ovk,
+    const uint256& cv,
+    const uint256& cm,
+    const SaplingOutPlaintext& message)
 {
     if (already_encrypted_out) {
         throw std::logic_error("already encrypted to the recipient using this key");
@@ -243,11 +232,15 @@ SaplingOutCiphertext SaplingNoteEncryption::encrypt_to_ourselves(
     SaplingOutCiphertext ciphertext;
 
     crypto_aead_chacha20poly1305_ietf_encrypt(
-        ciphertext.begin(), NULL,
-        message.begin(), SAPLING_OUTPLAINTEXT_SIZE,
-        NULL, 0, // no "additional data"
-        NULL, cipher_nonce, K
-    );
+        ciphertext.begin(),
+        NULL,
+        message.begin(),
+        SAPLING_OUTPLAINTEXT_SIZE,
+        NULL,
+        0, // no "additional data"
+        NULL,
+        cipher_nonce,
+        K);
 
     already_encrypted_out = true;
 
@@ -255,12 +248,11 @@ SaplingOutCiphertext SaplingNoteEncryption::encrypt_to_ourselves(
 }
 
 std::optional<SaplingOutPlaintext> AttemptSaplingOutDecryption(
-    const SaplingOutCiphertext &ciphertext,
-    const uint256 &ovk,
-    const uint256 &cv,
-    const uint256 &cm,
-    const uint256 &epk
-)
+    const SaplingOutCiphertext& ciphertext,
+    const uint256& ovk,
+    const uint256& cv,
+    const uint256& cm,
+    const uint256& epk)
 {
     // Construct the symmetric key
     unsigned char K[NOTEENCRYPTION_CIPHER_KEYSIZE];
@@ -272,13 +264,15 @@ std::optional<SaplingOutPlaintext> AttemptSaplingOutDecryption(
     SaplingOutPlaintext plaintext;
 
     if (crypto_aead_chacha20poly1305_ietf_decrypt(
-        plaintext.begin(), NULL,
-        NULL,
-        ciphertext.begin(), SAPLING_OUTCIPHERTEXT_SIZE,
-        NULL,
-        0,
-        cipher_nonce, K) != 0)
-    {
+            plaintext.begin(),
+            NULL,
+            NULL,
+            ciphertext.begin(),
+            SAPLING_OUTCIPHERTEXT_SIZE,
+            NULL,
+            0,
+            cipher_nonce,
+            K) != 0) {
         return std::nullopt;
     }
 
@@ -286,7 +280,8 @@ std::optional<SaplingOutPlaintext> AttemptSaplingOutDecryption(
 }
 
 template<size_t MLEN>
-NoteEncryption<MLEN>::NoteEncryption(uint256 hSig) : nonce(0), hSig(hSig) {
+NoteEncryption<MLEN>::NoteEncryption(uint256 hSig) : nonce(0), hSig(hSig)
+{
     // All of this code assumes crypto_scalarmult_BYTES is 32
     // There's no reason that will _ever_ change, but for
     // completeness purposes, let's check anyway.
@@ -300,15 +295,14 @@ NoteEncryption<MLEN>::NoteEncryption(uint256 hSig) : nonce(0), hSig(hSig) {
 }
 
 template<size_t MLEN>
-NoteDecryption<MLEN>::NoteDecryption(uint256 sk_enc) : sk_enc(sk_enc) {
+NoteDecryption<MLEN>::NoteDecryption(uint256 sk_enc) : sk_enc(sk_enc)
+{
     this->pk_enc = NoteEncryption<MLEN>::generate_pubkey(sk_enc);
 }
 
 template<size_t MLEN>
-typename NoteEncryption<MLEN>::Ciphertext NoteEncryption<MLEN>::encrypt
-                                          (const uint256 &pk_enc,
-                                           const NoteEncryption<MLEN>::Plaintext &message
-                                          )
+typename NoteEncryption<MLEN>::Ciphertext
+NoteEncryption<MLEN>::encrypt(const uint256& pk_enc, const NoteEncryption<MLEN>::Plaintext& message)
 {
     uint256 dhsecret;
 
@@ -328,21 +322,26 @@ typename NoteEncryption<MLEN>::Ciphertext NoteEncryption<MLEN>::encrypt
 
     NoteEncryption<MLEN>::Ciphertext ciphertext;
 
-    crypto_aead_chacha20poly1305_ietf_encrypt(ciphertext.begin(), NULL,
-                                         message.begin(), MLEN,
-                                         NULL, 0, // no "additional data"
-                                         NULL, cipher_nonce, K);
+    crypto_aead_chacha20poly1305_ietf_encrypt(
+        ciphertext.begin(),
+        NULL,
+        message.begin(),
+        MLEN,
+        NULL,
+        0, // no "additional data"
+        NULL,
+        cipher_nonce,
+        K);
 
     return ciphertext;
 }
 
 template<size_t MLEN>
-typename NoteDecryption<MLEN>::Plaintext NoteDecryption<MLEN>::decrypt
-                                         (const NoteDecryption<MLEN>::Ciphertext &ciphertext,
-                                          const uint256 &epk,
-                                          const uint256 &hSig,
-                                          unsigned char nonce
-                                         ) const
+typename NoteDecryption<MLEN>::Plaintext NoteDecryption<MLEN>::decrypt(
+    const NoteDecryption<MLEN>::Ciphertext& ciphertext,
+    const uint256& epk,
+    const uint256& hSig,
+    unsigned char nonce) const
 {
     uint256 dhsecret;
 
@@ -360,12 +359,16 @@ typename NoteDecryption<MLEN>::Plaintext NoteDecryption<MLEN>::decrypt
 
     // Message length is always NOTEENCRYPTION_AUTH_BYTES less than
     // the ciphertext length.
-    if (crypto_aead_chacha20poly1305_ietf_decrypt(plaintext.begin(), NULL,
-                                             NULL,
-                                             ciphertext.begin(), NoteDecryption<MLEN>::CLEN,
-                                             NULL,
-                                             0,
-                                             cipher_nonce, K) != 0) {
+    if (crypto_aead_chacha20poly1305_ietf_decrypt(
+            plaintext.begin(),
+            NULL,
+            NULL,
+            ciphertext.begin(),
+            NoteDecryption<MLEN>::CLEN,
+            NULL,
+            0,
+            cipher_nonce,
+            K) != 0) {
         throw note_decryption_failed();
     }
 
@@ -376,13 +379,13 @@ typename NoteDecryption<MLEN>::Plaintext NoteDecryption<MLEN>::decrypt
 // Payment disclosure - decrypt with esk
 //
 template<size_t MLEN>
-typename PaymentDisclosureNoteDecryption<MLEN>::Plaintext PaymentDisclosureNoteDecryption<MLEN>::decryptWithEsk
-                                         (const PaymentDisclosureNoteDecryption<MLEN>::Ciphertext &ciphertext,
-                                          const uint256 &pk_enc,
-                                          const uint256 &esk,
-                                          const uint256 &hSig,
-                                          unsigned char nonce
-                                         ) const
+typename PaymentDisclosureNoteDecryption<MLEN>::Plaintext
+PaymentDisclosureNoteDecryption<MLEN>::decryptWithEsk(
+    const PaymentDisclosureNoteDecryption<MLEN>::Ciphertext& ciphertext,
+    const uint256& pk_enc,
+    const uint256& esk,
+    const uint256& hSig,
+    unsigned char nonce) const
 {
     uint256 dhsecret;
 
@@ -403,12 +406,16 @@ typename PaymentDisclosureNoteDecryption<MLEN>::Plaintext PaymentDisclosureNoteD
 
     // Message length is always NOTEENCRYPTION_AUTH_BYTES less than
     // the ciphertext length.
-    if (crypto_aead_chacha20poly1305_ietf_decrypt(plaintext.begin(), NULL,
-                                             NULL,
-                                             ciphertext.begin(), PaymentDisclosureNoteDecryption<MLEN>::CLEN,
-                                             NULL,
-                                             0,
-                                             cipher_nonce, K) != 0) {
+    if (crypto_aead_chacha20poly1305_ietf_decrypt(
+            plaintext.begin(),
+            NULL,
+            NULL,
+            ciphertext.begin(),
+            PaymentDisclosureNoteDecryption<MLEN>::CLEN,
+            NULL,
+            0,
+            cipher_nonce,
+            K) != 0) {
         throw note_decryption_failed();
     }
 
@@ -416,10 +423,8 @@ typename PaymentDisclosureNoteDecryption<MLEN>::Plaintext PaymentDisclosureNoteD
 }
 
 
-
-
 template<size_t MLEN>
-uint256 NoteEncryption<MLEN>::generate_privkey(const uint252 &a_sk)
+uint256 NoteEncryption<MLEN>::generate_privkey(const uint252& a_sk)
 {
     uint256 sk = PRF_addr_sk_enc(a_sk);
 
@@ -429,7 +434,7 @@ uint256 NoteEncryption<MLEN>::generate_privkey(const uint252 &a_sk)
 }
 
 template<size_t MLEN>
-uint256 NoteEncryption<MLEN>::generate_pubkey(const uint256 &sk_enc)
+uint256 NoteEncryption<MLEN>::generate_pubkey(const uint256& sk_enc)
 {
     uint256 pk;
 
@@ -458,4 +463,4 @@ template class NoteDecryption<NOTEPLAINTEXT_SIZE>;
 
 template class PaymentDisclosureNoteDecryption<NOTEPLAINTEXT_SIZE>;
 
-}
+} // namespace libzcash

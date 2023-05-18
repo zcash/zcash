@@ -4,18 +4,21 @@
 
 
 #include "consensus/upgrades.h"
+#include "librustzcash.h"
 #include "serialize.h"
 #include "streams.h"
 #include "uint256.h"
-#include "librustzcash.h"
 
-namespace libzcash {
+namespace libzcash
+{
 
-void HistoryCache::Extend(const HistoryNode &leaf) {
+void HistoryCache::Extend(const HistoryNode& leaf)
+{
     appends[length++] = leaf;
 }
 
-void HistoryCache::Truncate(HistoryIndex newLength) {
+void HistoryCache::Truncate(HistoryIndex newLength)
+{
     // Remove any to-be-appended nodes beyond the new length. The array representation is
     // zero-indexed, and HistoryIndex is unsigned, so we handle the truncate-to-zero case
     // separately.
@@ -40,21 +43,20 @@ void HistoryCache::Truncate(HistoryIndex newLength) {
 }
 
 HistoryNode NewNode(
-        uint256 subtreeCommitment,
-        uint32_t startTime,
-        uint32_t endTime,
-        uint32_t startTarget,
-        uint32_t endTarget,
-        uint256 startSaplingRoot,
-        uint256 endSaplingRoot,
-        std::optional<uint256> startOrchardRoot,
-        std::optional<uint256> endOrchardRoot,
-        uint256 subtreeTotalWork,
-        uint64_t startHeight,
-        uint64_t endHeight,
-        uint64_t saplingTxCount,
-        std::optional<uint64_t> orchardTxCount
-    )
+    uint256 subtreeCommitment,
+    uint32_t startTime,
+    uint32_t endTime,
+    uint32_t startTarget,
+    uint32_t endTarget,
+    uint256 startSaplingRoot,
+    uint256 endSaplingRoot,
+    std::optional<uint256> startOrchardRoot,
+    std::optional<uint256> endOrchardRoot,
+    uint256 subtreeTotalWork,
+    uint64_t startHeight,
+    uint64_t endHeight,
+    uint64_t saplingTxCount,
+    std::optional<uint64_t> orchardTxCount)
 {
     CDataStream buf(SER_DISK, 0);
     HistoryNode result = {};
@@ -89,8 +91,8 @@ HistoryNode NewV1Leaf(
     uint256 saplingRoot,
     uint256 totalWork,
     uint64_t height,
-    uint64_t saplingTxCount
-) {
+    uint64_t saplingTxCount)
+{
     return NewNode(
         commitment,
         time,
@@ -105,8 +107,7 @@ HistoryNode NewV1Leaf(
         height,
         height,
         saplingTxCount,
-        std::nullopt
-    );
+        std::nullopt);
 }
 
 HistoryNode NewV2Leaf(
@@ -118,8 +119,8 @@ HistoryNode NewV2Leaf(
     uint256 totalWork,
     uint64_t height,
     uint64_t saplingTxCount,
-    uint64_t orchardTxCount
-) {
+    uint64_t orchardTxCount)
+{
     return NewNode(
         commitment,
         time,
@@ -134,11 +135,11 @@ HistoryNode NewV2Leaf(
         height,
         height,
         saplingTxCount,
-        orchardTxCount
-    );
+        orchardTxCount);
 }
 
-HistoryEntry NodeToEntry(const HistoryNode node, uint32_t left, uint32_t right) {
+HistoryEntry NodeToEntry(const HistoryNode node, uint32_t left, uint32_t right)
+{
     CDataStream buf(SER_DISK, 0);
     HistoryEntry result;
 
@@ -158,7 +159,8 @@ HistoryEntry NodeToEntry(const HistoryNode node, uint32_t left, uint32_t right) 
     return result;
 }
 
-HistoryEntry LeafToEntry(const HistoryNode node) {
+HistoryEntry LeafToEntry(const HistoryNode node)
+{
     CDataStream buf(SER_DISK, 0);
     HistoryEntry result;
 
@@ -176,15 +178,15 @@ HistoryEntry LeafToEntry(const HistoryNode node) {
     return result;
 }
 
-bool IsV1HistoryTree(uint32_t epochId) {
+bool IsV1HistoryTree(uint32_t epochId)
+{
     return (
         epochId == NetworkUpgradeInfo[Consensus::BASE_SPROUT].nBranchId ||
         epochId == NetworkUpgradeInfo[Consensus::UPGRADE_OVERWINTER].nBranchId ||
         epochId == NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId ||
         epochId == NetworkUpgradeInfo[Consensus::UPGRADE_BLOSSOM].nBranchId ||
         epochId == NetworkUpgradeInfo[Consensus::UPGRADE_HEARTWOOD].nBranchId ||
-        epochId == NetworkUpgradeInfo[Consensus::UPGRADE_CANOPY].nBranchId
-    );
+        epochId == NetworkUpgradeInfo[Consensus::UPGRADE_CANOPY].nBranchId);
 }
 
-}
+} // namespace libzcash

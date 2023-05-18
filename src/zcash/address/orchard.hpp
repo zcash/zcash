@@ -12,12 +12,14 @@
 #include <optional>
 
 class OrchardWallet;
-namespace orchard {
-    class Builder;
-    class UnauthorizedBundle;
-}
+namespace orchard
+{
+class Builder;
+class UnauthorizedBundle;
+} // namespace orchard
 
-namespace libzcash {
+namespace libzcash
+{
 
 class OrchardFullViewingKey;
 class OrchardIncomingViewingKey;
@@ -35,15 +37,19 @@ private:
     friend class OrchardIncomingViewingKey;
     friend class ::OrchardWallet;
     friend class ::orchard::Builder;
+
 public:
-    static OrchardRawAddress KeyIoOnlyFromReceiver(OrchardRawAddressPtr* ptr) {
+    static OrchardRawAddress KeyIoOnlyFromReceiver(OrchardRawAddressPtr* ptr)
+    {
         return OrchardRawAddress(ptr);
     }
 
     OrchardRawAddress(OrchardRawAddress&& key) : inner(std::move(key.inner)) {}
 
     OrchardRawAddress(const OrchardRawAddress& key) :
-        inner(orchard_address_clone(key.inner.get()), orchard_address_free) {}
+        inner(orchard_address_clone(key.inner.get()), orchard_address_free)
+    {
+    }
 
     OrchardRawAddress& operator=(OrchardRawAddress&& key)
     {
@@ -61,16 +67,19 @@ public:
         return *this;
     }
 
-    friend bool operator==(const OrchardRawAddress& c1, const OrchardRawAddress& c2) {
+    friend bool operator==(const OrchardRawAddress& c1, const OrchardRawAddress& c2)
+    {
         return orchard_address_eq(c1.inner.get(), c2.inner.get());
     }
 
-    friend bool operator<(const OrchardRawAddress& c1, const OrchardRawAddress& c2) {
+    friend bool operator<(const OrchardRawAddress& c1, const OrchardRawAddress& c2)
+    {
         return orchard_address_lt(c1.inner.get(), c2.inner.get());
     }
 
     template<typename Stream>
-    void Serialize(Stream& s) const {
+    void Serialize(Stream& s) const
+    {
         RustStream rs(s);
         if (!orchard_raw_address_serialize(inner.get(), &rs, RustStream<Stream>::write_callback)) {
             throw std::ios_base::failure("Failed to serialize Orchard raw address to bytes");
@@ -78,9 +87,11 @@ public:
     }
 
     template<typename Stream>
-    void Unserialize(Stream& s) {
+    void Unserialize(Stream& s)
+    {
         RustStream rs(s);
-        OrchardRawAddressPtr* addr = orchard_raw_address_parse(&rs, RustStream<Stream>::read_callback);
+        OrchardRawAddressPtr* addr =
+            orchard_raw_address_parse(&rs, RustStream<Stream>::read_callback);
         if (addr == nullptr) {
             throw std::ios_base::failure("Failed to parse Orchard raw address bytes");
         }
@@ -88,7 +99,8 @@ public:
     }
 
     template<typename Stream>
-    static OrchardRawAddress Read(Stream& stream) {
+    static OrchardRawAddress Read(Stream& stream)
+    {
         OrchardRawAddress key;
         stream >> key;
         return key;
@@ -98,23 +110,30 @@ public:
 class OrchardIncomingViewingKey
 {
 private:
-    std::unique_ptr<OrchardIncomingViewingKeyPtr, decltype(&orchard_incoming_viewing_key_free)> inner;
+    std::unique_ptr<OrchardIncomingViewingKeyPtr, decltype(&orchard_incoming_viewing_key_free)>
+        inner;
 
     OrchardIncomingViewingKey(OrchardIncomingViewingKeyPtr* key) :
-        inner(key, orchard_incoming_viewing_key_free) {}
+        inner(key, orchard_incoming_viewing_key_free)
+    {
+    }
 
     friend class OrchardFullViewingKey;
     friend class OrchardSpendingKey;
     friend class ::OrchardWallet;
+
 public:
     // DO NOT USE - this is exposed for serialization purposes only.
-    OrchardIncomingViewingKey() :
-        inner(nullptr, orchard_incoming_viewing_key_free) {}
+    OrchardIncomingViewingKey() : inner(nullptr, orchard_incoming_viewing_key_free) {}
 
     OrchardIncomingViewingKey(OrchardIncomingViewingKey&& key) : inner(std::move(key.inner)) {}
 
     OrchardIncomingViewingKey(const OrchardIncomingViewingKey& key) :
-        inner(orchard_incoming_viewing_key_clone(key.inner.get()), orchard_incoming_viewing_key_free) {}
+        inner(
+            orchard_incoming_viewing_key_clone(key.inner.get()),
+            orchard_incoming_viewing_key_free)
+    {
+    }
 
     OrchardRawAddress Address(const diversifier_index_t& j) const;
 
@@ -147,25 +166,32 @@ public:
         return orchard_incoming_viewing_key_eq(a.inner.get(), b.inner.get());
     }
 
-    friend bool operator<(const OrchardIncomingViewingKey& c1, const OrchardIncomingViewingKey& c2) {
+    friend bool operator<(const OrchardIncomingViewingKey& c1, const OrchardIncomingViewingKey& c2)
+    {
         assert(c1.inner.get() != nullptr);
         assert(c2.inner.get() != nullptr);
         return orchard_incoming_viewing_key_lt(c1.inner.get(), c2.inner.get());
     }
 
     template<typename Stream>
-    void Serialize(Stream& s) const {
+    void Serialize(Stream& s) const
+    {
         assert(inner.get() != nullptr);
         RustStream rs(s);
-        if (!orchard_incoming_viewing_key_serialize(inner.get(), &rs, RustStream<Stream>::write_callback)) {
+        if (!orchard_incoming_viewing_key_serialize(
+                inner.get(),
+                &rs,
+                RustStream<Stream>::write_callback)) {
             throw std::ios_base::failure("Failed to serialize Orchard incoming viewing key");
         }
     }
 
     template<typename Stream>
-    void Unserialize(Stream& s) {
+    void Unserialize(Stream& s)
+    {
         RustStream rs(s);
-        OrchardIncomingViewingKeyPtr* key = orchard_incoming_viewing_key_parse(&rs, RustStream<Stream>::read_callback);
+        OrchardIncomingViewingKeyPtr* key =
+            orchard_incoming_viewing_key_parse(&rs, RustStream<Stream>::read_callback);
         if (key == nullptr) {
             throw std::ios_base::failure("Failed to parse Orchard incoming viewing key");
         }
@@ -173,7 +199,8 @@ public:
     }
 
     template<typename Stream>
-    static OrchardIncomingViewingKey Read(Stream& stream) {
+    static OrchardIncomingViewingKey Read(Stream& stream)
+    {
         OrchardIncomingViewingKey key;
         stream >> key;
         return key;
@@ -187,16 +214,20 @@ private:
 
     OrchardFullViewingKey() : inner(nullptr, orchard_full_viewing_key_free) {}
 
-    OrchardFullViewingKey(OrchardFullViewingKeyPtr* ptr) :
-        inner(ptr, orchard_full_viewing_key_free) {}
+    OrchardFullViewingKey(OrchardFullViewingKeyPtr* ptr) : inner(ptr, orchard_full_viewing_key_free)
+    {
+    }
 
     friend class OrchardSpendingKey;
     friend class ::OrchardWallet;
+
 public:
     OrchardFullViewingKey(OrchardFullViewingKey&& key) : inner(std::move(key.inner)) {}
 
     OrchardFullViewingKey(const OrchardFullViewingKey& key) :
-        inner(orchard_full_viewing_key_clone(key.inner.get()), orchard_full_viewing_key_free) {}
+        inner(orchard_full_viewing_key_clone(key.inner.get()), orchard_full_viewing_key_free)
+    {
+    }
 
     OrchardIncomingViewingKey ToIncomingViewingKey() const;
 
@@ -218,7 +249,9 @@ public:
      * whether the address is external (set to true in the case this is an external
      * address), or std::nullopt if the address was not generated from this key.
      */
-    std::optional<std::pair<diversifier_index_t, bool>> DecryptDiversifier(const OrchardRawAddress& addr) const {
+    std::optional<std::pair<diversifier_index_t, bool>>
+    DecryptDiversifier(const OrchardRawAddress& addr) const
+    {
         auto j_external = ToIncomingViewingKey().DecryptDiversifier(addr);
         if (j_external.has_value()) {
             return std::make_pair(j_external.value(), true);
@@ -252,17 +285,23 @@ public:
     }
 
     template<typename Stream>
-    void Serialize(Stream& s) const {
+    void Serialize(Stream& s) const
+    {
         RustStream rs(s);
-        if (!orchard_full_viewing_key_serialize(inner.get(), &rs, RustStream<Stream>::write_callback)) {
+        if (!orchard_full_viewing_key_serialize(
+                inner.get(),
+                &rs,
+                RustStream<Stream>::write_callback)) {
             throw std::ios_base::failure("Failed to serialize Orchard full viewing key");
         }
     }
 
     template<typename Stream>
-    void Unserialize(Stream& s) {
+    void Unserialize(Stream& s)
+    {
         RustStream rs(s);
-        OrchardFullViewingKeyPtr* key = orchard_full_viewing_key_parse(&rs, RustStream<Stream>::read_callback);
+        OrchardFullViewingKeyPtr* key =
+            orchard_full_viewing_key_parse(&rs, RustStream<Stream>::read_callback);
         if (key == nullptr) {
             throw std::ios_base::failure("Failed to parse Orchard full viewing key");
         }
@@ -270,7 +309,8 @@ public:
     }
 
     template<typename Stream>
-    static OrchardFullViewingKey Read(Stream& stream) {
+    static OrchardFullViewingKey Read(Stream& stream)
+    {
         OrchardFullViewingKey key;
         stream >> key;
         return key;
@@ -284,21 +324,21 @@ private:
 
     OrchardSpendingKey() : inner(nullptr, orchard_spending_key_free) {}
 
-    OrchardSpendingKey(OrchardSpendingKeyPtr* ptr) :
-        inner(ptr, orchard_spending_key_free) {}
+    OrchardSpendingKey(OrchardSpendingKeyPtr* ptr) : inner(ptr, orchard_spending_key_free) {}
 
     friend class orchard::UnauthorizedBundle;
     friend class ::OrchardWallet;
+
 public:
     OrchardSpendingKey(OrchardSpendingKey&& key) : inner(std::move(key.inner)) {}
 
     OrchardSpendingKey(const OrchardSpendingKey& key) :
-        inner(orchard_spending_key_clone(key.inner.get()), orchard_spending_key_free) {}
+        inner(orchard_spending_key_clone(key.inner.get()), orchard_spending_key_free)
+    {
+    }
 
-    static OrchardSpendingKey ForAccount(
-            const HDSeed& seed,
-            uint32_t bip44CoinType,
-            libzcash::AccountId accountId);
+    static OrchardSpendingKey
+    ForAccount(const HDSeed& seed, uint32_t bip44CoinType, libzcash::AccountId accountId);
 
     OrchardFullViewingKey ToFullViewingKey() const;
 
@@ -322,4 +362,3 @@ public:
 } // namespace libzcash
 
 #endif // ZCASH_ADDRESS_ORCHARD_H
-

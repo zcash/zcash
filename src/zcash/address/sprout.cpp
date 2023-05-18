@@ -9,35 +9,43 @@
 #include "zcash/NoteEncryption.hpp"
 #include "zcash/prf.h"
 
-namespace libzcash {
+namespace libzcash
+{
 
-uint256 SproutPaymentAddress::GetHash() const {
+uint256 SproutPaymentAddress::GetHash() const
+{
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << *this;
     return Hash(ss.begin(), ss.end());
 }
 
-uint256 ReceivingKey::pk_enc() const {
+uint256 ReceivingKey::pk_enc() const
+{
     return ZCNoteEncryption::generate_pubkey(*this);
 }
 
-SproutPaymentAddress SproutViewingKey::address() const {
+SproutPaymentAddress SproutViewingKey::address() const
+{
     return SproutPaymentAddress(a_pk, sk_enc.pk_enc());
 }
 
-ReceivingKey SproutSpendingKey::receiving_key() const {
+ReceivingKey SproutSpendingKey::receiving_key() const
+{
     return ReceivingKey(ZCNoteEncryption::generate_privkey(*this));
 }
 
-SproutViewingKey SproutSpendingKey::viewing_key() const {
+SproutViewingKey SproutSpendingKey::viewing_key() const
+{
     return SproutViewingKey(PRF_addr_a_pk(*this), receiving_key());
 }
 
-SproutSpendingKey SproutSpendingKey::random() {
+SproutSpendingKey SproutSpendingKey::random()
+{
     return SproutSpendingKey(random_uint252());
 }
 
-SproutPaymentAddress SproutSpendingKey::address() const {
+SproutPaymentAddress SproutSpendingKey::address() const
+{
     return viewing_key().address();
 }
 

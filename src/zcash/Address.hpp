@@ -4,11 +4,8 @@
 #include "consensus/params.h"
 #include "key_constants.h"
 #include "pubkey.h"
-#include "key_constants.h"
 #include "script/script.h"
 #include "uint256.h"
-#include "pubkey.h"
-#include "script/script.h"
 #include "util/match.h"
 #include "zcash/address/orchard.hpp"
 #include "zcash/address/sapling.hpp"
@@ -16,41 +13,51 @@
 #include "zcash/address/unified.h"
 #include "zcash/address/zip32.h"
 
-#include <variant>
 #include <rust/constants.h>
 #include <rust/unified_keys.h>
+#include <variant>
 
 const unsigned char ZCASH_UFVK_ID_PERSONAL[blake2b::PERSONALBYTES] =
     {'Z', 'c', 'a', 's', 'h', '_', 'U', 'F', 'V', 'K', '_', 'I', 'd', '_', 'F', 'P'};
 
-namespace libzcash {
+namespace libzcash
+{
 
 bool HasKnownReceiverType(const Receiver& receiver);
 
 struct ReceiverIterator {
     using iterator_category = std::random_access_iterator_tag;
-    using difference_type   = std::ptrdiff_t;
-    using value_type        = const Receiver;
-    using pointer           = const Receiver*;
-    using reference         = const Receiver&;
+    using difference_type = std::ptrdiff_t;
+    using value_type = const Receiver;
+    using pointer = const Receiver*;
+    using reference = const Receiver&;
 
     ReceiverIterator(std::vector<const Receiver*> sorted, size_t cur) :
-        sortedReceivers(sorted), cur(cur) {}
+        sortedReceivers(sorted), cur(cur)
+    {
+    }
 
     reference operator*() const { return *sortedReceivers[cur]; }
     pointer operator->() { return sortedReceivers[cur]; }
 
-    ReceiverIterator& operator++() { cur++; return *this; }
-    ReceiverIterator operator++(int) {
+    ReceiverIterator& operator++()
+    {
+        cur++;
+        return *this;
+    }
+    ReceiverIterator operator++(int)
+    {
         ReceiverIterator tmp = *this;
         ++(*this);
         return tmp;
     }
 
-    friend bool operator==(const ReceiverIterator& a, const ReceiverIterator& b) {
+    friend bool operator==(const ReceiverIterator& a, const ReceiverIterator& b)
+    {
         return a.sortedReceivers == b.sortedReceivers && a.cur == b.cur;
     }
-    friend bool operator!=(const ReceiverIterator& a, const ReceiverIterator& b) {
+    friend bool operator!=(const ReceiverIterator& a, const ReceiverIterator& b)
+    {
         return !(a == b);
     }
 
@@ -60,7 +67,8 @@ private:
 };
 
 
-class UnifiedAddress {
+class UnifiedAddress
+{
     std::vector<Receiver> receivers;
 
     std::vector<const Receiver*> GetSorted() const;
@@ -68,18 +76,21 @@ class UnifiedAddress {
 public:
     UnifiedAddress() {}
 
-    static UnifiedAddress ForSingleReceiver(Receiver receiver) {
+    static UnifiedAddress ForSingleReceiver(Receiver receiver)
+    {
         UnifiedAddress ua;
         ua.AddReceiver(receiver);
         return ua;
     }
 
-    static std::optional<UnifiedAddress> Parse(const KeyConstants& keyConstants, const std::string& str);
+    static std::optional<UnifiedAddress>
+    Parse(const KeyConstants& keyConstants, const std::string& str);
 
     ADD_SERIALIZE_METHODS;
 
-    template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action) {
+    template<typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action)
+    {
         READWRITE(receivers);
     }
 
@@ -99,7 +110,8 @@ public:
 
     const std::vector<Receiver>& GetReceiversAsParsed() const { return receivers; }
 
-    std::set<ReceiverType> GetKnownReceiverTypes() const {
+    std::set<ReceiverType> GetKnownReceiverTypes() const
+    {
         std::set<ReceiverType> result;
         for (const auto& receiver : receivers) {
             examine(receiver, match {
@@ -122,15 +134,9 @@ public:
         return result;
     }
 
-    ReceiverIterator begin() const {
-        return ReceiverIterator(GetSorted(), 0);
-    }
-    ReceiverIterator end() const {
-        return ReceiverIterator(GetSorted(), receivers.size());
-    }
-    size_t size() const {
-        return receivers.size();
-    }
+    ReceiverIterator begin() const { return ReceiverIterator(GetSorted(), 0); }
+    ReceiverIterator end() const { return ReceiverIterator(GetSorted(), receivers.size()); }
+    size_t size() const { return receivers.size(); }
 
     std::optional<CKeyID> GetP2PKHReceiver() const;
 
@@ -144,16 +150,19 @@ public:
      * Return the most-preferred receiver from among the receiver types
      * that we recognize and can use at the given block height.
      */
-    std::optional<RecipientAddress> GetPreferredRecipientAddress(
-        const Consensus::Params& consensus, int height) const;
+    std::optional<RecipientAddress>
+    GetPreferredRecipientAddress(const Consensus::Params& consensus, int height) const;
 
-    friend inline bool operator==(const UnifiedAddress& a, const UnifiedAddress& b) {
+    friend inline bool operator==(const UnifiedAddress& a, const UnifiedAddress& b)
+    {
         return a.receivers == b.receivers;
     }
-    friend inline bool operator!=(const UnifiedAddress& a, const UnifiedAddress& b) {
+    friend inline bool operator!=(const UnifiedAddress& a, const UnifiedAddress& b)
+    {
         return a.receivers != b.receivers;
     }
-    friend inline bool operator<(const UnifiedAddress& a, const UnifiedAddress& b) {
+    friend inline bool operator<(const UnifiedAddress& a, const UnifiedAddress& b)
+    {
         return a.receivers < b.receivers;
     }
 };
@@ -163,22 +172,26 @@ class UnifiedFullViewingKeyBuilder;
 /**
  * Wrapper for a zcash_address::unified::Ufvk.
  */
-class UnifiedFullViewingKey {
+class UnifiedFullViewingKey
+{
 private:
     std::unique_ptr<UnifiedFullViewingKeyPtr, decltype(&unified_full_viewing_key_free)> inner;
 
-    UnifiedFullViewingKey() :
-        inner(nullptr, unified_full_viewing_key_free) {}
+    UnifiedFullViewingKey() : inner(nullptr, unified_full_viewing_key_free) {}
 
-    UnifiedFullViewingKey(UnifiedFullViewingKeyPtr* ptr) :
-        inner(ptr, unified_full_viewing_key_free) {}
+    UnifiedFullViewingKey(UnifiedFullViewingKeyPtr* ptr) : inner(ptr, unified_full_viewing_key_free)
+    {
+    }
 
     friend class UnifiedFullViewingKeyBuilder;
+
 public:
     UnifiedFullViewingKey(UnifiedFullViewingKey&& key) : inner(std::move(key.inner)) {}
 
     UnifiedFullViewingKey(const UnifiedFullViewingKey& key) :
-        inner(unified_full_viewing_key_clone(key.inner.get()), unified_full_viewing_key_free) {}
+        inner(unified_full_viewing_key_clone(key.inner.get()), unified_full_viewing_key_free)
+    {
+    }
 
     /**
      * This method should only be used for serialization of unified full
@@ -190,9 +203,8 @@ public:
      */
     static UnifiedFullViewingKey FromZcashdUFVK(const ZcashdUnifiedFullViewingKey&);
 
-    static std::optional<UnifiedFullViewingKey> Decode(
-            const std::string& str,
-            const KeyConstants& keyConstants);
+    static std::optional<UnifiedFullViewingKey>
+    Decode(const std::string& str, const KeyConstants& keyConstants);
 
     std::string Encode(const KeyConstants& keyConstants) const;
 
@@ -204,7 +216,8 @@ public:
 
     UFVKId GetKeyID(const KeyConstants& keyConstants) const;
 
-    std::set<ReceiverType> GetKnownReceiverTypes() const {
+    std::set<ReceiverType> GetKnownReceiverTypes() const
+    {
         std::set<ReceiverType> result;
         if (GetTransparentKey().has_value()) {
             result.insert(ReceiverType::P2PKH);
@@ -235,16 +248,18 @@ public:
     }
 };
 
-class UnifiedFullViewingKeyBuilder {
+class UnifiedFullViewingKeyBuilder
+{
 private:
     std::optional<std::vector<uint8_t>> t_bytes;
     std::optional<std::vector<uint8_t>> sapling_bytes;
     std::optional<std::vector<uint8_t>> orchard_bytes;
+
 public:
-    UnifiedFullViewingKeyBuilder():
-        t_bytes(std::nullopt),
-        sapling_bytes(std::nullopt),
-        orchard_bytes(std::nullopt) {}
+    UnifiedFullViewingKeyBuilder() :
+        t_bytes(std::nullopt), sapling_bytes(std::nullopt), orchard_bytes(std::nullopt)
+    {
+    }
 
     bool AddTransparentKey(const transparent::AccountPubKey&);
     bool AddSaplingKey(const SaplingDiversifiableFullViewingKey&);
@@ -254,23 +269,16 @@ public:
 };
 
 /** Addresses that can appear in a string encoding. */
-typedef std::variant<
-    CKeyID,
-    CScriptID,
-    SproutPaymentAddress,
-    SaplingPaymentAddress,
-    UnifiedAddress> PaymentAddress;
+typedef std::variant<CKeyID, CScriptID, SproutPaymentAddress, SaplingPaymentAddress, UnifiedAddress>
+    PaymentAddress;
 /** Viewing keys that can have a string encoding. */
-typedef std::variant<
-    SproutViewingKey,
-    SaplingExtendedFullViewingKey,
-    UnifiedFullViewingKey> ViewingKey;
+typedef std::variant<SproutViewingKey, SaplingExtendedFullViewingKey, UnifiedFullViewingKey>
+    ViewingKey;
 /** Spending keys that can have a string encoding. */
-typedef std::variant<
-    SproutSpendingKey,
-    SaplingExtendedSpendingKey> SpendingKey;
+typedef std::variant<SproutSpendingKey, SaplingExtendedSpendingKey> SpendingKey;
 
-class HasShieldedRecipient {
+class HasShieldedRecipient
+{
 public:
     bool operator()(const CKeyID& p2pkh) { return false; }
     bool operator()(const CScriptID& p2sh) { return false; }
@@ -279,54 +287,66 @@ public:
     bool operator()(const UnifiedAddress& addr) { return true; }
 };
 
-class SelectRecipientAddress {
+class SelectRecipientAddress
+{
     const Consensus::Params& consensus;
     int height;
 
 public:
     SelectRecipientAddress(const Consensus::Params& consensus, int height) :
-        consensus(consensus), height(height) {}
+        consensus(consensus), height(height)
+    {
+    }
 
     std::optional<RecipientAddress> operator()(const CKeyID& p2pkh) { return p2pkh; }
     std::optional<RecipientAddress> operator()(const CScriptID& p2sh) { return p2sh; }
-    std::optional<RecipientAddress> operator()(const SproutPaymentAddress& addr) { return std::nullopt; }
+    std::optional<RecipientAddress> operator()(const SproutPaymentAddress& addr)
+    {
+        return std::nullopt;
+    }
     std::optional<RecipientAddress> operator()(const SaplingPaymentAddress& addr) { return addr; }
-    std::optional<RecipientAddress> operator()(const UnifiedAddress& addr) {
+    std::optional<RecipientAddress> operator()(const UnifiedAddress& addr)
+    {
         return addr.GetPreferredRecipientAddress(consensus, height);
     }
 };
 
-class AddressInfoFromSpendingKey {
+class AddressInfoFromSpendingKey
+{
 public:
     std::pair<std::string, PaymentAddress> operator()(const SproutSpendingKey&) const;
-    std::pair<std::string, PaymentAddress> operator()(const struct SaplingExtendedSpendingKey&) const;
+    std::pair<std::string, PaymentAddress>
+    operator()(const struct SaplingExtendedSpendingKey&) const;
 };
 
-class AddressInfoFromViewingKey {
+class AddressInfoFromViewingKey
+{
 private:
     const KeyConstants& keyConstants;
 
 public:
-    AddressInfoFromViewingKey(const KeyConstants& keyConstants): keyConstants(keyConstants) {}
+    AddressInfoFromViewingKey(const KeyConstants& keyConstants) : keyConstants(keyConstants) {}
     std::pair<std::string, PaymentAddress> operator()(const SproutViewingKey&) const;
-    std::pair<std::string, PaymentAddress> operator()(const struct SaplingExtendedFullViewingKey&) const;
+    std::pair<std::string, PaymentAddress>
+    operator()(const struct SaplingExtendedFullViewingKey&) const;
     std::pair<std::string, PaymentAddress> operator()(const UnifiedFullViewingKey&) const;
 };
 
-} //namespace libzcash
+} // namespace libzcash
 
 /**
  * Gets the typecode for the given UA receiver.
  */
-class TypecodeForReceiver {
+class TypecodeForReceiver
+{
 public:
     TypecodeForReceiver() {}
 
-    uint32_t operator()(const libzcash::OrchardRawAddress &zaddr) const;
-    uint32_t operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
-    uint32_t operator()(const CScriptID &p2sh) const;
-    uint32_t operator()(const CKeyID &p2pkh) const;
-    uint32_t operator()(const libzcash::UnknownReceiver &p2pkh) const;
+    uint32_t operator()(const libzcash::OrchardRawAddress& zaddr) const;
+    uint32_t operator()(const libzcash::SaplingPaymentAddress& zaddr) const;
+    uint32_t operator()(const CScriptID& p2sh) const;
+    uint32_t operator()(const CKeyID& p2pkh) const;
+    uint32_t operator()(const libzcash::UnknownReceiver& p2pkh) const;
 };
 
 #endif // ZC_ADDRESS_H_

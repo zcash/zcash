@@ -26,7 +26,7 @@ typedef std::array<uint8_t, 32> BundleCacheEntry;
 class BundleCacheHasher
 {
 public:
-    template <uint8_t hash_select>
+    template<uint8_t hash_select>
     uint32_t operator()(const BundleCacheEntry& key) const
     {
         static_assert(hash_select < 8, "BundleCacheHasher only has 8 hashes available.");

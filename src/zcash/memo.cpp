@@ -6,7 +6,8 @@
 
 #include <utf8cpp/utf8.h>
 
-namespace libzcash {
+namespace libzcash
+{
 
 Memo::Memo(const ArbitraryData& data) : value_({0xff})
 {
@@ -98,4 +99,4 @@ tl::expected<Memo::Contents, Memo::InterpretationError> Memo::Interpret() const
         return value_;
     }
 }
-}
+} // namespace libzcash

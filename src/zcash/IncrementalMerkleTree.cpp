@@ -1,32 +1,25 @@
 #include <stdexcept>
 
 
-#include "zcash/IncrementalMerkleTree.hpp"
 #include "crypto/sha256.h"
-#include "zcash/util.h"
 #include "librustzcash.h"
+#include "zcash/IncrementalMerkleTree.hpp"
+#include "zcash/util.h"
 
-namespace libzcash {
+namespace libzcash
+{
 
-PedersenHash PedersenHash::combine(
-    const PedersenHash& a,
-    const PedersenHash& b,
-    size_t depth
-)
+PedersenHash PedersenHash::combine(const PedersenHash& a, const PedersenHash& b, size_t depth)
 {
     PedersenHash res = PedersenHash();
 
-    librustzcash_merkle_hash(
-        depth,
-        a.begin(),
-        b.begin(),
-        res.begin()
-    );
+    librustzcash_merkle_hash(depth, a.begin(), b.begin(), res.begin());
 
     return res;
 }
 
-PedersenHash PedersenHash::uncommitted() {
+PedersenHash PedersenHash::uncommitted()
+{
     PedersenHash res = PedersenHash();
 
     librustzcash_tree_uncommitted(res.begin());
@@ -35,6 +28,8 @@ PedersenHash PedersenHash::uncommitted() {
 }
 
 static const std::array<PedersenHash, 65> pedersen_empty_roots = {
+    // NB: break argument lists at machine word boundaries
+    // clang-format off
     uint256(std::vector<unsigned char>{
         0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -413,6 +408,7 @@ static const std::array<PedersenHash, 65> pedersen_empty_roots = {
         0xec, 0xc5, 0x25, 0x68, 0x9d, 0xbf, 0x17, 0x77,
         0x96, 0x58, 0x74, 0x1b, 0x95, 0xc1, 0x5a, 0x55,
     }),
+    // clang-format on
 };
 
 PedersenHash PedersenHash::EmptyRoot(size_t depth) {
@@ -436,6 +432,8 @@ SHA256Compress SHA256Compress::combine(
 }
 
 static const std::array<SHA256Compress, 66> sha256_empty_roots = {
+    // NB: break argument lists at machine word boundaries
+    // clang-format off
     uint256(std::vector<unsigned char>{
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -832,6 +830,7 @@ static const std::array<SHA256Compress, 66> sha256_empty_roots = {
         0x79, 0x3d, 0x3a, 0xd5, 0xfe, 0x33, 0x83, 0xf9,
         0x3a, 0xb6, 0x06, 0x1f, 0x2a, 0x11, 0xbb, 0x02
     }),
+    // clang-format on
 };
 
 SHA256Compress SHA256Compress::EmptyRoot(size_t depth) {
@@ -857,14 +856,14 @@ public:
             return emptyroots.empty_root(depth);
         }
     }
-
 };
 
 template<size_t Depth, typename Hash>
 EmptyMerkleRoots<Depth, Hash> PathFiller<Depth, Hash>::emptyroots;
 
 template<size_t Depth, typename Hash>
-void IncrementalMerkleTree<Depth, Hash>::wfcheck() const {
+void IncrementalMerkleTree<Depth, Hash>::wfcheck() const
+{
     if (parents.size() >= Depth) {
         throw std::ios_base::failure("tree has too many parents");
     }
@@ -876,17 +875,20 @@ void IncrementalMerkleTree<Depth, Hash>::wfcheck() const {
 
     // Left cannot be empty when right exists.
     if (!left && right) {
-        throw std::ios_base::failure("tree has non-canonical representation; right should not exist");
+        throw std::ios_base::failure(
+            "tree has non-canonical representation; right should not exist");
     }
 
     // Left cannot be empty when parents is nonempty.
     if (!left && parents.size() > 0) {
-        throw std::ios_base::failure("tree has non-canonical representation; parents should not be unempty");
+        throw std::ios_base::failure(
+            "tree has non-canonical representation; parents should not be unempty");
     }
 }
 
 template<size_t Depth, typename Hash>
-Hash IncrementalMerkleTree<Depth, Hash>::last() const {
+Hash IncrementalMerkleTree<Depth, Hash>::last() const
+{
     if (right) {
         return *right;
     } else if (left) {
@@ -897,7 +899,8 @@ Hash IncrementalMerkleTree<Depth, Hash>::last() const {
 }
 
 template<size_t Depth, typename Hash>
-size_t IncrementalMerkleTree<Depth, Hash>::size() const {
+size_t IncrementalMerkleTree<Depth, Hash>::size() const
+{
     size_t ret = 0;
     if (left) {
         ret++;
@@ -909,14 +912,15 @@ size_t IncrementalMerkleTree<Depth, Hash>::size() const {
     // (right-shifted by 1)
     for (size_t i = 0; i < parents.size(); i++) {
         if (parents[i]) {
-            ret += (1 << (i+1));
+            ret += (1 << (i + 1));
         }
     }
     return ret;
 }
 
 template<size_t Depth, typename Hash>
-void IncrementalMerkleTree<Depth, Hash>::append(Hash obj) {
+void IncrementalMerkleTree<Depth, Hash>::append(Hash obj)
+{
     if (is_complete(Depth)) {
         throw std::runtime_error("tree is full");
     }
@@ -938,7 +942,7 @@ void IncrementalMerkleTree<Depth, Hash>::append(Hash obj) {
         for (size_t i = 0; i < Depth; i++) {
             if (i < parents.size()) {
                 if (parents[i]) {
-                    combined = Hash::combine(*parents[i], *combined, i+1);
+                    combined = Hash::combine(*parents[i], *combined, i + 1);
                     parents[i] = std::nullopt;
                 } else {
                     parents[i] = *combined;
@@ -956,7 +960,8 @@ void IncrementalMerkleTree<Depth, Hash>::append(Hash obj) {
 // to a particular depth, or for append() to ensure we're not appending
 // to a full tree.
 template<size_t Depth, typename Hash>
-bool IncrementalMerkleTree<Depth, Hash>::is_complete(size_t depth) const {
+bool IncrementalMerkleTree<Depth, Hash>::is_complete(size_t depth) const
+{
     if (!left || !right) {
         return false;
     }
@@ -977,7 +982,8 @@ bool IncrementalMerkleTree<Depth, Hash>::is_complete(size_t depth) const {
 // This finds the next "depth" of an unfilled subtree, given that we've filled
 // `skip` uncles/subtrees.
 template<size_t Depth, typename Hash>
-size_t IncrementalMerkleTree<Depth, Hash>::next_depth(size_t skip) const {
+size_t IncrementalMerkleTree<Depth, Hash>::next_depth(size_t skip) const
+{
     if (!left) {
         if (skip) {
             skip--;
@@ -1013,11 +1019,11 @@ size_t IncrementalMerkleTree<Depth, Hash>::next_depth(size_t skip) const {
 
 // This calculates the root of the tree.
 template<size_t Depth, typename Hash>
-Hash IncrementalMerkleTree<Depth, Hash>::root(size_t depth,
-                                              std::deque<Hash> filler_hashes) const {
+Hash IncrementalMerkleTree<Depth, Hash>::root(size_t depth, std::deque<Hash> filler_hashes) const
+{
     PathFiller<Depth, Hash> filler(filler_hashes);
 
-    Hash combine_left =  left  ? *left  : filler.next(0);
+    Hash combine_left = left ? *left : filler.next(0);
     Hash combine_right = right ? *right : filler.next(0);
 
     Hash root = Hash::combine(combine_left, combine_right, 0);
@@ -1047,9 +1053,11 @@ Hash IncrementalMerkleTree<Depth, Hash>::root(size_t depth,
 // This constructs an authentication path into the tree in the format that the circuit
 // wants. The caller provides `filler_hashes` to fill in the uncle subtrees.
 template<size_t Depth, typename Hash>
-MerklePath IncrementalMerkleTree<Depth, Hash>::path(std::deque<Hash> filler_hashes) const {
+MerklePath IncrementalMerkleTree<Depth, Hash>::path(std::deque<Hash> filler_hashes) const
+{
     if (!left) {
-        throw std::runtime_error("can't create an authentication path for the beginning of the tree");
+        throw std::runtime_error(
+            "can't create an authentication path for the beginning of the tree");
     }
 
     PathFiller<Depth, Hash> filler(filler_hashes);
@@ -1086,8 +1094,7 @@ MerklePath IncrementalMerkleTree<Depth, Hash>::path(std::deque<Hash> filler_hash
     }
 
     std::vector<std::vector<bool>> merkle_path;
-    for (Hash b : path)
-    {
+    for (Hash b : path) {
         std::vector<unsigned char> hashv(b.begin(), b.end());
 
         merkle_path.push_back(convertBytesVectorToVector(hashv));
@@ -1100,7 +1107,8 @@ MerklePath IncrementalMerkleTree<Depth, Hash>::path(std::deque<Hash> filler_hash
 }
 
 template<size_t Depth, typename Hash>
-std::deque<Hash> IncrementalWitness<Depth, Hash>::partial_path() const {
+std::deque<Hash> IncrementalWitness<Depth, Hash>::partial_path() const
+{
     std::deque<Hash> uncles(filled.begin(), filled.end());
 
     if (cursor) {
@@ -1111,7 +1119,8 @@ std::deque<Hash> IncrementalWitness<Depth, Hash>::partial_path() const {
 }
 
 template<size_t Depth, typename Hash>
-void IncrementalWitness<Depth, Hash>::append(Hash obj) {
+void IncrementalWitness<Depth, Hash>::append(Hash obj)
+{
     if (cursor) {
         cursor->append(obj);
 
@@ -1147,4 +1156,4 @@ template class IncrementalMerkleTree<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, Pede
 template class IncrementalWitness<SAPLING_INCREMENTAL_MERKLE_TREE_DEPTH, PedersenHash>;
 template class IncrementalWitness<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, PedersenHash>;
 
-} // end namespace `libzcash`
+} // namespace libzcash

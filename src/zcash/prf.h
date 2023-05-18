@@ -6,8 +6,8 @@ within the zkSNARK circuit.
 #ifndef ZCASH_ZCASH_PRF_H
 #define ZCASH_ZCASH_PRF_H
 
-#include "uint256.h"
 #include "uint252.h"
+#include "uint256.h"
 
 #include <array>
 

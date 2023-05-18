@@ -7,18 +7,20 @@
 
 #include "zip32.h"
 
-namespace libzcash {
-namespace transparent {
+namespace libzcash
+{
+namespace transparent
+{
 
-class AccountPubKey {
+class AccountPubKey
+{
 private:
     CChainablePubKey pubkey;
-public:
-    AccountPubKey(CChainablePubKey pubkey): pubkey(pubkey) {};
 
-    const CChainablePubKey& GetChainablePubKey() const {
-        return pubkey;
-    }
+public:
+    AccountPubKey(CChainablePubKey pubkey) : pubkey(pubkey){};
+
+    const CChainablePubKey& GetChainablePubKey() const { return pubkey; }
 
     std::optional<CPubKey> DeriveExternal(uint32_t addrIndex) const;
 
@@ -39,7 +41,8 @@ public:
      * exhausted or the provided diversifier index exceeds the maximum allowed
      * non-hardened transparent child index.
      */
-    std::optional<std::pair<CKeyID, diversifier_index_t>> FindChangeAddress(diversifier_index_t j) const;
+    std::optional<std::pair<CKeyID, diversifier_index_t>>
+    FindChangeAddress(diversifier_index_t j) const;
 
     /**
      * Return the internal and external OVKs for shielding from transparent
@@ -53,32 +56,35 @@ public:
     }
 };
 
-class AccountKey {
+class AccountKey
+{
 private:
     CExtKey accountKey;
     CExtKey external;
     CExtKey internal;
 
-    AccountKey(CExtKey accountKeyIn, CExtKey externalIn, CExtKey internalIn):
-        accountKey(accountKeyIn), external(externalIn), internal(internalIn) {}
-public:
-    static std::optional<AccountKey> ForAccount(
-            const HDSeed& mnemonic,
-            uint32_t bip44CoinType,
-            libzcash::AccountId accountId);
-
-    static HDKeyPath KeyPath(uint32_t bip44CoinType, libzcash::AccountId accountId) {
-        return
-            "m/44'/" +
-            std::to_string(bip44CoinType) + "'/" +
-            std::to_string(accountId) + "'";
+    AccountKey(CExtKey accountKeyIn, CExtKey externalIn, CExtKey internalIn) :
+        accountKey(accountKeyIn), external(externalIn), internal(internalIn)
+    {
     }
 
-    static HDKeyPath KeyPath(uint32_t bip44CoinType, libzcash::AccountId accountId, bool external, uint32_t childIndex) {
-        return
-            AccountKey::KeyPath(bip44CoinType, accountId) + "/" +
-            (external ? "0/" : "1/") +
-            std::to_string(childIndex);
+public:
+    static std::optional<AccountKey>
+    ForAccount(const HDSeed& mnemonic, uint32_t bip44CoinType, libzcash::AccountId accountId);
+
+    static HDKeyPath KeyPath(uint32_t bip44CoinType, libzcash::AccountId accountId)
+    {
+        return "m/44'/" + std::to_string(bip44CoinType) + "'/" + std::to_string(accountId) + "'";
+    }
+
+    static HDKeyPath KeyPath(
+        uint32_t bip44CoinType,
+        libzcash::AccountId accountId,
+        bool external,
+        uint32_t childIndex)
+    {
+        return AccountKey::KeyPath(bip44CoinType, accountId) + "/" + (external ? "0/" : "1/") +
+               std::to_string(childIndex);
     }
 
     /**
@@ -106,7 +112,7 @@ public:
     }
 };
 
-} //namespace transparent
-} //namespace libzcash
+} // namespace transparent
+} // namespace libzcash
 
 #endif // ZCASH_ZCASH_ADDRESS_TRANSPARENT_H
