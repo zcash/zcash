@@ -275,6 +275,26 @@ UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool tx
     valuePools.push_back(ValuePoolDesc("orchard", blockindex->nChainOrchardValue, blockindex->nOrchardValue));
     result.pushKV("valuePools", valuePools);
 
+    {
+        UniValue trees(UniValue::VOBJ);
+
+        SaplingMerkleTree saplingTree;
+        if (pcoinsTip->GetSaplingAnchorAt(blockindex->hashFinalSaplingRoot, saplingTree)) {
+            UniValue sapling(UniValue::VOBJ);
+            sapling.pushKV("size", (uint64_t)saplingTree.size());
+            trees.pushKV("sapling", sapling);
+        }
+
+        OrchardMerkleFrontier orchardTree;
+        if (pcoinsTip->GetOrchardAnchorAt(blockindex->hashFinalOrchardRoot, orchardTree)) {
+            UniValue orchard(UniValue::VOBJ);
+            orchard.pushKV("size", (uint64_t)orchardTree.size());
+            trees.pushKV("orchard", orchard);
+        }
+
+        result.pushKV("trees", trees);
+    }
+
     if (blockindex->pprev)
         result.pushKV("previousblockhash", blockindex->pprev->GetBlockHash().GetHex());
     CBlockIndex *pnext = chainActive.Next(blockindex);
@@ -747,7 +767,7 @@ UniValue getblock(const UniValue& params, bool fHelp)
             "      \"chainValueZat\": xxxxxx,   (numeric, optional) total chain supply after this block, in " + MINOR_CURRENCY_UNIT + "\n"
             "      \"valueDelta\": xxxxxx,      (numeric, optional) change to the chain supply produced by this block, in " + CURRENCY_UNIT + "\n"
             "      \"valueDeltaZat\": xxxxxx,   (numeric, optional) change to the chain supply produced by this block, in " + MINOR_CURRENCY_UNIT + "\n"
-            "  }\n"
+            "  },\n"
             "  \"valuePools\": [            (array) information about each value pool\n"
             "      {\n"
             "          \"id\": \"xxxx\",            (string) name of the pool\n"
@@ -757,7 +777,15 @@ UniValue getblock(const UniValue& params, bool fHelp)
             "          \"valueDelta\": xxxxxx,      (numeric, optional) change to the amount in the pool produced by this block, in " + CURRENCY_UNIT + "\n"
             "          \"valueDeltaZat\": xxxxxx,   (numeric, optional) change to the amount in the pool produced by this block, in " + MINOR_CURRENCY_UNIT + "\n"
             "      }, ...\n"
-            "  ]\n"
+            "  ],\n"
+            "  \"trees\": {                 (object) information about the note commitment trees\n"
+            "      \"sapling\": {             (object, optional)\n"
+            "          \"size\": n,             (numeric) the number of note commitments appended to the tree\n"
+            "      },\n"
+            "      \"orchard\": {             (object, optional)\n"
+            "          \"size\": n,             (numeric) the number of note commitments appended to the tree\n"
+            "      },\n"
+            "  },\n"
             "  \"previousblockhash\" : \"hash\",  (string) The hash of the previous block\n"
             "  \"nextblockhash\" : \"hash\"       (string) The hash of the next block\n"
             "}\n"
