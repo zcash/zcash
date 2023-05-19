@@ -37,16 +37,15 @@ fi
 
 # Allow users to set arbitrary compile flags. Most users will not need this.
 if [ -z "${CONFIGURE_FLAGS-}" ]; then
-    CONFIGURE_FLAGS=""
+    # If the user did not set CONFIGURE_FLAGS, then use "--quiet" unless V=1 was given.
+    CONFIGURE_FLAGS="--quiet"
+    for arg in "$@"
+    do
+        if [ "$arg" = "V=1" ]; then
+            CONFIGURE_FLAGS=""
+        fi
+    done
 fi
-
-case "$@" in
-    *"V=1"*)
-        ;;
-    *)
-        CONFIGURE_FLAGS="--quiet $CONFIGURE_FLAGS"
-        ;;
-esac
 
 if [ "$*" = '--help' ]
 then
