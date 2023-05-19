@@ -31,7 +31,7 @@ std::string FormatConversionFailure(const std::string& strMethod, const Conversi
                         err.optionalParams == 0
                         ? tinyformat::format("exactly %u", err.requiredParams)
                         : tinyformat::format(
-                                "from %u to %u",
+                                "at least %u and at most %u",
                                 err.requiredParams,
                                 err.requiredParams + err.optionalParams),
                         err.providedParams);

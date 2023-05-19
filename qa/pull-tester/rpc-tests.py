@@ -146,7 +146,7 @@ BASE_SCRIPTS= [
     'wallet_zero_value.py',
     'threeofthreerestore.py',
     'show_help.py',
-    'errors.py'
+    'errors.py',
 ]
 
 ZMQ_SCRIPTS = [

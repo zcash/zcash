@@ -513,7 +513,7 @@ UniValue CRPCTable::execute(const std::string &strMethod, const UniValue &params
                             strMethod,
                             numOptional == 0
                             ? strprintf("exactly %u", numRequired)
-                            : strprintf("from %u to %u", numRequired, numRequired + numOptional),
+                            : strprintf("at least %u and at most %u", numRequired, numRequired + numOptional),
                             params.size(),
                             helpMsg));
             } else {
