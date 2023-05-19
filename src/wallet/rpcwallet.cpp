@@ -289,11 +289,11 @@ static void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtr
     vecSend.push_back(recipient);
     if (!pwalletMain->CreateTransaction(vecSend, wtxNew, reservekey, nFeeRequired, nChangePosRet, strError)) {
         if (!fSubtractFeeFromAmount && nValue + nFeeRequired > curBalance) {
-            strError = strprintf("Error: Insufficient funds to pay the fee. This transaction needs to spend %s " + CURRENCY_UNIT +
-                                 " plus a fee of at least %s " + CURRENCY_UNIT + ", but only %s " + CURRENCY_UNIT + " is available",
-                                 FormatMoney(nValue),
-                                 FormatMoney(nFeeRequired),
-                                 FormatMoney(curBalance));
+            strError = strprintf("Error: Insufficient funds to pay the fee. This transaction needs to spend %s "
+                                 "plus a fee of at least %s, but only %s is available",
+                                 DisplayMoney(nValue),
+                                 DisplayMoney(nFeeRequired),
+                                 DisplayMoney(curBalance));
             throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, strError);
         } else {
             throw JSONRPCError(RPC_WALLET_ERROR, strError);
