@@ -43,7 +43,7 @@ services:
       - 9100
 
   grafana:
-    #image: grafana/grafana:8.2.2
+    #image: grafana/grafana:8.3.7
     image: grafana/grafana
     ports:
       - "3000:3000"

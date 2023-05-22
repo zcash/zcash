@@ -129,6 +129,40 @@ class ZcashExporter:
         self.ZCASH_TOTAL_BYTES_RECV = Gauge("zcash_total_bytes_recv", "Total bytes received")
         self.ZCASH_TOTAL_BYTES_SENT = Gauge("zcash_total_bytes_sent", "Total bytes sent")
 
+        # getconnectioncount
+        self.ZCASH_CONNECTION_COUNT = Gauge("zcash_connection_count", "Current number of peers connected")
+
+
+        # getpeerinfo
+        #self.ZCASH_PEER_CONNECTION_TIME = Gauge("zcash_peer_conn_time", "zcash peer connection time", ["id", "addr", "addrlocal"])
+        self.ZCASH_PEER_ID = Gauge("zcash_peer_id", "Peer index", ["addr", "geohash"])
+        self.ZCASH_PEER_SERVICES = Gauge("zcash_peer_services", "(string) The services offered", ["id", "addr"])
+        self.ZCASH_PEER_RELAYTXES = Gauge("zcash_peer_relaytxes","(boolean) Whether peer has asked us to relay transactions to it", ["id", "addr"])
+        self.ZCASH_PEER_LAST_SEND =  Gauge("zcash_peer_last_send", "he time in seconds since epoch (Jan 1 1970 GMT) of the last send", ["id", "addr"])
+        self.ZCASH_PEER_LAST_RECV = Gauge("zcash_peer_last_recv", "he time in seconds since epoch (Jan 1 1970 GMT) of the last receive", ["id", "addr"])
+        self.ZCASH_PEER_BYTES_SENT = Gauge("zcash_peer_bytes_sent", "The total bytes sent", ["id", "addr"])
+        self.ZCASH_PEER_BYTES_RECV = Gauge("zcash_peer_bytes_recv", "The total bytes received", ["id", "addr"])
+        self.ZCASH_PEER_CONNECTION_TIME = Gauge("zcash_peer_conn_time", "zcash peer connection time", ["id", "addr"])
+        self.ZCASH_PEER_TIME_OFFSET = Gauge("zcash_peer_time_offset", "The time offset in seconds", ["id", "addr"])
+        self.ZCASH_PEER_PING_TIME = Gauge("zcash_peer_ping_time", "ping time", ["id", "addr"])
+        self.ZCASH_PEER_PING_WAIT = Gauge("zcash_peer_ping_wait", "ping wait", ["id", "addr"])
+        self.ZCASH_PEER_VERSION = Gauge("zcash_peer_version", "Peer version", ["id", "addr"])
+        self.ZCASH_PEER_SUBVERSION = Gauge("zcash_peer_subversion", "(string) The string version", ["id", "addr"])
+        self.ZCASH_PEER_INBOUND = Gauge("zcash_peer_inbound", "Inbound (true) or Outbound (false)", ["id", "addr"])
+        self.ZCASH_PEER_STARTING_HEIGHT = Gauge("zcash_peer_starting_height", "The starting height (block) of the peer", ["id", "addr"])
+        self.ZCASH_PEER_BANSCORE = Gauge("zcash_peer_banscore", "The ban score", ["id", "addr"])
+        self.ZCASH_SYNCED_HEADERS = Gauge("zcash_peer_synced_headers", "The last header we have in common with this peer", ["id", "addr"])
+        self.ZCASH_SYNCED_BLOCKS = Gauge("zcash_peer_synced_blocks", "The last block we have in common with this peer", ["id", "addr"])
+        self.ZCASH_ADDR_PROCESSED = Gauge("zcash_peer_addr_processed", "zcash current addreses processed", ["id", "addr"])
+        self.ZCASH_ADDR_RATE_LIMITED = Gauge("zcash_peer_addr_rate_limited", "current zcash address rate limit", ["id", "addr"])
+        self.ZCASH_WHITELISTED = Gauge("zcash_peer_whitelisted", "zcash whitelisted", ["id", "addr"]) #TRUE/FA:S
+
+        #getchaintips
+        self.ZCASH_CHAINTIP_HEIGHT = Gauge("zcash_chaintip_height", "height of the chain tip", ["hash", "status"])
+        self.ZCASH_CHAINTIP_BRANCH_LEN = Gauge("zcash_chaintip_branchlen", "zero for main chain", ["hash", "status"])
+
+        #self.ZCASH_PEER_ID = Gauge("zcash_peer_id", "zcash peer id", ["ip", "id"])
+
     def run_startup_loop(self):
         """startup polling loop to ensure valid zcashd state before fetching metrics"""
         logging.info("Startup loop")
@@ -305,9 +339,111 @@ class ZcashExporter:
         try:
             zcash_info = api.getdeprecationinfo()
             logging.info("return from rpc")
-            for i in zcash_info["end_of_service"]:
-                ZCASH_DEPRECATION_HEIGHT.set(i["block_height"])
-                ZCASH_DEPRECATION_TIME.set(i["estimated_time"])
+            self.ZCASH_DEPRECATION_HEIGHT.set(zcash_info["end_of_service"]["block_height"])
+            self.ZCASH_DEPRECATION_TIME.set(zcash_info["end_of_service"]["estimated_time"])
+        except Exception as e:
+            frame = inspect.currentframe()
+            logging.info("missed zcash RPC endpoint call: %s", frame.f_code.co_name)
+    
+    def rpc_getnettotals(self):
+        api = Proxy(f"http://{self.rpc_user}:{self.rpc_password}@{self.rpc_host}:{self.rpc_port}")
+        logging.info("calling zcash RPC API endpoint")
+
+        try:
+            zcash_info = api.getnettotals()
+            logging.info("return from rpc")
+            self.ZCASH_TOTAL_BYTES_RECV.set(zcash_info["totalbytesrecv"])
+            self.ZCASH_TOTAL_BYTES_SENT.set(zcash_info["totalbytessent"])
+        #todo need to check if meta is needed
+        #   "timemillis": 1684792583787,
+        #     "uploadtarget": {
+        #         "timeframe": 86400,
+        #         "target": 0,
+        #         "target_reached": false,
+        #         "serve_historical_blocks": true,
+        #         "bytes_left_in_cycle": 0,
+        #         "time_left_in_cycle": 0
+        #     }
+        #     }
+        except Exception as e:
+            frame = inspect.currentframe()
+            logging.info("missed zcash RPC endpoint call: %s", frame.f_code.co_name)
+
+    def rpc_getconnectioncount(self):
+        api = Proxy(f"http://{self.rpc_user}:{self.rpc_password}@{self.rpc_host}:{self.rpc_port}")
+        logging.info("calling zcash RPC API endpoint")
+
+        try:
+            zcash_info = api.getconnectioncount()
+            logging.info("return from rpc")
+            self.ZCASH_CONNECTION_COUNT.set(zcash_info)
+        except Exception as e:
+            frame = inspect.currentframe()
+            logging.info("missed zcash RPC endpoint call: %s", frame.f_code.co_name)
+
+    def rpc_getpeerinfo(self):
+        api = Proxy(f"http://{self.rpc_user}:{self.rpc_password}@{self.rpc_host}:{self.rpc_port}")
+        logging.info("calling zcash RPC API endpoint")
+
+        try:
+            zcash_info = api.getpeerinfo()
+            logging.info("return from rpc")
+            for i in zcash_info:
+                #self.ZCASH_PEER_ID.labels(i["addr"], "geohash").set(i["id"])
+                # node_ip_addr = i['addr']
+                # ip = node_ip_addr.split(":")
+                # g = geocoder.ip(ip[0])
+                # lat_p = g.latlng[0]
+                # long_p =  g.latlng[1]
+                # geohash2 = pgh.encode(lat_p, long_p)
+                # print(geohash2)
+                # self.ZCASH_PEER_CONNECTION_TIME.labels(i["id"], geohash2, i["addrlocal"]).set(i["conntime"])
+                #ZCASH_PEER_ID.labels(i["addr"]).set(i["id"])
+                #self.ZCASH_PEER_SERVICES.labels(i["id"], i["addr"]).set(int(i["services"]))
+                if i["relaytxes"] == True:
+                    self.ZCASH_PEER_RELAYTXES.labels(i["id"], i["addr"]).set(1)
+                else:
+                    self.ZCASH_PEER_RELAYTXES.labels(i["id"], i["addr"]).set(0)
+                self.ZCASH_PEER_LAST_SEND.labels(i["id"], i["addr"]).set(i["lastsend"])
+                self.ZCASH_PEER_LAST_RECV.labels(i["id"], i["addr"]).set(i["lastrecv"])
+                self.ZCASH_PEER_BYTES_SENT.labels(i["id"], i["addr"]).set(i["bytessent"])
+                self.ZCASH_PEER_BYTES_RECV.labels(i["id"],i["addr"]).set(i["bytesrecv"])
+                self.ZCASH_PEER_CONNECTION_TIME.labels(i["id"],i["addr"]).set(i["conntime"])
+                self.ZCASH_PEER_TIME_OFFSET.labels(i["id"],i["addr"]).set(i["timeoffset"])
+                self.ZCASH_PEER_PING_TIME.labels(i["id"],i["addr"]).set(i["pingtime"])
+                # self.ZCASH_PEER_PING_WAIT.labels(i["id"],i["addr"]).set(i["pingwait"])
+                self.ZCASH_PEER_VERSION.labels(i["id"],i["addr"]).set(i["version"])
+                #self.ZCASH_PEER_SUBVERSION.labels(i["id"],i["addr"]).set(i['subversion']) #string
+                if i["inbound"] == True:
+                    self.ZCASH_PEER_INBOUND.labels(i["id"],i["addr"]).set(1)
+                else:
+                    self.ZCASH_PEER_INBOUND.labels(i["id"],i["addr"]).set(0)
+                self.ZCASH_PEER_STARTING_HEIGHT.labels(i["id"],i["addr"]).set(i["startingheight"])
+                self.ZCASH_PEER_BANSCORE.labels(i["id"],i["addr"]).set(i["banscore"])
+                self.ZCASH_SYNCED_HEADERS.labels(i["id"],i["addr"]).set(i["synced_headers"])
+                self.ZCASH_SYNCED_BLOCKS.labels(i["id"],i["addr"]).set(i["synced_blocks"])
+                # #NEED TO CHECK INFLIGHT BLOCKS
+                self.ZCASH_ADDR_PROCESSED.labels(i["id"],i["addr"]).set(i["addr_processed"])
+                self.ZCASH_ADDR_RATE_LIMITED.labels(i["id"],i["addr"]).set(i["addr_rate_limited"])
+                if i["whitelisted"] == True:
+                    self.ZCASH_WHITELISTED.labels(i["id"],i["addr"]).set(1)
+                else:
+                    self.ZCASH_WHITELISTED.labels(i["id"],i["addr"]).set(0)
+        except Exception as e:
+            frame = inspect.currentframe()
+            logging.info("missed zcash RPC endpoint call: %s", frame.f_code.co_name)
+
+
+    def rpc_getchaintips(self):
+        api = Proxy(f"http://{self.rpc_user}:{self.rpc_password}@{self.rpc_host}:{self.rpc_port}")
+        logging.info("calling zcash RPC API endpoint")
+
+        try:
+            zcash_info = api.getchaintips()
+            for i in zcash_info:
+                if i["branchlen"] >= 2:
+                    self.ZCASH_CHAINTIP_HEIGHT.labels(i["hash"], i["status"]).set(i["height"])
+                    self.ZCASH_CHAINTIP_BRANCH_LEN.labels(i["hash"], i["status"]).set(i["branchlen"])
         except Exception as e:
             frame = inspect.currentframe()
             logging.info("missed zcash RPC endpoint call: %s", frame.f_code.co_name)
@@ -323,13 +459,17 @@ class ZcashExporter:
         """
         self.rpc_getinfo()
         self.rpc_getblockchaininfo()
-
         self.rpc_getmempoolinfo() #todo might need to check if only for synced node
         #self.rpc_gettxoutsetinfo() #takes 4 seconds on synced node
         self.rpc_getmemoryinfo()
         self.rpc_getmininginfo()
         #check if on mainnet
         self.rpc_getdeprecationinfo()
+        self.rpc_getpeerinfo() #can't poll on geohash or will get rate limited
+        self.rpc_getchaintips()
+        self.rpc_getnettotals()
+        self.rpc_getconnectioncount()
+        time.sleep(self.polling_interval_seconds)
 
         
 def main():
