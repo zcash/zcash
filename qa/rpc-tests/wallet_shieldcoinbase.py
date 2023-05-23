@@ -7,9 +7,9 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, initialize_chain_clean, \
     start_node, connect_nodes_bi, sync_blocks, sync_mempools, \
-    wait_and_assert_operationid_status, get_coinbase_address, LEGACY_DEFAULT_FEE, \
+    wait_and_assert_operationid_status, get_coinbase_address, \
     NU5_BRANCH_ID, nuparams
-from test_framework.zip317 import conventional_fee
+from test_framework.zip317 import conventional_fee, ZIP_317_FEE
 
 from decimal import Decimal
 
@@ -26,6 +26,7 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
             nuparams(NU5_BRANCH_ID, self.nu5_activation),
             '-allowdeprecated=z_getnewaddress',
             '-allowdeprecated=z_getbalance',
+            '-debug=mempool',
         ]
         self.nodes = []
         self.nodes.append(start_node(0, self.options.tmpdir, args))
@@ -137,14 +138,14 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
         mytaddr = get_coinbase_address(self.nodes[0], 800)
 
         def verify_locking(first, second, limit):
-            result = self.nodes[0].z_shieldcoinbase(mytaddr, myzaddr, 0, limit)
+            result = self.nodes[0].z_shieldcoinbase(mytaddr, myzaddr, ZIP_317_FEE, limit)
             assert_equal(result["shieldingUTXOs"], Decimal(first))
             assert_equal(result["remainingUTXOs"], Decimal(second))
             remainingValue = result["remainingValue"]
             opid1 = result['opid']
 
             # Verify that utxos are locked (not available for selection) by queuing up another shielding operation
-            result = self.nodes[0].z_shieldcoinbase(mytaddr, myzaddr, 0, 0)
+            result = self.nodes[0].z_shieldcoinbase(mytaddr, myzaddr, ZIP_317_FEE, 0)
             assert_equal(result["shieldingValue"], Decimal(remainingValue))
             assert_equal(result["shieldingUTXOs"], Decimal(second))
             assert_equal(result["remainingValue"], Decimal('0'))
@@ -170,13 +171,13 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
         self.nodes[0].generate(200)
         self.sync_all()
         mytaddr = get_coinbase_address(self.nodes[0], 100)
-        result = self.nodes[0].z_shieldcoinbase(mytaddr, myzaddr, LEGACY_DEFAULT_FEE, None, 'DEADBEEF')
+        result = self.nodes[0].z_shieldcoinbase(mytaddr, myzaddr, ZIP_317_FEE, None, 'DEADBEEF')
         assert_equal(result["shieldingUTXOs"], Decimal('50'))
         assert_equal(result["remainingUTXOs"], Decimal('50'))
         wait_and_assert_operationid_status(self.nodes[0], result['opid'])
 
         # Verify maximum number of utxos which node 0 can shield can be set by the limit parameter
-        result = self.nodes[0].z_shieldcoinbase(mytaddr, myzaddr, LEGACY_DEFAULT_FEE, 33, None)
+        result = self.nodes[0].z_shieldcoinbase(mytaddr, myzaddr, ZIP_317_FEE, 33, None)
         assert_equal(result["shieldingUTXOs"], Decimal('33'))
         assert_equal(result["remainingUTXOs"], Decimal('17'))
         wait_and_assert_operationid_status(self.nodes[0], result['opid'])

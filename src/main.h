@@ -214,6 +214,9 @@ extern size_t nCoinCacheUsage;
 extern CFeeRate minRelayTxFee;
 /** Absolute maximum transaction fee (in zatoshis) used by wallet and mempool (rejects high fee in sendrawtransaction). */
 extern CAmount maxTxFee;
+/** Limit on the number of unpaid actions a transaction can have to be accepted to the mempool. */
+extern CAmount nTxUnpaidActionLimit;
+/** Whether alert messages are processed. */
 extern bool fAlerts;
 /** If the tip is older than this (in seconds), the node is considered to be in initial block download. */
 extern int64_t nMaxTipAge;
