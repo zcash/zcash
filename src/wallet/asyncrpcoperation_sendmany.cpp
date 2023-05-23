@@ -175,6 +175,8 @@ AsyncRPCOperation_sendmany::main_impl(CWallet& wallet) {
                          FormatMoney(payments.GetSaplingTotal()));
                 LogPrint("zrpcunsafe", "%s: total shielded Orchard output: %s\n", getId(),
                          FormatMoney(payments.GetOrchardTotal()));
+                LogPrint("zrpcunsafe", "%s: requested fee: %s\n", getId(),
+                         fee_.has_value() ? FormatMoney(fee_.value()) : "default");
                 LogPrint("zrpc", "%s: fee: %s\n", getId(), FormatMoney(effects.GetFee()));
 
                 auto buildResult = effects.ApproveAndBuild(
@@ -183,6 +185,7 @@ AsyncRPCOperation_sendmany::main_impl(CWallet& wallet) {
                         chainActive,
                         strategy_);
                 auto tx = buildResult.GetTxOrThrow();
+                LogPrint("zrpc", "%s, conventional fee: %s\n", getId(), FormatMoney(tx.GetConventionalFee()));
 
                 UniValue sendResult = SendTransaction(tx, payments.GetResolvedPayments(), std::nullopt, testmode);
                 set_result(sendResult);

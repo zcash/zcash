@@ -37,6 +37,7 @@
 #include "wallet/asyncrpcoperation_sendmany.h"
 #include "wallet/asyncrpcoperation_shieldcoinbase.h"
 #include "warnings.h"
+#include "zip317.h"
 
 #include <algorithm>
 #include <atomic>
@@ -107,6 +108,7 @@ std::optional<unsigned int> expiryDeltaArg = std::nullopt;
 
 CFeeRate minRelayTxFee = CFeeRate(DEFAULT_MIN_RELAY_TX_FEE);
 CAmount maxTxFee = DEFAULT_TRANSACTION_MAXFEE;
+CAmount nTxUnpaidActionLimit = DEFAULT_TX_UNPAID_ACTION_LIMIT;
 
 CTxMemPool mempool(::minRelayTxFee);
 
@@ -1906,6 +1908,20 @@ bool AcceptToMemoryPool(
                     " The minimum acceptance/relay fee for this transaction is %d " + MINOR_CURRENCY_UNIT,
                     tx.GetHash().ToString(), nSize, nModifiedFees, nModifiedFees - nFees, minRelayFee);
             return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "min relay fee not met");
+        }
+
+        // Transactions with more than `-txunpaidactionlimit` unpaid actions (calculated
+        // using the modified fee) are not accepted to the mempool or relayed.
+        // <https://zips.z.cash/zip-0317#transaction-relaying>
+        size_t nUnpaidActionCount = entry.GetUnpaidActionCount();
+        if (nUnpaidActionCount > nTxUnpaidActionLimit) {
+            LogPrint("mempool",
+                    "Not accepting transaction with txid %s, size %d bytes, effective fee %d " + MINOR_CURRENCY_UNIT +
+                    ", and fee delta %d " + MINOR_CURRENCY_UNIT + " to the mempool because it has %d unpaid actions"
+                    ", which is over the limit of %d. The conventional fee for this transaction is %d " + MINOR_CURRENCY_UNIT,
+                    tx.GetHash().ToString(), nSize, nModifiedFees, nModifiedFees - nFees, nUnpaidActionCount,
+                    nTxUnpaidActionLimit, tx.GetConventionalFee());
+            return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "tx unpaid action limit exceeded");
         }
 
         if (fRejectAbsurdFee && nFees > maxTxFee) {

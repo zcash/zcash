@@ -1188,6 +1188,12 @@ public:
         const int nHeight);
 };
 
+enum class AccountChangeAddressFailure {
+    DisjointReceivers,
+    TransparentChangeNotPermitted,
+    NoSuchAccount,
+};
+
 /**
  * A CWallet is an extension of a keystore, which also maintains a set of transactions and balances,
  * and provides the ability to create new transactions.
@@ -1607,7 +1613,8 @@ public:
      * Returns `std::nullopt` if the account does not have an internal spending
      * key matching the requested `OutputPool`.
      */
-    std::optional<libzcash::RecipientAddress> GenerateChangeAddressForAccount(
+    tl::expected<libzcash::RecipientAddress, AccountChangeAddressFailure>
+    GenerateChangeAddressForAccount(
             libzcash::AccountId accountId,
             std::set<libzcash::OutputPool> changeOptions);
 

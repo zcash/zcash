@@ -44,7 +44,6 @@ confdefs.h
 conftest.cpp
 conftest.err
 
-cache/
 venv-mnf/
 src/univalue/gen
 
