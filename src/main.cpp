@@ -3098,6 +3098,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         // checking them twice for transactions that were already checked when
         // added to the mempool.
         fExpensiveChecks = false;
+        [[fallthrough]];
     case CheckAs::SlowBenchmark:
         // Disable checking the authDataRoot for block templates and slow block
         // benchmarks.
@@ -3435,7 +3436,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             return state.DoS(100,
                 error("ConnectBlock(): block would overfill the Orchard commitment tree."),
                 REJECT_INVALID, "orchard-commitment-tree-full");
-        };
+        }
 
         for (const auto& out : tx.vout) {
             transparentValueDelta += out.nValue;
@@ -5930,11 +5931,11 @@ bool RewindBlockIndex(const CChainParams& chainparams, bool& clearWitnessCaches)
     }
 
     // Erase block indices in-memory
-    for (auto pindex : vBlocks) {
-        auto ret = mapBlockIndex.find(*pindex->phashBlock);
+    for (auto pidx : vBlocks) {
+        auto ret = mapBlockIndex.find(*pidx->phashBlock);
         if (ret != mapBlockIndex.end()) {
             mapBlockIndex.erase(ret);
-            delete pindex;
+            delete pidx;
         }
     }
 
@@ -6481,16 +6482,16 @@ void static ProcessGetData(CNode* pfrom, const Consensus::Params& consensusParam
                         pfrom->PushMessage("block", block);
                     else // MSG_FILTERED_BLOCK)
                     {
-                        bool send = false;
+                        bool send2 = false;
                         CMerkleBlock merkleBlock;
                         {
                             LOCK(pfrom->cs_filter);
                             if (pfrom->pfilter) {
-                                send = true;
+                                send2 = true;
                                 merkleBlock = CMerkleBlock(block, *pfrom->pfilter);
                             }
                         }
-                        if (send) {
+                        if (send2) {
                             pfrom->PushMessage("merkleblock", merkleBlock);
                             // CMerkleBlock just contains hashes, so also push any transactions in the block the client did not see
                             // This avoids hurting performance by pointlessly requiring a round-trip
@@ -7738,9 +7739,9 @@ class CompareInvMempoolOrder
 {
     CTxMemPool *mp;
 public:
-    CompareInvMempoolOrder(CTxMemPool *mempool)
+    CompareInvMempoolOrder(CTxMemPool *txMempool)
     {
-        mp = mempool;
+        mp = txMempool;
     }
 
     bool operator()(std::set<uint256>::iterator a, std::set<uint256>::iterator b)

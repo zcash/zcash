@@ -353,13 +353,13 @@ bool CDB::Rewrite(const string& strFile, const char* pszSkip)
                     CDB db(strFile.c_str(), "r");
                     Db* pdbCopy = new Db(bitdb.dbenv, 0);
 
-                    int ret = pdbCopy->open(NULL,               // Txn pointer
+                    int fileRet = pdbCopy->open(NULL,           // Txn pointer
                                             strFileRes.c_str(), // Filename
                                             "main",             // Logical db name
                                             DB_BTREE,           // Database type
                                             DB_CREATE,          // Flags
                                             0);
-                    if (ret > 0) {
+                    if (fileRet > 0) {
                         LogPrintf("CDB::Rewrite: Can't create database file %s\n", strFileRes);
                         fSuccess = false;
                     }
@@ -369,11 +369,11 @@ bool CDB::Rewrite(const string& strFile, const char* pszSkip)
                         while (fSuccess) {
                             CDataStream ssKey(SER_DISK, CLIENT_VERSION);
                             CDataStream ssValue(SER_DISK, CLIENT_VERSION);
-                            int ret = db.ReadAtCursor(pcursor, ssKey, ssValue, DB_NEXT);
-                            if (ret == DB_NOTFOUND) {
+                            int dbRet = db.ReadAtCursor(pcursor, ssKey, ssValue, DB_NEXT);
+                            if (dbRet == DB_NOTFOUND) {
                                 pcursor->close();
                                 break;
-                            } else if (ret != 0) {
+                            } else if (dbRet != 0) {
                                 pcursor->close();
                                 fSuccess = false;
                                 break;
@@ -388,8 +388,8 @@ bool CDB::Rewrite(const string& strFile, const char* pszSkip)
                             }
                             Dbt datKey(ssKey.data(), ssKey.size());
                             Dbt datValue(ssValue.data(), ssValue.size());
-                            int ret2 = pdbCopy->put(NULL, &datKey, &datValue, DB_NOOVERWRITE);
-                            if (ret2 > 0)
+                            int dbRet2 = pdbCopy->put(NULL, &datKey, &datValue, DB_NOOVERWRITE);
+                            if (dbRet2 > 0)
                                 fSuccess = false;
                         }
                     if (fSuccess) {

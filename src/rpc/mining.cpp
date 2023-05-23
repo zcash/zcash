@@ -624,7 +624,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
 
         // Release the main lock while waiting
         // Don't call chainActive->Tip() without holding cs_main
-        LEAVE_CRITICAL_SECTION(cs_main);
+        LEAVE_CRITICAL_SECTION(cs_main)
         {
             checktxtime = std::chrono::steady_clock::now() + std::chrono::seconds(10);
 
@@ -662,7 +662,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
                 next_cb_mtx = nullopt;
             }
         }
-        ENTER_CRITICAL_SECTION(cs_main);
+        ENTER_CRITICAL_SECTION(cs_main)
 
         if (!IsRPCRunning())
             throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "Shutting down");
@@ -1016,8 +1016,8 @@ static const CRPCCommand commands[] =
 #endif
 };
 
-void RegisterMiningRPCCommands(CRPCTable &tableRPC)
+void RegisterMiningRPCCommands(CRPCTable &rpcTable)
 {
     for (unsigned int vcidx = 0; vcidx < ARRAYLEN(commands); vcidx++)
-        tableRPC.appendCommand(commands[vcidx].name, &commands[vcidx]);
+        rpcTable.appendCommand(commands[vcidx].name, &commands[vcidx]);
 }

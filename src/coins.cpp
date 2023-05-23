@@ -502,7 +502,7 @@ void CCoinsViewCache::PushHistoryNode(uint32_t epochId, const HistoryNode node) 
 
         if (librustzcash_mmr_hash_node(epochId, &node, historyCache.root.begin()) != 0) {
             throw std::runtime_error("hashing node failed");
-        };
+        }
 
         return;
     }
@@ -551,6 +551,7 @@ void CCoinsViewCache::PopHistoryNode(uint32_t epochId) {
             // back.
 
             // Sensible action is to truncate the history cache:
+            [[fallthrough]];
         }
         case 1:
         {

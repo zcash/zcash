@@ -277,30 +277,6 @@ public:
     uint256 sproutNullifier;
     uint256 saplingNullifier;
     uint256 orchardNullifier;
-
-    TxWithNullifiers()
-    {
-        CMutableTransaction mutableTx;
-
-        sproutNullifier = InsecureRand256();
-        JSDescription jsd;
-        jsd.nullifiers[0] = sproutNullifier;
-        mutableTx.vJoinSplit.emplace_back(jsd);
-
-        SpendDescription sd = RandomInvalidSpendDescription();
-        saplingNullifier = sd.nullifier();
-        mutableTx.vShieldedSpend.push_back(sd);
-
-        // The Orchard bundle builder always pads to two Actions, so we can just
-        // use an empty builder to create a dummy Orchard bundle.
-        uint256 orchardAnchor;
-        uint256 dataToBeSigned;
-        auto builder = orchard::Builder(true, true, orchardAnchor);
-        mutableTx.orchardBundle = builder.Build().value().ProveAndSign({}, dataToBeSigned).value();
-        orchardNullifier = mutableTx.orchardBundle.GetNullifiers()[0];
-
-        tx = CTransaction(mutableTx);
-    }
 };
 
 }

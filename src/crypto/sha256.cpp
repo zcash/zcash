@@ -527,23 +527,23 @@ bool SelfTest() {
 
     // Test TransformD64_2way, if available.
     if (TransformD64_2way) {
-        unsigned char out[64];
-        TransformD64_2way(out, data + 1);
-        if (!std::equal(out, out + 64, result_d64)) return false;
+        unsigned char out2[64];
+        TransformD64_2way(out2, data + 1);
+        if (!std::equal(out2, out2 + 64, result_d64)) return false;
     }
 
     // Test TransformD64_4way, if available.
     if (TransformD64_4way) {
-        unsigned char out[128];
-        TransformD64_4way(out, data + 1);
-        if (!std::equal(out, out + 128, result_d64)) return false;
+        unsigned char out3[128];
+        TransformD64_4way(out3, data + 1);
+        if (!std::equal(out3, out3 + 128, result_d64)) return false;
     }
 
     // Test TransformD64_8way, if available.
     if (TransformD64_8way) {
-        unsigned char out[256];
-        TransformD64_8way(out, data + 1);
-        if (!std::equal(out, out + 256, result_d64)) return false;
+        unsigned char out4[256];
+        TransformD64_8way(out4, data + 1);
+        if (!std::equal(out4, out4 + 256, result_d64)) return false;
     }
 
     return true;

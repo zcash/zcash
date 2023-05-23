@@ -1942,7 +1942,7 @@ public:
                 )) {
                     LogPrintf("SaveRecipientMappings: Failed to write recipient mappings to the wallet database.");
                     return false;
-                };
+                }
             }
         }
 

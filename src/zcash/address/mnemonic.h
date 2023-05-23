@@ -96,7 +96,7 @@ public:
         return seed;
     }
 
-    const Language GetLanguage() const {
+    Language GetLanguage() const {
         return language;
     }
 
@@ -116,4 +116,3 @@ public:
 };
 
 #endif // ZCASH_ZCASH_ADDRESS_MNEMONIC_H
-

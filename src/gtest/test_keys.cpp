@@ -90,7 +90,6 @@ TEST(Keys, EncodeAndDecodeUnifiedAddresses)
         if (test.size() < 1) // Allow for extra stuff (useful for comments)
         {
             FAIL() << "Bad test: " << strTest;
-            continue;
         }
         if (test.size() == 1) continue; // comment
 
@@ -158,7 +157,6 @@ TEST(Keys, DeriveUnifiedFullViewingKeys)
         if (test.size() < 1) // Allow for extra stuff (useful for comments)
         {
             FAIL() << "Bad test: " << strTest;
-            continue;
         }
         if (test.size() == 1) continue; // comment
 
@@ -268,7 +266,6 @@ TEST(Keys, EncodeAndDecodeUnifiedFullViewingKeys)
         if (test.size() < 1) // Allow for extra stuff (useful for comments)
         {
             FAIL() << "Bad test: " << strTest;
-            continue;
         }
         if (test.size() == 1) continue; // comment
 

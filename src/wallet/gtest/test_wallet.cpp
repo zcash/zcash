@@ -315,22 +315,19 @@ TEST(WalletTests, FindUnspentSproutNotes) {
 
 
     // Let's receive a new note
-    CWalletTx wtx3;
+    CWalletTx wtx3 = GetValidSproutReceive(sk, 20, true);
     {
-        auto wtx = GetValidSproutReceive(sk, 20, true);
-        auto note = GetSproutNote(sk, wtx, 0, 1);
-        auto nullifier = note.nullifier(sk);
+        auto note3 = GetSproutNote(sk, wtx3, 0, 1);
+        auto nullifier3 = note3.nullifier(sk);
 
-        mapSproutNoteData_t noteData;
-        JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
-        SproutNoteData nd {sk.address(), nullifier};
-        noteData[jsoutpt] = nd;
+        mapSproutNoteData_t noteData3;
+        JSOutPoint jsoutpt3 {wtx3.GetHash(), 0, 1};
+        SproutNoteData nd3 {sk.address(), nullifier3};
+        noteData3[jsoutpt3] = nd3;
 
-        wtx.SetSproutNoteData(noteData);
-        wallet.LoadWalletTx(wtx);
-        EXPECT_FALSE(wallet.IsSproutSpent(nullifier, std::nullopt));
-
-        wtx3 = wtx;
+        wtx3.SetSproutNoteData(noteData3);
+        wallet.LoadWalletTx(wtx3);
+        EXPECT_FALSE(wallet.IsSproutSpent(nullifier3, std::nullopt));
     }
 
     // Fake-mine the new transaction
@@ -1149,10 +1146,10 @@ TEST(WalletTests, NavigateFromSaplingNullifierToNote) {
         EXPECT_EQ(hash, op.hash);
         EXPECT_EQ(1, nd.witnesses.size());
         ASSERT_TRUE(nd.nullifier);
-        auto nf = nd.nullifier.value();
-        EXPECT_EQ(1, wallet.mapSaplingNullifiersToNotes.count(nf));
-        EXPECT_EQ(op.hash, wallet.mapSaplingNullifiersToNotes[nf].hash);
-        EXPECT_EQ(op.n, wallet.mapSaplingNullifiersToNotes[nf].n);
+        auto nf2 = nd.nullifier.value();
+        EXPECT_EQ(1, wallet.mapSaplingNullifiersToNotes.count(nf2));
+        EXPECT_EQ(op.hash, wallet.mapSaplingNullifiersToNotes[nf2].hash);
+        EXPECT_EQ(op.n, wallet.mapSaplingNullifiersToNotes[nf2].n);
     }
 
     // Tear down
@@ -1679,26 +1676,26 @@ TEST(WalletTests, CachedWitnessesCleanIndex) {
             {
                 wallet.DecrementNoteWitnesses(Params().GetConsensus(), &(indices[i]));
 
-                auto anchors = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, 1, sproutWitnesses, saplingWitnesses);
+                auto anchors2 = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, 1, sproutWitnesses, saplingWitnesses);
                 for (size_t j = 0; j < numBlocks; j++) {
                     EXPECT_TRUE((bool) sproutWitnesses[j]);
                     EXPECT_TRUE((bool) saplingWitnesses[j]);
                 }
                 // Should equal final anchor because witness cache unaffected
-                EXPECT_EQ(sproutAnchors.back(), anchors.first);
-                EXPECT_EQ(saplingAnchors.back(), anchors.second);
+                EXPECT_EQ(sproutAnchors.back(), anchors2.first);
+                EXPECT_EQ(saplingAnchors.back(), anchors2.second);
             }
 
             {
                 wallet.IncrementNoteWitnesses(Params().GetConsensus(), &(indices[i]), &(blocks[i]), riPrevFrontiers, true);
-                auto anchors = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, 1, sproutWitnesses, saplingWitnesses);
+                auto anchors3 = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, 1, sproutWitnesses, saplingWitnesses);
                 for (size_t j = 0; j < numBlocks; j++) {
                     EXPECT_TRUE((bool) sproutWitnesses[j]);
                     EXPECT_TRUE((bool) saplingWitnesses[j]);
                 }
                 // Should equal final anchor because witness cache unaffected
-                EXPECT_EQ(sproutAnchors.back(), anchors.first);
-                EXPECT_EQ(saplingAnchors.back(), anchors.second);
+                EXPECT_EQ(sproutAnchors.back(), anchors3.first);
+                EXPECT_EQ(saplingAnchors.back(), anchors3.second);
             }
         }
     }
