@@ -107,8 +107,8 @@ class FinalSaplingRootTest(BitcoinTestFramework):
         # Verify the final Sapling root has changed
         blk = self.nodes[0].getblock("201")
         root = blk["finalsaplingroot"]
-        assert root is not SAPLING_TREE_EMPTY_ROOT
-        assert root is not NULL_FIELD
+        assert root != SAPLING_TREE_EMPTY_ROOT
+        assert root != NULL_FIELD
 
         # Verify there is a Sapling output description (its commitment was added to tree)
         result = self.nodes[0].getrawtransaction(mytxid, 1)
@@ -179,7 +179,7 @@ class FinalSaplingRootTest(BitcoinTestFramework):
 
         assert_equal(len(self.nodes[0].getblock("205")["tx"]), 2)
         assert_equal(self.nodes[1].z_getbalance(saplingAddr1), Decimal("2.34"))
-        assert root is not self.nodes[0].getblock("205")["finalsaplingroot"]
+        assert root != self.nodes[0].getblock("205")["finalsaplingroot"]
 
         # Verify there is a Sapling output description (its commitment was added to tree)
         result = self.nodes[0].getrawtransaction(mytxid, 1)
@@ -212,7 +212,7 @@ class FinalSaplingRootTest(BitcoinTestFramework):
         # with 2 dummy outputs).
         blk = self.nodes[0].getblock("206")
         root = blk["finalsaplingroot"]
-        assert root is not self.nodes[0].getblock("205")["finalsaplingroot"]
+        assert root != self.nodes[0].getblock("205")["finalsaplingroot"]
 
         # Verify there are two Sapling output descriptions.
         result = self.nodes[0].getrawtransaction(mytxid, 1)
