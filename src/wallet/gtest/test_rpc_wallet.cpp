@@ -37,7 +37,7 @@ CWalletTx FakeWalletTx() {
 void ExpectConsistentFee(const TransactionStrategy& strategy, const TransactionEffects& effects)
 {
     auto buildResult = effects.ApproveAndBuild(
-            Params().GetConsensus(),
+            Params(),
             *pwalletMain,
             chainActive,
             strategy);
