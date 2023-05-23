@@ -32,8 +32,7 @@ TEST(RecursiveDynamicUsageTests, TestTransactionTransparent)
 
     auto tx = builder.Build().GetTxOrThrow();
     // 1 vin + 1 vout
-    // (96 + 128) + 64
-    EXPECT_EQ(288, RecursiveDynamicUsage(tx));
+    EXPECT_EQ((96 + 128) + 64, RecursiveDynamicUsage(tx));
 
     RegtestDeactivateSapling();
 }
@@ -46,10 +45,9 @@ TEST(RecursiveDynamicUsageTests, TestTransactionJoinSplit)
 
     auto wtx = GetValidSproutReceive(sproutSk, 25000, true);
     // 2 vin + 1 vJoinSplit + 1 vShieldedOutput
-    // 160 + 1856 + 1200
     EXPECT_EQ(0, wtx.GetSaplingSpendsCount());
     EXPECT_EQ(1, wtx.GetSaplingOutputsCount());
-    EXPECT_EQ(3216, RecursiveDynamicUsage(wtx));
+    EXPECT_EQ(160 + 1856 + 1200, RecursiveDynamicUsage(wtx));
 
     RegtestDeactivateSapling();
 }
@@ -73,10 +71,9 @@ TEST(RecursiveDynamicUsageTests, TestTransactionSaplingToSapling)
 
     auto tx = builder.Build().GetTxOrThrow();
     // 1 vShieldedSpend + 2 vShieldedOutput
-    // 400 + 2520
     EXPECT_EQ(1, tx.GetSaplingSpendsCount());
     EXPECT_EQ(2, tx.GetSaplingOutputsCount());
-    EXPECT_EQ(2920, RecursiveDynamicUsage(tx));
+    EXPECT_EQ(400 + 2520, RecursiveDynamicUsage(tx));
 
     RegtestDeactivateSapling();
 }
@@ -101,10 +98,9 @@ TEST(RecursiveDynamicUsageTests, TestTransactionTransparentToSapling)
 
     auto tx = builder.Build().GetTxOrThrow();
     // 1 vin + 1 vShieldedOutput
-    // (96 + 128) + 1200
     EXPECT_EQ(0, tx.GetSaplingSpendsCount());
     EXPECT_EQ(1, tx.GetSaplingOutputsCount());
-    EXPECT_EQ(1424, RecursiveDynamicUsage(tx));
+    EXPECT_EQ((96 + 128) + 1200, RecursiveDynamicUsage(tx));
 
     RegtestDeactivateSapling();
 }
@@ -128,10 +124,9 @@ TEST(RecursiveDynamicUsageTests, TestTransactionSaplingToTransparent)
 
     auto tx = builder.Build().GetTxOrThrow();
     // 1 vShieldedSpend + 2 vShieldedOutput + 1 vout
-    // 400 + 2520 + 64
     EXPECT_EQ(1, tx.GetSaplingSpendsCount());
     EXPECT_EQ(2, tx.GetSaplingOutputsCount());
-    EXPECT_EQ(2984, RecursiveDynamicUsage(tx));
+    EXPECT_EQ(400 + 2520 + 64, RecursiveDynamicUsage(tx));
 
     RegtestDeactivateSapling();
 }

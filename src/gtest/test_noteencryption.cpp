@@ -77,9 +77,7 @@ TEST(NoteEncryption, NotePlaintext)
             }
         }
 
-        if (!decrypted_out_ct) {
-            FAIL();
-        }
+        ASSERT_TRUE(decrypted_out_ct.has_value());
 
         auto decrypted_out_ct_unwrapped = decrypted_out_ct.value();
 
