@@ -258,10 +258,6 @@ private:
     std::optional<CTxDestination> tChangeAddr;
 
 public:
-    TransactionBuilder() :
-        saplingBuilder(sapling::new_builder(
-            *Params().RustNetwork(),
-            Params().GetConsensus().vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight)) {}
     /**
      * If an Orchard anchor is provided, the resulting builder will always attempt
      * to construct a V5 transaction unless NU5 is not yet active. If an Orchard
