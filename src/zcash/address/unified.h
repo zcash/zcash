@@ -5,27 +5,23 @@
 #ifndef ZCASH_ZCASH_ADDRESS_UNIFIED_H
 #define ZCASH_ZCASH_ADDRESS_UNIFIED_H
 
-#include "transparent.h"
 #include "key_constants.h"
 #include "script/script.h"
+#include "transparent.h"
 #include "zcash/address/orchard.hpp"
 #include "zip32.h"
 
 #include <variant>
 
-namespace libzcash {
+namespace libzcash
+{
 
 // prototypes for the classes handling ZIP-316 encoding (in Address.hpp)
 // TODO: ZIP-316 encoding should probably be moved here
 class UnifiedAddress;
 class UnifiedFullViewingKey;
 
-enum class ReceiverType: uint32_t {
-    P2PKH = 0x00,
-    P2SH = 0x01,
-    Sapling = 0x02,
-    Orchard = 0x03
-};
+enum class ReceiverType : uint32_t { P2PKH = 0x00, P2SH = 0x01, Sapling = 0x02, Orchard = 0x03 };
 
 /**
  * An enumeration of the fund pools for which a transaction may produce outputs.
@@ -47,37 +43,36 @@ enum class UnifiedAddressGenerationError {
     InvalidTransparentChildIndex
 };
 
-typedef std::variant<
-    std::pair<UnifiedAddress, diversifier_index_t>,
-    UnifiedAddressGenerationError> UnifiedAddressGenerationResult;
+typedef std::variant<std::pair<UnifiedAddress, diversifier_index_t>, UnifiedAddressGenerationError>
+    UnifiedAddressGenerationResult;
 
 /** A recipient address to which a unified address can be resolved */
-typedef std::variant<
-    CKeyID,
-    CScriptID,
-    libzcash::SaplingPaymentAddress,
-    libzcash::OrchardRawAddress> RecipientAddress;
+typedef std::
+    variant<CKeyID, CScriptID, libzcash::SaplingPaymentAddress, libzcash::OrchardRawAddress>
+        RecipientAddress;
 
 std::string DebugPrintRecipientAddress(const RecipientAddress& add);
 
-class TransparentChangeRequest {
+class TransparentChangeRequest
+{
 private:
     const diversifier_index_t& index;
-public:
-    TransparentChangeRequest(const diversifier_index_t& indexIn): index(indexIn) {}
 
-    const diversifier_index_t& GetIndex() const {
-        return index;
-    }
+public:
+    TransparentChangeRequest(const diversifier_index_t& indexIn) : index(indexIn) {}
+
+    const diversifier_index_t& GetIndex() const { return index; }
 };
 
-class SaplingChangeRequest {};
-class OrchardChangeRequest {};
+class SaplingChangeRequest
+{
+};
+class OrchardChangeRequest
+{
+};
 
-typedef std::variant<
-    TransparentChangeRequest,
-    SaplingChangeRequest,
-    OrchardChangeRequest> ChangeRequest;
+typedef std::variant<TransparentChangeRequest, SaplingChangeRequest, OrchardChangeRequest>
+    ChangeRequest;
 
 /**
  * Test whether the specified list of receiver types contains a
@@ -93,24 +88,27 @@ bool HasTransparent(const std::set<ReceiverType>& receiverTypes);
 
 class ZcashdUnifiedSpendingKey;
 
-class UnknownReceiver {
+class UnknownReceiver
+{
 public:
     uint32_t typecode;
     std::vector<uint8_t> data;
 
-    UnknownReceiver(uint32_t typecode, std::vector<uint8_t> data) :
-        typecode(typecode), data(data) {}
+    UnknownReceiver(uint32_t typecode, std::vector<uint8_t> data) : typecode(typecode), data(data)
+    {
+    }
 
-    friend inline bool operator==(const UnknownReceiver& a, const UnknownReceiver& b) {
+    friend inline bool operator==(const UnknownReceiver& a, const UnknownReceiver& b)
+    {
         return a.typecode == b.typecode && a.data == b.data;
     }
-    friend inline bool operator<(const UnknownReceiver& a, const UnknownReceiver& b) {
+    friend inline bool operator<(const UnknownReceiver& a, const UnknownReceiver& b)
+    {
         // We don't know for certain the preference order of unknown receivers, but it is
         // _likely_ that the higher typecode has higher preference. The exact sort order
         // doesn't really matter, as unknown receivers have lower preference than known
         // receivers.
-        return (a.typecode > b.typecode ||
-                (a.typecode == b.typecode && a.data < b.data));
+        return (a.typecode > b.typecode || (a.typecode == b.typecode && a.data < b.data));
     }
 };
 
@@ -120,12 +118,8 @@ public:
  * These types are given in order of preference (as defined in ZIP 316), so that sorting
  * variants by `operator<` is equivalent to sorting by preference.
  */
-typedef std::variant<
-    OrchardRawAddress,
-    SaplingPaymentAddress,
-    CScriptID,
-    CKeyID,
-    UnknownReceiver> Receiver;
+typedef std::variant<OrchardRawAddress, SaplingPaymentAddress, CScriptID, CKeyID, UnknownReceiver>
+    Receiver;
 
 Receiver RecipientAddressToReceiver(const RecipientAddress& recipient);
 
@@ -135,7 +129,8 @@ std::string DebugPrintReceiver(const Receiver& receiver);
  * An internal identifier for a unified full viewing key, derived as a
  * blake2b hash of the serialized form of the UFVK.
  */
-class UFVKId: public uint256 {
+class UFVKId : public uint256
+{
 public:
     UFVKId() : uint256() {}
     UFVKId(const uint256& in) : uint256(in) {}
@@ -147,7 +142,8 @@ public:
  * support round-trip serialization to and from the UnifiedFullViewingKey type,
  * which should be used in most cases.
  */
-class ZcashdUnifiedFullViewingKey {
+class ZcashdUnifiedFullViewingKey
+{
 private:
     UFVKId keyId;
     std::optional<transparent::AccountPubKey> transparentKey;
@@ -157,33 +153,31 @@ private:
     ZcashdUnifiedFullViewingKey() {}
 
     friend class ZcashdUnifiedSpendingKey;
+
 public:
     /**
      * This constructor is lossy; it ignores unknown receiver types
      * and therefore does not support round-trip transformations.
      */
-    static ZcashdUnifiedFullViewingKey FromUnifiedFullViewingKey(
-            const KeyConstants& keyConstants,
-            const UnifiedFullViewingKey& ufvk);
+    static ZcashdUnifiedFullViewingKey
+    FromUnifiedFullViewingKey(const KeyConstants& keyConstants, const UnifiedFullViewingKey& ufvk);
 
-    const UFVKId& GetKeyID() const {
-        return keyId;
-    }
+    const UFVKId& GetKeyID() const { return keyId; }
 
     /**
      * Return the transparent key at the account level;
      */
-    const std::optional<transparent::AccountPubKey>& GetTransparentKey() const {
+    const std::optional<transparent::AccountPubKey>& GetTransparentKey() const
+    {
         return transparentKey;
     }
 
-    const std::optional<SaplingDiversifiableFullViewingKey>& GetSaplingKey() const {
+    const std::optional<SaplingDiversifiableFullViewingKey>& GetSaplingKey() const
+    {
         return saplingKey;
     }
 
-    const std::optional<OrchardFullViewingKey>& GetOrchardKey() const {
-        return orchardKey;
-    }
+    const std::optional<OrchardFullViewingKey>& GetOrchardKey() const { return orchardKey; }
 
     /**
      * Creates a new unified address having the specified receiver types, at the specified
@@ -198,9 +192,8 @@ public:
      * If successful in deriving an address, this method returns a `UnifiedAddressGenerationResult`
      * holding a pair consisting of the newly derived address and the provided value `j`.
      */
-    UnifiedAddressGenerationResult Address(
-            const diversifier_index_t& j,
-            const std::set<ReceiverType>& receiverTypes) const;
+    UnifiedAddressGenerationResult
+    Address(const diversifier_index_t& j, const std::set<ReceiverType>& receiverTypes) const;
 
     /**
      * Find the smallest diversifier index >= `j` such that it generates a valid
@@ -213,9 +206,8 @@ public:
      * transparent receiver and the diversifier exceeds the maximum transparent
      * child index.
      */
-    UnifiedAddressGenerationResult FindAddress(
-            const diversifier_index_t& j,
-            const std::set<ReceiverType>& receiverTypes) const;
+    UnifiedAddressGenerationResult
+    FindAddress(const diversifier_index_t& j, const std::set<ReceiverType>& receiverTypes) const;
 
     /**
      * Find the next available address that contains all supported receiver types.
@@ -242,11 +234,13 @@ public:
      * *any* shielded pool) in which case the change address returned will be
      * associated with diversifier index 0.
      */
-    std::optional<RecipientAddress> GetChangeAddress(const std::set<OutputPool>& allowedPools) const;
+    std::optional<RecipientAddress>
+    GetChangeAddress(const std::set<OutputPool>& allowedPools) const;
 
     UnifiedFullViewingKey ToFullViewingKey() const;
 
-    friend bool operator==(const ZcashdUnifiedFullViewingKey& a, const ZcashdUnifiedFullViewingKey& b)
+    friend bool
+    operator==(const ZcashdUnifiedFullViewingKey& a, const ZcashdUnifiedFullViewingKey& b)
     {
         return a.transparentKey == b.transparentKey && a.saplingKey == b.saplingKey;
     }
@@ -255,37 +249,34 @@ public:
 /**
  * The type of unified spending keys supported by zcashd.
  */
-class ZcashdUnifiedSpendingKey {
+class ZcashdUnifiedSpendingKey
+{
 private:
     transparent::AccountKey transparentKey;
     SaplingExtendedSpendingKey saplingKey;
     OrchardSpendingKey orchardKey;
 
     ZcashdUnifiedSpendingKey(
-            transparent::AccountKey tkey,
-            SaplingExtendedSpendingKey skey,
-            OrchardSpendingKey okey): transparentKey(tkey), saplingKey(skey), orchardKey(okey) {}
+        transparent::AccountKey tkey,
+        SaplingExtendedSpendingKey skey,
+        OrchardSpendingKey okey)
+        : transparentKey(tkey), saplingKey(skey), orchardKey(okey)
+    {
+    }
+
 public:
-    static std::optional<ZcashdUnifiedSpendingKey> ForAccount(
-            const HDSeed& seed,
-            uint32_t bip44CoinType,
-            libzcash::AccountId accountId);
+    static std::optional<ZcashdUnifiedSpendingKey>
+    ForAccount(const HDSeed& seed, uint32_t bip44CoinType, libzcash::AccountId accountId);
 
-    const transparent::AccountKey& GetTransparentKey() const {
-        return transparentKey;
-    }
+    const transparent::AccountKey& GetTransparentKey() const { return transparentKey; }
 
-    const SaplingExtendedSpendingKey& GetSaplingKey() const {
-        return saplingKey;
-    }
+    const SaplingExtendedSpendingKey& GetSaplingKey() const { return saplingKey; }
 
-    const OrchardSpendingKey& GetOrchardKey() const {
-        return orchardKey;
-    }
+    const OrchardSpendingKey& GetOrchardKey() const { return orchardKey; }
 
     UnifiedFullViewingKey ToFullViewingKey() const;
 };
 
-} //namespace libzcash
+} // namespace libzcash
 
 #endif // ZCASH_ZCASH_ADDRESS_UNIFIED_H

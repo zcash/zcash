@@ -1,8 +1,8 @@
 #ifndef ZCASH_ZCASH_UTIL_H
 #define ZCASH_ZCASH_UTIL_H
 
-#include <vector>
 #include <cstdint>
+#include <vector>
 
 std::vector<unsigned char> convertIntToVectorLE(const uint64_t val_int);
 std::vector<bool> convertBytesVectorToVector(const std::vector<unsigned char>& bytes);

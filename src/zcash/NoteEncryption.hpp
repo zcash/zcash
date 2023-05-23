@@ -6,33 +6,35 @@ https://github.com/zcash/zips/blob/master/protocol/protocol.pdf
 #ifndef ZC_NOTE_ENCRYPTION_H_
 #define ZC_NOTE_ENCRYPTION_H_
 
-#include "uint256.h"
 #include "uint252.h"
-
+#include "uint256.h"
 #include "zcash/Address.hpp"
 #include "zcash/memo.h"
 
 #include <array>
 #include <optional>
 
-namespace libzcash {
+namespace libzcash
+{
 
-constexpr size_t NOTEENCRYPTION_AUTH_BYTES{16};
+constexpr size_t NOTEENCRYPTION_AUTH_BYTES {16};
 
-constexpr size_t NOTEPLAINTEXT_LEADING{1};
-constexpr size_t V_SIZE{8};
-constexpr size_t RHO_SIZE{32};
-constexpr size_t R_SIZE{32};
-constexpr size_t JUBJUB_POINT_SIZE{32};
-constexpr size_t JUBJUB_SCALAR_SIZE{32};
+constexpr size_t NOTEPLAINTEXT_LEADING {1};
+constexpr size_t V_SIZE {8};
+constexpr size_t RHO_SIZE {32};
+constexpr size_t R_SIZE {32};
+constexpr size_t JUBJUB_POINT_SIZE {32};
+constexpr size_t JUBJUB_SCALAR_SIZE {32};
 
-constexpr size_t NOTEPLAINTEXT_SIZE{NOTEPLAINTEXT_LEADING + V_SIZE + RHO_SIZE + R_SIZE + Memo::SIZE};
+constexpr size_t NOTEPLAINTEXT_SIZE {
+    NOTEPLAINTEXT_LEADING + V_SIZE + RHO_SIZE + R_SIZE + Memo::SIZE};
 
-constexpr size_t SAPLING_ENCPLAINTEXT_SIZE{NOTEPLAINTEXT_LEADING + SAPLING_DIVERSIFIER_SIZE + V_SIZE + R_SIZE + Memo::SIZE};
-constexpr size_t SAPLING_OUTPLAINTEXT_SIZE{JUBJUB_POINT_SIZE + JUBJUB_SCALAR_SIZE};
+constexpr size_t SAPLING_ENCPLAINTEXT_SIZE {
+    NOTEPLAINTEXT_LEADING + SAPLING_DIVERSIFIER_SIZE + V_SIZE + R_SIZE + Memo::SIZE};
+constexpr size_t SAPLING_OUTPLAINTEXT_SIZE {JUBJUB_POINT_SIZE + JUBJUB_SCALAR_SIZE};
 
-constexpr size_t SAPLING_ENCCIPHERTEXT_SIZE{SAPLING_ENCPLAINTEXT_SIZE + NOTEENCRYPTION_AUTH_BYTES};
-constexpr size_t SAPLING_OUTCIPHERTEXT_SIZE{SAPLING_OUTPLAINTEXT_SIZE + NOTEENCRYPTION_AUTH_BYTES};
+constexpr size_t SAPLING_ENCCIPHERTEXT_SIZE {SAPLING_ENCPLAINTEXT_SIZE + NOTEENCRYPTION_AUTH_BYTES};
+constexpr size_t SAPLING_OUTCIPHERTEXT_SIZE {SAPLING_OUTPLAINTEXT_SIZE + NOTEENCRYPTION_AUTH_BYTES};
 
 // Ciphertext for the recipient to decrypt
 typedef std::array<unsigned char, SAPLING_ENCCIPHERTEXT_SIZE> SaplingEncCiphertext;
@@ -43,7 +45,8 @@ typedef std::array<unsigned char, SAPLING_OUTCIPHERTEXT_SIZE> SaplingOutCipherte
 typedef std::array<unsigned char, SAPLING_OUTPLAINTEXT_SIZE> SaplingOutPlaintext;
 
 //! This is not a thread-safe API.
-class SaplingNoteEncryption {
+class SaplingNoteEncryption
+{
 protected:
     // Ephemeral public key
     uint256 epk;
@@ -54,66 +57,57 @@ protected:
     bool already_encrypted_enc;
     bool already_encrypted_out;
 
-    SaplingNoteEncryption(uint256 epk, uint256 esk) : epk(epk), esk(esk), already_encrypted_enc(false), already_encrypted_out(false) {
-
+    SaplingNoteEncryption(uint256 epk, uint256 esk)
+        : epk(epk), esk(esk), already_encrypted_enc(false), already_encrypted_out(false)
+    {
     }
 
 public:
-
     static std::optional<SaplingNoteEncryption> FromDiversifier(diversifier_t d, uint256 esk);
 
-    std::optional<SaplingEncCiphertext> encrypt_to_recipient(
-        const uint256 &pk_d,
-        const SaplingEncPlaintext &message
-    );
+    std::optional<SaplingEncCiphertext>
+    encrypt_to_recipient(const uint256& pk_d, const SaplingEncPlaintext& message);
 
     SaplingOutCiphertext encrypt_to_ourselves(
-        const uint256 &ovk,
-        const uint256 &cv,
-        const uint256 &cm,
-        const SaplingOutPlaintext &message
-    );
+        const uint256& ovk,
+        const uint256& cv,
+        const uint256& cm,
+        const SaplingOutPlaintext& message);
 
-    uint256 get_epk() const {
-        return epk;
-    }
+    uint256 get_epk() const { return epk; }
 
-    uint256 get_esk() const {
-        return esk;
-    }
+    uint256 get_esk() const { return esk; }
 };
 
 // Attempts to decrypt a Sapling note. This will not check that the contents
 // of the ciphertext are correct.
 std::optional<SaplingEncPlaintext> AttemptSaplingEncDecryption(
-    const SaplingEncCiphertext &ciphertext,
-    const uint256 &ivk,
-    const uint256 &epk
-);
+    const SaplingEncCiphertext& ciphertext,
+    const uint256& ivk,
+    const uint256& epk);
 
 // Attempts to decrypt a Sapling note using outgoing plaintext.
 // This will not check that the contents of the ciphertext are correct.
-std::optional<SaplingEncPlaintext> AttemptSaplingEncDecryption (
-    const SaplingEncCiphertext &ciphertext,
-    const uint256 &epk,
-    const uint256 &esk,
-    const uint256 &pk_d
-);
+std::optional<SaplingEncPlaintext> AttemptSaplingEncDecryption(
+    const SaplingEncCiphertext& ciphertext,
+    const uint256& epk,
+    const uint256& esk,
+    const uint256& pk_d);
 
 // Attempts to decrypt a Sapling note. This will not check that the contents
 // of the ciphertext are correct.
 std::optional<SaplingOutPlaintext> AttemptSaplingOutDecryption(
-    const SaplingOutCiphertext &ciphertext,
-    const uint256 &ovk,
-    const uint256 &cv,
-    const uint256 &cm,
-    const uint256 &epk
-);
+    const SaplingOutCiphertext& ciphertext,
+    const uint256& ovk,
+    const uint256& cv,
+    const uint256& cm,
+    const uint256& epk);
 
 template<size_t MLEN>
-class NoteEncryption {
+class NoteEncryption
+{
 protected:
-    enum { CLEN=MLEN+NOTEENCRYPTION_AUTH_BYTES };
+    enum { CLEN = MLEN + NOTEENCRYPTION_AUTH_BYTES };
     uint256 epk;
     uint256 esk;
     unsigned char nonce;
@@ -126,33 +120,28 @@ public:
     NoteEncryption(uint256 hSig);
 
     // Gets the ephemeral secret key
-    uint256 get_esk() {
-        return esk;
-    }
+    uint256 get_esk() { return esk; }
 
     // Gets the ephemeral public key
-    uint256 get_epk() {
-        return epk;
-    }
+    uint256 get_epk() { return epk; }
 
     // Encrypts `message` with `pk_enc` and returns the ciphertext.
     // This is only called ZC_NUM_JS_OUTPUTS times for a given instantiation;
     // but can be called 255 times before the nonce-space runs out.
-    Ciphertext encrypt(const uint256 &pk_enc,
-                       const Plaintext &message
-                      );
+    Ciphertext encrypt(const uint256& pk_enc, const Plaintext& message);
 
     // Creates a NoteEncryption private key
-    static uint256 generate_privkey(const uint252 &a_sk);
+    static uint256 generate_privkey(const uint252& a_sk);
 
     // Creates a NoteEncryption public key from a private key
-    static uint256 generate_pubkey(const uint256 &sk_enc);
+    static uint256 generate_pubkey(const uint256& sk_enc);
 };
 
 template<size_t MLEN>
-class NoteDecryption {
+class NoteDecryption
+{
 protected:
-    enum { CLEN=MLEN+NOTEENCRYPTION_AUTH_BYTES };
+    enum { CLEN = MLEN + NOTEENCRYPTION_AUTH_BYTES };
     uint256 sk_enc;
     uint256 pk_enc;
 
@@ -160,40 +149,42 @@ public:
     typedef std::array<unsigned char, CLEN> Ciphertext;
     typedef std::array<unsigned char, MLEN> Plaintext;
 
-    NoteDecryption() { }
+    NoteDecryption() {}
     NoteDecryption(uint256 sk_enc);
 
-    Plaintext decrypt(const Ciphertext &ciphertext,
-                      const uint256 &epk,
-                      const uint256 &hSig,
-                      unsigned char nonce
-                     ) const;
+    Plaintext decrypt(
+        const Ciphertext& ciphertext,
+        const uint256& epk,
+        const uint256& hSig,
+        unsigned char nonce) const;
 
-    friend inline bool operator==(const NoteDecryption& a, const NoteDecryption& b) {
+    friend inline bool operator==(const NoteDecryption& a, const NoteDecryption& b)
+    {
         return a.sk_enc == b.sk_enc && a.pk_enc == b.pk_enc;
     }
-    friend inline bool operator<(const NoteDecryption& a, const NoteDecryption& b) {
-        return (a.sk_enc < b.sk_enc ||
-                (a.sk_enc == b.sk_enc && a.pk_enc < b.pk_enc));
+    friend inline bool operator<(const NoteDecryption& a, const NoteDecryption& b)
+    {
+        return (a.sk_enc < b.sk_enc || (a.sk_enc == b.sk_enc && a.pk_enc < b.pk_enc));
     }
 };
 
 uint256 random_uint256();
 uint252 random_uint252();
 
-class note_decryption_failed : public std::runtime_error {
+class note_decryption_failed : public std::runtime_error
+{
 public:
-    note_decryption_failed() : std::runtime_error("Could not decrypt message") { }
+    note_decryption_failed() : std::runtime_error("Could not decrypt message") {}
 };
-
 
 
 // Subclass PaymentDisclosureNoteDecryption provides a method to decrypt a note with esk.
 template<size_t MLEN>
-class PaymentDisclosureNoteDecryption : public NoteDecryption<MLEN> {
+class PaymentDisclosureNoteDecryption : public NoteDecryption<MLEN>
+{
 protected:
 public:
-    enum { CLEN=MLEN+NOTEENCRYPTION_AUTH_BYTES };
+    enum { CLEN = MLEN + NOTEENCRYPTION_AUTH_BYTES };
     typedef std::array<unsigned char, CLEN> Ciphertext;
     typedef std::array<unsigned char, MLEN> Plaintext;
 
@@ -201,15 +192,14 @@ public:
     PaymentDisclosureNoteDecryption(uint256 sk_enc) : NoteDecryption<MLEN>(sk_enc) {}
 
     Plaintext decryptWithEsk(
-        const Ciphertext &ciphertext,
-        const uint256 &pk_enc,
-        const uint256 &esk,
-        const uint256 &hSig,
-        unsigned char nonce
-        ) const;
+        const Ciphertext& ciphertext,
+        const uint256& pk_enc,
+        const uint256& esk,
+        const uint256& hSig,
+        unsigned char nonce) const;
 };
 
-}
+} // namespace libzcash
 
 typedef libzcash::NoteEncryption<libzcash::NOTEPLAINTEXT_SIZE> ZCNoteEncryption;
 typedef libzcash::NoteDecryption<libzcash::NOTEPLAINTEXT_SIZE> ZCNoteDecryption;

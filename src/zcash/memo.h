@@ -24,7 +24,7 @@ namespace libzcash
 class Memo
 {
 public:
-    static constexpr size_t SIZE{512};
+    static constexpr size_t SIZE {512};
 
     typedef unsigned char Byte;
 
@@ -52,17 +52,17 @@ public:
         /// * the first byte has a value between 0xF7 and 0xFE inclusive
         FutureData,
         /// the first byte has a value of 0xFF […] the remaining 511 bytes are then unconstrained
-        ArbitraryData
-        > Contents;
+        ArbitraryData>
+        Contents;
 
 private:
     Bytes value_;
 
-    static constexpr const Bytes noMemo{0xf6};
+    static constexpr const Bytes noMemo {0xf6};
 
     /// This constructor trusts that the Memo is a valid memo, and constructs one even if it’s the
     /// `noMemo` value.
-    explicit Memo(Bytes value): value_(value) {}
+    explicit Memo(Bytes value) : value_(value) {}
 
 public:
     enum class ConversionError {
@@ -107,6 +107,6 @@ public:
     /// uninterpreted contents can be accessed via `ToBytes` and `ToHex`.
     tl::expected<Contents, InterpretationError> Interpret() const;
 };
-}
+} // namespace libzcash
 
 #endif // ZCASH_ZCASH_MEMO_H
