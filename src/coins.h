@@ -435,16 +435,16 @@ public:
 };
 
 //! This class is used by `CCoinsViewCache` to internally store, for each
-//! shielded type, the complete subtrees that have not yet been flushed
+//! shielded type, the roots of complete subtrees that have not yet been flushed
 //! to the backing `CCoinsView`. This allows the cache to both store new
-//! subtrees and handle removing subtrees from the backing view when the
+//! subtree roots and handle removing subtree roots from the backing view when the
 //! cache is flushed.
 class SubtreeCache {
     public:
 
     bool initialized = false;
     //! We store in `parentLatestSubtree` our perspective of what the latest
-    //! subtree aught to be in the backing `CCoinsView`. If subtrees are
+    //! subtree ought to be in the backing `CCoinsView`. If subtrees are
     //! removed from this subtree cache but no new complete subtrees exist,
     //! they must be removed from the backing view later when it is flushed.
     std::optional<libzcash::LatestSubtree> parentLatestSubtree;
