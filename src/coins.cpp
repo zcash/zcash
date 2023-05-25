@@ -1219,22 +1219,23 @@ std::optional<libzcash::SubtreeData> SubtreeCache::GetSubtreeData(CCoinsView *pa
         return std::nullopt;
     }
 
-    if (parentLatestSubtree.has_value() && index <= parentLatestSubtree.value().index) {
-        // This subtree is complete, but it's not in the local cache
-        return parentView->GetSubtreeData(type, index);
-    } else {
-        if (parentLatestSubtree.has_value()) {
+    if (parentLatestSubtree.has_value()) {
+        if (index <= parentLatestSubtree.value().index) {
+            // This subtree in question must have previously been flushed to the parent cache layer,
+            // so we ask for it there.
+            return parentView->GetSubtreeData(type, index);
+        } else {
             // Get the index into our local `newSubtrees` where the subtree should
             // be located.
             auto localIndex = index - (parentLatestSubtree.value().index + 1);
             assert(newSubtrees.size() > localIndex);
-            return newSubtrees[localIndex];
-        } else {
-            // The index we've been given is the index into our local `newSubtrees`
-            // since the parent view has no subtrees.
-            assert(newSubtrees.size() > index);
-            return newSubtrees[index];
-        }
+            return newSubtrees[localIndex];            
+        } 
+    } else {
+        // The index we've been given is the index into our local `newSubtrees`
+        // since the parent view has no subtrees.
+        assert(newSubtrees.size() > index);
+        return newSubtrees[index];
     }
 }
 
