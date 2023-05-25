@@ -35,10 +35,10 @@ class LatestSubtree {
     //! the rightmost leaf of the most recently completed subtree.
     int nHeight;
 
-    LatestSubtree() { }
+    LatestSubtree() : nHeight(0) { }
 
     LatestSubtree(SubtreeIndex index, SubtreeRoot root, int nHeight)
-        : index(index), root(root), nHeight(nHeight){ }
+        : index(index), root(root), nHeight(nHeight) { }
 
     ADD_SERIALIZE_METHODS;
 
@@ -62,10 +62,10 @@ class SubtreeData {
     //! that completed this subtree.
     int nHeight;
 
-    SubtreeData() { }
+    SubtreeData() : nHeight(0) { }
 
     SubtreeData(SubtreeRoot root, int nHeight)
-        : root(root), nHeight(nHeight){ }
+        : root(root), nHeight(nHeight) { }
 
     ADD_SERIALIZE_METHODS;
 

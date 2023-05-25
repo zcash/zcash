@@ -353,19 +353,19 @@ public:
 
         if (memorydb) {
             memorydb->BatchWrite(mapCoins,
-                            hashBlock,
-                            hashSproutAnchor,
-                            hashSaplingAnchor,
-                            hashOrchardAnchor,
-                            mapSproutAnchors,
-                            mapSaplingAnchors,
-                            mapOrchardAnchors,
-                            mapSproutNullifiers,
-                            mapSaplingNullifiers,
-                            mapOrchardNullifiers,
-                            historyCacheMap,
-                            cacheSaplingSubtrees,
-                            cacheOrchardSubtrees);
+                                 hashBlock,
+                                 hashSproutAnchor,
+                                 hashSaplingAnchor,
+                                 hashOrchardAnchor,
+                                 mapSproutAnchors,
+                                 mapSaplingAnchors,
+                                 mapOrchardAnchors,
+                                 mapSproutNullifiers,
+                                 mapSaplingNullifiers,
+                                 mapOrchardNullifiers,
+                                 historyCacheMap,
+                                 cacheSaplingSubtrees,
+                                 cacheOrchardSubtrees);
         }
 
         if (!hashBlock.IsNull())
@@ -417,7 +417,7 @@ libzcash::SubtreeData RandomSubtree(libzcash::SubtreeIndex index) {
     // We store the intended index in the nHeight field
     // so that the mock database can exercise tests. (Indices
     // are not stored in the SubtreeData struct because they
-    // are already known by the caller of GetSubtreeData)
+    // are already known by the caller of GetSubtreeData.)
     return libzcash::SubtreeData(root, index);
 }
 
@@ -982,6 +982,7 @@ enum SubtreeAction {
     FlushCache1,
     FlushCache2,
     Pop,
+    PopIsError,
 
     // Push the nth index subtree to cache2
     Push0,
@@ -1054,349 +1055,94 @@ void testSubtreesForShieldedType(ShieldedType type) {
         CCoinsViewCache cache1(&base);
         CCoinsViewCache cache2(&cache1);
 
+        auto LatestEqualsX = [&type](CCoinsView& view) {
+            auto latest = view.GetLatestSubtree(type);
+            ASSERT_FALSE(latest.has_value());
+        };
+
+        auto LatestEqualsN = [&type](CCoinsView& view, int n) {
+            auto latest = view.GetLatestSubtree(type);
+            ASSERT_TRUE(latest.has_value());
+            EXPECT_EQ(latest->index, n);
+            EXPECT_EQ(latest->nHeight, n);
+            auto subtree = view.GetSubtreeData(type, n);
+            ASSERT_TRUE(subtree.has_value());
+            EXPECT_EQ(subtree->nHeight, n);
+        };
+
+        auto GetN = [&type](CCoinsView& view, int n) {
+            auto subtree = view.GetSubtreeData(type, n);
+            ASSERT_TRUE(subtree.has_value());
+            EXPECT_EQ(subtree->nHeight, n);
+        };
+
+        auto NoneN = [&type](CCoinsView& view, int n) {
+            auto subtree = view.GetSubtreeData(type, n);
+            ASSERT_FALSE(subtree.has_value());
+        };
+
         for (auto action : actions) {
             switch (action) {
-                case FlushCache1:
+                case FlushCache1: cache1.Flush(); break;
+                case FlushCache2: cache2.Flush(); break;
+                case Pop: cache2.PopSubtree(type); break;
+                case PopIsError:
                 {
-                    cache1.Flush();
+                    ASSERT_THROW({ cache2.PopSubtree(type); }, std::runtime_error);
                 }
                 break;
-                case FlushCache2:
-                {
-                    cache2.Flush();
-                }
-                break;
-                case Pop:
-                {
-                    cache2.PopSubtree(type);
-                }
-                break;
-                case Push0:
-                {
-                    cache2.PushSubtree(type, tree0);
-                }
-                break;
-                case Push1:
-                {
-                    cache2.PushSubtree(type, tree1);
-                }
-                break;
-                case Push2:
-                {
-                    cache2.PushSubtree(type, tree2);
-                }
-                break;
-                case Push3:
-                {
-                    cache2.PushSubtree(type, tree3);
-                }
-                break;
-                case LatestC1EqualsX:
-                {
-                    auto latest = cache1.GetLatestSubtree(type);
-                    ASSERT_FALSE(latest.has_value());
-                }
-                break;
-                case LatestC1Equals0:
-                {
-                    auto latest = cache1.GetLatestSubtree(type);
-                    ASSERT_TRUE(latest.has_value());
-                    EXPECT_EQ(latest->index, 0);
-                    EXPECT_EQ(latest->nHeight, 0);
-                    auto subtree = cache1.GetSubtreeData(type, 0);
-                    ASSERT_TRUE(subtree.has_value());
-                    EXPECT_EQ(subtree->nHeight, 0);
-                }
-                break;
-                case LatestC1Equals1:
-                {
-                    auto latest = cache1.GetLatestSubtree(type);
-                    ASSERT_TRUE(latest.has_value());
-                    EXPECT_EQ(latest->index, 1);
-                    EXPECT_EQ(latest->nHeight, 1);
-                    auto subtree = cache1.GetSubtreeData(type, 1);
-                    ASSERT_TRUE(subtree.has_value());
-                    EXPECT_EQ(subtree->nHeight, 1);
-                }
-                break;
-                case LatestC1Equals2:
-                {
-                    auto latest = cache1.GetLatestSubtree(type);
-                    ASSERT_TRUE(latest.has_value());
-                    EXPECT_EQ(latest->index, 2);
-                    EXPECT_EQ(latest->nHeight, 2);
-                    auto subtree = cache1.GetSubtreeData(type, 2);
-                    ASSERT_TRUE(subtree.has_value());
-                    EXPECT_EQ(subtree->nHeight, 2);
-                }
-                break;
-                case LatestC1Equals3:
-                {
-                    auto latest = cache1.GetLatestSubtree(type);
-                    ASSERT_TRUE(latest.has_value());
-                    EXPECT_EQ(latest->index, 3);
-                    EXPECT_EQ(latest->nHeight, 3);
-                    auto subtree = cache1.GetSubtreeData(type, 3);
-                    ASSERT_TRUE(subtree.has_value());
-                    EXPECT_EQ(subtree->nHeight, 3);
-                }
-                break;
-                case LatestC2EqualsX:
-                {
-                    auto latest = cache2.GetLatestSubtree(type);
-                    ASSERT_FALSE(latest.has_value());
-                }
-                break;
-                case LatestC2Equals0:
-                {
-                    auto latest = cache2.GetLatestSubtree(type);
-                    ASSERT_TRUE(latest.has_value());
-                    EXPECT_EQ(latest->index, 0);
-                    EXPECT_EQ(latest->nHeight, 0);
-                    auto subtree = cache2.GetSubtreeData(type, 0);
-                    ASSERT_TRUE(subtree.has_value());
-                    EXPECT_EQ(subtree->nHeight, 0);
-                }
-                break;
-                case LatestC2Equals1:
-                {
-                    auto latest = cache2.GetLatestSubtree(type);
-                    ASSERT_TRUE(latest.has_value());
-                    EXPECT_EQ(latest->index, 1);
-                    EXPECT_EQ(latest->nHeight, 1);
-                    auto subtree = cache2.GetSubtreeData(type, 1);
-                    ASSERT_TRUE(subtree.has_value());
-                    EXPECT_EQ(subtree->nHeight, 1);
-                }
-                break;
-                case LatestC2Equals2:
-                {
-                    auto latest = cache2.GetLatestSubtree(type);
-                    ASSERT_TRUE(latest.has_value());
-                    EXPECT_EQ(latest->index, 2);
-                    EXPECT_EQ(latest->nHeight, 2);
-                    auto subtree = cache2.GetSubtreeData(type, 2);
-                    ASSERT_TRUE(subtree.has_value());
-                    EXPECT_EQ(subtree->nHeight, 2);
-                }
-                break;
-                case LatestC2Equals3:
-                {
-                    auto latest = cache2.GetLatestSubtree(type);
-                    ASSERT_TRUE(latest.has_value());
-                    EXPECT_EQ(latest->index, 3);
-                    EXPECT_EQ(latest->nHeight, 3);
-                    auto subtree = cache2.GetSubtreeData(type, 3);
-                    ASSERT_TRUE(subtree.has_value());
-                    EXPECT_EQ(subtree->nHeight, 3);
-                }
-                break;
-                case LatestBaseEqualsX:
-                {
-                    auto latest = base.GetLatestSubtree(type);
-                    ASSERT_FALSE(latest.has_value());
-                }
-                break;
-                case LatestBaseEquals0:
-                {
-                    auto latest = base.GetLatestSubtree(type);
-                    ASSERT_TRUE(latest.has_value());
-                    EXPECT_EQ(latest->index, 0);
-                    EXPECT_EQ(latest->nHeight, 0);
-                    auto subtree = base.GetSubtreeData(type, 0);
-                    ASSERT_TRUE(subtree.has_value());
-                    EXPECT_EQ(subtree->nHeight, 0);
-                }
-                break;
-                case LatestBaseEquals1:
-                {
-                    auto latest = base.GetLatestSubtree(type);
-                    ASSERT_TRUE(latest.has_value());
-                    EXPECT_EQ(latest->index, 1);
-                    EXPECT_EQ(latest->nHeight, 1);
-                    auto subtree = base.GetSubtreeData(type, 1);
-                    ASSERT_TRUE(subtree.has_value());
-                    EXPECT_EQ(subtree->nHeight, 1);
-                }
-                break;
-                case LatestBaseEquals2:
-                {
-                    auto latest = base.GetLatestSubtree(type);
-                    ASSERT_TRUE(latest.has_value());
-                    EXPECT_EQ(latest->index, 2);
-                    EXPECT_EQ(latest->nHeight, 2);
-                    auto subtree = base.GetSubtreeData(type, 2);
-                    ASSERT_TRUE(subtree.has_value());
-                    EXPECT_EQ(subtree->nHeight, 2);
-                }
-                break;
-                case LatestBaseEquals3:
-                {
-                    auto latest = base.GetLatestSubtree(type);
-                    ASSERT_TRUE(latest.has_value());
-                    EXPECT_EQ(latest->index, 3);
-                    EXPECT_EQ(latest->nHeight, 3);
-                    auto subtree = base.GetSubtreeData(type, 3);
-                    ASSERT_TRUE(subtree.has_value());
-                    EXPECT_EQ(subtree->nHeight, 3);
-                }
-                break;
-                case Get0C1:
-                {
-                    auto subtree = cache1.GetSubtreeData(type, 0);
-                    ASSERT_TRUE(subtree.has_value());
-                    EXPECT_EQ(subtree->nHeight, 0);
-                }
-                break;
-                case Get1C1:
-                {
-                    auto subtree = cache1.GetSubtreeData(type, 1);
-                    ASSERT_TRUE(subtree.has_value());
-                    EXPECT_EQ(subtree->nHeight, 1);
-                }
-                break;
-                case Get2C1:
-                {
-                    auto subtree = cache1.GetSubtreeData(type, 2);
-                    ASSERT_TRUE(subtree.has_value());
-                    EXPECT_EQ(subtree->nHeight, 2);
-                }
-                break;
-                case Get3C1:
-                {
-                    auto subtree = cache1.GetSubtreeData(type, 3);
-                    ASSERT_TRUE(subtree.has_value());
-                    EXPECT_EQ(subtree->nHeight, 3);
-                }
-                break;
-                case Get0C2:
-                {
-                    auto subtree = cache2.GetSubtreeData(type, 0);
-                    ASSERT_TRUE(subtree.has_value());
-                    EXPECT_EQ(subtree->nHeight, 0);
-                }
-                break;
-                case Get1C2:
-                {
-                    auto subtree = cache2.GetSubtreeData(type, 1);
-                    ASSERT_TRUE(subtree.has_value());
-                    EXPECT_EQ(subtree->nHeight, 1);
-                }
-                break;
-                case Get2C2:
-                {
-                    auto subtree = cache2.GetSubtreeData(type, 2);
-                    ASSERT_TRUE(subtree.has_value());
-                    EXPECT_EQ(subtree->nHeight, 2);
-                }
-                break;
-                case Get3C2:
-                {
-                    auto subtree = cache2.GetSubtreeData(type, 3);
-                    ASSERT_TRUE(subtree.has_value());
-                    EXPECT_EQ(subtree->nHeight, 3);
-                }
-                break;
-                case Get0B:
-                {
-                    auto subtree = base.GetSubtreeData(type, 0);
-                    ASSERT_TRUE(subtree.has_value());
-                    EXPECT_EQ(subtree->nHeight, 0);
-                }
-                break;
-                case Get1B:
-                {
-                    auto subtree = base.GetSubtreeData(type, 1);
-                    ASSERT_TRUE(subtree.has_value());
-                    EXPECT_EQ(subtree->nHeight, 1);
-                }
-                break;
-                case Get2B:
-                {
-                    auto subtree = base.GetSubtreeData(type, 2);
-                    ASSERT_TRUE(subtree.has_value());
-                    EXPECT_EQ(subtree->nHeight, 2);
-                }
-                break;
-                case Get3B:
-                {
-                    auto subtree = base.GetSubtreeData(type, 3);
-                    ASSERT_TRUE(subtree.has_value());
-                    EXPECT_EQ(subtree->nHeight, 3);
-                }
-                break;
-                case None0C1:
-                {
-                    auto subtree = cache1.GetSubtreeData(type, 0);
-                    ASSERT_FALSE(subtree.has_value());
-                }
-                break;
-                case None1C1:
-                {
-                    auto subtree = cache1.GetSubtreeData(type, 1);
-                    ASSERT_FALSE(subtree.has_value());
-                }
-                break;
-                case None2C1:
-                {
-                    auto subtree = cache1.GetSubtreeData(type, 2);
-                    ASSERT_FALSE(subtree.has_value());
-                }
-                break;
-                case None3C1:
-                {
-                    auto subtree = cache1.GetSubtreeData(type, 3);
-                    ASSERT_FALSE(subtree.has_value());
-                }
-                break;
-                case None0C2:
-                {
-                    auto subtree = cache2.GetSubtreeData(type, 0);
-                    ASSERT_FALSE(subtree.has_value());
-                }
-                break;
-                case None1C2:
-                {
-                    auto subtree = cache2.GetSubtreeData(type, 1);
-                    ASSERT_FALSE(subtree.has_value());
-                }
-                break;
-                case None2C2:
-                {
-                    auto subtree = cache2.GetSubtreeData(type, 2);
-                    ASSERT_FALSE(subtree.has_value());
-                }
-                break;
-                case None3C2:
-                {
-                    auto subtree = cache2.GetSubtreeData(type, 3);
-                    ASSERT_FALSE(subtree.has_value());
-                }
-                break;
-                case None0B:
-                {
-                    auto subtree = base.GetSubtreeData(type, 0);
-                    ASSERT_FALSE(subtree.has_value());
-                }
-                break;
-                case None1B:
-                {
-                    auto subtree = base.GetSubtreeData(type, 1);
-                    ASSERT_FALSE(subtree.has_value());
-                }
-                break;
-                case None2B:
-                {
-                    auto subtree = base.GetSubtreeData(type, 2);
-                    ASSERT_FALSE(subtree.has_value());
-                }
-                break;
-                case None3B:
-                {
-                    auto subtree = base.GetSubtreeData(type, 3);
-                    ASSERT_FALSE(subtree.has_value());
-                }
-                break;
+                case Push0: cache2.PushSubtree(type, tree0); break;
+                case Push1: cache2.PushSubtree(type, tree1); break;
+                case Push2: cache2.PushSubtree(type, tree2); break;
+                case Push3: cache2.PushSubtree(type, tree3); break;
+
+                case LatestC1EqualsX: LatestEqualsX(cache1); break;
+                case LatestC1Equals0: LatestEqualsN(cache1, 0); break;
+                case LatestC1Equals1: LatestEqualsN(cache1, 1); break;
+                case LatestC1Equals2: LatestEqualsN(cache1, 2); break;
+                case LatestC1Equals3: LatestEqualsN(cache1, 3); break;
+
+                case LatestC2EqualsX: LatestEqualsX(cache2); break;
+                case LatestC2Equals0: LatestEqualsN(cache2, 0); break;
+                case LatestC2Equals1: LatestEqualsN(cache2, 1); break;
+                case LatestC2Equals2: LatestEqualsN(cache2, 2); break;
+                case LatestC2Equals3: LatestEqualsN(cache2, 3); break;
+
+                case LatestBaseEqualsX: LatestEqualsX(base); break;
+                case LatestBaseEquals0: LatestEqualsN(base, 0); break;
+                case LatestBaseEquals1: LatestEqualsN(base, 1); break;
+                case LatestBaseEquals2: LatestEqualsN(base, 2); break;
+                case LatestBaseEquals3: LatestEqualsN(base, 3); break;
+
+                case Get0C1: GetN(cache1, 0); break;
+                case Get1C1: GetN(cache1, 1); break;
+                case Get2C1: GetN(cache1, 2); break;
+                case Get3C1: GetN(cache1, 3); break;
+
+                case Get0C2: GetN(cache2, 0); break;
+                case Get1C2: GetN(cache2, 1); break;
+                case Get2C2: GetN(cache2, 2); break;
+                case Get3C2: GetN(cache2, 3); break;
+
+                case Get0B: GetN(base, 0); break;
+                case Get1B: GetN(base, 1); break;
+                case Get2B: GetN(base, 2); break;
+                case Get3B: GetN(base, 3); break;
+
+                case None0C1: NoneN(cache1, 0); break;
+                case None1C1: NoneN(cache1, 1); break;
+                case None2C1: NoneN(cache1, 2); break;
+                case None3C1: NoneN(cache1, 3); break;
+
+                case None0C2: NoneN(cache2, 0); break;
+                case None1C2: NoneN(cache2, 1); break;
+                case None2C2: NoneN(cache2, 2); break;
+                case None3C2: NoneN(cache2, 3); break;
+
+                case None0B: NoneN(base, 0); break;
+                case None1B: NoneN(base, 1); break;
+                case None2B: NoneN(base, 2); break;
+                case None3B: NoneN(base, 3); break;
             }
         }
 
@@ -1416,31 +1162,18 @@ void testSubtreesForShieldedType(ShieldedType type) {
     };
 
     attempt({Push0, Push1, FlushCache2, Get0C2});
-    attempt({Push0, FlushCache2, FlushCache1, FlushCache1, LatestBaseEquals0});
-    attempt({None0B, None0C1, None0C2, LatestBaseEqualsX, LatestC1EqualsX, LatestC2EqualsX});
-    attempt({Push0, None0B, None0C1, Get0C2, None1C2});
-    attempt({Push0, None0C1, FlushCache2, Get0C2, Get0C1, LatestC1Equals0, LatestC2Equals0, LatestBaseEqualsX});
-    attempt({Push0, None0C1, FlushCache2, Get0C2, Get0C1, None0B, FlushCache1, Get0B, LatestC1Equals0, LatestC2Equals0, LatestBaseEquals0});
-    attempt({Push0, Push1, Get0C2, None0C1, FlushCache2, Get0C2, Get0C1, Get1C2, Get1C1, None0B, FlushCache1, Get0B, Get1B});
-    attempt({Push0, FlushCache2, Pop, None0C2, Get0C1});
-    attempt({Push0, Push1, FlushCache2, Push2, Pop, Get0C2, Get1C2, LatestC2Equals1, Pop, Get0C2, LatestC2Equals0, Pop, FlushCache2, None0C1, None0C2, LatestC1EqualsX});
+    attempt({Push0, FlushCache2, FlushCache1, LatestBaseEquals0, FlushCache1, LatestBaseEquals0});
     attempt({Push0, FlushCache2, Push1, FlushCache2, FlushCache1, Push2, Push3, Pop, FlushCache2, LatestC2Equals2, LatestC1Equals2, LatestBaseEquals1, FlushCache1, LatestBaseEquals2});
-    attempt({Push0, Push1, FlushCache2, Get0C1, Pop, Pop, FlushCache2, None0C1, None0C2, LatestC1EqualsX, LatestC2EqualsX});
-    attempt({Push0, Push1, FlushCache2, LatestC1Equals1, Pop, FlushCache2, LatestC1Equals0});
-    attempt({Push0, FlushCache2, Push1, None2C2, None2C1});
-    attempt({Push0, FlushCache2, Push1, Get1C2});
-    attempt({Push0, Push1, Get0C2, Get1C2, FlushCache2, Get0C2, Get0C2, Get1C2, Get1C2});
-    attempt({Push0, Push1, LatestC2Equals1, FlushCache2, Push2, LatestC2Equals2});
-    attempt({Push0, FlushCache2, LatestC2Equals0, LatestC1Equals0});attempt({None0B, None0C1, None0C2, LatestBaseEqualsX, LatestC1EqualsX, LatestC2EqualsX});
+    attempt({None0B, None0C1, None0C2, LatestBaseEqualsX, LatestC1EqualsX, LatestC2EqualsX, PopIsError});
     attempt({Push0, None0B, None0C1, Get0C2, None1C2});
     attempt({Push0, None0C1, FlushCache2, Get0C2, Get0C1, LatestC1Equals0, LatestC2Equals0, LatestBaseEqualsX});
     attempt({Push0, None0C1, FlushCache2, Get0C2, Get0C1, None0B, FlushCache1, Get0B, LatestC1Equals0, LatestC2Equals0, LatestBaseEquals0});
     attempt({Push0, Push1, Get0C2, None0C1, FlushCache2, Get0C2, Get0C1, Get1C2, Get1C1, None0B, FlushCache1, Get0B, Get1B});
-    attempt({Push0, FlushCache2, Pop, None0C2, Get0C1});
-    attempt({Push0, Push1, FlushCache2, Push2, Pop, Get0C2, Get1C2, LatestC2Equals1, Pop, Get0C2, LatestC2Equals0, Pop, FlushCache2, None0C1, None0C2, LatestC1EqualsX});
+    attempt({Push0, FlushCache2, Pop, PopIsError, None0C2, Get0C1});
+    attempt({Push0, Push1, FlushCache2, Push2, Pop, Get0C2, Get1C2, LatestC2Equals1, Pop, Get0C2, LatestC2Equals0, Pop, FlushCache2, None0C1, None0C2, LatestC1EqualsX, PopIsError});
     attempt({Push0, FlushCache2, Push1, FlushCache2, FlushCache1, LatestBaseEquals1, Push2, FlushCache2, LatestC1Equals2, FlushCache1, LatestBaseEquals2});
     attempt({Push0, FlushCache2, Push1, FlushCache2, FlushCache1, LatestBaseEquals1, FlushCache1, LatestBaseEquals1});
-    attempt({Push0, Push1, FlushCache2, Get0C1, Pop, Pop, FlushCache2, None0C1, None0C2, LatestC1EqualsX, LatestC2EqualsX});
+    attempt({Push0, Push1, FlushCache2, Get0C1, Pop, Pop, PopIsError, FlushCache2, PopIsError, None0C1, None0C2, LatestC1EqualsX, LatestC2EqualsX, LatestBaseEqualsX});
     attempt({Push0, Push1, FlushCache2, LatestC1Equals1, Pop, FlushCache2, LatestC1Equals0});
     attempt({Push0, FlushCache2, Push1, None2C2, None2C1});
     attempt({Push0, FlushCache2, Push1, Get1C2});
@@ -1450,8 +1183,7 @@ void testSubtreesForShieldedType(ShieldedType type) {
     attempt({Push0, FlushCache2, FlushCache1, Get0B, Pop, FlushCache2, FlushCache1, None0B, LatestBaseEqualsX});
     attempt({Push0, FlushCache2, FlushCache1, LatestC1Equals0, LatestC2Equals0, LatestBaseEquals0});
     attempt({Push0, Push1, FlushCache2, LatestBaseEqualsX, FlushCache1, LatestBaseEquals1});
-    attempt({Push0, FlushCache2, FlushCache1, FlushCache1, LatestBaseEquals0});
-    attempt({Push0, Push1, FlushCache2, FlushCache1, Pop, FlushCache2, FlushCache1, LatestBaseEquals0});
+    attempt({Push0, Push1, FlushCache2, FlushCache1, Pop, LatestC1Equals1, FlushCache2, LatestC1Equals0, LatestBaseEquals1, FlushCache1, LatestBaseEquals0});
 }
 
 TEST(CoinsTests, SubtreesTest)

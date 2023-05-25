@@ -434,7 +434,7 @@ public:
     virtual ~CCoinsView() {}
 };
 
-//! This class is used by `CCoinsViewCache` to interally store, for each
+//! This class is used by `CCoinsViewCache` to internally store, for each
 //! shielded type, the complete subtrees that have not yet been flushed
 //! to the backing `CCoinsView`. This allows the cache to both store new
 //! subtrees and handle removing subtrees from the backing view when the
@@ -454,11 +454,11 @@ class SubtreeCache {
 
     SubtreeCache(ShieldedType type) : type(type) { };
 
-    //! Initialize the subtree cache so that the `parentLatestSubtree`
+    //! Initializes the subtree cache so that the `parentLatestSubtree`
     //! stored internally is consistent with the parent view.
     void Initialize(CCoinsView *parentView);
 
-    //! Resets this cache to its original uninitialized state
+    //! Resets this cache to its original uninitialized state.
     void clear();
 
     //! Gets the latest subtree for this cache, using the parent view
