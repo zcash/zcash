@@ -50,6 +50,15 @@ public:
         throw std::runtime_error("`GetHistoryRoot` unimplemented for mock AssumeShieldedInputsExistAndAreSpendable");
     }
 
+    std::optional<libzcash::LatestSubtree> GetLatestSubtree(ShieldedType type) const {
+        throw std::runtime_error("`GetLatestSubtree` unimplemented for mock AssumeShieldedInputsExistAndAreSpendable");
+    };
+    std::optional<libzcash::SubtreeData> GetSubtreeData(
+            ShieldedType type,
+            libzcash::SubtreeIndex index) const {
+        throw std::runtime_error("`GetSubtreeData` unimplemented for mock AssumeShieldedInputsExistAndAreSpendable");
+    };
+
     bool BatchWrite(CCoinsMap &mapCoins,
                     const uint256 &hashBlock,
                     const uint256 &hashSproutAnchor,
@@ -61,7 +70,9 @@ public:
                     CNullifiersMap &mapSproutNullifiers,
                     CNullifiersMap &mapSaplingNullifiers,
                     CNullifiersMap &mapOrchardNullifiers,
-                    CHistoryCacheMap &historyCacheMap) {
+                    CHistoryCacheMap &historyCacheMap,
+                    SubtreeCache &cacheSaplingSubtrees,
+                    SubtreeCache &cacheOrchardSubtrees) {
         return false;
     }
     bool GetStats(CCoinsStats &stats) const { return false; }

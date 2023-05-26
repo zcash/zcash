@@ -17,6 +17,66 @@
 
 namespace libzcash {
 
+
+typedef uint64_t SubtreeIndex;
+typedef std::array<uint8_t, 32> SubtreeRoot;
+static const uint8_t TRACKED_SUBTREE_HEIGHT = 16;
+
+class LatestSubtree {
+    public:
+
+    //! Version of this structure for extensibility purposes
+    uint8_t leadbyte = 0x00;
+    //! The index of the latest complete subtree
+    SubtreeIndex index;
+    //! The latest complete subtree root at level TRACKED_SUBTREE_HEIGHT
+    SubtreeRoot root;
+    //! The height of the block that contains the note commitment that is
+    //! the rightmost leaf of the most recently completed subtree.
+    int nHeight;
+
+    LatestSubtree() : nHeight(0) { }
+
+    LatestSubtree(SubtreeIndex index, SubtreeRoot root, int nHeight)
+        : index(index), root(root), nHeight(nHeight) { }
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        READWRITE(leadbyte);
+        READWRITE(index);
+        READWRITE(root);
+        READWRITE(nHeight);
+    }
+};
+
+class SubtreeData {
+    public:
+
+    //! Version of this structure for extensibility purposes
+    uint8_t leadbyte = 0x00;
+    //! The root of the subtree at level TRACKED_SUBTREE_HEIGHT
+    SubtreeRoot root;
+    //! The height of the block that contains the note commitment
+    //! that completed this subtree.
+    int nHeight;
+
+    SubtreeData() : nHeight(0) { }
+
+    SubtreeData(SubtreeRoot root, int nHeight)
+        : root(root), nHeight(nHeight) { }
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        READWRITE(leadbyte);
+        READWRITE(root);
+        READWRITE(nHeight);
+    }
+};
+
 class MerklePath {
 public:
     std::vector<std::vector<bool>> authentication_path;

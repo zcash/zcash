@@ -198,6 +198,16 @@ public:
     HistoryNode GetHistoryAt(uint32_t epochId, HistoryIndex index) const { return HistoryNode(); }
     uint256 GetHistoryRoot(uint32_t epochId) const { return uint256(); }
 
+    std::optional<libzcash::LatestSubtree> GetLatestSubtree(ShieldedType type) const {
+        return std::nullopt;
+    };
+    std::optional<libzcash::SubtreeData> GetSubtreeData(
+            ShieldedType type,
+            libzcash::SubtreeIndex index) const
+    {
+        return std::nullopt;
+    };
+
     bool BatchWrite(CCoinsMap& mapCoins,
                     const uint256& hashBlock,
                     const uint256& hashSproutAnchor,
@@ -209,7 +219,9 @@ public:
                     CNullifiersMap& mapSproutNullifiers,
                     CNullifiersMap& mapSaplingNullifiers,
                     CNullifiersMap& mapOrchardNullifiers,
-                    CHistoryCacheMap &historyCacheMap)
+                    CHistoryCacheMap &historyCacheMap,
+                    SubtreeCache &cacheSaplingSubtrees,
+                    SubtreeCache &cacheOrchardSubtrees)
     {
         for (CCoinsMap::iterator it = mapCoins.begin(); it != mapCoins.end(); ) {
             if (it->second.flags & CCoinsCacheEntry::DIRTY) {
@@ -261,7 +273,9 @@ public:
                      memusage::DynamicUsage(cacheSproutNullifiers) +
                      memusage::DynamicUsage(cacheSaplingNullifiers) +
                      memusage::DynamicUsage(cacheOrchardNullifiers) +
-                     memusage::DynamicUsage(historyCacheMap);
+                     memusage::DynamicUsage(historyCacheMap) +
+                     memusage::DynamicUsage(cacheSaplingSubtrees) +
+                     memusage::DynamicUsage(cacheOrchardSubtrees);
         for (CCoinsMap::iterator it = cacheCoins.begin(); it != cacheCoins.end(); it++) {
             ret += it->second.coins.DynamicMemoryUsage();
         }
