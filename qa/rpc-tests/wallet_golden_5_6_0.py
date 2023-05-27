@@ -15,7 +15,7 @@ from test_framework.util import (
     wait_bitcoinds,
     wait_and_assert_operationid_status,
     persistent_cache_exists,
-    # persist_node_caches,
+    persist_node_caches,
 )
 from decimal import Decimal
 
@@ -125,7 +125,7 @@ class WalletGoldenV5_6_0Test(BitcoinTestFramework):
             wait_bitcoinds()
 
             # persist the node state to the cache
-            # persist_node_caches(self.options.tmpdir, 'golden-v5.6.0', 4)
+            persist_node_caches(self.options.tmpdir, 'golden-v5.6.0', 4)
 
             # Restart the network
             self.setup_network()
