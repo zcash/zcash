@@ -510,17 +510,34 @@ pub extern "C" fn librustzcash_sprout_prove(
         use std::io::Read;
 
         // Load parameters from disk
-        let sprout_fs = File::open(unsafe { &SPROUT_GROTH16_PARAMS_PATH }.as_ref().expect(
+        let sprout_path = unsafe { &SPROUT_GROTH16_PARAMS_PATH }.as_ref().expect(
             "Parameters not loaded: SPROUT_GROTH16_PARAMS_PATH should have been initialized",
-        ))
-        .expect("couldn't load Sprout groth16 parameters file");
+        );
+        const HOW_TO_FIX: &str = "
+Please download this file from https://download.z.cash/downloads/sprout-groth16.params
+and put it at ";
+        let sprout_fs = File::open(sprout_path).unwrap_or_else(|err| {
+            panic!(
+                "Couldn't load Sprout Groth16 parameters file: {}{}{}",
+                err,
+                HOW_TO_FIX,
+                &sprout_path.to_string_lossy()
+            )
+        });
 
         let mut sprout_fs = BufReader::with_capacity(1024 * 1024, sprout_fs);
 
         let mut sprout_params_file = vec![];
         sprout_fs
             .read_to_end(&mut sprout_params_file)
-            .expect("couldn't read Sprout groth16 parameters file");
+            .unwrap_or_else(|err| {
+                panic!(
+                    "Couldn't read Sprout Groth16 parameters file: {}{}{}",
+                    err,
+                    HOW_TO_FIX,
+                    &sprout_path.to_string_lossy()
+                )
+            });
 
         let hash = blake2b_simd::Params::new()
             .hash_length(64)
@@ -528,11 +545,11 @@ pub extern "C" fn librustzcash_sprout_prove(
 
         // b2sum sprout-groth16.params
         if hash.as_bytes() != hex::decode("e9b238411bd6c0ec4791e9d04245ec350c9c5744f5610dfcce4365d5ca49dfefd5054e371842b3f88fa1b9d7e8e075249b3ebabd167fa8b0f3161292d36c180a").unwrap().as_slice() {
-            panic!("hash of Sprout groth16 parameters file is incorrect");
+            panic!("Hash of Sprout Groth16 parameters file is incorrect.{}{}", HOW_TO_FIX, &sprout_path.to_string_lossy());
         }
 
         Parameters::read(&sprout_params_file[..], false)
-            .expect("couldn't deserialize Sprout JoinSplit parameters file")
+            .expect("Couldn't deserialize Sprout Groth16 parameters file")
     };
 
     let proof = sprout::create_proof(
