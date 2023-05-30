@@ -330,11 +330,11 @@ def initialize_chain(test_dir, num_nodes, cachedir, cache_behavior='current'):
     def init_persistent(cache_behavior):
         assert num_nodes <= 4 # only 4 nodes with Sprout funds are supported
         cache_path = persistent_cache_path(cache_behavior)
-        if not os.path.exists(cache_path):
+        if not os.path.isdir(cache_path):
             raise Exception('No cache available for cache behavior %s' % cache_behavior)
 
-        chain_cache_fn = os.path.join(cache_path, "chain_cache.tar.gz")
-        if not os.path.exists(chain_cache_fn):
+        chain_cache_filename = os.path.join(cache_path, "chain_cache.tar.gz")
+        if not os.path.exists(chain_cache_filename):
             raise Exception('Chain cache missing for cache behavior %s' % cache_behavior)
 
         for i in range(num_nodes):
@@ -342,22 +342,22 @@ def initialize_chain(test_dir, num_nodes, cachedir, cache_behavior='current'):
             os.makedirs(to_dir)
 
             # Copy the same chain data to all nodes
-            with tarfile.open(chain_cache_fn, "r:gz") as chain_cache_file:
+            with tarfile.open(chain_cache_filename, "r:gz") as chain_cache_file:
                 chain_cache_file.extractall(path = to_dir)
 
             # Copy in per-node wallet data
-            wallet_tgz_fn = os.path.join(cache_path, "node"+str(i)+"_wallet.tar.gz")
-            if not os.path.exists(wallet_tgz_fn):
+            wallet_tgz_filename = os.path.join(cache_path, "node"+str(i)+"_wallet.tar.gz")
+            if not os.path.exists(wallet_tgz_filename):
                 raise Exception('Wallet cache missing for cache behavior %s, node %d' % (cache_behavior, i))
-            with tarfile.open(wallet_tgz_fn, "r:gz") as wallet_tgz_file:
+            with tarfile.open(wallet_tgz_filename, "r:gz") as wallet_tgz_file:
                 wallet_tgz_file.extractall(path = os.path.join(to_dir, "wallet.dat"))
 
             # Copy in per-node wallet config and update zcash.conf to set the
             # clock offsets correctly.
-            cache_conf_fn = os.path.join(to_dir, 'cache_config.json')
-            if not os.path.exists(cache_conf_fn):
+            cache_conf_filename = os.path.join(to_dir, 'cache_config.json')
+            if not os.path.exists(cache_conf_filename):
                 raise Exception('Cache config missing for cache behavior %s, node %d' % (cache_behavior, i))
-            with open(cache_conf_fn, "r", encoding="utf8") as cache_conf_file:
+            with open(cache_conf_filename, "r", encoding="utf8") as cache_conf_file:
                 cache_conf = json.load(cache_conf_file)
                 # obtain the clock offset as a negative number of seconds
                 offset = round(cache_conf['cache_time']) - round(time.time())
@@ -402,7 +402,7 @@ def persistent_cache_path(cache_behavior):
 
 def persistent_cache_exists(cache_behavior):
     cache_path = persistent_cache_path(cache_behavior)
-    return os.path.exists(cache_path)
+    return os.path.isdir(cache_path)
 
 # Clean up, zip, and persist the generated datadirs. Record the generation
 # time so that we can correctly set the system clock offset in tests that
@@ -422,8 +422,8 @@ def persist_node_caches(tmpdir, cache_behavior, num_nodes):
         os.remove(os.path.join(node_path, 'peers.dat'))
 
         # Persist the wallet file for the node to the cache
-        wallet_tgz_fn = os.path.join(cache_path, 'node' + str(i) + '_wallet.tar.gz')
-        with tarfile.open(wallet_tgz_fn, "w:gz") as wallet_tgz_file:
+        wallet_tgz_filename = os.path.join(cache_path, 'node' + str(i) + '_wallet.tar.gz')
+        with tarfile.open(wallet_tgz_filename, "w:gz") as wallet_tgz_file:
             wallet_tgz_file.add(os.path.join(node_path, 'wallet.dat'), arcname="")
 
         # Persist the chain data and cache config just once; it will be reused
@@ -438,14 +438,14 @@ def persist_node_caches(tmpdir, cache_behavior, num_nodes):
             # Store the current time so that we can correctly set the clock
             # offset when restoring from the cache.
             cache_config = { "cache_time": time.time() }
-            cache_conf_fn = os.path.join(cache_path, 'cache_config.json')
-            with open(cache_conf_fn, "w", encoding="utf8") as cache_conf_file:
+            cache_conf_filename = os.path.join(cache_path, 'cache_config.json')
+            with open(cache_conf_filename, "w", encoding="utf8") as cache_conf_file:
                 cache_conf_json = json.dumps(cache_config, indent=4)
                 cache_conf_file.write(cache_conf_json)
 
             # Persist the chain data.
-            chain_cache_fn = os.path.join(cache_path, 'chain_cache.tar.gz')
-            with tarfile.open(chain_cache_fn, "w:gz") as chain_cache_file:
+            chain_cache_filename = os.path.join(cache_path, 'chain_cache.tar.gz')
+            with tarfile.open(chain_cache_filename, "w:gz") as chain_cache_file:
                 chain_cache_file.add(node_path, arcname="")
 
             # Move the wallet file back into place
