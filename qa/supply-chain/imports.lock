@@ -52,6 +52,18 @@ who = "Benjamin Bouvier <public@benj.me>"
 criteria = "safe-to-deploy"
 delta = "0.9.0 -> 0.10.3"
 
+[[audits.bytecode-alliance.audits.errno]]
+who = "Dan Gohman <dev@sunfishcode.online>"
+criteria = "safe-to-deploy"
+version = "0.3.0"
+notes = "This crate uses libc and windows-sys APIs to get and set the raw OS error value."
+
+[[audits.bytecode-alliance.audits.errno]]
+who = "Dan Gohman <dev@sunfishcode.online>"
+criteria = "safe-to-deploy"
+delta = "0.3.0 -> 0.3.1"
+notes = "Just a dependency version bump and a bug fix for redox"
+
 [[audits.bytecode-alliance.audits.futures-channel]]
 who = "Pat Hickey <phickey@fastly.com>"
 criteria = "safe-to-deploy"
@@ -70,6 +82,11 @@ criteria = "safe-to-deploy"
 version = "1.0.2"
 notes = "No unsafety, no io"
 
+[[audits.bytecode-alliance.audits.matchers]]
+who = "Pat Hickey <phickey@fastly.com>"
+criteria = "safe-to-deploy"
+version = "0.1.0"
+
 [[audits.bytecode-alliance.audits.memoffset]]
 who = "Alex Crichton <alex@alexcrichton.com>"
 criteria = "safe-to-deploy"
@@ -87,11 +104,22 @@ criteria = "safe-to-deploy"
 version = "0.1.21"
 notes = "I am the author of this crate."
 
+[[audits.bytecode-alliance.audits.rustix]]
+who = "Dan Gohman <dev@sunfishcode.online>"
+criteria = "safe-to-deploy"
+version = "0.37.13"
+notes = "The Bytecode Alliance is the author of this crate."
+
 [[audits.bytecode-alliance.audits.sha2]]
 who = "Benjamin Bouvier <public@benj.me>"
 criteria = "safe-to-deploy"
 delta = "0.9.9 -> 0.10.2"
 notes = "This upgrade is mostly a code refactor, as far as I can tell. No new uses of unsafe nor any new ambient capabilities usage."
+
+[[audits.bytecode-alliance.audits.tempfile]]
+who = "Pat Hickey <phickey@fastly.com>"
+criteria = "safe-to-deploy"
+delta = "3.3.0 -> 3.5.0"
 
 [[audits.bytecode-alliance.audits.tinyvec]]
 who = "Alex Crichton <alex@alexcrichton.com>"
@@ -143,6 +171,12 @@ version = "0.42.0"
 notes = "This is a Windows API bindings library maintained by Microsoft themselves."
 
 [[audits.bytecode-alliance.audits.windows-sys]]
+who = "Dan Gohman <dev@sunfishcode.online>"
+criteria = "safe-to-deploy"
+version = "0.48.0"
+notes = "This is a Windows API bindings library maintained by Microsoft themselves."
+
+[[audits.bytecode-alliance.audits.windows-sys]]
 who = "Pat Hickey <phickey@fastly.com>"
 criteria = "safe-to-deploy"
 delta = "0.42.0 -> 0.45.0"
@@ -154,10 +188,22 @@ criteria = "safe-to-deploy"
 version = "0.42.1"
 notes = "This is a Windows API bindings library maintained by Microsoft themselves. Additionally, this particular crate is empty and just collects a bunch of dependencies, which are not exported, so I don't understand why it exists at all."
 
+[[audits.bytecode-alliance.audits.windows-targets]]
+who = "Dan Gohman <dev@sunfishcode.online>"
+criteria = "safe-to-deploy"
+version = "0.48.0"
+notes = "This is a Windows API bindings library maintained by Microsoft themselves. It just provides the import libs needed by windows-sys."
+
 [[audits.bytecode-alliance.audits.windows_aarch64_gnullvm]]
 who = "Dan Gohman <dev@sunfishcode.online>"
 criteria = "safe-to-deploy"
 version = "0.42.0"
+notes = "This is a Windows API bindings library maintained by Microsoft themselves."
+
+[[audits.bytecode-alliance.audits.windows_aarch64_gnullvm]]
+who = "Dan Gohman <dev@sunfishcode.online>"
+criteria = "safe-to-deploy"
+version = "0.48.0"
 notes = "This is a Windows API bindings library maintained by Microsoft themselves."
 
 [[audits.bytecode-alliance.audits.windows_aarch64_msvc]]
@@ -166,10 +212,22 @@ criteria = "safe-to-deploy"
 version = "0.42.0"
 notes = "This is a Windows API bindings library maintained by Microsoft themselves."
 
+[[audits.bytecode-alliance.audits.windows_aarch64_msvc]]
+who = "Dan Gohman <dev@sunfishcode.online>"
+criteria = "safe-to-deploy"
+version = "0.48.0"
+notes = "This is a Windows API bindings library maintained by Microsoft themselves."
+
 [[audits.bytecode-alliance.audits.windows_i686_gnu]]
 who = "Dan Gohman <dev@sunfishcode.online>"
 criteria = "safe-to-deploy"
 version = "0.42.0"
+notes = "This is a Windows API bindings library maintained by Microsoft themselves."
+
+[[audits.bytecode-alliance.audits.windows_i686_gnu]]
+who = "Dan Gohman <dev@sunfishcode.online>"
+criteria = "safe-to-deploy"
+version = "0.48.0"
 notes = "This is a Windows API bindings library maintained by Microsoft themselves."
 
 [[audits.bytecode-alliance.audits.windows_i686_msvc]]
@@ -178,10 +236,22 @@ criteria = "safe-to-deploy"
 version = "0.42.0"
 notes = "This is a Windows API bindings library maintained by Microsoft themselves."
 
+[[audits.bytecode-alliance.audits.windows_i686_msvc]]
+who = "Dan Gohman <dev@sunfishcode.online>"
+criteria = "safe-to-deploy"
+version = "0.48.0"
+notes = "This is a Windows API bindings library maintained by Microsoft themselves."
+
 [[audits.bytecode-alliance.audits.windows_x86_64_gnu]]
 who = "Dan Gohman <dev@sunfishcode.online>"
 criteria = "safe-to-deploy"
 version = "0.42.0"
+notes = "This is a Windows API bindings library maintained by Microsoft themselves."
+
+[[audits.bytecode-alliance.audits.windows_x86_64_gnu]]
+who = "Dan Gohman <dev@sunfishcode.online>"
+criteria = "safe-to-deploy"
+version = "0.48.0"
 notes = "This is a Windows API bindings library maintained by Microsoft themselves."
 
 [[audits.bytecode-alliance.audits.windows_x86_64_gnullvm]]
@@ -190,10 +260,22 @@ criteria = "safe-to-deploy"
 version = "0.42.0"
 notes = "This is a Windows API bindings library maintained by Microsoft themselves."
 
+[[audits.bytecode-alliance.audits.windows_x86_64_gnullvm]]
+who = "Dan Gohman <dev@sunfishcode.online>"
+criteria = "safe-to-deploy"
+version = "0.48.0"
+notes = "This is a Windows API bindings library maintained by Microsoft themselves."
+
 [[audits.bytecode-alliance.audits.windows_x86_64_msvc]]
 who = "Dan Gohman <dev@sunfishcode.online>"
 criteria = "safe-to-deploy"
 version = "0.42.0"
+notes = "This is a Windows API bindings library maintained by Microsoft themselves."
+
+[[audits.bytecode-alliance.audits.windows_x86_64_msvc]]
+who = "Dan Gohman <dev@sunfishcode.online>"
+criteria = "safe-to-deploy"
+version = "0.48.0"
 notes = "This is a Windows API bindings library maintained by Microsoft themselves."
 
 [[audits.embark-studios.audits.anyhow]]
@@ -201,10 +283,44 @@ who = "Johan Andersson <opensource@embark-studios.com>"
 criteria = "safe-to-deploy"
 version = "1.0.58"
 
+[[audits.embark-studios.audits.epaint]]
+who = "Johan Andersson <opensource@embark-studios.com>"
+criteria = "safe-to-deploy"
+violation = "<0.20.0"
+notes = "Specified crate license does not include licenses of embedded fonts if using default features or the `default_fonts` feature. Tracked in: https://github.com/emilk/egui/issues/2321"
+
+[[audits.embark-studios.audits.tap]]
+who = "Johan Andersson <opensource@embark-studios.com>"
+criteria = "safe-to-deploy"
+version = "1.0.1"
+notes = "No unsafe usage or ambient capabilities"
+
+[[audits.embark-studios.audits.thiserror]]
+who = "Johan Andersson <opensource@embark-studios.com>"
+criteria = "safe-to-deploy"
+version = "1.0.40"
+notes = "Wrapper over implementation crate, found no unsafe or ambient capabilities used"
+
+[[audits.embark-studios.audits.thiserror-impl]]
+who = "Johan Andersson <opensource@embark-studios.com>"
+criteria = "safe-to-deploy"
+version = "1.0.40"
+notes = "Found no unsafe or ambient capabilities used"
+
 [[audits.google.audits.cxxbridge-flags]]
 who = "George Burgess IV <gbiv@google.com>"
 criteria = "safe-to-deploy"
 version = "1.0.92"
+aggregated-from = "https://chromium.googlesource.com/chromiumos/third_party/rust_crates/+/refs/heads/main/cargo-vet/audits.toml?format=TEXT"
+
+[[audits.google.audits.fastrand]]
+who = "George Burgess IV <gbiv@google.com>"
+criteria = "safe-to-deploy"
+version = "1.9.0"
+notes = """
+`does-not-implement-crypto` is certified because this crate explicitly says
+that the RNG here is not cryptographically secure.
+"""
 aggregated-from = "https://chromium.googlesource.com/chromiumos/third_party/rust_crates/+/refs/heads/main/cargo-vet/audits.toml?format=TEXT"
 
 [[audits.google.audits.version_check]]
@@ -303,26 +419,6 @@ who = "Brandon Pitman <bran@bran.land>"
 criteria = "safe-to-deploy"
 delta = "1.0.104 -> 2.0.11"
 
-[[audits.isrg.audits.thiserror]]
-who = "Brandon Pitman <bran@bran.land>"
-criteria = "safe-to-deploy"
-delta = "1.0.38 -> 1.0.39"
-
-[[audits.isrg.audits.thiserror]]
-who = "Brandon Pitman <bran@bran.land>"
-criteria = "safe-to-deploy"
-delta = "1.0.39 -> 1.0.40"
-
-[[audits.isrg.audits.thiserror-impl]]
-who = "Brandon Pitman <bran@bran.land>"
-criteria = "safe-to-deploy"
-delta = "1.0.38 -> 1.0.39"
-
-[[audits.isrg.audits.thiserror-impl]]
-who = "Brandon Pitman <bran@bran.land>"
-criteria = "safe-to-deploy"
-delta = "1.0.39 -> 1.0.40"
-
 [[audits.isrg.audits.unicode-ident]]
 who = "David Cook <dcook@divviup.org>"
 criteria = "safe-to-deploy"
@@ -379,6 +475,26 @@ who = "Josh Stone <jistone@redhat.com>"
 criteria = "safe-to-deploy"
 version = "1.1.0"
 notes = "All code written or reviewed by Josh Stone."
+aggregated-from = "https://hg.mozilla.org/mozilla-central/raw-file/tip/supply-chain/audits.toml"
+
+[[audits.mozilla.audits.bit-set]]
+who = "Aria Beingessner <a.beingessner@gmail.com>"
+criteria = "safe-to-deploy"
+version = "0.5.2"
+notes = "Another crate I own via contain-rs that is ancient and maintenance mode, no known issues."
+aggregated-from = "https://hg.mozilla.org/mozilla-central/raw-file/tip/supply-chain/audits.toml"
+
+[[audits.mozilla.audits.bit-set]]
+who = "Mike Hommey <mh+mozilla@glandium.org>"
+criteria = "safe-to-deploy"
+delta = "0.5.2 -> 0.5.3"
+aggregated-from = "https://hg.mozilla.org/mozilla-central/raw-file/tip/supply-chain/audits.toml"
+
+[[audits.mozilla.audits.bit-vec]]
+who = "Aria Beingessner <a.beingessner@gmail.com>"
+criteria = "safe-to-deploy"
+version = "0.6.3"
+notes = "Another crate I own via contain-rs that is ancient and in maintenance mode but otherwise perfectly fine."
 aggregated-from = "https://hg.mozilla.org/mozilla-central/raw-file/tip/supply-chain/audits.toml"
 
 [[audits.mozilla.audits.block-buffer]]
@@ -746,18 +862,6 @@ aggregated-from = "https://hg.mozilla.org/mozilla-central/raw-file/tip/supply-ch
 who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
 delta = "0.10.2 -> 0.10.6"
-aggregated-from = "https://hg.mozilla.org/mozilla-central/raw-file/tip/supply-chain/audits.toml"
-
-[[audits.mozilla.audits.thiserror]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
-delta = "1.0.32 -> 1.0.38"
-aggregated-from = "https://hg.mozilla.org/mozilla-central/raw-file/tip/supply-chain/audits.toml"
-
-[[audits.mozilla.audits.thiserror-impl]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
-delta = "1.0.32 -> 1.0.38"
 aggregated-from = "https://hg.mozilla.org/mozilla-central/raw-file/tip/supply-chain/audits.toml"
 
 [[audits.mozilla.audits.typenum]]
