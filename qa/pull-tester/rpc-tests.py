@@ -62,6 +62,7 @@ BASE_SCRIPTS= [
     'wallet_persistence.py',
     'wallet_listnotes.py',
     'wallet_listunspent.py',
+    'wallet_golden_5_6_0.py',
     # vv Tests less than 60s vv
     'orchard_reorg.py',
     'fundrawtransaction.py',
