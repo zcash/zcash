@@ -1,4 +1,4 @@
-use std::convert::TryInto;
+use std::convert::TryFrom;
 use std::ptr;
 use std::slice;
 
@@ -15,16 +15,19 @@ use orchard::{
 };
 use rand_core::OsRng;
 use tracing::error;
-use zcash_primitives::transaction::{
-    components::{sapling, Amount},
-    sighash::SignableInput,
-    sighash_v5::v5_signature_hash,
-    txid::TxIdDigester,
-    Authorization, TransactionData, TxVersion,
+use zcash_primitives::{
+    consensus::BranchId,
+    transaction::{
+        components::{sapling, Amount},
+        sighash::{signature_hash, SignableInput},
+        txid::TxIdDigester,
+        Authorization, Transaction, TransactionData,
+    },
 };
 
 use crate::{
-    transaction_ffi::{PrecomputedTxParts, TransparentAuth},
+    bridge::ffi::OrchardUnauthorizedBundlePtr,
+    transaction_ffi::{MapTransparent, TransparentAuth},
     ORCHARD_PK,
 };
 
@@ -186,48 +189,61 @@ pub extern "C" fn orchard_unauthorized_bundle_prove_and_sign(
     }
 }
 
-/// Calculates a ZIP 244 shielded signature digest for the given under-construction
-/// transaction.
+/// Calculates a shielded signature digest for the given under-construction transaction.
 ///
 /// Returns `false` if any of the parameters are invalid; in this case, `sighash_ret`
 /// will be unaltered.
-#[no_mangle]
-pub extern "C" fn zcash_builder_zip244_shielded_signature_digest(
-    precomputed_tx: *mut PrecomputedTxParts,
-    bundle: *const Bundle<InProgress<Unproven, Unauthorized>, Amount>,
-    sighash_ret: *mut [u8; 32],
-) -> bool {
-    let precomputed_tx = if !precomputed_tx.is_null() {
-        unsafe { Box::from_raw(precomputed_tx) }
-    } else {
-        error!("Invalid precomputed transaction");
-        return false;
-    };
-    if matches!(
-        precomputed_tx.tx.version(),
-        TxVersion::Sprout(_) | TxVersion::Overwinter | TxVersion::Sapling,
-    ) {
-        error!("Cannot calculate ZIP 244 digest for pre-v5 transaction");
-        return false;
-    }
-    let bundle = unsafe { bundle.as_ref().unwrap() };
+pub(crate) fn shielded_signature_digest(
+    consensus_branch_id: u32,
+    tx_bytes: &[u8],
+    all_prev_outputs: &[u8],
+    sapling_bundle: &crate::sapling::SaplingUnauthorizedBundle,
+    orchard_bundle: *const OrchardUnauthorizedBundlePtr,
+) -> Result<[u8; 32], String> {
+    // TODO: This is also parsing a transaction that may have partially-filled fields.
+    // This doesn't matter for transparent components (the only such field would be the
+    // scriptSig fields of transparent inputs, which would serialize as empty Scripts),
+    // but is ill-defined for shielded components (we'll be serializing 64 bytes of zeroes
+    // for each signature). This is an internal FFI so it's fine for now, but we should
+    // refactor the transaction builder (which is the only source of partially-created
+    // shielded components) to use a different FFI for obtaining the sighash, that passes
+    // across the transaction components and then constructs the TransactionData. This is
+    // already being done as part of the Orchard changes to the transaction builder, since
+    // the Orchard bundle will already be built on the Rust side, and we can avoid passing
+    // it back and forward across the FFI with this change. We should similarly refactor
+    // the Sapling code to do the same.
+    let consensus_branch_id = BranchId::try_from(consensus_branch_id)
+        .expect("caller should provide a valid consensus branch ID");
+    let tx = Transaction::read(tx_bytes, consensus_branch_id)
+        .map_err(|e| format!("Failed to parse transaction: {}", e))?;
+    // This method should only be called with an in-progress transaction that contains no
+    // Sapling or Orchard component.
+    assert!(tx.sapling_bundle().is_none());
+    assert!(tx.orchard_bundle().is_none());
 
+    let f_transparent = MapTransparent::parse(all_prev_outputs, &tx)?;
+    let orchard_bundle = unsafe {
+        orchard_bundle
+            .cast::<Bundle<InProgress<Unproven, Unauthorized>, Amount>>()
+            .as_ref()
+    };
+
+    #[derive(Debug)]
     struct Signable {}
     impl Authorization for Signable {
         type TransparentAuth = TransparentAuth;
-        type SaplingAuth = sapling::Authorized;
+        type SaplingAuth = sapling::builder::Unauthorized;
         type OrchardAuth = InProgress<Unproven, Unauthorized>;
     }
 
-    let txdata: TransactionData<Signable> =
-        precomputed_tx
-            .tx
-            .map_bundles(|b| b, |b| b, |_| Some(bundle.clone()));
+    let txdata: TransactionData<Signable> = tx.into_data().map_bundles(
+        |b| b.map(|b| b.map_authorization(f_transparent)),
+        |_| sapling_bundle.bundle.clone(),
+        |_| orchard_bundle.cloned(),
+    );
     let txid_parts = txdata.digest(TxIdDigester);
 
-    let sighash = v5_signature_hash(&txdata, &SignableInput::Shielded, &txid_parts);
+    let sighash = signature_hash(&txdata, &SignableInput::Shielded, &txid_parts);
 
-    // `v5_signature_hash` output is always 32 bytes.
-    *unsafe { &mut *sighash_ret } = sighash.as_ref().try_into().unwrap();
-    true
+    Ok(*sighash.as_ref())
 }

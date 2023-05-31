@@ -734,7 +734,7 @@ void CCoinsViewCache::SetNullifiers(const CTransaction& tx, bool spent) {
         }
     }
     for (const auto& spendDescription : tx.GetSaplingSpends()) {
-        std::pair<CNullifiersMap::iterator, bool> ret = cacheSaplingNullifiers.insert(std::make_pair(spendDescription.nullifier(), CNullifiersCacheEntry()));
+        std::pair<CNullifiersMap::iterator, bool> ret = cacheSaplingNullifiers.insert(std::make_pair(uint256::FromRawBytes(spendDescription.nullifier()), CNullifiersCacheEntry()));
         ret.first->second.entered = spent;
         ret.first->second.flags |= CNullifiersCacheEntry::DIRTY;
     }
@@ -1090,7 +1090,7 @@ tl::expected<void, UnsatisfiedShieldedReq> CCoinsViewCache::CheckShieldedRequire
     }
 
     for (const auto& spendDescription : tx.GetSaplingSpends()) {
-        uint256 nullifier = spendDescription.nullifier();
+        uint256 nullifier = uint256::FromRawBytes(spendDescription.nullifier());
         if (GetNullifier(nullifier, SAPLING)) { // Prevent double spends
             auto txid = tx.GetHash().ToString();
             auto nf = nullifier.ToString();
@@ -1101,7 +1101,7 @@ tl::expected<void, UnsatisfiedShieldedReq> CCoinsViewCache::CheckShieldedRequire
         }
 
         SaplingMerkleTree tree;
-        uint256 rt = spendDescription.anchor();
+        uint256 rt = uint256::FromRawBytes(spendDescription.anchor());
         if (!GetSaplingAnchorAt(rt, tree)) {
             auto txid = tx.GetHash().ToString();
             auto anchor = rt.ToString();

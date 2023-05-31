@@ -339,48 +339,6 @@ std::optional<SaplingNotePlaintext> SaplingNotePlaintext::plaintext_checks_witho
     return plaintext;
 }
 
-std::optional<SaplingNotePlaintextEncryptionResult> SaplingNotePlaintext::encrypt(const uint256& pk_d) const
-{
-    // Get the encryptor
-    auto sne = SaplingNoteEncryption::FromDiversifier(d, generate_or_derive_esk());
-    if (!sne) {
-        return std::nullopt;
-    }
-    auto enc = sne.value();
-
-    // Create the plaintext
-    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-    ss << (*this);
-    SaplingEncPlaintext pt;
-    assert(pt.size() == ss.size());
-    memcpy(&pt[0], &ss[0], pt.size());
-
-    // Encrypt the plaintext
-    auto encciphertext = enc.encrypt_to_recipient(pk_d, pt);
-    if (!encciphertext) {
-        return std::nullopt;
-    }
-    return SaplingNotePlaintextEncryptionResult(encciphertext.value(), enc);
-}
-
-
-SaplingOutCiphertext SaplingOutgoingPlaintext::encrypt(
-        const uint256& ovk,
-        const uint256& cv,
-        const uint256& cm,
-        SaplingNoteEncryption& enc
-    ) const
-{
-    // Create the plaintext
-    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-    ss << (*this);
-    SaplingOutPlaintext pt;
-    assert(pt.size() == ss.size());
-    memcpy(&pt[0], &ss[0], pt.size());
-
-    return enc.encrypt_to_ourselves(ovk, cv, cm, pt);
-}
-
 uint256 SaplingNotePlaintext::rcm() const {
     if (leadbyte != 0x01) {
         assert(leadbyte == 0x02);

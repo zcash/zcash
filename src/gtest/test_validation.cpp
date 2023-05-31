@@ -174,7 +174,8 @@ TEST(Validation, ContextualCheckInputsDetectsOldBranchId) {
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, 10);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, 20);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_BLOSSOM, 30);
-    const Consensus::Params& consensusParams = Params(CBaseChainParams::REGTEST).GetConsensus();
+    const CChainParams& params = Params(CBaseChainParams::REGTEST);
+    const Consensus::Params& consensusParams = params.GetConsensus();
 
     auto overwinterBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_OVERWINTER].nBranchId;
     auto saplingBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId;
@@ -207,7 +208,7 @@ TEST(Validation, ContextualCheckInputsDetectsOldBranchId) {
 
     // Create a transparent transaction that spends the coin, targeting
     // a height during the Overwinter epoch.
-    auto builder = TransactionBuilder(consensusParams, 15, std::nullopt, &keystore);
+    auto builder = TransactionBuilder(params, 15, std::nullopt, &keystore);
     builder.AddTransparentInput(utxo, scriptPubKey, coinValue);
     builder.AddTransparentOutput(destination, 4000);
     auto tx = builder.Build().GetTxOrThrow();

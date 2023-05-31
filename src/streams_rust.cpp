@@ -20,6 +20,10 @@ rust::Box<stream::CppStream> ToRustStream(CHashWriter& writer) {
     return stream::from_hash_writer(writer);
 }
 
+rust::Box<stream::CppStream> ToRustStream(CBLAKE2bWriter& writer) {
+    return stream::from_blake2b_writer(writer);
+}
+
 rust::Box<stream::CppStream> ToRustStream(CSizeComputer& sc) {
     return stream::from_size_computer(sc);
 }

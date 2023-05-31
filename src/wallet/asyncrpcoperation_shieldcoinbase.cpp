@@ -233,7 +233,7 @@ uint256 AsyncRPCOperation_shieldcoinbase::main_impl(CWallet& wallet) {
         LogPrint("zrpc", "%s: fee: %s\n", getId(), FormatMoney(effects_->GetFee()));
 
         auto buildResult = effects_->ApproveAndBuild(
-                Params().GetConsensus(),
+                Params(),
                 wallet,
                 chainActive,
                 strategy_);

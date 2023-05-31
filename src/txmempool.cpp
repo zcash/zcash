@@ -705,7 +705,7 @@ void CTxMemPool::removeWithAnchor(const uint256 &invalidRoot, ShieldedType type)
             break;
             case SAPLING:
                 for (const auto& spendDescription : tx.GetSaplingSpends()) {
-                    if (spendDescription.anchor() == invalidRoot) {
+                    if (uint256::FromRawBytes(spendDescription.anchor()) == invalidRoot) {
                         transactionsToRemove.push_back(tx);
                         break;
                     }
@@ -759,7 +759,7 @@ void CTxMemPool::removeConflicts(const CTransaction &tx, std::list<CTransaction>
         }
     }
     for (const auto& spendDescription : tx.GetSaplingSpends()) {
-        std::map<uint256, const CTransaction*>::iterator it = mapSaplingNullifiers.find(spendDescription.nullifier());
+        auto it = mapSaplingNullifiers.find(spendDescription.nullifier());
         if (it != mapSaplingNullifiers.end()) {
             const CTransaction &txConflict = *it->second;
             if (txConflict != tx) {
@@ -974,31 +974,18 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
         assert(it->first == it->second.ptx->vin[it->second.n].prevout);
     }
 
-    checkNullifiers(SPROUT);
-    checkNullifiers(SAPLING);
-    checkNullifiers(ORCHARD);
+    checkNullifiers(mapSproutNullifiers);
+    checkNullifiers(mapSaplingNullifiers);
+    checkNullifiers(mapOrchardNullifiers);
 
     assert(totalTxSize == checkTotal);
     assert(innerUsage == cachedInnerUsage);
 }
 
-void CTxMemPool::checkNullifiers(ShieldedType type) const
+template<typename T>
+void CTxMemPool::checkNullifiers(const std::map<T, const CTransaction*>& mapToUse) const
 {
-    const std::map<uint256, const CTransaction*>* mapToUse;
-    switch (type) {
-        case SPROUT:
-            mapToUse = &mapSproutNullifiers;
-            break;
-        case SAPLING:
-            mapToUse = &mapSaplingNullifiers;
-            break;
-        case ORCHARD:
-            mapToUse = &mapOrchardNullifiers;
-            break;
-        default:
-            throw runtime_error("Unknown nullifier type");
-    }
-    for (const auto& entry : *mapToUse) {
+    for (const auto& entry : mapToUse) {
         uint256 hash = entry.second->GetHash();
         CTxMemPool::indexed_transaction_set::const_iterator findTx = mapTx.find(hash);
         const CTransaction& tx = findTx->GetTx();
@@ -1148,7 +1135,7 @@ bool CTxMemPool::nullifierExists(const uint256& nullifier, ShieldedType type) co
         case SPROUT:
             return mapSproutNullifiers.count(nullifier);
         case SAPLING:
-            return mapSaplingNullifiers.count(nullifier);
+            return mapSaplingNullifiers.count(nullifier.GetRawBytes());
         case ORCHARD:
             return mapOrchardNullifiers.count(nullifier);
         default:

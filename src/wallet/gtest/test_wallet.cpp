@@ -17,8 +17,6 @@
 #include "zcash/Note.hpp"
 #include "zcash/NoteEncryption.hpp"
 
-#include <rust/test_harness.h>
-
 #include <optional>
 
 using ::testing::Return;
@@ -422,15 +420,14 @@ TEST(WalletTests, SetSaplingNoteAddrsInCWalletTx) {
         auto cm = note.cmu().value();
         SaplingMerkleTree tree;
         tree.append(cm);
-        auto anchor = tree.root();
         auto witness = tree.witness();
 
         auto nf = note.nullifier(fvk, witness.position());
         ASSERT_TRUE(nf);
         uint256 nullifier = nf.value();
 
-        auto builder = TransactionBuilder(consensusParams, 1, std::nullopt);
-        builder.AddSaplingSpend(expsk, note, anchor, witness);
+        auto builder = TransactionBuilder(Params(), 1, std::nullopt);
+        builder.AddSaplingSpend(sk, note, witness);
         builder.AddSaplingOutput(fvk.ovk, pk, 50000, {});
         builder.SetFee(0);
         auto tx = builder.Build().GetTxOrThrow();
@@ -566,8 +563,8 @@ TEST(WalletTests, FindMySaplingNotes) {
     auto testNote = GetTestSaplingNote(pa, 50000);
 
     // Generate transaction
-    auto builder = TransactionBuilder(consensusParams, 1, std::nullopt);
-    builder.AddSaplingSpend(expsk, testNote.note, testNote.tree.root(), testNote.tree.witness());
+    auto builder = TransactionBuilder(Params(), 1, std::nullopt);
+    builder.AddSaplingSpend(sk, testNote.note, testNote.tree.witness());
     builder.AddSaplingOutput(extfvk.fvk.ovk, pa, 25000, {});
     auto tx = builder.Build().GetTxOrThrow();
 
@@ -710,12 +707,11 @@ TEST(WalletTests, GetConflictedSaplingNotes) {
 
         MerkleFrontiers frontiers;
         frontiers.sapling.append(cm);
-        auto anchor = frontiers.sapling.root();
         auto witness = frontiers.sapling.witness();
 
         // Generate tx to create output note B
-        auto builder = TransactionBuilder(consensusParams, 1, std::nullopt);
-        builder.AddSaplingSpend(expsk, note, anchor, witness);
+        auto builder = TransactionBuilder(Params(), 1, std::nullopt);
+        builder.AddSaplingSpend(sk, note, witness);
         builder.AddSaplingOutput(extfvk.fvk.ovk, pk, 35000, {});
         auto tx = builder.Build().GetTxOrThrow();
         CWalletTx wtx {&wallet, tx};
@@ -760,18 +756,16 @@ TEST(WalletTests, GetConflictedSaplingNotes) {
         ASSERT_EQ(static_cast<bool>(maybe_nf), true);
         auto nullifier2 = maybe_nf.value();
 
-        anchor = frontiers.sapling.root();
-
         // Create transaction to spend note B
-        auto builder2 = TransactionBuilder(consensusParams, 2, std::nullopt);
-        builder2.AddSaplingSpend(expsk, note2, anchor, spend_note_witness);
-        builder2.AddSaplingOutput(extfvk.fvk.ovk, pk, 20000, {});
+        auto builder2 = TransactionBuilder(Params(), 2, std::nullopt);
+        builder2.AddSaplingSpend(sk, note2, spend_note_witness);
+        builder2.AddSaplingOutput(extfvk.fvk.ovk, pk, 2000, {});
         auto tx2 = builder2.Build().GetTxOrThrow();
 
         // Create conflicting transaction which also spends note B
-        auto builder3 = TransactionBuilder(consensusParams, 2, std::nullopt);
-        builder3.AddSaplingSpend(expsk, note2, anchor, spend_note_witness);
-        builder3.AddSaplingOutput(extfvk.fvk.ovk, pk, 19999, {});
+        auto builder3 = TransactionBuilder(Params(), 2, std::nullopt);
+        builder3.AddSaplingSpend(sk, note2, spend_note_witness);
+        builder3.AddSaplingOutput(extfvk.fvk.ovk, pk, 1999, {});
         auto tx3 = builder3.Build().GetTxOrThrow();
 
         CWalletTx wtx2 {&wallet, tx2};
@@ -827,7 +821,7 @@ TEST(WalletTests, GetConflictedOrchardNotes) {
     auto scriptPubKey = GetScriptForDestination(tkeyid);
 
     // Generate a bundle containing output note A.
-    auto builder = TransactionBuilder(consensusParams, 1, orchardAnchor, &keystore);
+    auto builder = TransactionBuilder(Params(), 1, orchardAnchor, &keystore);
     builder.AddTransparentInput(COutPoint(uint256(), 0), scriptPubKey, 5000);
     builder.AddOrchardOutput(std::nullopt, recipient, 4000, {});
     auto maybeTx = builder.Build();
@@ -881,7 +875,7 @@ TEST(WalletTests, GetConflictedOrchardNotes) {
     auto recipient2 = ivk.Address(j2);
 
     // Generate tx to spend note A
-    auto builder2 = TransactionBuilder(consensusParams, 2, orchardTree.root());
+    auto builder2 = TransactionBuilder(Params(), 2, orchardTree.root());
     auto noteToSpend = std::move(wallet.GetOrchardSpendInfo(orchardEntries, orchardTree.root())[0]);
     builder2.AddOrchardSpend(std::move(noteToSpend.first), std::move(noteToSpend.second));
     auto maybeTx2 = builder2.Build();
@@ -895,7 +889,7 @@ TEST(WalletTests, GetConflictedOrchardNotes) {
 
     // Generate conflicting tx to spend note A
     auto noteToSpend2 = std::move(wallet.GetOrchardSpendInfo(orchardEntries, orchardTree.root())[0]);
-    auto builder3 = TransactionBuilder(consensusParams, 2, orchardTree.root());
+    auto builder3 = TransactionBuilder(Params(), 2, orchardTree.root());
     builder3.AddOrchardSpend(std::move(noteToSpend2.first), std::move(noteToSpend2.second));
     auto maybeTx3 = builder3.Build();
     EXPECT_TRUE(maybeTx3.IsTx());
@@ -997,8 +991,8 @@ TEST(WalletTests, SaplingNullifierIsSpent) {
     auto testNote = GetTestSaplingNote(pa, 50000);
 
     // Generate transaction
-    auto builder = TransactionBuilder(consensusParams, 1, std::nullopt);
-    builder.AddSaplingSpend(expsk,  testNote.note, testNote.tree.root(), testNote.tree.witness());
+    auto builder = TransactionBuilder(Params(), 1, std::nullopt);
+    builder.AddSaplingSpend(sk,  testNote.note, testNote.tree.witness());
     builder.AddSaplingOutput(extfvk.fvk.ovk, pa, 25000, {});
     auto tx = builder.Build().GetTxOrThrow();
 
@@ -1084,8 +1078,8 @@ TEST(WalletTests, NavigateFromSaplingNullifierToNote) {
     auto testNote = GetTestSaplingNote(pa, 50000);
 
     // Generate transaction
-    auto builder = TransactionBuilder(consensusParams, 1, std::nullopt);
-    builder.AddSaplingSpend(expsk, testNote.note, testNote.tree.root(), testNote.tree.witness());
+    auto builder = TransactionBuilder(Params(), 1, std::nullopt);
+    builder.AddSaplingSpend(sk, testNote.note, testNote.tree.witness());
     builder.AddSaplingOutput(extfvk.fvk.ovk, pa, 25000, {});
     auto tx = builder.Build().GetTxOrThrow();
 
@@ -1149,7 +1143,7 @@ TEST(WalletTests, NavigateFromSaplingNullifierToNote) {
         EXPECT_EQ(hash, op.hash);
         EXPECT_EQ(1, nd.witnesses.size());
         ASSERT_TRUE(nd.nullifier);
-        auto nf = nd.nullifier.value();
+        auto nf = nd.nullifier->GetRawBytes();
         EXPECT_EQ(1, wallet.mapSaplingNullifiersToNotes.count(nf));
         EXPECT_EQ(op.hash, wallet.mapSaplingNullifiersToNotes[nf].hash);
         EXPECT_EQ(op.n, wallet.mapSaplingNullifiersToNotes[nf].n);
@@ -1215,17 +1209,16 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
         auto pk = extfvk.DefaultAddress();
 
         // Generate Sapling note A
-        libzcash::SaplingNote note(pk, 5000, zip_212_enabled[ver]);
+        libzcash::SaplingNote note(pk, 50000, zip_212_enabled[ver]);
         auto cm = note.cmu().value();
         MerkleFrontiers frontiers;
         frontiers.sapling.append(cm);
-        auto anchor = frontiers.sapling.root();
         auto witness = frontiers.sapling.witness();
 
         // Generate transaction, which sends funds to note B
-        auto builder = TransactionBuilder(consensusParams, 1, std::nullopt);
-        builder.AddSaplingSpend(expsk, note, anchor, witness);
-        builder.AddSaplingOutput(extfvk.fvk.ovk, pk, 2500, {});
+        auto builder = TransactionBuilder(Params(), 1, std::nullopt);
+        builder.AddSaplingSpend(sk, note, witness);
+        builder.AddSaplingOutput(extfvk.fvk.ovk, pk, 25000, {});
         auto tx = builder.Build().GetTxOrThrow();
 
         CWalletTx wtx {&wallet, tx};
@@ -1267,7 +1260,7 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
         // Manually compute the nullifier and check map entry does not exist
         auto nf = note.nullifier(extfvk.fvk, witness.position());
         ASSERT_TRUE(nf);
-        ASSERT_FALSE(wallet.mapSaplingNullifiersToNotes.count(nf.value()));
+        ASSERT_FALSE(wallet.mapSaplingNullifiersToNotes.count(nf->GetRawBytes()));
 
         // Decrypt note B
         auto maybe_pt = wtx.DecryptSaplingNote(Params(), SaplingOutPoint(wtx.GetHash(), 0));
@@ -1283,14 +1276,10 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
         ASSERT_EQ(static_cast<bool>(maybe_nf), true);
         auto nullifier2 = maybe_nf.value();
 
-        // NOTE: Not updating the anchor results in a core dump.  Shouldn't builder just return error?
-        // *** Error in `./zcash-gtest': double free or corruption (out): 0x00007ffd8755d990 ***
-        anchor = frontiers.sapling.root();
-
         // Create transaction to spend note B
-        auto builder2 = TransactionBuilder(consensusParams, 2, std::nullopt);
-        builder2.AddSaplingSpend(expsk, note2, anchor, spend_note_witness);
-        builder2.AddSaplingOutput(extfvk.fvk.ovk, pk, 1250, {});
+        auto builder2 = TransactionBuilder(Params(), 2, std::nullopt);
+        builder2.AddSaplingSpend(sk, note2, spend_note_witness);
+        builder2.AddSaplingOutput(extfvk.fvk.ovk, pk, 12500, {});
         auto tx2 = builder2.Build().GetTxOrThrow();
         EXPECT_EQ(tx2.vin.size(), 0);
         EXPECT_EQ(tx2.vout.size(), 0);
@@ -1326,7 +1315,7 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
 
         // Verify note B belongs to wallet.
         EXPECT_TRUE(wallet.IsFromMe(wtx2));
-        ASSERT_TRUE(wallet.mapSaplingNullifiersToNotes.count(nullifier2));
+        ASSERT_TRUE(wallet.mapSaplingNullifiersToNotes.count(nullifier2.GetRawBytes()));
 
         // Tear down
         chainActive.SetTip(NULL);
@@ -1922,7 +1911,7 @@ TEST(WalletTests, SetBestChainIgnoresTxsWithoutShieldedData) {
     mtxSapling.fOverwintered = true;
     mtxSapling.nVersion = SAPLING_TX_VERSION;
     mtxSapling.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
-    mtxSapling.vShieldedOutput.push_back(RandomInvalidOutputDescription());
+    mtxSapling.saplingBundle = sapling::test_only_invalid_bundle(0, 1, 0);
     CWalletTx wtxSapling {nullptr, mtxSapling};
     SetSaplingNoteData(wtxSapling);
     wallet.LoadWalletTx(wtxSapling);
@@ -1932,7 +1921,7 @@ TEST(WalletTests, SetBestChainIgnoresTxsWithoutShieldedData) {
     mtxSaplingTransparent.fOverwintered = true;
     mtxSaplingTransparent.nVersion = SAPLING_TX_VERSION;
     mtxSaplingTransparent.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
-    mtxSaplingTransparent.vShieldedOutput.push_back(RandomInvalidOutputDescription());
+    mtxSaplingTransparent.saplingBundle = sapling::test_only_invalid_bundle(0, 1, 0);
     CWalletTx wtxSaplingTransparent {nullptr, mtxSaplingTransparent};
     wallet.LoadWalletTx(wtxSaplingTransparent);
 
@@ -2070,8 +2059,8 @@ TEST(WalletTests, UpdatedSaplingNoteData) {
     auto testNote = GetTestSaplingNote(pa, 50000);
 
     // Generate transaction
-    auto builder = TransactionBuilder(consensusParams, 1, std::nullopt);
-    builder.AddSaplingSpend(expsk, testNote.note, testNote.tree.root(), testNote.tree.witness());
+    auto builder = TransactionBuilder(Params(), 1, std::nullopt);
+    builder.AddSaplingSpend(sk, testNote.note, testNote.tree.witness());
     builder.AddSaplingOutput(extfvk.fvk.ovk, pa2, 25000, {});
     auto tx = builder.Build().GetTxOrThrow();
 
@@ -2216,8 +2205,10 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
 
     // Generate shielding tx from transparent to Sapling
     // 0.0005 t-ZEC in, 0.0004 z-ZEC out, default fee
-    auto builder = TransactionBuilder(consensusParams, 1, std::nullopt, &keystore);
-    builder.AddTransparentInput(COutPoint(), scriptPubKey, 5000);
+    auto builder = TransactionBuilder(Params(), 1, std::nullopt, &keystore);
+    builder.AddTransparentInput(
+        COutPoint(uint256S("7777777777777777777777777777777777777777777777777777777777777777"), 0),
+        scriptPubKey, 5000);
     builder.AddSaplingOutput(extfvk.fvk.ovk, pk, 4000, {});
     auto tx1 = builder.Build().GetTxOrThrow();
 
@@ -2270,8 +2261,8 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
 
     // Create a Sapling-only transaction
     // 0.0004 z-ZEC in, 0.00025 z-ZEC out, default fee, 0.00005 z-ZEC change
-    auto builder2 = TransactionBuilder(consensusParams, 2, std::nullopt);
-    builder2.AddSaplingSpend(expsk, note, anchor, witness);
+    auto builder2 = TransactionBuilder(Params(), 2, std::nullopt);
+    builder2.AddSaplingSpend(sk, note, witness);
     builder2.AddSaplingOutput(extfvk.fvk.ovk, pk, 2500, {});
     auto tx2 = builder2.Build().GetTxOrThrow();
 

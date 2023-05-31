@@ -1204,7 +1204,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_parameters)
     // Mutable tx containing contextual information we need to build tx
     UniValue retValue = CallRPC("getblockcount");
     int nHeight = retValue.get_int();
-    TransactionBuilder builder(Params().GetConsensus(), nHeight + 1, std::nullopt, pwalletMain);
+    TransactionBuilder builder(Params(), nHeight + 1, std::nullopt, pwalletMain);
 }
 
 BOOST_AUTO_TEST_CASE(asyncrpcoperation_sign_send_raw_transaction) {

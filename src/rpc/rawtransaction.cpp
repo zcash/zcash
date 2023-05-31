@@ -122,31 +122,31 @@ UniValue TxJoinSplitToJSON(const CTransaction& tx) {
     return vJoinSplit;
 }
 
-UniValue TxShieldedSpendsToJSON(const CTransaction& tx) {
+UniValue TxShieldedSpendsToJSON(const rust::Vec<sapling::Spend>& saplingSpends) {
     UniValue vdesc(UniValue::VARR);
-    for (const auto& spendDesc : tx.GetSaplingSpends()) {
+    for (const auto& spendDesc : saplingSpends) {
         UniValue obj(UniValue::VOBJ);
-        obj.pushKV("cv", spendDesc.cv().GetHex());
-        obj.pushKV("anchor", spendDesc.anchor().GetHex());
-        obj.pushKV("nullifier", spendDesc.nullifier().GetHex());
-        obj.pushKV("rk", spendDesc.rk().GetHex());
-        obj.pushKV("proof", HexStr(spendDesc.zkproof().begin(), spendDesc.zkproof().end()));
-        obj.pushKV("spendAuthSig", HexStr(spendDesc.spend_auth_sig().begin(), spendDesc.spend_auth_sig().end()));
+        obj.pushKV("cv", uint256::FromRawBytes(spendDesc.cv()).GetHex());
+        obj.pushKV("anchor", uint256::FromRawBytes(spendDesc.anchor()).GetHex());
+        obj.pushKV("nullifier", uint256::FromRawBytes(spendDesc.nullifier()).GetHex());
+        obj.pushKV("rk", uint256::FromRawBytes(spendDesc.rk()).GetHex());
+        obj.pushKV("proof", HexStr(spendDesc.zkproof()));
+        obj.pushKV("spendAuthSig", HexStr(spendDesc.spend_auth_sig()));
         vdesc.push_back(obj);
     }
     return vdesc;
 }
 
-UniValue TxShieldedOutputsToJSON(const CTransaction& tx) {
+UniValue TxShieldedOutputsToJSON(const rust::Vec<sapling::Output>& saplingOutputs) {
     UniValue vdesc(UniValue::VARR);
-    for (const auto& outputDesc : tx.GetSaplingOutputs()) {
+    for (const auto& outputDesc : saplingOutputs) {
         UniValue obj(UniValue::VOBJ);
-        obj.pushKV("cv", outputDesc.cv().GetHex());
-        obj.pushKV("cmu", outputDesc.cmu().GetHex());
-        obj.pushKV("ephemeralKey", outputDesc.ephemeral_key().GetHex());
-        obj.pushKV("encCiphertext", HexStr(outputDesc.enc_ciphertext().begin(), outputDesc.enc_ciphertext().end()));
-        obj.pushKV("outCiphertext", HexStr(outputDesc.out_ciphertext().begin(), outputDesc.out_ciphertext().end()));
-        obj.pushKV("proof", HexStr(outputDesc.zkproof().begin(), outputDesc.zkproof().end()));
+        obj.pushKV("cv", uint256::FromRawBytes(outputDesc.cv()).GetHex());
+        obj.pushKV("cmu", uint256::FromRawBytes(outputDesc.cmu()).GetHex());
+        obj.pushKV("ephemeralKey", uint256::FromRawBytes(outputDesc.ephemeral_key()).GetHex());
+        obj.pushKV("encCiphertext", HexStr(outputDesc.enc_ciphertext()));
+        obj.pushKV("outCiphertext", HexStr(outputDesc.out_ciphertext()));
+        obj.pushKV("proof", HexStr(outputDesc.zkproof()));
         vdesc.push_back(obj);
     }
     return vdesc;
@@ -288,14 +288,16 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
 
     if (tx.fOverwintered) {
         if (tx.nVersion >= SAPLING_TX_VERSION) {
+            const auto& bundle = tx.GetSaplingBundle().GetDetails();
             entry.pushKV("valueBalance", ValueFromAmount(tx.GetValueBalanceSapling()));
             entry.pushKV("valueBalanceZat", tx.GetValueBalanceSapling());
-            UniValue vspenddesc = TxShieldedSpendsToJSON(tx);
+            UniValue vspenddesc = TxShieldedSpendsToJSON(bundle.spends());
             entry.pushKV("vShieldedSpend", vspenddesc);
-            UniValue voutputdesc = TxShieldedOutputsToJSON(tx);
+            UniValue voutputdesc = TxShieldedOutputsToJSON(bundle.outputs());
             entry.pushKV("vShieldedOutput", voutputdesc);
             if (!(vspenddesc.empty() && voutputdesc.empty())) {
-                entry.pushKV("bindingSig", HexStr(tx.bindingSig.begin(), tx.bindingSig.end()));
+                auto bindingSig = bundle.binding_sig();
+                entry.pushKV("bindingSig", HexStr(bindingSig.begin(), bindingSig.end()));
             }
         }
         if (tx.nVersion >= ZIP225_TX_VERSION) {

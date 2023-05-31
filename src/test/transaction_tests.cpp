@@ -309,7 +309,7 @@ void test_simple_sapling_invalidity(uint32_t consensusBranchId, CMutableTransact
         CMutableTransaction newTx(tx);
         CValidationState state;
 
-        newTx.vShieldedSpend.push_back(RandomInvalidSpendDescription());
+        newTx.saplingBundle = sapling::test_only_invalid_bundle(1, 0, 0);
 
         BOOST_CHECK(!CheckTransactionWithoutProofVerification(newTx, state));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-no-sink-of-funds");
@@ -319,29 +319,17 @@ void test_simple_sapling_invalidity(uint32_t consensusBranchId, CMutableTransact
         CMutableTransaction newTx(tx);
         CValidationState state;
 
-        newTx.vShieldedSpend.push_back(RandomInvalidSpendDescription());
-
-        newTx.vShieldedOutput.push_back(RandomInvalidOutputDescription());
-
-        newTx.vShieldedSpend.push_back(RandomInvalidSpendDescription());
-        newTx.vShieldedSpend[1] = SpendDescription(
-            newTx.vShieldedSpend[1].cv(),
-            newTx.vShieldedSpend[1].anchor(),
-            newTx.vShieldedSpend[0].nullifier(),
-            newTx.vShieldedSpend[1].rk(),
-            newTx.vShieldedSpend[1].zkproof(),
-            newTx.vShieldedSpend[1].spend_auth_sig());
+        newTx.saplingBundle = sapling::test_only_invalid_bundle(2, 1, 0);
+        sapling::test_only_replace_nullifier(
+            newTx.saplingBundle.GetDetailsMut(),
+            1, newTx.saplingBundle.GetDetails().spends()[0].nullifier());
 
         BOOST_CHECK(!CheckTransactionWithoutProofVerification(newTx, state));
         BOOST_CHECK(state.GetRejectReason() == "bad-spend-description-nullifiers-duplicate");
 
-        newTx.vShieldedSpend[1] = SpendDescription(
-            newTx.vShieldedSpend[1].cv(),
-            newTx.vShieldedSpend[1].anchor(),
-            InsecureRand256(),
-            newTx.vShieldedSpend[1].rk(),
-            newTx.vShieldedSpend[1].zkproof(),
-            newTx.vShieldedSpend[1].spend_auth_sig());
+        sapling::test_only_replace_nullifier(
+            newTx.saplingBundle.GetDetailsMut(),
+            1, InsecureRand256().GetRawBytes());
 
         BOOST_CHECK(CheckTransactionWithoutProofVerification(newTx, state));
     }
@@ -357,7 +345,7 @@ void test_simple_sapling_invalidity(uint32_t consensusBranchId, CMutableTransact
         vout.nValue = 1;
         newTx.vout.push_back(vout);
 
-        newTx.vShieldedSpend.push_back(RandomInvalidSpendDescription());
+        newTx.saplingBundle = sapling::test_only_invalid_bundle(1, 0, 0);
 
         BOOST_CHECK(!CheckTransactionWithoutProofVerification(newTx, state));
         BOOST_CHECK(state.GetRejectReason() == "bad-cb-has-spend-description");
