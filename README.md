@@ -60,6 +60,7 @@ for instructions on joining the main Zcash network.
   for help and more information.
 * :incoming_envelope: Ask for help on the [Zcash](https://forum.z.cash/) forum.
 * :speech_balloon: Join our community on [Discord](https://discordapp.com/invite/PhJY6Pm)
+* 🧑‍🎓: Learn at [ZecHub](https://wiki.zechub.xyz/)
 
 Participation in the Zcash project is subject to a
 [Code of Conduct](code_of_conduct.md).
