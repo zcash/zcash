@@ -1808,6 +1808,22 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                     strLoadError = _("Corrupted block database detected");
                     break;
                 }
+
+                {
+                    LOCK(cs_main);
+
+                    SaplingMerkleTree sapling_tree;
+                    assert(pcoinsdbview->GetSaplingAnchorAt(pcoinsdbview->GetBestAnchor(SAPLING), sapling_tree));
+
+                    if (!SubtreeStateConsistent(SAPLING, sapling_tree, pcoinsdbview)) {
+                        LogPrintf("NOTE: the database does not contain some subtree data for Sapling or Orchard; most users will not need this, but if you do, you will have to use -reindex\n");
+
+                        if (fExperimentalLightWalletd) {
+                            strLoadError = _("You need to rebuild the database using -reindex to migrate the database for lightwalletd usage");
+                            break;
+                        }
+                    }
+                }
             } catch (const std::exception& e) {
                 if (fDebug) LogPrintf("%s\n", e.what());
                 strLoadError = _("Error opening block database");

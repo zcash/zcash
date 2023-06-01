@@ -19,7 +19,7 @@ namespace libzcash {
 
 
 typedef uint64_t SubtreeIndex;
-typedef std::array<uint8_t, 32> SubtreeRoot;
+typedef uint256 SubtreeRoot;
 static const uint8_t TRACKED_SUBTREE_HEIGHT = 16;
 
 class LatestSubtree {
@@ -156,7 +156,22 @@ public:
                parents.size() * 32; // parents
     }
 
+    //! Returns the number of (filled) leaves present in this tree, or
+    //! in other words, the 0-indexed position that the next leaf
+    //! added to the tree will occupy.
     size_t size() const;
+
+    //! Returns the current 2^TRACKED_SUBTREE_HEIGHT subtree index
+    //! that this tree is currently on. Specifically, a leaf appended
+    //! at this point will be located in the 2^TRACKED_SUBTREE_HEIGHT
+    //! subtree with the index returned by this function.
+    SubtreeIndex current_subtree_index() const;
+
+    //! If the last leaf appended to this tree completed a
+    //! 2^TRACKED_SUBTREE_HEIGHT subtree, this function will return
+    //! the 2^TRACKED_SUBTREE_HEIGHT root of that subtree. Otherwise,
+    //! this will return nullopt.
+    std::optional<Hash> complete_subtree_root() const;
 
     void append(Hash obj);
     Hash root() const {

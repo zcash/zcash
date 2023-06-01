@@ -2930,6 +2930,22 @@ static DisconnectResult DisconnectBlock(const CBlock& block, CValidationState& s
         }
     }
 
+    // Grab the latest subtree (according to the view) and use it
+    // to determine if the block being disconnected was responsible
+    // for completing a subtree. If so, we'll pop the subtree.
+    {
+        auto disconnectSubtrees = [&] (ShieldedType type) {
+            auto latestSubtree = view.GetLatestSubtree(type);
+            if (latestSubtree) {
+                if (latestSubtree->nHeight == pindex->nHeight) {
+                    view.PopSubtree(type);
+                }
+            }
+        };
+
+        disconnectSubtrees(SAPLING);
+    }
+
     // set the old best Sprout anchor back
     view.PopAnchor(blockUndo.old_sprout_tree_root, SPROUT);
 
@@ -3039,6 +3055,41 @@ static bool ShouldCheckTransactions(const CChainParams& chainparams, const CBloc
              && IsInitialBlockDownload(chainparams.GetConsensus())
              && Checkpoints::IsAncestorOfLastCheckpoint(chainparams.Checkpoints(), pindex));
 }
+
+template<typename Tree>
+bool SubtreeStateConsistent(
+    const ShieldedType type,
+    const Tree& tree,
+    const CCoinsView* view
+)
+{
+    auto latestSubtree = view->GetLatestSubtree(type);
+
+    if (latestSubtree) {
+        // The view believes the last completed subtree is
+        // at index latestSubtree->index, so the "current"
+        // subtree index of the tree should be one
+        // larger than this.
+        if ((latestSubtree->index + 1) == tree.current_subtree_index()) {
+            return true;
+        }
+    } else {
+        // The view believes there are no completed subtrees
+        // yet, so the index of the current subtree
+        // should be zero.
+        if (tree.current_subtree_index() == 0) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+template bool SubtreeStateConsistent<SaplingMerkleTree>(
+    const ShieldedType type,
+    const SaplingMerkleTree& tree,
+    const CCoinsView* view
+);
 
 bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex,
                   CCoinsViewCache& view, const CChainParams& chainparams,
@@ -3204,6 +3255,13 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
     SaplingMerkleTree sapling_tree;
     assert(view.GetSaplingAnchorAt(view.GetBestAnchor(SAPLING), sapling_tree));
+
+    // Here we determine whether the CCoinsView view of our latest
+    // subtree matches that of the chain state. If it doesn't,
+    // the node had not been writing the latest subtrees to the
+    // view in the past and so later in this function we will
+    // not bother to add new subtrees.
+    bool fUpdateSaplingSubtrees = SubtreeStateConsistent(SAPLING, sapling_tree, &view);
 
     OrchardMerkleFrontier orchard_tree;
     if (pindex->pprev && chainparams.GetConsensus().NetworkUpgradeActive(pindex->pprev->nHeight, Consensus::UPGRADE_NU5)) {
@@ -3388,6 +3446,21 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
         for (const auto &outputDescription : tx.GetSaplingOutputs()) {
             sapling_tree.append(uint256::FromRawBytes(outputDescription.cmu()));
+
+            if (fUpdateSaplingSubtrees) {
+                auto completeSubtreeRoot = sapling_tree.complete_subtree_root();
+                if (completeSubtreeRoot) {
+                    libzcash::SubtreeData subtree(*completeSubtreeRoot, pindex->nHeight);
+                    view.PushSubtree(SAPLING, subtree);
+                    auto latest = view.GetLatestSubtree(SAPLING);
+
+                    // The latest subtree, according to the view, should now be one
+                    // less than the "current" subtree index according to the tree
+                    // itself, after the append takes place earlier in this loop.
+                    assert(latest);
+                    assert((latest->index + 1) == sapling_tree.current_subtree_index());
+                }
+            }
         }
 
         if (!orchard_tree.AppendBundle(tx.GetOrchardBundle())) {
