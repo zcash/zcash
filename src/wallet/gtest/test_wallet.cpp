@@ -876,7 +876,7 @@ TEST(WalletTests, GetConflictedOrchardNotes) {
 
     // Generate tx to spend note A
     auto builder2 = TransactionBuilder(Params(), 2, orchardTree.root());
-    auto noteToSpend = std::move(wallet.GetOrchardSpendInfo(orchardEntries, orchardTree.root())[0]);
+    auto noteToSpend = std::move(wallet.GetOrchardSpendInfo(orchardEntries, 1, orchardTree.root())[0]);
     builder2.AddOrchardSpend(std::move(noteToSpend.first), std::move(noteToSpend.second));
     auto maybeTx2 = builder2.Build();
     EXPECT_TRUE(maybeTx2.IsTx());
@@ -888,7 +888,7 @@ TEST(WalletTests, GetConflictedOrchardNotes) {
     CWalletTx wtx2 {&wallet, tx2};
 
     // Generate conflicting tx to spend note A
-    auto noteToSpend2 = std::move(wallet.GetOrchardSpendInfo(orchardEntries, orchardTree.root())[0]);
+    auto noteToSpend2 = std::move(wallet.GetOrchardSpendInfo(orchardEntries, 1, orchardTree.root())[0]);
     auto builder3 = TransactionBuilder(Params(), 2, orchardTree.root());
     builder3.AddOrchardSpend(std::move(noteToSpend2.first), std::move(noteToSpend2.second));
     auto maybeTx3 = builder3.Build();

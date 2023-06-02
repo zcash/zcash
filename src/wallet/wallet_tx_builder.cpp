@@ -947,18 +947,26 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
     }
 
     // Fetch Sapling anchor and witnesses, and Orchard Merkle paths.
-    uint256 anchor;
+    uint256 saplingAnchor;
     std::vector<std::optional<SaplingWitness>> witnesses;
     std::vector<std::pair<libzcash::OrchardSpendingKey, orchard::SpendInfo>> orchardSpendInfo;
     {
         LOCK(wallet.cs_wallet);
-        if (!wallet.GetSaplingNoteWitnesses(saplingOutPoints, anchorConfirmations, witnesses, anchor)) {
+        if (!wallet.GetSaplingNoteWitnesses(
+                    saplingOutPoints,
+                    anchorConfirmations,
+                    witnesses,
+                    saplingAnchor)) {
             // This error should not appear once we're nAnchorConfirmations blocks past
             // Sapling activation.
             return TransactionBuilderResult("Insufficient Sapling witnesses.");
         }
-        if (builder.GetOrchardAnchor().has_value()) {
-            orchardSpendInfo = wallet.GetOrchardSpendInfo(spendable.orchardNoteMetadata, builder.GetOrchardAnchor().value());
+
+        if (orchardAnchor.has_value()) {
+            orchardSpendInfo = wallet.GetOrchardSpendInfo(
+                    spendable.orchardNoteMetadata,
+                    anchorConfirmations,
+                    orchardAnchor.value());
         }
     }
 

@@ -1011,6 +1011,11 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.23 -> 1.0.26"
 
+[[audits.rand_xorshift]]
+who = "Sean Bowe <ewillbefull@gmail.com>"
+criteria = "safe-to-deploy"
+version = "0.3.0"
+
 [[audits.raw-cpuid]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"

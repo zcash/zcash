@@ -2962,7 +2962,8 @@ void CWallet::DecrementNoteWitnesses(const Consensus::Params& consensus, const C
         // wallet's Orchard note commitment tree will be in an indeterminate state and it
         // will be overwritten in the next `IncrementNoteWitnesses` call, so we can skip
         // the check against `hashFinalOrchardRoot`.
-        if (orchardWallet.GetLastCheckpointHeight().has_value()) {
+        auto walletLastCheckpointHeight = orchardWallet.GetLastCheckpointHeight();
+        if (walletLastCheckpointHeight.has_value()) {
             assert(pindex->pprev->hashFinalOrchardRoot == orchardWallet.GetLatestAnchor());
         }
     }
@@ -3927,10 +3928,11 @@ bool CWallet::GetSaplingNoteWitnesses(const std::vector<SaplingOutPoint>& notes,
 
 std::vector<std::pair<libzcash::OrchardSpendingKey, orchard::SpendInfo>> CWallet::GetOrchardSpendInfo(
     const std::vector<OrchardNoteMetadata>& orchardNoteMetadata,
-    uint256 anchor) const
+    unsigned int confirmations,
+    const uint256& anchor) const
 {
     AssertLockHeld(cs_wallet);
-    return orchardWallet.GetSpendInfo(orchardNoteMetadata, anchor);
+    return orchardWallet.GetSpendInfo(orchardNoteMetadata, confirmations, anchor);
 }
 
 isminetype CWallet::IsMine(const CTxIn &txin) const

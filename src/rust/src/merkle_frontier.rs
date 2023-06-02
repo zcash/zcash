@@ -1,18 +1,20 @@
 use core::mem::size_of_val;
 
-use incrementalmerkletree::{bridgetree, Altitude, Frontier, Hashable};
+use incrementalmerkletree::{
+    frontier::{CommitmentTree, Frontier},
+    Hashable, Level,
+};
 use orchard::tree::MerkleHashOrchard;
 use tracing::error;
 use zcash_primitives::merkle_tree::{
-    incremental::{read_frontier_v1, write_frontier_v1},
-    CommitmentTree, HashSer,
+    read_frontier_v1, write_commitment_tree, write_frontier_v1, HashSer,
 };
 
 use crate::{orchard_bundle, streams::CppStream, wallet::Wallet};
 
 pub const MERKLE_DEPTH: u8 = 32;
 
-type Inner<H> = bridgetree::Frontier<H, MERKLE_DEPTH>;
+type Inner<H> = Frontier<H, MERKLE_DEPTH>;
 
 /// An incremental Merkle frontier.
 #[derive(Clone)]
@@ -41,7 +43,7 @@ impl<H: Copy + Hashable + HashSer> MerkleFrontier<H> {
     /// Serializes the frontier to the given C++ stream in the legacy frontier encoding.
     pub(crate) fn serialize_legacy(&self, writer: &mut CppStream<'_>) -> Result<(), String> {
         let commitment_tree = CommitmentTree::from_frontier(&self.0);
-        commitment_tree.write(writer).map_err(|e| {
+        write_commitment_tree(&commitment_tree, writer).map_err(|e| {
             format!(
                 "Failed to serialize Merkle frontier in legacy format: {}",
                 e,
@@ -67,16 +69,16 @@ impl<H: Copy + Hashable + HashSer> MerkleFrontier<H> {
         root
     }
 
-    /// Returns the number of leaves appended to the frontier.
+    /// Returns the number of leaves in the Merkle tree for which this is the frontier.
     pub(crate) fn size(&self) -> u64 {
-        self.0.position().map_or(0, |p| <u64>::from(p) + 1)
+        self.0.value().map_or(0, |f| u64::from(f.position()) + 1)
     }
 }
 
 /// Returns the root of an empty Orchard Merkle tree.
 pub(crate) fn orchard_empty_root() -> [u8; 32] {
-    let altitude = Altitude::from(MERKLE_DEPTH);
-    MerkleHashOrchard::empty_root(altitude).to_bytes()
+    let level = Level::from(MERKLE_DEPTH);
+    MerkleHashOrchard::empty_root(level).to_bytes()
 }
 
 /// An Orchard incremental Merkle frontier.
@@ -99,7 +101,7 @@ impl Orchard {
     pub(crate) fn append_bundle(&mut self, bundle: &orchard_bundle::Bundle) -> bool {
         if let Some(bundle) = bundle.inner() {
             for action in bundle.actions().iter() {
-                if !self.0.append(&MerkleHashOrchard::from_cmx(action.cmx())) {
+                if !self.0.append(MerkleHashOrchard::from_cmx(action.cmx())) {
                     error!("Orchard note commitment tree is full.");
                     return false;
                 }
