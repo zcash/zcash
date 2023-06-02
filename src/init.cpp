@@ -1815,8 +1815,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                     SaplingMerkleTree sapling_tree;
                     assert(pcoinsdbview->GetSaplingAnchorAt(pcoinsdbview->GetBestAnchor(SAPLING), sapling_tree));
 
-                    if (!SubtreeStateConsistent(SAPLING, sapling_tree, pcoinsdbview)) {
-                        LogPrintf("NOTE: the database does not contain some subtree data for Sapling or Orchard; most users will not need this, but if you do, you will have to use -reindex\n");
+                    if (pcoinsdbview->CurrentSubtreeIndex(SAPLING) != sapling_tree.current_subtree_index()) {
+                        LogPrintf("NOTE: the database does not contain complete subtree data for Sapling or Orchard. This is typically not needed unless this zcashd is backing a lightwalletd instance. If it is needed, you will have to use `-reindex`.\n");
 
                         if (fExperimentalLightWalletd) {
                             strLoadError = _("You need to rebuild the database using -reindex to migrate the database for lightwalletd usage");

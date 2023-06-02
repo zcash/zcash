@@ -19,7 +19,7 @@ namespace libzcash {
 
 
 typedef uint64_t SubtreeIndex;
-typedef uint256 SubtreeRoot;
+typedef std::array<uint8_t, 32> SubtreeRoot;
 static const uint8_t TRACKED_SUBTREE_HEIGHT = 16;
 
 class LatestSubtree {

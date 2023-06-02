@@ -409,11 +409,16 @@ public:
 };
 
 libzcash::SubtreeData RandomSubtree(libzcash::SubtreeIndex index) {
+    std::array<uint8_t, 32> root;
+    for (size_t i = 0; i < 32; i++) {
+        root[i] = InsecureRandRange(256);
+    }
+
     // We store the intended index in the nHeight field
     // so that the mock database can exercise tests. (Indices
     // are not stored in the SubtreeData struct because they
     // are already known by the caller of GetSubtreeData.)
-    return libzcash::SubtreeData(GetRandHash(), index);
+    return libzcash::SubtreeData(root, index);
 }
 
 class TxWithNullifiers

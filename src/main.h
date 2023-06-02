@@ -588,18 +588,6 @@ enum class CheckAs {
     SlowBenchmark,
 };
 
-//! Returns true if the latest complete subtree index in the CCoinsView
-//! is consistent with the latest frontier; we want to avoid writing
-//! new subtrees in the event they are inconsistent, which happens when
-//! a node that previously was not recording complete subtree roots
-//! upgrades to a version of zcashd which does.
-template<typename Tree>
-bool SubtreeStateConsistent(
-    const ShieldedType type,
-    const Tree& tree,
-    const CCoinsView* view
-);
-
 /** Apply the effects of this block (with given index) on the UTXO set represented by coins.
  *  Validity checks that depend on the UTXO set are also done; ConnectBlock()
  *  can fail if those validity checks fail (among other reasons). */

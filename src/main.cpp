@@ -2933,17 +2933,20 @@ static DisconnectResult DisconnectBlock(const CBlock& block, CValidationState& s
     // Grab the latest subtree (according to the view) and use it
     // to determine if the block being disconnected was responsible
     // for completing a subtree. If so, we'll pop the subtree.
+    // (It is not possible for a block to complete more than one
+    // subtree, due to the maximum number of outputs/actions in
+    // a block being less than 2^16.)
     {
-        auto disconnectSubtrees = [&] (ShieldedType type) {
+        auto maybeDisconnectSubtree = [&] (ShieldedType type) {
             auto latestSubtree = view.GetLatestSubtree(type);
-            if (latestSubtree) {
+            if (latestSubtree.has_value()) {
                 if (latestSubtree->nHeight == pindex->nHeight) {
                     view.PopSubtree(type);
                 }
             }
         };
 
-        disconnectSubtrees(SAPLING);
+        maybeDisconnectSubtree(SAPLING);
     }
 
     // set the old best Sprout anchor back
@@ -3055,41 +3058,6 @@ static bool ShouldCheckTransactions(const CChainParams& chainparams, const CBloc
              && IsInitialBlockDownload(chainparams.GetConsensus())
              && Checkpoints::IsAncestorOfLastCheckpoint(chainparams.Checkpoints(), pindex));
 }
-
-template<typename Tree>
-bool SubtreeStateConsistent(
-    const ShieldedType type,
-    const Tree& tree,
-    const CCoinsView* view
-)
-{
-    auto latestSubtree = view->GetLatestSubtree(type);
-
-    if (latestSubtree) {
-        // The view believes the last completed subtree is
-        // at index latestSubtree->index, so the "current"
-        // subtree index of the tree should be one
-        // larger than this.
-        if ((latestSubtree->index + 1) == tree.current_subtree_index()) {
-            return true;
-        }
-    } else {
-        // The view believes there are no completed subtrees
-        // yet, so the index of the current subtree
-        // should be zero.
-        if (tree.current_subtree_index() == 0) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-template bool SubtreeStateConsistent<SaplingMerkleTree>(
-    const ShieldedType type,
-    const SaplingMerkleTree& tree,
-    const CCoinsView* view
-);
 
 bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex,
                   CCoinsViewCache& view, const CChainParams& chainparams,
@@ -3261,7 +3229,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     // the node had not been writing the latest subtrees to the
     // view in the past and so later in this function we will
     // not bother to add new subtrees.
-    bool fUpdateSaplingSubtrees = SubtreeStateConsistent(SAPLING, sapling_tree, &view);
+    bool fUpdateSaplingSubtrees = view.CurrentSubtreeIndex(SAPLING) == sapling_tree.current_subtree_index();
 
     OrchardMerkleFrontier orchard_tree;
     if (pindex->pprev && chainparams.GetConsensus().NetworkUpgradeActive(pindex->pprev->nHeight, Consensus::UPGRADE_NU5)) {
@@ -3449,15 +3417,15 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
             if (fUpdateSaplingSubtrees) {
                 auto completeSubtreeRoot = sapling_tree.complete_subtree_root();
-                if (completeSubtreeRoot) {
-                    libzcash::SubtreeData subtree(*completeSubtreeRoot, pindex->nHeight);
+                if (completeSubtreeRoot.has_value()) {
+                    libzcash::SubtreeData subtree(completeSubtreeRoot->ToRawBytes(), pindex->nHeight);
                     view.PushSubtree(SAPLING, subtree);
                     auto latest = view.GetLatestSubtree(SAPLING);
 
                     // The latest subtree, according to the view, should now be one
                     // less than the "current" subtree index according to the tree
                     // itself, after the append takes place earlier in this loop.
-                    assert(latest);
+                    assert(latest.has_value());
                     assert((latest->index + 1) == sapling_tree.current_subtree_index());
                 }
             }

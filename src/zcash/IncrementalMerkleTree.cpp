@@ -938,7 +938,7 @@ std::optional<Hash> IncrementalMerkleTree<Depth, Hash>::complete_subtree_root() 
         }
 
         Hash root = Hash::combine(*left, *right, 0);
-        for (size_t d = 1; d <= (TRACKED_SUBTREE_HEIGHT - 1); d++) {
+        for (size_t d = 1; d < TRACKED_SUBTREE_HEIGHT; d++) {
             root = Hash::combine(*parents[d - 1], root, d);
         }
 
