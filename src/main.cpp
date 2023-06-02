@@ -5070,6 +5070,8 @@ bool ContextualCheckBlock(
 static bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, const CChainParams& chainparams, CBlockIndex** ppindex=NULL)
 {
     AssertLockHeld(cs_main);
+    LogPrint("main", "AcceptBlockHeader %s", block.GetHash().ToString());
+
     // Check for duplicate
     uint256 hash = block.GetHash();
     BlockMap::iterator miSelf = mapBlockIndex.find(hash);
@@ -5084,8 +5086,11 @@ static bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state
         return true;
     }
 
-    if (!CheckBlockHeader(block, state, chainparams))
+    LogPrint("main", "AcceptBlockHeader: calling CheckBlockHeader");
+    if (!CheckBlockHeader(block, state, chainparams)) {
+        LogPrint("main", "AcceptBlockHeader: CheckBlockHeader failed");
         return false;
+    }
 
     // Get prev block index
     CBlockIndex* pindexPrev = NULL;
@@ -5098,11 +5103,16 @@ static bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state
             return state.DoS(100, error("%s: prev block invalid", __func__), REJECT_INVALID, "bad-prevblk");
     }
 
-    if (!ContextualCheckBlockHeader(block, state, chainparams, pindexPrev))
+    LogPrint("main", "AcceptBlockHeader: calling ContextualCheckBlockHeader");
+    if (!ContextualCheckBlockHeader(block, state, chainparams, pindexPrev)) {
+        LogPrint("main", "AcceptBlockHeader: ContextualCheckBlockHeader failed");
         return false;
+    }
 
-    if (pindex == NULL)
+    if (pindex == NULL) {
+        LogPrint("main", "AcceptBlockHeader: calling AddToBlockIndex");
         pindex = AddToBlockIndex(block, chainparams.GetConsensus());
+    }
 
     if (ppindex)
         *ppindex = pindex;
@@ -5121,12 +5131,15 @@ static bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state
 static bool AcceptBlock(const CBlock& block, CValidationState& state, const CChainParams& chainparams, CBlockIndex** ppindex, bool fRequested, const CDiskBlockPos* dbp)
 {
     AssertLockHeld(cs_main);
+    LogPrint("main", "AcceptBlock %s", block.GetHash().ToString());
 
     CBlockIndex *pindexDummy = NULL;
     CBlockIndex *&pindex = ppindex ? *ppindex : pindexDummy;
 
-    if (!AcceptBlockHeader(block, state, chainparams, &pindex))
+    if (!AcceptBlockHeader(block, state, chainparams, &pindex)) {
+        LogPrint("main", "AcceptBlockHeader failed");
         return false;
+    }
 
     // Try to process all requested blocks that we don't have, but only
     // process an unrequested block if it's new and has enough work to
@@ -5153,14 +5166,17 @@ static bool AcceptBlock(const CBlock& block, CValidationState& state, const CCha
     auto verifier = ProofVerifier::Disabled();
 
     bool fCheckTransactions = ShouldCheckTransactions(chainparams, pindex);
+    LogPrint("main", "AcceptBlock: calling CheckBlock");
     if ((!CheckBlock(block, state, chainparams, verifier, true, true, fCheckTransactions)) ||
          !ContextualCheckBlock(block, state, chainparams, pindex->pprev, fCheckTransactions)) {
+        LogPrint("main", "AcceptBlock: CheckBlock or ContextualCheckBlock failed");
         if (state.IsInvalid() && !state.CorruptionPossible()) {
             pindex->nStatus |= BLOCK_FAILED_VALID;
             setDirtyBlockIndex.insert(pindex);
         }
         return false;
     }
+    LogPrint("main", "AcceptBlock: got past CheckBlock and ContextualCheckBlock");
 
     int nHeight = pindex->nHeight;
 
