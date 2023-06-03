@@ -869,8 +869,22 @@ std::pair<uint256, uint256> WalletTxBuilder::SelectOVKs(
 PrivacyPolicy TransactionEffects::GetRequiredPrivacyPolicy() const
 {
     if (!spendable.utxos.empty()) {
-        // TODO: Add a check for whether we need AllowLinkingAccountAddresses here. (#6467)
-        if (payments.HasTransparentRecipient()) {
+        std::set<CTxDestination> receivedAddrs;
+        for (const auto& utxo : spendable.utxos) {
+            if (utxo.destination.has_value()) {
+                receivedAddrs.insert(utxo.destination.value());
+            } else {
+                throw std::runtime_error("Can’t spend a multisig UTXO via WalletTxBuilder.");
+            }
+        }
+
+        if (receivedAddrs.size() > 1) {
+            if (payments.HasTransparentRecipient()) {
+                return PrivacyPolicy::NoPrivacy;
+            } else {
+                return PrivacyPolicy::AllowLinkingAccountAddresses;
+            }
+        } else if (payments.HasTransparentRecipient()) {
             return PrivacyPolicy::AllowFullyTransparent;
         } else {
             return PrivacyPolicy::AllowRevealedSenders;

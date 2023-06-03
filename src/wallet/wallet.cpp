@@ -2261,11 +2261,17 @@ SpendableInputs CWallet::FindSpendableInputs(
 
                 // check to see if the coin conforms to the payment source
                 CTxDestination address;
+                bool hasDestination = ExtractDestination(output.scriptPubKey, address);
                 bool isSelectable =
-                    ExtractDestination(output.scriptPubKey, address) &&
-                    this->SelectorMatchesAddress(selector, address);
+                    hasDestination && this->SelectorMatchesAddress(selector, address);
                 if (isSelectable) {
-                    unspent.utxos.push_back(COutput(&wtx, i, nDepth, true, isCoinbase));
+                    unspent.utxos.emplace_back(
+                            &wtx,
+                            i,
+                            hasDestination ? std::optional(address) : std::nullopt,
+                            nDepth,
+                            true,
+                            isCoinbase);
                 }
             }
         }
@@ -5166,10 +5172,12 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins,
                 if (fOnlySpendable && !isSpendable)
                     continue;
 
+                CTxDestination address;
+                bool hasDestination = ExtractDestination(output.scriptPubKey, address);
+
                 // Filter by specific destinations if needed
                 if (!onlyFilterByDests.empty()) {
-                    CTxDestination address;
-                    if (!ExtractDestination(output.scriptPubKey, address) || onlyFilterByDests.count(address) == 0) {
+                    if (!hasDestination || onlyFilterByDests.count(address) == 0) {
                         continue;
                     }
                 }
@@ -5177,7 +5185,13 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins,
                 if (!(IsSpent(wtxid, i, asOfHeight)) && mine != ISMINE_NO &&
                     !IsLockedCoin(wtxid, i) && (pcoin.vout[i].nValue > 0 || fIncludeZeroValue) &&
                     (!coinControl || !coinControl->HasSelected() || coinControl->fAllowOtherInputs || coinControl->IsSelected(wtxid, i)))
-                        vCoins.push_back(COutput(&pcoin, i, nDepth, isSpendable, isCoinbase));
+                    vCoins.emplace_back(
+                            &pcoin,
+                            i,
+                            hasDestination ? std::optional(address) : std::nullopt,
+                            nDepth,
+                            isSpendable,
+                            isCoinbase);
             }
         }
     }

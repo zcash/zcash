@@ -13,6 +13,7 @@ from test_framework.util import (
     sync_blocks,
     wait_and_assert_operationid_status,
 )
+from test_framework.zip317 import ZIP_317_FEE
 
 TX_EXPIRY_DELTA = 10
 TX_EXPIRING_SOON_THRESHOLD = 3
@@ -44,7 +45,7 @@ class WalletSendManyAnyTaddr(BitcoinTestFramework):
         # Prepare some non-coinbase UTXOs
         wait_and_assert_operationid_status(
             self.nodes[3],
-            self.nodes[3].z_shieldcoinbase("*", node3zaddr, 0)['opid'],
+            self.nodes[3].z_shieldcoinbase("*", node3zaddr, 0, None, None, 'AllowLinkingAccountAddresses')['opid'],
         )
         self.sync_all()
         self.nodes[0].generate(1)
@@ -79,7 +80,7 @@ class WalletSendManyAnyTaddr(BitcoinTestFramework):
             self.nodes[3].z_sendmany(
                 'ANY_TADDR',
                 [{'address': recipient, 'amount': 100}],
-                1, LEGACY_DEFAULT_FEE, 'AllowFullyTransparent'),
+                1, LEGACY_DEFAULT_FEE, 'NoPrivacy'),
         )
 
         self.sync_all()
@@ -113,7 +114,7 @@ class WalletSendManyAnyTaddr(BitcoinTestFramework):
         myopid = self.nodes[3].z_sendmany(
             'ANY_TADDR',
             [{'address': recipient, 'amount': 20}],
-            1, LEGACY_DEFAULT_FEE, 'AllowRevealedSenders')
+            1, LEGACY_DEFAULT_FEE, 'AllowLinkingAccountAddresses')
         wait_and_assert_operationid_status(self.nodes[3], myopid, "failed", "Insufficient funds: have 14.99998, need 20.00001; note that coinbase outputs will not be selected if you specify ANY_TADDR, any transparent recipients are included, or if the `privacyPolicy` parameter is not set to `AllowRevealedSenders` or weaker.")
 
         # Create an expired transaction on node 3.
@@ -135,11 +136,11 @@ class WalletSendManyAnyTaddr(BitcoinTestFramework):
         assert_raises_message(AssertionError, "tx unpaid action limit exceeded",
             wait_and_assert_operationid_status,
             self.nodes[2],
-            self.nodes[2].z_shieldcoinbase("*", node2zaddr, 0)['opid'],
+            self.nodes[2].z_shieldcoinbase("*", node2zaddr, 0, None, None, 'AllowLinkingAccountAddresses')['opid'],
         )
         wait_and_assert_operationid_status(
             self.nodes[2],
-            self.nodes[2].z_shieldcoinbase("*", node2zaddr)['opid'],
+            self.nodes[2].z_shieldcoinbase("*", node2zaddr, ZIP_317_FEE, None, None, 'AllowLinkingAccountAddresses')['opid'],
         )
         self.sync_all()
         assert_equal(0, self.nodes[2].getbalance())

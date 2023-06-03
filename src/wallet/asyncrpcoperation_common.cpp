@@ -153,11 +153,11 @@ void ThrowInputSelectionError(
                        "`privacyPolicy` parameter is not set to `AllowRevealedSenders` or weaker")
                     + (!isFromUa || strategy.AllowLinkingAccountAddresses() ? "." :
                        ". (This transaction may require selecting transparent coins that were sent "
-                       "to multiple Unified Addresses, which is not enabled by default because "
-                       "it would create a public link between the transparent receivers of these "
-                       "addresses. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` "
-                       "parameter set to `AllowLinkingAccountAddresses` or weaker if you wish to "
-                       "allow this transaction to proceed anyway.)"));
+                       "to multiple addresses, which is not enabled by default because it would "
+                       "create a public link between those addresses. THIS MAY AFFECT YOUR PRIVACY. "
+                       "Resubmit with the `privacyPolicy` parameter set to "
+                       "`AllowLinkingAccountAddresses` or weaker if you wish to allow this "
+                       "transaction to proceed anyway.)"));
         },
         [](const ChangeNotAllowedError& err) {
             throw JSONRPCError(

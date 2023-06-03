@@ -750,12 +750,13 @@ class COutput
 public:
     const CWalletTx *tx;
     int i;
+    std::optional<CTxDestination> destination;
     int nDepth;
     bool fSpendable;
     bool fIsCoinbase;
 
-    COutput(const CWalletTx *txIn, int iIn, int nDepthIn, bool fSpendableIn, bool fIsCoinbaseIn = false) :
-            tx(txIn), i(iIn), nDepth(nDepthIn), fSpendable(fSpendableIn), fIsCoinbase(fIsCoinbaseIn){ }
+    COutput(const CWalletTx *txIn, int iIn, std::optional<CTxDestination> destination, int nDepthIn, bool fSpendableIn, bool fIsCoinbaseIn = false) :
+        tx(txIn), i(iIn), destination(destination), nDepth(nDepthIn), fSpendable(fSpendableIn), fIsCoinbase(fIsCoinbaseIn){ }
 
     CAmount Value() const { return tx->vout[i].nValue; }
     std::string ToString() const;

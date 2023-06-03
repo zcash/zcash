@@ -25,6 +25,18 @@ is not possible to compute that without knowing the number of logical actions
 in a transaction, which was not an input to `estimatefee`. The `fee_estimates.dat`
 file is no longer used.
 
+Privacy Policy Changes
+----------------------
+
+ The `AllowRevealedSenders` privacy policy no longer allows sending from
+ multiple taddrs in the same transaction. This now requires
+ `AllowLinkingAccountAddresses`. Care should be taken in using
+ `AllowLinkingAccountAddresses` too broadly, as it can also result in linking
+ UAs when transparent funds are sent from them. The practical effect is that an
+ explicit privacy policy is always required for `z_mergetoaddress`,
+`z_sendmany`, and `z_shieldcoinbase` when sending from multiple taddrs, even
+when using wildcards like `*` and `ANY_TADDR`.
+
 Platform Support
 ----------------
 
