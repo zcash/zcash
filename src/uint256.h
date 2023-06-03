@@ -138,6 +138,13 @@ public:
         return buf;
     }
 
+    std::array<uint8_t, 32> ToRawBytes() const
+    {
+        std::array<uint8_t, 32> buf;
+        std::memcpy(buf.data(), begin(), 32);
+        return buf;
+    }
+
     /** A cheap hash function that just returns 64 bits from the result, it can be
      * used when the contents are considered uniformly random. It is not appropriate
      * when the value can easily be influenced from outside as e.g. a network adversary could

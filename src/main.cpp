@@ -2930,6 +2930,25 @@ static DisconnectResult DisconnectBlock(const CBlock& block, CValidationState& s
         }
     }
 
+    // Grab the latest subtree (according to the view) and use it
+    // to determine if the block being disconnected was responsible
+    // for completing a subtree. If so, we'll pop the subtree.
+    // (It is not possible for a block to complete more than one
+    // subtree, due to the maximum number of outputs/actions in
+    // a block being less than 2^16.)
+    {
+        auto maybeDisconnectSubtree = [&] (ShieldedType type) {
+            auto latestSubtree = view.GetLatestSubtree(type);
+            if (latestSubtree.has_value()) {
+                if (latestSubtree->nHeight == pindex->nHeight) {
+                    view.PopSubtree(type);
+                }
+            }
+        };
+
+        maybeDisconnectSubtree(SAPLING);
+    }
+
     // set the old best Sprout anchor back
     view.PopAnchor(blockUndo.old_sprout_tree_root, SPROUT);
 
@@ -3205,6 +3224,13 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     SaplingMerkleTree sapling_tree;
     assert(view.GetSaplingAnchorAt(view.GetBestAnchor(SAPLING), sapling_tree));
 
+    // Here we determine whether the CCoinsView view of our latest
+    // subtree matches that of the chain state. If it doesn't,
+    // the node had not been writing the latest subtrees to the
+    // view in the past and so later in this function we will
+    // not bother to add new subtrees.
+    bool fUpdateSaplingSubtrees = view.CurrentSubtreeIndex(SAPLING) == sapling_tree.current_subtree_index();
+
     OrchardMerkleFrontier orchard_tree;
     if (pindex->pprev && chainparams.GetConsensus().NetworkUpgradeActive(pindex->pprev->nHeight, Consensus::UPGRADE_NU5)) {
         // Verify that the view's current state corresponds to the previous block.
@@ -3388,6 +3414,21 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
         for (const auto &outputDescription : tx.GetSaplingOutputs()) {
             sapling_tree.append(uint256::FromRawBytes(outputDescription.cmu()));
+
+            if (fUpdateSaplingSubtrees) {
+                auto completeSubtreeRoot = sapling_tree.complete_subtree_root();
+                if (completeSubtreeRoot.has_value()) {
+                    libzcash::SubtreeData subtree(completeSubtreeRoot->ToRawBytes(), pindex->nHeight);
+                    view.PushSubtree(SAPLING, subtree);
+                    auto latest = view.GetLatestSubtree(SAPLING);
+
+                    // The latest subtree, according to the view, should now be one
+                    // less than the "current" subtree index according to the tree
+                    // itself, after the append takes place earlier in this loop.
+                    assert(latest.has_value());
+                    assert((latest->index + 1) == sapling_tree.current_subtree_index());
+                }
+            }
         }
 
         if (!orchard_tree.AppendBundle(tx.GetOrchardBundle())) {
