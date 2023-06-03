@@ -279,14 +279,14 @@ UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool tx
         UniValue trees(UniValue::VOBJ);
 
         SaplingMerkleTree saplingTree;
-        if (pcoinsTip->GetSaplingAnchorAt(blockindex->hashFinalSaplingRoot, saplingTree)) {
+        if (pcoinsTip != nullptr && pcoinsTip->GetSaplingAnchorAt(blockindex->hashFinalSaplingRoot, saplingTree)) {
             UniValue sapling(UniValue::VOBJ);
             sapling.pushKV("size", (uint64_t)saplingTree.size());
             trees.pushKV("sapling", sapling);
         }
 
         OrchardMerkleFrontier orchardTree;
-        if (pcoinsTip->GetOrchardAnchorAt(blockindex->hashFinalOrchardRoot, orchardTree)) {
+        if (pcoinsTip != nullptr && pcoinsTip->GetOrchardAnchorAt(blockindex->hashFinalOrchardRoot, orchardTree)) {
             UniValue orchard(UniValue::VOBJ);
             orchard.pushKV("size", (uint64_t)orchardTree.size());
             trees.pushKV("orchard", orchard);
