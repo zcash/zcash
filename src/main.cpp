@@ -46,6 +46,8 @@
 
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/math/distributions/poisson.hpp>
+#include <boost/range/algorithm/lower_bound.hpp>
+#include <boost/range/irange.hpp>
 #include <boost/thread.hpp>
 
 #include <rust/ed25519.h>
@@ -5802,6 +5804,218 @@ bool CVerifyDB::VerifyDB(const CChainParams& chainparams, CCoinsView *coinsview,
     }
 
     LogPrintf("No coin database inconsistencies in last %i blocks (%i transactions)\n", chainActive.Height() - pindexState->nHeight, nGoodTransactions);
+
+    return true;
+}
+
+bool RegenerateSubtrees(ShieldedType type, const Consensus::Params& consensusParams)
+{
+    AssertLockHeld(cs_main);
+
+    if (chainActive.Tip() == NULL || chainActive.Tip()->pprev == NULL) {
+        LogPrintf("RegenerateSubtrees: chain is at genesis currently; migration complete\n");
+        return true;
+    }
+
+    // Delete all subtrees in pcoinsTip.
+    pcoinsTip->ResetSubtrees(type);
+
+    Consensus::UpgradeIndex upgrade;
+    if (type == SAPLING) {
+        upgrade = Consensus::UPGRADE_SAPLING;
+    } else if (type == ORCHARD) {
+        upgrade = Consensus::UPGRADE_NU5;
+    } else {
+        throw std::runtime_error("RegenerateSubtrees: bad shielded pool type");
+    }
+
+    // The search space starts at the activation height of the shielded pool
+    auto currentHeightMaybe = consensusParams.GetActivationHeight(upgrade);
+    int currentHeight;
+    if (currentHeightMaybe.has_value()) {
+        currentHeight = *currentHeightMaybe;
+    } else {
+        LogPrintf("RegenerateSubtrees: shielded pool is not active; migration complete\n");
+        return true;
+    }
+
+    // The search space ends at the active chain tip.
+    int chainHeight = chainActive.Tip()->nHeight;
+
+    LogPrintf("RegenerateSubtrees: current chain height is %d, activation height is %d\n", chainHeight, currentHeight);
+
+    if (currentHeight > chainHeight) {
+        // We don't have any blocks to search through.
+        // The subtrees will be added naturally as the
+        // chain progresses.
+        LogPrintf("RegenerateSubtrees: activation takes place in the future; migration complete\n");
+        return true;
+    }
+
+    // Vector to accumulate the heights of discovered blocks
+    // that complete subtrees.
+    std::vector<int> vHeights;
+
+    libzcash::SubtreeIndex chainSubtreeIndex;
+    libzcash::SubtreeIndex loggingModulus;
+    size_t percentage = 0;
+
+    {
+        auto lookupCurrentSubtreeIndex = [&] (int nHeight) {
+            auto blockIndex = chainActive[nHeight];
+            assert(blockIndex != nullptr);
+
+            // Because these blocks are connected to the active chain
+            // tip, and because we are inspecting blocks where Sapling/Orchard
+            // are activated, hashFinalSaplingRoot and hashFinalOrchardRoot
+            // are guaranteed to be non-null.
+            if (type == SAPLING) {
+                SaplingMerkleTree latest_frontier;
+                assert(pcoinsTip->GetSaplingAnchorAt(blockIndex->hashFinalSaplingRoot, latest_frontier));
+                return latest_frontier.current_subtree_index();
+            } else if (type == ORCHARD) {
+                OrchardMerkleFrontier latest_frontier;
+                assert(pcoinsTip->GetOrchardAnchorAt(blockIndex->hashFinalOrchardRoot, latest_frontier));
+                return latest_frontier.current_subtree_index();
+            } else {
+                assert(false);
+            }
+        };
+
+        chainSubtreeIndex = lookupCurrentSubtreeIndex(chainHeight);
+
+        if (chainSubtreeIndex == 0) {
+            // There's nothing to do, because no complete subtrees
+            // exist on chain yet.
+            LogPrintf("RegenerateSubtrees: current subtree is index 0, nothing to do; migration complete\n");
+            return true;
+        }
+
+        // We'll report every ~10% of progress made.
+        loggingModulus = chainSubtreeIndex / 10;
+
+        if (loggingModulus == 0) {
+            loggingModulus = 1;
+        }
+
+        libzcash::SubtreeIndex subtreeIndex = 0;
+        while (currentHeight <= chainHeight) {
+            if ((subtreeIndex % loggingModulus) == 0) {
+                LogPrintf(
+                    "RegenerateSubtrees: Searching for complete subtrees... %d percent complete (%d / %d)\n",
+                    percentage,
+                    subtreeIndex,
+                    chainSubtreeIndex
+                );
+                percentage += 10;
+            }
+            // In this loop we're looking for the completed subtree
+            // with index subtreeIndex (if it exists) somewhere
+            // between currentHeight and chainHeight (inclusive).
+            // We'll first need to find the first block in this
+            // range that has a "current" subtree index one larger,
+            // which implies that block completed the subtree.
+
+            auto searchRange = boost::irange(currentHeight, chainHeight + 1);
+
+            auto result = boost::lower_bound(
+                searchRange,
+                subtreeIndex + 1,
+                [&](int a, libzcash::SubtreeIndex b) {
+                    return lookupCurrentSubtreeIndex(a) < b;
+                }
+            );
+
+            if (result != boost::end(searchRange)) {
+                vHeights.push_back(*result);
+
+                // Search for the next subtree, starting with the
+                // next block.
+                currentHeight = *result + 1;
+                subtreeIndex += 1;
+            } else {
+                break;
+            }
+        }
+    }
+
+    LogPrintf("RegenerateSubtrees: Found all complete subtrees.\n");
+
+    percentage = 0;
+
+    for (size_t subtreeIndex = 0; subtreeIndex < vHeights.size(); subtreeIndex++) {
+        if ((subtreeIndex % loggingModulus) == 0) {
+            LogPrintf(
+                "RegenerateSubtrees: Rebuilding complete subtrees... %d percent complete (%d / %d)\n",
+                percentage,
+                subtreeIndex,
+                chainSubtreeIndex
+            );
+            percentage += 10;
+        }
+
+        int nHeight = vHeights[subtreeIndex];
+
+        auto pindex = chainActive[nHeight];
+        CBlock block;
+        if (!ReadBlockFromDisk(block, pindex, consensusParams)) {
+            LogPrintf("Failed to read block\n");
+            return false;
+        }
+
+        // We'll grab the final frontier from the previous block (which
+        // should have a hashFinalSaplingRoot/hashFinalOrchardRoot
+        // because this block completed a 2^16 size subtree!) and append
+        // to it until we complete the subtree.
+        if (type == SAPLING) {
+            SaplingMerkleTree sapling_tree;
+            assert(pcoinsTip->GetSaplingAnchorAt(pindex->pprev->hashFinalSaplingRoot, sapling_tree));
+            for (const CTransaction &tx : block.vtx) {
+                for (const auto &outputDescription : tx.GetSaplingOutputs()) {
+                    sapling_tree.append(uint256::FromRawBytes(outputDescription.cmu()));
+
+                    auto completeSubtreeRoot = sapling_tree.complete_subtree_root();
+                    if (completeSubtreeRoot.has_value()) {
+                        libzcash::SubtreeData subtree(completeSubtreeRoot->ToRawBytes(), nHeight);
+                        pcoinsTip->PushSubtree(SAPLING, subtree);
+                        goto nextsubtree; // sorry
+                    }
+                }
+            }
+
+            // We should not get here; this block should have completed the subtree
+            // and the goto statement above should have executed.
+            assert(false);
+        } else if (type == ORCHARD) {
+            OrchardMerkleFrontier orchard_tree;
+            assert(pcoinsTip->GetOrchardAnchorAt(pindex->pprev->hashFinalOrchardRoot, orchard_tree));
+            for (const CTransaction &tx : block.vtx) {
+                if (tx.GetOrchardBundle().IsPresent()) {
+                    try {
+                        auto appendResult = orchard_tree.AppendBundle(tx.GetOrchardBundle());
+                        if (appendResult.has_subtree_boundary) {
+                            libzcash::SubtreeData subtree(appendResult.completed_subtree_root, nHeight);
+
+                            pcoinsTip->PushSubtree(ORCHARD, subtree);
+                            goto nextsubtree; // sorry
+                        }
+                    } catch (const rust::Error& e) {
+                        return false;
+                    }
+                }
+            }
+
+            // Similarly, we should not get here.
+            assert(false);
+        } else {
+            assert(false);
+        }
+
+        nextsubtree:
+            // needed because statements need to exist
+            // after a label is defined or it won't parse
+            continue;
+    }
 
     return true;
 }

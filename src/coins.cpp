@@ -662,6 +662,18 @@ void CCoinsViewCache::PopSubtree(ShieldedType type)
     }
 }
 
+void CCoinsViewCache::ResetSubtrees(ShieldedType type)
+{
+    switch(type) {
+        case SAPLING:
+            return cacheSaplingSubtrees.ResetSubtrees();
+        case ORCHARD:
+            return cacheOrchardSubtrees.ResetSubtrees();
+        default:
+            throw std::runtime_error("ResetSubtrees: unsupported shielded type");
+    }
+}
+
 template<typename Tree, typename Cache, typename CacheEntry>
 void CCoinsViewCache::AbstractPopAnchor(
     const uint256 &newrt,
@@ -1275,6 +1287,14 @@ void SubtreeCache::PopSubtree(CCoinsView *parentView) {
     } else {
         newSubtrees.pop_back();
     }
+}
+
+void SubtreeCache::ResetSubtrees() {
+    // This ensures that all subtrees will be popped from the parent view
+    initialized = true;
+
+    parentLatestSubtree = std::nullopt;
+    newSubtrees.clear();
 }
 
 void SubtreeCache::BatchWrite(CCoinsView *parentView, SubtreeCache &childMap) {

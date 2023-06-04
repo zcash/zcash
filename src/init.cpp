@@ -1817,14 +1817,32 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                     assert(pcoinsdbview->GetSaplingAnchorAt(pcoinsdbview->GetBestAnchor(SAPLING), sapling_tree));
                     assert(pcoinsdbview->GetOrchardAnchorAt(pcoinsdbview->GetBestAnchor(ORCHARD), orchard_tree));
 
-                    if (pcoinsdbview->CurrentSubtreeIndex(SAPLING) != sapling_tree.current_subtree_index() ||
-                        pcoinsdbview->CurrentSubtreeIndex(ORCHARD) != orchard_tree.current_subtree_index()) {
-                        LogPrintf("NOTE: the database does not contain complete subtree data for Sapling or Orchard. This is typically not needed unless this zcashd is backing a lightwalletd instance. If it is needed, you will have to use `-reindex`.\n");
-
-                        if (fExperimentalLightWalletd) {
-                            strLoadError = _("You need to rebuild the database using -reindex to migrate the database for lightwalletd usage");
+                    if (pcoinsdbview->CurrentSubtreeIndex(SAPLING) != sapling_tree.current_subtree_index()) {
+                        LogPrintf("init: the complete subtree database for Sapling needs to be migrated. Starting RegenerateSubtrees...\n");
+                        struct timeval tv_start, tv_end;
+                        float elapsed;
+                        gettimeofday(&tv_start, 0);
+                        if (!RegenerateSubtrees(SAPLING, chainparams.GetConsensus())) {
+                            strLoadError = _("Error migrating subtree database for Sapling");
                             break;
                         }
+                        gettimeofday(&tv_end, 0);
+                        elapsed = float(tv_end.tv_sec-tv_start.tv_sec) + (tv_end.tv_usec-tv_start.tv_usec)/float(1000000);
+                        LogPrintf("init: Sapling subtree database migrated in %f seconds\n", elapsed);
+                    }
+
+                    if (pcoinsdbview->CurrentSubtreeIndex(ORCHARD) != orchard_tree.current_subtree_index()) {
+                        LogPrintf("init: the complete subtree database for Orchard needs to be migrated. Starting RegenerateSubtrees...\n");
+                        struct timeval tv_start, tv_end;
+                        float elapsed;
+                        gettimeofday(&tv_start, 0);
+                        if (!RegenerateSubtrees(ORCHARD, chainparams.GetConsensus())) {
+                            strLoadError = _("Error migrating subtree database for Orchard");
+                            break;
+                        }
+                        gettimeofday(&tv_end, 0);
+                        elapsed = float(tv_end.tv_sec-tv_start.tv_sec) + (tv_end.tv_usec-tv_start.tv_usec)/float(1000000);
+                        LogPrintf("init: Orchard subtree database migrated in %f seconds\n", elapsed);
                     }
                 }
             } catch (const std::exception& e) {
