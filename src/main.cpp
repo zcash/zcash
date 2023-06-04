@@ -2947,6 +2947,7 @@ static DisconnectResult DisconnectBlock(const CBlock& block, CValidationState& s
         };
 
         maybeDisconnectSubtree(SAPLING);
+        maybeDisconnectSubtree(ORCHARD);
     }
 
     // set the old best Sprout anchor back
@@ -3224,13 +3225,6 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     SaplingMerkleTree sapling_tree;
     assert(view.GetSaplingAnchorAt(view.GetBestAnchor(SAPLING), sapling_tree));
 
-    // Here we determine whether the CCoinsView view of our latest
-    // subtree matches that of the chain state. If it doesn't,
-    // the node had not been writing the latest subtrees to the
-    // view in the past and so later in this function we will
-    // not bother to add new subtrees.
-    bool fUpdateSaplingSubtrees = view.CurrentSubtreeIndex(SAPLING) == sapling_tree.current_subtree_index();
-
     OrchardMerkleFrontier orchard_tree;
     if (pindex->pprev && chainparams.GetConsensus().NetworkUpgradeActive(pindex->pprev->nHeight, Consensus::UPGRADE_NU5)) {
         // Verify that the view's current state corresponds to the previous block.
@@ -3245,6 +3239,14 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         }
         assert(view.GetOrchardAnchorAt(OrchardMerkleFrontier::empty_root(), orchard_tree));
     }
+
+    // Here we determine whether the CCoinsView view of our latest
+    // subtree matches that of the chain state. If it doesn't,
+    // the node had not been writing the latest subtrees to the
+    // view in the past and so later in this function we will
+    // not bother to add new subtrees.
+    bool fUpdateSaplingSubtrees = view.CurrentSubtreeIndex(SAPLING) == sapling_tree.current_subtree_index();
+    bool fUpdateOrchardSubtrees = view.CurrentSubtreeIndex(ORCHARD) == orchard_tree.current_subtree_index();
 
     // Grab the consensus branch ID for this block and its parent
     auto consensusBranchId = CurrentEpochBranchId(pindex->nHeight, chainparams.GetConsensus());
@@ -3431,11 +3433,27 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             }
         }
 
-        if (!orchard_tree.AppendBundle(tx.GetOrchardBundle())) {
-            return state.DoS(100,
-                error("ConnectBlock(): block would overfill the Orchard commitment tree."),
-                REJECT_INVALID, "orchard-commitment-tree-full");
-        };
+        if (tx.GetOrchardBundle().IsPresent()) {
+            try {
+                auto appendResult = orchard_tree.AppendBundle(tx.GetOrchardBundle());
+                if (fUpdateOrchardSubtrees && appendResult.has_subtree_boundary) {
+                    libzcash::SubtreeData subtree(appendResult.completed_subtree_root, pindex->nHeight);
+
+                    view.PushSubtree(ORCHARD, subtree);
+                    auto latest = view.GetLatestSubtree(ORCHARD);
+
+                    // The latest subtree, according to the view, should now be one
+                    // less than the "current" subtree index according to the tree
+                    // itself, after the append takes place earlier in this loop.
+                    assert(latest.has_value());
+                    assert((latest->index + 1) == orchard_tree.current_subtree_index());
+                }
+            } catch (const rust::Error& e) {
+                return state.DoS(100,
+                    error("ConnectBlock(): block would overfill the Orchard commitment tree."),
+                    REJECT_INVALID, "orchard-commitment-tree-full");
+            }
+        }
 
         for (const auto& out : tx.vout) {
             transparentValueDelta += out.nValue;

@@ -308,6 +308,12 @@ pub(crate) mod ffi {
     }
 
     #[namespace = "merkle_frontier"]
+    struct OrchardAppendResult {
+        has_subtree_boundary: bool,
+        completed_subtree_root: [u8; 32],
+    }
+
+    #[namespace = "merkle_frontier"]
     extern "Rust" {
         type Orchard;
         type OrchardWallet;
@@ -321,7 +327,7 @@ pub(crate) mod ffi {
         fn dynamic_memory_usage(self: &Orchard) -> usize;
         fn root(self: &Orchard) -> [u8; 32];
         fn size(self: &Orchard) -> u64;
-        fn append_bundle(self: &mut Orchard, bundle: &Bundle) -> bool;
+        fn append_bundle(self: &mut Orchard, bundle: &Bundle) -> Result<OrchardAppendResult>;
         unsafe fn init_wallet(self: &Orchard, wallet: *mut OrchardWallet) -> bool;
     }
 
