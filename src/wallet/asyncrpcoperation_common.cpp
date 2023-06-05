@@ -152,18 +152,21 @@ void ThrowInputSelectionError(
                                     FormatMoney(dte.dustThreshold));
                         }
                     }))
-                    + (selector.TransparentCoinbasePolicy() != TransparentCoinbasePolicy::Disallow
-                       ? "" :
+                    + (selector.TransparentCoinbasePolicy() == TransparentCoinbasePolicy::Disallow
+                       ?
                        "; note that coinbase outputs will not be selected if you specify "
                        "ANY_TADDR, any transparent recipients are included, or if the "
-                       "`privacyPolicy` parameter is not set to `AllowRevealedSenders` or weaker")
-                    + (!suggestLinkingAddresses ? "." :
+                       "`privacyPolicy` parameter is not set to `AllowRevealedSenders` or weaker"
+                       : "")
+                    + (suggestLinkingAddresses
+                       ?
                        ". (This transaction may require selecting transparent coins that were sent "
                        "to multiple addresses, which is not enabled by default because it would "
                        "create a public link between those addresses. THIS MAY AFFECT YOUR PRIVACY. "
                        "Resubmit with the `privacyPolicy` parameter set to "
                        "`AllowLinkingAccountAddresses` or weaker if you wish to allow this "
-                       "transaction to proceed anyway.)"));
+                       "transaction to proceed anyway.)"
+                       : "."));
         },
         [](const ChangeNotAllowedError& err) {
             throw JSONRPCError(
