@@ -305,7 +305,7 @@ TEST(WalletRPCTests, RPCZsendmanyTaddrToSapling)
             taddr,
             true,
             TransparentCoinbasePolicy::Disallow,
-            false).value();
+            strategy.PermittedAccountSpendingPolicy()).value();
     std::vector<Payment> recipients = { Payment(pa, 1*COIN, Memo::FromBytes({0xAB, 0xCD})) };
     std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 0, 0, strategy, std::nullopt));
     std::shared_ptr<AsyncRPCOperation_sendmany> ptr = std::dynamic_pointer_cast<AsyncRPCOperation_sendmany> (operation);

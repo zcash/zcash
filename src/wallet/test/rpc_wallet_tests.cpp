@@ -812,7 +812,7 @@ void CheckHaveAddr(const std::optional<libzcash::PaymentAddress>& addr) {
                         *addr_of_type,
                         true,
                         TransparentCoinbasePolicy::Allow,
-                        false).has_value());
+                        std::nullopt).has_value());
 }
 
 BOOST_AUTO_TEST_CASE(rpc_wallet_z_getnewaddress) {
@@ -1247,6 +1247,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
 
     // there are no utxos to spend
     {
+        TransactionStrategy strategy(PrivacyPolicy::AllowRevealedSenders);
         auto selector = pwalletMain->ZTXOSelectorForAddress(
                 taddr1,
                 true,
@@ -1254,9 +1255,8 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
                 // are checking that there are no UTXOs at all, so we allow either to be selected to
                 // confirm this.
                 TransparentCoinbasePolicy::Allow,
-                false).value();
+                strategy.PermittedAccountSpendingPolicy()).value();
         std::vector<Payment> recipients = { Payment(zaddr1, 100*COIN, Memo::FromBytes({0xDE, 0xAD, 0xBE, 0xEF})) };
-        TransactionStrategy strategy(PrivacyPolicy::AllowRevealedSenders);
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1, 1, strategy, std::nullopt));
         operation->main();
         BOOST_CHECK(operation->isFailed());
@@ -1266,13 +1266,13 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
 
     // there are no unspent notes to spend
     {
+        TransactionStrategy strategy(PrivacyPolicy::AllowRevealedRecipients);
         auto selector = pwalletMain->ZTXOSelectorForAddress(
                 zaddr1,
                 true,
                 TransparentCoinbasePolicy::Disallow,
-                false).value();
+                strategy.PermittedAccountSpendingPolicy()).value();
         std::vector<Payment> recipients = { Payment(taddr1, 100*COIN, Memo::FromBytes({0xDE, 0xAD, 0xBE, 0xEF})) };
-        TransactionStrategy strategy(PrivacyPolicy::AllowRevealedRecipients);
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1, 1, strategy, std::nullopt));
         operation->main();
         BOOST_CHECK(operation->isFailed());
@@ -1526,7 +1526,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_parameters)
             // are checking that there are no UTXOs at all, so we allow either to be selected to
             // confirm this.
             TransparentCoinbasePolicy::Allow,
-            false).value();
+            UnifiedAccountSpendingPolicy::ShieldedWithSingleTransparentAddress).value();
 
     try {
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_shieldcoinbase(std::move(builder), selector, testnetzaddr, std::nullopt, PrivacyPolicy::AllowRevealedSenders, SHIELD_COINBASE_DEFAULT_LIMIT, 1));

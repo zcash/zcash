@@ -117,7 +117,13 @@ void ThrowInputSelectionError(
             }
         },
         [&](const InvalidFundsError& err) {
-            bool isFromUa = std::holds_alternative<libzcash::UnifiedAddress>(selector.GetPattern());
+            bool suggestLinkingAddresses =
+                !strategy.AllowLinkingAccountAddresses()
+                && examine(selector.GetPattern(), match {
+                    [](const libzcash::UnifiedAddress&) { return true; },
+                    [](const AccountZTXOPattern&) { return true; },
+                    [](const auto&) { return false; },
+                });
             throw JSONRPCError(
                 RPC_INVALID_PARAMETER,
                 strprintf(
@@ -151,7 +157,7 @@ void ThrowInputSelectionError(
                        "; note that coinbase outputs will not be selected if you specify "
                        "ANY_TADDR, any transparent recipients are included, or if the "
                        "`privacyPolicy` parameter is not set to `AllowRevealedSenders` or weaker")
-                    + (!isFromUa || strategy.AllowLinkingAccountAddresses() ? "." :
+                    + (!suggestLinkingAddresses ? "." :
                        ". (This transaction may require selecting transparent coins that were sent "
                        "to multiple addresses, which is not enabled by default because it would "
                        "create a public link between those addresses. THIS MAY AFFECT YOUR PRIVACY. "
