@@ -780,10 +780,10 @@ UniValue getblock(const UniValue& params, bool fHelp)
             "  ],\n"
             "  \"trees\": {                 (object) information about the note commitment trees\n"
             "      \"sapling\": {             (object, optional)\n"
-            "          \"size\": n,             (numeric) the number of note commitments appended to the tree\n"
+            "          \"size\": n,             (numeric) the total number of Sapling note commitments as of the end of this block\n"
             "      },\n"
             "      \"orchard\": {             (object, optional)\n"
-            "          \"size\": n,             (numeric) the number of note commitments appended to the tree\n"
+            "          \"size\": n,             (numeric) the total number of Orchard note commitments as of the end of this block\n"
             "      },\n"
             "  },\n"
             "  \"previousblockhash\" : \"hash\",  (string) The hash of the previous block\n"
@@ -1455,12 +1455,12 @@ UniValue z_getsubtreesbyindex(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() < 2 || params.size() > 3)
         throw runtime_error(
-            "z_getsubtreesbyindex \"pool\" start_index ( end_index )\n"
+            "z_getsubtreesbyindex \"pool\" start_index ( limit )\n"
             "Return information about the given block's tree state.\n"
             "\nArguments:\n"
             "1. \"pool\"        (string, required) The pool from which subtrees should be returned. Either \"sapling\" or \"orchard\".\n"
             "2. start_index   (numeric, required) The index of the first subtree to return.\n"
-            "2. end_index     (numeric, optional) The index of the last subtree to return.\n"
+            "2. limit         (numeric, optional) The maximum number of subtree values to return.\n"
             "\nResult:\n"
             "{\n"
             "  \"pool\" : \"sapling|orchard\", (string) The shielded pool to which the subtrees belong\n"
@@ -1489,16 +1489,17 @@ UniValue z_getsubtreesbyindex(const UniValue& params, bool fHelp)
     }
 
     libzcash::SubtreeIndex startIndex = params[1].get_int();
-    std::optional<libzcash::SubtreeIndex> endIndex = std::nullopt;
+    std::optional<uint64_t> limit = std::nullopt;
     if (params.size() > 2) {
-        endIndex = params[2].get_int();
+        limit = params[2].get_int();
     }
 
     LOCK(cs_main);
 
     UniValue subtrees(UniValue::VARR);
+    uint64_t count = 0;
     for (libzcash::SubtreeIndex index = startIndex; ; index++) {
-        if (endIndex.has_value() && endIndex.value() < index) {
+        if (limit.has_value() && count >= limit.value()) {
             break;
         }
 
@@ -1511,6 +1512,7 @@ UniValue z_getsubtreesbyindex(const UniValue& params, bool fHelp)
         subtree.pushKV("root", HexStr(subtreeData->root));
         subtree.pushKV("end_height", subtreeData->nHeight);
         subtrees.push_back(subtree);
+        count++;
     }
 
     UniValue res(UniValue::VOBJ);
