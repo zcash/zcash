@@ -256,7 +256,7 @@ class FinalOrchardRootTest(BitcoinTestFramework):
         blk = self.nodes[0].getblock("216")
         assert_equal(len(blk["tx"]), 2)
         assert_equal(self.nodes[1].z_getbalance(orchardAddr1), Decimal("2.34"))
-        assert root is not blk["finalorchardroot"]
+        assert root != blk["finalorchardroot"]
 
         # Verify there is a Orchard output description (its commitment was added to tree)
         result = self.nodes[0].getrawtransaction(mytxid, 1)
@@ -286,7 +286,7 @@ class FinalOrchardRootTest(BitcoinTestFramework):
         blk = self.nodes[0].getblock("217")
         assert_equal(len(blk["tx"]), 2)
         assert_equal(self.nodes[0].z_getbalance(taddr2), Decimal("2.34"))
-        assert root is not blk["finalorchardroot"]
+        assert root != blk["finalorchardroot"]
 
         # Verify there is a Orchard output description (its commitment was added to tree)
         result = self.nodes[0].getrawtransaction(mytxid, 1)
