@@ -55,6 +55,44 @@ unsigned int nOrchardActionLimit = DEFAULT_ORCHARD_ACTION_LIMIT;
 
 const char * DEFAULT_WALLET_DAT = "wallet.dat";
 
+
+libzcash::UnifiedFullViewingKey
+UnifiedAccount::GetUnifiedFullViewingKey() const
+{
+    return ufvk;
+}
+
+std::optional<RecipientAddress>
+UnifiedAccount::GenerateChangeAddress(const CChainParams& params, const std::set<OutputPool>& changeOptions) const
+{
+    auto ufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(params, GetUnifiedFullViewingKey());
+    // changeOptions is sorted in preference order, so return
+    // the first (and therefore most preferred) change address that
+    // we're able to generate.
+    for (OutputPool t : changeOptions) {
+        std::optional<RecipientAddress> changeAddr;
+        switch (t) {
+            case OutputPool::Orchard:
+                changeAddr = ufvk.GetChangeAddress(OrchardChangeRequest());
+                break;
+            case OutputPool::Sapling:
+                changeAddr = ufvk.GetChangeAddress(SaplingChangeRequest());
+                break;
+            case OutputPool::Transparent:
+                // UFVKs must have a shielded component, so we would only
+                // reach this point if changeOptions contained no shielded
+                // options. But we prefer to opportunistically shield funds
+                // where possible, so we don't produce transparent change
+                // addresses for accounts.
+                break;
+        }
+        if (changeAddr.has_value()) {
+            return changeAddr.value();
+        }
+    }
+    return std::nullopt;
+}
+
 std::set<ReceiverType> CWallet::DefaultReceiverTypes(int nHeight) {
     // For now, just ignore the height information because the default
     // is always the same.
@@ -503,8 +541,7 @@ libzcash::transparent::AccountKey CWallet::GetLegacyAccountKey() const {
             ZCASH_LEGACY_ACCOUNT).value();
 }
 
-
-std::pair<UnifiedFullViewingKey, libzcash::AccountId> CWallet::GenerateNewUnifiedSpendingKey() {
+UnifiedAccount CWallet::GenerateNewUnifiedSpendingKey() {
     AssertLockHeld(cs_wallet);
 
     if (!mnemonicHDChain.has_value()) {
@@ -529,13 +566,14 @@ std::pair<UnifiedFullViewingKey, libzcash::AccountId> CWallet::GenerateNewUnifie
                         "CWallet::GenerateNewUnifiedSpendingKey(): Writing HD chain model failed");
             }
 
-            return std::make_pair(generated.value().ToFullViewingKey(), accountId);
+            auto ufvk = generated.value().ToFullViewingKey();
+            return UnifiedAccount(accountId, ufvk);
         }
     }
 }
 
 std::optional<libzcash::ZcashdUnifiedSpendingKey>
-        CWallet::GenerateUnifiedSpendingKeyForAccount(libzcash::AccountId accountId) {
+CWallet::GenerateUnifiedSpendingKeyForAccount(libzcash::AccountId accountId) {
     AssertLockHeld(cs_wallet); // mapUnifiedAccountKeys
 
     auto seed = GetMnemonicSeed();
@@ -684,7 +722,7 @@ WalletUAGenerationResult ToWalletUAGenerationResult(UnifiedAddressGenerationResu
 }
 
 WalletUAGenerationResult CWallet::GenerateUnifiedAddress(
-    const libzcash::AccountId& accountId,
+    const UnifiedAccount& account,
     const std::set<libzcash::ReceiverType>& receiverTypes,
     std::optional<libzcash::diversifier_index_t> j)
 {
@@ -712,124 +750,122 @@ WalletUAGenerationResult CWallet::GenerateUnifiedAddress(
         }
     }
 
-    auto ufvk = GetUnifiedFullViewingKeyByAccount(accountId);
-    if (ufvk.has_value()) {
-        auto ufvkid = ufvk.value().GetKeyID();
+    auto ufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(
+            Params(),
+            account.GetUnifiedFullViewingKey());
+    auto ufvkid = ufvk.GetKeyID();
 
-        // Check whether an address has already been generated for any provided
-        // diversifier index. Return that address, or set the diversifier index
-        // at which we'll begin searching for the next available diversified
-        // address.
-        auto metadata = mapUfvkAddressMetadata.find(ufvkid);
-        if (metadata != mapUfvkAddressMetadata.end()) {
-            if (j.has_value()) {
-                auto receivers = metadata->second.GetReceivers(j.value());
-                if (receivers.has_value()) {
-                    // Ensure that the set of receiver types being requested is
-                    // the same as the set of receiver types that was previously
-                    // generated. If they match, simply return that address.
-                    if (receivers.value() == receiverTypes) {
-                        return ToWalletUAGenerationResult(ufvk.value().Address(j.value(), receiverTypes));
-                    } else {
-                        return WalletUAGenerationError::ExistingAddressMismatch;
-                    }
-                }
-            } else {
-                // Set the diversifier index to one greater than the last used
-                // diversifier
-                j = metadata->second.GetNextDiversifierIndex();
-                if (!j.has_value()) {
-                    return UnifiedAddressGenerationError::DiversifierSpaceExhausted;
+    // Check whether an address has already been generated for any provided
+    // diversifier index. Return that address, or set the diversifier index
+    // at which we'll begin searching for the next available diversified
+    // address.
+    auto metadata = mapUfvkAddressMetadata.find(ufvkid);
+    if (metadata != mapUfvkAddressMetadata.end()) {
+        if (j.has_value()) {
+            auto receivers = metadata->second.GetReceivers(j.value());
+            if (receivers.has_value()) {
+                // Ensure that the set of receiver types being requested is
+                // the same as the set of receiver types that was previously
+                // generated. If they match, simply return that address.
+                if (receivers.value() == receiverTypes) {
+                    return ToWalletUAGenerationResult(ufvk.Address(j.value(), receiverTypes));
+                } else {
+                    return WalletUAGenerationError::ExistingAddressMismatch;
                 }
             }
         } else {
-            // Begin searching from the zero diversifier index if we haven't
-            // yet generated an address from the specified UFVK and no
-            // diversifier index has been specified.
+            // Set the diversifier index to one greater than the last used
+            // diversifier
+            j = metadata->second.GetNextDiversifierIndex();
             if (!j.has_value()) {
-                j = libzcash::diversifier_index_t(0);
+                return UnifiedAddressGenerationError::DiversifierSpaceExhausted;
             }
         }
-
-        // Find a working diversifier and construct the associated address.
-        // At this point, we know that `j` will contain a value.
-        auto addressGenerationResult = searchDiversifiers ?
-            ufvk.value().FindAddress(j.value(), receiverTypes) :
-            ufvk.value().Address(j.value(), receiverTypes);
-
-        if (std::holds_alternative<UnifiedAddressGenerationError>(addressGenerationResult)) {
-            return std::get<UnifiedAddressGenerationError>(addressGenerationResult);
-        }
-
-        auto address = std::get<std::pair<UnifiedAddress, diversifier_index_t>>(addressGenerationResult);
-
-        assert(mapUfvkAddressMetadata[ufvkid].SetReceivers(address.second, receiverTypes));
-        if (hasTransparent) {
-            // We must construct and add the transparent spending key associated
-            // with the external and internal transparent child addresses to the
-            // transparent keystore. This call to `value` will succeed because
-            // this key must have been previously generated.
-            auto usk = GenerateUnifiedSpendingKeyForAccount(accountId).value();
-            auto accountKey = usk.GetTransparentKey();
-            // this .value is known to be safe from the earlier check
-            auto childIndex = address.second.ToTransparentChildIndex().value();
-            auto externalKey = accountKey.DeriveExternalSpendingKey(childIndex);
-
-            if (!externalKey.has_value()) {
-                return UnifiedAddressGenerationError::NoAddressForDiversifier;
-            }
-
-            AddTransparentSecretKey(
-                mnemonicHDChain.value().GetSeedFingerprint(),
-                externalKey.value(),
-                transparent::AccountKey::KeyPath(BIP44CoinType(), accountId, true, childIndex)
-            );
-
-            // We do not add the change address for the transparent key, because
-            // we do not send transparent change when using unified accounts.
-
-            // Writing this data is handled by `CWalletDB::WriteUnifiedAddressMetadata` below.
-            assert(
-                CCryptoKeyStore::AddTransparentReceiverForUnifiedAddress(
-                    ufvkid, address.second, address.first
-                )
-            );
-        }
-
-        // If the address has a Sapling component, add an association between
-        // that address and the Sapling IVK corresponding to the ufvk
-        auto hasSapling = receiverTypes.find(ReceiverType::Sapling) != receiverTypes.end();
-        if (hasSapling) {
-            auto dfvk = ufvk.value().GetSaplingKey();
-            auto saplingAddress = address.first.GetSaplingReceiver();
-            assert (dfvk.has_value() && saplingAddress.has_value());
-
-            AddSaplingPaymentAddress(dfvk.value().ToIncomingViewingKey(), saplingAddress.value());
-        }
-
-        // If the address has an Orchard component, add an association between
-        // that address and the Orchard IVK corresponding to the ufvk
-        auto hasOrchard = receiverTypes.find(ReceiverType::Orchard) != receiverTypes.end();
-        if (hasOrchard) {
-            auto fvk = ufvk.value().GetOrchardKey();
-            auto orchardReceiver = address.first.GetOrchardReceiver();
-            assert (fvk.has_value() && orchardReceiver.has_value());
-
-            AddOrchardRawAddress(fvk.value().ToIncomingViewingKey(), orchardReceiver.value());
-        }
-
-        // Save the metadata for the generated address so that we can re-derive
-        // it in the future.
-        ZcashdUnifiedAddressMetadata addrmeta(ufvkid, address.second, receiverTypes);
-        if (fFileBacked && !CWalletDB(strWalletFile).WriteUnifiedAddressMetadata(addrmeta)) {
-            throw std::runtime_error(
-                    "CWallet::AddUnifiedAddress(): Writing unified address metadata failed");
-        }
-
-        return address;
     } else {
-        return WalletUAGenerationError::NoSuchAccount;
+        // Begin searching from the zero diversifier index if we haven't
+        // yet generated an address from the specified UFVK and no
+        // diversifier index has been specified.
+        if (!j.has_value()) {
+            j = libzcash::diversifier_index_t(0);
+        }
     }
+
+    // Find a working diversifier and construct the associated address.
+    // At this point, we know that `j` will contain a value.
+    auto addressGenerationResult = searchDiversifiers ?
+        ufvk.FindAddress(j.value(), receiverTypes) :
+        ufvk.Address(j.value(), receiverTypes);
+
+    if (std::holds_alternative<UnifiedAddressGenerationError>(addressGenerationResult)) {
+        return std::get<UnifiedAddressGenerationError>(addressGenerationResult);
+    }
+
+    auto address = std::get<std::pair<UnifiedAddress, diversifier_index_t>>(addressGenerationResult);
+
+    assert(mapUfvkAddressMetadata[ufvkid].SetReceivers(address.second, receiverTypes));
+    if (hasTransparent) {
+        // We must construct and add the transparent spending key associated
+        // with the external and internal transparent child addresses to the
+        // transparent keystore. This call to `value` will succeed because
+        // this key must have been previously generated.
+        auto usk = GenerateUnifiedSpendingKeyForAccount(account.id).value();
+        auto accountKey = usk.GetTransparentKey();
+        // this .value is known to be safe from the earlier check
+        auto childIndex = address.second.ToTransparentChildIndex().value();
+        auto externalKey = accountKey.DeriveExternalSpendingKey(childIndex);
+
+        if (!externalKey.has_value()) {
+            return UnifiedAddressGenerationError::NoAddressForDiversifier;
+        }
+
+        AddTransparentSecretKey(
+            mnemonicHDChain.value().GetSeedFingerprint(),
+            externalKey.value(),
+            transparent::AccountKey::KeyPath(BIP44CoinType(), account.id, true, childIndex)
+        );
+
+        // We do not add the change address for the transparent key, because
+        // we do not send transparent change when using unified accounts.
+
+        // Writing this data is handled by `CWalletDB::WriteUnifiedAddressMetadata` below.
+        assert(
+            CCryptoKeyStore::AddTransparentReceiverForUnifiedAddress(
+                ufvkid, address.second, address.first
+            )
+        );
+    }
+
+    // If the address has a Sapling component, add an association between
+    // that address and the Sapling IVK corresponding to the ufvk
+    auto hasSapling = receiverTypes.find(ReceiverType::Sapling) != receiverTypes.end();
+    if (hasSapling) {
+        auto dfvk = ufvk.GetSaplingKey();
+        auto saplingAddress = address.first.GetSaplingReceiver();
+        assert (dfvk.has_value() && saplingAddress.has_value());
+
+        AddSaplingPaymentAddress(dfvk.value().ToIncomingViewingKey(), saplingAddress.value());
+    }
+
+    // If the address has an Orchard component, add an association between
+    // that address and the Orchard IVK corresponding to the ufvk
+    auto hasOrchard = receiverTypes.find(ReceiverType::Orchard) != receiverTypes.end();
+    if (hasOrchard) {
+        auto fvk = ufvk.GetOrchardKey();
+        auto orchardReceiver = address.first.GetOrchardReceiver();
+        assert (fvk.has_value() && orchardReceiver.has_value());
+
+        AddOrchardRawAddress(fvk.value().ToIncomingViewingKey(), orchardReceiver.value());
+    }
+
+    // Save the metadata for the generated address so that we can re-derive
+    // it in the future.
+    ZcashdUnifiedAddressMetadata addrmeta(ufvkid, address.second, receiverTypes);
+    if (fFileBacked && !CWalletDB(strWalletFile).WriteUnifiedAddressMetadata(addrmeta)) {
+        throw std::runtime_error(
+                "CWallet::AddUnifiedAddress(): Writing unified address metadata failed");
+    }
+
+    return address;
 }
 
 bool CWallet::LoadUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey &key)
@@ -1861,24 +1897,16 @@ void CWallet::SyncMetaData(pair<typename TxSpendMap<T>::iterator, typename TxSpe
 // Zcash transaction output selectors
 //
 
-std::optional<ZTXOSelector> CWallet::ZTXOSelectorForAccount(
-    libzcash::AccountId account,
+ZTXOSelector CWallet::ZTXOSelectorForAccount(
+    const UnifiedAccount& account,
     bool requireSpendingKey,
     TransparentCoinbasePolicy transparentCoinbasePolicy,
     std::set<libzcash::ReceiverType> receiverTypes) const
 {
-    if (mnemonicHDChain.has_value() &&
-        mapUnifiedAccountKeys.count(
-            std::make_pair(mnemonicHDChain.value().GetSeedFingerprint(), account)
-        ) > 0)
-    {
-        return ZTXOSelector(
-                AccountZTXOPattern(account, receiverTypes),
-                requireSpendingKey,
-                transparentCoinbasePolicy);
-    } else {
-        return std::nullopt;
-    }
+    return ZTXOSelector(
+            AccountZTXOPattern(account, receiverTypes),
+            requireSpendingKey,
+            transparentCoinbasePolicy);
 }
 
 std::optional<ZTXOSelector> CWallet::ZTXOSelectorForAddress(
@@ -1911,17 +1939,17 @@ std::optional<ZTXOSelector> CWallet::ZTXOSelectorForAddress(
             }
         },
         [&](const libzcash::UnifiedAddress& ua) {
-            auto ufvkId = GetUFVKIdForAddress(ua);
-            if (ufvkId.has_value()) {
+            auto ufvk = GetUFVKForAddress(ua);
+            if (ufvk.has_value()) {
                 // TODO: at present, the `false` value for the `requireSpendingKey` argument
                 // is not respected for unified addresses, because we have no notion of
                 // an account for which we do not control the spending key. An alternate
                 // approach would be to use the UFVK directly in the case that we cannot
                 // determine a local account.
-                auto accountId = this->GetUnifiedAccountId(ufvkId.value());
-                if (accountId.has_value()) {
+                auto account = this->GetUnifiedAccount(ufvk.value().GetKeyID());
+                if (account.has_value()) {
                     if (allowAddressLinkability) {
-                        pattern = AccountZTXOPattern(accountId.value(), ua.GetKnownReceiverTypes());
+                        pattern = AccountZTXOPattern(account.value(), ua.GetKnownReceiverTypes());
                     } else {
                         pattern = ua;
                     }
@@ -1957,9 +1985,11 @@ std::optional<ZTXOSelector> CWallet::ZTXOSelectorForViewingKey(
         },
         [&](const libzcash::UnifiedFullViewingKey& ufvk) {
             auto ufvkId = ufvk.GetKeyID(Params());
-            auto accountId = this->GetUnifiedAccountId(ufvkId);
+            auto accountId = this->GetUnifiedAccount(ufvkId);
             if (accountId.has_value()) {
-                pattern = AccountZTXOPattern(accountId.value(), ufvk.GetKnownReceiverTypes());
+                pattern = AccountZTXOPattern(
+                        UnifiedAccount(accountId.value()),
+                        ufvk.GetKnownReceiverTypes());
             } else {
                 pattern = ufvk;
             }
@@ -1974,58 +2004,51 @@ std::optional<ZTXOSelector> CWallet::ZTXOSelectorForViewingKey(
 }
 
 ZTXOSelector CWallet::LegacyTransparentZTXOSelector(bool requireSpendingKey, TransparentCoinbasePolicy transparentCoinbasePolicy) {
-    return ZTXOSelector(
-            AccountZTXOPattern(ZCASH_LEGACY_ACCOUNT, {ReceiverType::P2PKH, ReceiverType::P2SH}),
-            requireSpendingKey,
-            transparentCoinbasePolicy);
+    return ZTXOSelector(LegacyAccount(), requireSpendingKey, transparentCoinbasePolicy);
 }
 
-std::optional<libzcash::AccountId> CWallet::FindAccountForSelector(const ZTXOSelector& selector) const {
+std::optional<UnifiedAccount> CWallet::FindAccountForSelector(const ZTXOSelector& selector) const {
     auto self = this;
-    std::optional<libzcash::AccountId> result{};
+    std::optional<UnifiedAccount> result{};
     examine(selector.GetPattern(), match {
         [&](const CKeyID& addr) {
             auto meta = self->GetUFVKMetadataForReceiver(addr);
             if (meta.has_value()) {
-                result = self->GetUnifiedAccountId(meta.value().GetUFVKId());
+                result = self->GetUnifiedAccount(meta.value().GetUFVKId());
             }
         },
         [&](const CScriptID& addr) {
             auto meta = self->GetUFVKMetadataForReceiver(addr);
             if (meta.has_value()) {
-                result = self->GetUnifiedAccountId(meta.value().GetUFVKId());
+                result = self->GetUnifiedAccount(meta.value().GetUFVKId());
             }
         },
-        [&](const libzcash::SproutPaymentAddress& addr) { },
-        [&](const libzcash::SproutViewingKey& vk) { },
+        [](const LegacyAccount&) { },
+        [](const libzcash::SproutPaymentAddress&) { },
+        [](const libzcash::SproutViewingKey&) { },
         [&](const libzcash::SaplingPaymentAddress& addr) {
             auto meta = GetUFVKMetadataForReceiver(addr);
             if (meta.has_value()) {
-                result = self->GetUnifiedAccountId(meta.value().GetUFVKId());
+                result = self->GetUnifiedAccount(meta.value().GetUFVKId());
             }
         },
         [&](const libzcash::SaplingExtendedFullViewingKey& vk) {
             auto ufvkid = GetUFVKIdForViewingKey(vk);
             if (ufvkid.has_value()) {
-                result = self->GetUnifiedAccountId(ufvkid.value());
+                result = self->GetUnifiedAccount(ufvkid.value());
             }
         },
         [&](const libzcash::UnifiedAddress& addr) {
             auto ufvkId = GetUFVKIdForAddress(addr);
             if (ufvkId.has_value()) {
-                result = self->GetUnifiedAccountId(ufvkId.value());
+                result = self->GetUnifiedAccount(ufvkId.value());
             }
         },
         [&](const libzcash::UnifiedFullViewingKey& vk) {
-            result = self->GetUnifiedAccountId(vk.GetKeyID(Params()));
+            result = self->GetUnifiedAccount(vk.GetKeyID(Params()));
         },
         [&](const AccountZTXOPattern& acct) {
-            if (self->mnemonicHDChain.has_value() &&
-                self->mapUnifiedAccountKeys.count(
-                    std::make_pair(self->mnemonicHDChain.value().GetSeedFingerprint(), acct.GetAccountId())
-                ) > 0) {
-                result = acct.GetAccountId();
-            }
+            result = acct.GetAccount();
         }
     });
     return result;
@@ -2046,6 +2069,10 @@ bool CWallet::SelectorMatchesAddress(
             CTxDestination scriptIdDest = scriptId;
             return address == scriptIdDest;
         },
+        // FIXME: What if it’s a UA taddr?!
+        // The legacy account is treated as a single pool of transparent funds, reproducing wallet
+        // behavior prior to the advent of unified addresses.
+        [](const LegacyAccount&) { return true; },
         [&](const libzcash::SproutPaymentAddress& addr) { return false; },
         [&](const libzcash::SproutViewingKey& vk) { return false; },
         [&](const libzcash::SaplingPaymentAddress& addr) { return false; },
@@ -2077,19 +2104,14 @@ bool CWallet::SelectorMatchesAddress(
         },
         [&](const AccountZTXOPattern& acct) {
             if (acct.IncludesP2PKH() || acct.IncludesP2SH()) {
-                auto meta = self->GetUFVKMetadataForAddress(address);
-                if (meta.has_value()) {
-                    // use the coin if the account id corresponding to the UFVK is
-                    // the payment source account.
-                    return self->GetUnifiedAccountId(meta.value().GetUFVKId()) == std::optional(acct.GetAccountId());
-                } else {
-                    // The legacy account is treated as a single pool of
-                    // transparent funds, reproducing wallet behavior prior to
-                    // the advent of unified addresses.
-                    return acct.GetAccountId() == ZCASH_LEGACY_ACCOUNT;
-                }
+                auto account = acct.GetAccount();
+                auto ufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(
+                        Params(),
+                        account.GetUnifiedFullViewingKey());
+                return self->GetUnifiedAccount(ufvk.GetKeyID()) == std::optional(account);
+            } else {
+                return false;
             }
-            return false;
         }
     });
 }
@@ -2109,10 +2131,11 @@ bool CWallet::SelectorMatchesAddress(
         const libzcash::SaplingPaymentAddress& a0) const {
     auto self = this;
     return examine(selector.GetPattern(), match {
-        [&](const CKeyID& keyId) { return false; },
-        [&](const CScriptID& scriptId) { return false; },
-        [&](const libzcash::SproutPaymentAddress& addr) { return false; },
-        [&](const libzcash::SproutViewingKey& vk) { return false; },
+        [](const CKeyID&) { return false; },
+        [](const CScriptID&) { return false; },
+        [](const LegacyAccount&) { return false; },
+        [](const libzcash::SproutPaymentAddress&) { return false; },
+        [](const libzcash::SproutViewingKey&) { return false; },
         [&](const libzcash::SaplingPaymentAddress& a1) {
             return a0 == a1;
         },
@@ -2144,67 +2167,18 @@ bool CWallet::SelectorMatchesAddress(
         },
         [&](const AccountZTXOPattern& acct) {
             if (acct.IncludesSapling()) {
-                const auto meta = self->GetUFVKMetadataForReceiver(a0);
-                if (meta.has_value()) {
-                    // use the coin if the account id corresponding to the UFVK is
-                    // the payment source account.
-                    return self->GetUnifiedAccountId(meta.value().GetUFVKId()) == std::optional(acct.GetAccountId());
-                } else {
-                    return false;
-                }
+                auto account = acct.GetAccount();
+                auto ufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(
+                        Params(),
+                        account.GetUnifiedFullViewingKey());
+                // use the coin if the account id corresponding to the UFVK is the payment source
+                // account.
+                return self->GetUnifiedAccount(ufvk.GetKeyID()) == std::optional(account);
+            } else {
+                return false;
             }
-            return false;
         }
     });
-}
-
-tl::expected<RecipientAddress, AccountChangeAddressFailure>
-CWallet::GenerateChangeAddressForAccount(
-        libzcash::AccountId accountId,
-        std::set<OutputPool> changeOptions)
-{
-    AssertLockHeld(cs_wallet);
-
-    if (accountId == ZCASH_LEGACY_ACCOUNT) {
-        // We only call this method with this account ID for legacy transparent addresses.
-        for (OutputPool t : changeOptions) {
-            if (t == OutputPool::Transparent) {
-                return GenerateNewKey(false).GetID();
-            }
-        }
-        return tl::make_unexpected(AccountChangeAddressFailure::TransparentChangeNotPermitted);
-    } else {
-        auto ufvk = this->GetUnifiedFullViewingKeyByAccount(accountId);
-        if (ufvk.has_value()) {
-            // changeOptions is sorted in preference order, so return
-            // the first (and therefore most preferred) change address that
-            // we're able to generate.
-            for (OutputPool t : changeOptions) {
-                std::optional<RecipientAddress> changeAddr;
-                switch (t) {
-                case OutputPool::Orchard:
-                    changeAddr = ufvk.value().GetChangeAddress(OrchardChangeRequest());
-                    break;
-                case OutputPool::Sapling:
-                    changeAddr = ufvk.value().GetChangeAddress(SaplingChangeRequest());
-                    break;
-                case OutputPool::Transparent:
-                    // UFVKs must have a shielded component, so we would only
-                    // reach this point if changeOptions contained no shielded
-                    // options. But we prefer to opportunistically shield funds
-                    // where possible, so we don't produce transparent change
-                    // addresses for accounts.
-                    break;
-                }
-                if (changeAddr.has_value()) {
-                    return changeAddr.value();
-                }
-            }
-            return tl::make_unexpected(AccountChangeAddressFailure::DisjointReceivers);
-        } else {
-            return tl::make_unexpected(AccountChangeAddressFailure::NoSuchAccount);
-        }
-    }
 }
 
 SpendableInputs CWallet::FindSpendableInputs(
@@ -2377,24 +2351,23 @@ SpendableInputs CWallet::FindSpendableInputs(
                 }
                 return {};
             },
-            [&](const libzcash::UnifiedFullViewingKey& ufvk) -> std::vector<OrchardIncomingViewingKey> {
+            [](const libzcash::UnifiedFullViewingKey& ufvk) -> std::vector<OrchardIncomingViewingKey> {
                 auto fvk = ufvk.GetOrchardKey();
                 if (fvk.has_value()) {
                     return {fvk->ToIncomingViewingKey(), fvk->ToInternalIncomingViewingKey()};
+                } else {
+                    return {};
                 }
-                return {};
             },
-            [&](const AccountZTXOPattern& acct) -> std::vector<OrchardIncomingViewingKey> {
-                auto ufvk = GetUnifiedFullViewingKeyByAccount(acct.GetAccountId());
-                if (ufvk.has_value()) {
-                    auto fvk = ufvk->GetOrchardKey();
-                    if (fvk.has_value()) {
-                        return {fvk->ToIncomingViewingKey(), fvk->ToInternalIncomingViewingKey()};
-                    }
+            [](const AccountZTXOPattern& acct) -> std::vector<OrchardIncomingViewingKey> {
+                auto fvk = acct.GetAccount().GetUnifiedFullViewingKey().GetOrchardKey();
+                if (fvk.has_value()) {
+                    return {fvk->ToIncomingViewingKey(), fvk->ToInternalIncomingViewingKey()};
+                } else {
+                    return {};
                 }
-                return {};
             },
-            [&](const auto& addr) -> std::vector<OrchardIncomingViewingKey> { return {}; }
+            [](const auto&) -> std::vector<OrchardIncomingViewingKey> { return {}; }
         });
 
         for (const auto& ivk : orchardIvks) {
@@ -7125,11 +7098,21 @@ void CWallet::GetFilteredNotes(
     }
 }
 
-std::optional<libzcash::AccountId> CWallet::GetUnifiedAccountId(const libzcash::UFVKId& ufvkId) const {
+std::optional<UnifiedAccount> CWallet::GetUnifiedAccount(const libzcash::UFVKId& ufvkId) const {
     auto addrMetaIt = mapUfvkAddressMetadata.find(ufvkId);
     if (addrMetaIt != mapUfvkAddressMetadata.end()) {
-        return addrMetaIt->second.GetAccountId();
+        auto id = addrMetaIt->second.GetAccountId();
+        if (id.has_value()) {
+            auto zufvk = CCryptoKeyStore::GetUnifiedFullViewingKey(ufvkId);
+            assert(zufvk.has_value()); // we found metadata associated with this id, so the UFVK should exist
+            return UnifiedAccount(id.value(), zufvk.value().ToFullViewingKey());
+
+        } else {
+            // TODO: report “imported UFVK or wallet load in progress”
+            return std::nullopt;
+        }
     } else {
+        // TODO: report “no known UFVK”
         return std::nullopt;
     }
 }
@@ -7138,10 +7121,10 @@ std::optional<UnifiedAddress> CWallet::FindUnifiedAddressByReceiver(const Receiv
     return std::visit(UnifiedAddressForReceiver(*this), receiver);
 }
 
-std::optional<libzcash::AccountId> CWallet::FindUnifiedAccountByReceiver(const Receiver& receiver) const {
+std::optional<UnifiedAccount> CWallet::FindUnifiedAccountByReceiver(const Receiver& receiver) const {
     auto ufvkMeta = GetUFVKMetadataForReceiver(receiver);
     if (ufvkMeta.has_value()) {
-        return GetUnifiedAccountId(ufvkMeta.value().GetUFVKId());
+        return GetUnifiedAccount(ufvkMeta.value().GetUFVKId());
     } else {
         return std::nullopt;
     }
@@ -7720,12 +7703,13 @@ bool TransactionStrategy::IsCompatibleWith(PrivacyPolicy policy) const {
 
 bool ZTXOSelector::SelectsTransparent() const {
     return examine(this->pattern, match {
-        [](const CKeyID& keyId) { return true; },
-        [](const CScriptID& scriptId) { return true; },
-        [](const libzcash::SproutPaymentAddress& addr) { return false; },
-        [](const libzcash::SproutViewingKey& vk) { return false; },
-        [](const libzcash::SaplingPaymentAddress& addr) { return false; },
-        [](const libzcash::SaplingExtendedFullViewingKey& vk) { return false; },
+        [](const CKeyID&) { return true; },
+        [](const CScriptID&) { return true; },
+        [](const LegacyAccount&) { return true; },
+        [](const libzcash::SproutPaymentAddress&) { return false; },
+        [](const libzcash::SproutViewingKey&) { return false; },
+        [](const libzcash::SaplingPaymentAddress&) { return false; },
+        [](const libzcash::SaplingExtendedFullViewingKey&) { return false; },
         [](const libzcash::UnifiedAddress& ua) {
             return ua.GetP2PKHReceiver().has_value() || ua.GetP2SHReceiver().has_value();
         },

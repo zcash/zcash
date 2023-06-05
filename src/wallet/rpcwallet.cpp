@@ -906,16 +906,16 @@ UniValue listaddresses(const UniValue& params, bool fHelp)
         UniValue unified_groups(UniValue::VARR);
         auto hdChain = pwalletMain->GetMnemonicHDChain();
         for (const auto& [ufvkid, addrmeta] : pwalletMain->mapUfvkAddressMetadata) {
-            auto account = pwalletMain->GetUnifiedAccountId(ufvkid);
+            auto account = pwalletMain->GetUnifiedAccount(ufvkid);
             if (account.has_value() && hdChain.has_value()) {
                 // double-check that the ufvkid we get from address metadata is actually
                 // associated with the mnemonic HD chain
                 auto ufvkCheck = pwalletMain->mapUnifiedAccountKeys.find(
-                    std::make_pair(hdChain.value().GetSeedFingerprint(), account.value())
+                    std::make_pair(hdChain.value().GetSeedFingerprint(), account.value().id)
                 );
                 if (ufvkCheck != pwalletMain->mapUnifiedAccountKeys.end() && ufvkCheck->second == ufvkid) {
                     UniValue unified_group(UniValue::VOBJ);
-                    unified_group.pushKV("account", uint64_t(account.value()));
+                    unified_group.pushKV("account", uint64_t(account.value().id));
                     unified_group.pushKV("seedfp", hdChain.value().GetSeedFingerprint().GetHex());
 
                     UniValue unified_addrs(UniValue::VARR);
@@ -2859,7 +2859,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
         obj.pushKV("spendable", hasSaplingSpendingKey);
         auto account = pwalletMain->FindUnifiedAccountByReceiver(entry.address);
         if (account.has_value()) {
-            obj.pushKV("account", (uint64_t) account.value());
+            obj.pushKV("account", (uint64_t) account.value().id);
         }
         auto addr = pwalletMain->GetPaymentAddressForRecipient(entry.op.hash, entry.address);
         if (addr.second != RecipientType::WalletInternalAddress) {
@@ -2885,14 +2885,14 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
         // TODO: add a better mechanism for checking whether we have the
         // spending key for an Orchard receiver.
         auto ufvkMeta = pwalletMain->GetUFVKMetadataForReceiver(entry.GetAddress());
-        auto account = pwalletMain->GetUnifiedAccountId(ufvkMeta.value().GetUFVKId());
+        auto account = pwalletMain->GetUnifiedAccount(ufvkMeta.value().GetUFVKId());
         bool haveSpendingKey = ufvkMeta.has_value() && account.has_value();
         bool isInternal = pwalletMain->IsInternalRecipient(entry.GetAddress());
 
         std::optional<std::string> addrStr;
         obj.pushKV("spendable", haveSpendingKey);
         if (account.has_value()) {
-            obj.pushKV("account", (uint64_t) account.value());
+            obj.pushKV("account", (uint64_t) account.value().id);
         }
         auto addr = pwalletMain->GetPaymentAddressForRecipient(entry.GetOutPoint().hash, entry.GetAddress());
         if (addr.second != RecipientType::WalletInternalAddress) {
@@ -3235,12 +3235,27 @@ UniValue z_getnewaccount(const UniValue& params, bool fHelp)
     EnsureWalletIsBackedUp(Params());
 
     // Generate the new account.
-    auto ufvkNew = pwalletMain->GenerateNewUnifiedSpendingKey();
-    const auto& account = ufvkNew.second;
+    auto account = pwalletMain->GenerateNewUnifiedSpendingKey();
 
     UniValue result(UniValue::VOBJ);
-    result.pushKV("account", (uint64_t)account);
+    result.pushKV("account", (uint64_t)account.id);
     return result;
+}
+
+static UnifiedAccount ParseAccount(const UniValue& accountValue) {
+    int64_t accountInt = accountValue.get_int64();
+    if (0 <= accountInt && accountInt < ZCASH_LEGACY_ACCOUNT) {
+        auto ufvk = pwalletMain->GetUnifiedFullViewingKeyByAccount(accountInt);
+        if (ufvk.has_value()) {
+            return UnifiedAccount(accountInt, ufvk.value().ToFullViewingKey());
+        } else {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "No such account.");
+        }
+    } else {
+        throw JSONRPCError(
+                RPC_INVALID_PARAMETER,
+                "Invalid account number, must be 0 <= account < (2^31)-1.");
+    }
 }
 
 UniValue z_getaddressforaccount(const UniValue& params, bool fHelp)
@@ -3282,11 +3297,7 @@ UniValue z_getaddressforaccount(const UniValue& params, bool fHelp)
     // CWallet::DefaultReceiverTypes
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    int64_t accountInt = params[0].get_int64();
-    if (accountInt < 0 || accountInt >= ZCASH_LEGACY_ACCOUNT) {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid account number, must be 0 <= account <= (2^31)-2.");
-    }
-    libzcash::AccountId account = accountInt;
+    auto account = ParseAccount(params[0]);
 
     std::set<libzcash::ReceiverType> receiverTypes;
     if (params.size() >= 2) {
@@ -3335,7 +3346,7 @@ UniValue z_getaddressforaccount(const UniValue& params, bool fHelp)
     auto res = pwalletMain->GenerateUnifiedAddress(account, receiverTypes, j);
 
     UniValue result(UniValue::VOBJ);
-    result.pushKV("account", (uint64_t)account);
+    result.pushKV("account", (uint64_t)account.id);
 
     examine(res, match {
         [&](std::pair<libzcash::UnifiedAddress, libzcash::diversifier_index_t> addr) {
@@ -3347,9 +3358,6 @@ UniValue z_getaddressforaccount(const UniValue& params, bool fHelp)
         [&](WalletUAGenerationError err) {
             std::string strErr;
             switch (err) {
-                case WalletUAGenerationError::NoSuchAccount:
-                    strErr = tfm::format("Error: account %d has not been generated by z_getnewaccount.", account);
-                    break;
                 case WalletUAGenerationError::ExistingAddressMismatch:
                     strErr = tfm::format(
                         "Error: address at diversifier index %s was already generated with different receiver types.",
@@ -4152,11 +4160,7 @@ UniValue z_getbalanceforaccount(const UniValue& params, bool fHelp)
             + HelpExampleRpc("z_getbalanceforaccount", "4 5")
         );
 
-    int64_t accountInt = params[0].get_int64();
-    if (accountInt < 0 || accountInt >= ZCASH_LEGACY_ACCOUNT) {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid account number, must be 0 <= account <= (2^31)-2.");
-    }
-    libzcash::AccountId account = accountInt;
+    auto account = ParseAccount(params[0]);
 
     auto asOfHeight = parseAsOfHeight(params, 2);
 
@@ -4166,13 +4170,8 @@ UniValue z_getbalanceforaccount(const UniValue& params, bool fHelp)
 
     // Get the receivers for this account.
     auto selector = pwalletMain->ZTXOSelectorForAccount(account, false, TransparentCoinbasePolicy::Allow);
-    if (!selector.has_value()) {
-        throw JSONRPCError(
-            RPC_INVALID_PARAMETER,
-            tfm::format("Error: account %d has not been generated by z_getnewaccount.", account));
-    }
 
-    auto spendableInputs = pwalletMain->FindSpendableInputs(selector.value(), minconf, asOfHeight);
+    auto spendableInputs = pwalletMain->FindSpendableInputs(selector, minconf, asOfHeight);
     // Accounts never contain Sprout notes.
     assert(spendableInputs.sproutNoteEntries.empty());
 
@@ -5004,17 +5003,16 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
             }
 
             auto selectorAccount = pwalletMain->FindAccountForSelector(ztxoSelectorOpt.value());
-            bool unknownOrLegacy = !selectorAccount.has_value() || selectorAccount.value() == ZCASH_LEGACY_ACCOUNT;
             examine(sender.value(), match {
                 [&](const libzcash::UnifiedAddress& ua) {
-                    if (unknownOrLegacy) {
+                    if (!selectorAccount.has_value()) {
                         throw JSONRPCError(
                                 RPC_INVALID_ADDRESS_OR_KEY,
                                 "Invalid from address, UA does not correspond to a known account.");
                     }
                 },
                 [&](const auto& other) {
-                    if (!unknownOrLegacy) {
+                    if (selectorAccount.has_value()) {
                         throw JSONRPCError(
                                 RPC_INVALID_ADDRESS_OR_KEY,
                                 "Invalid from address: is a bare receiver from a Unified Address in this wallet. Provide the UA as returned by z_getaddressforaccount instead.");
@@ -5299,14 +5297,14 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
             auto selectorAccount = pwalletMain->FindAccountForSelector(ztxoSelectorOpt.value());
             examine(decoded.value(), match {
                 [&](const libzcash::UnifiedAddress&) {
-                    if (!selectorAccount.has_value() || selectorAccount.value() == ZCASH_LEGACY_ACCOUNT) {
+                    if (!selectorAccount.has_value()) {
                         throw JSONRPCError(
                                 RPC_INVALID_ADDRESS_OR_KEY,
                                 "Invalid from address, UA does not correspond to a known account.");
                     }
                 },
                 [&](const auto&) {
-                    if (selectorAccount.has_value() && selectorAccount.value() != ZCASH_LEGACY_ACCOUNT) {
+                    if (selectorAccount.has_value()) {
                         throw JSONRPCError(
                                 RPC_INVALID_ADDRESS_OR_KEY,
                                 "Invalid from address: is a bare receiver from a Unified Address in this wallet. Provide the UA as returned by z_getaddressforaccount instead.");
