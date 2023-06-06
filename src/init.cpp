@@ -1809,7 +1809,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                     break;
                 }
 
-                {
+                if (fExperimentalLightWalletd) {
                     LOCK(cs_main);
 
                     SaplingMerkleTree sapling_tree;

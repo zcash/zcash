@@ -2938,7 +2938,9 @@ static DisconnectResult DisconnectBlock(const CBlock& block, CValidationState& s
     // (It is not possible for a block to complete more than one
     // subtree, due to the maximum number of outputs/actions in
     // a block being less than 2^16.)
-    {
+    //
+    // We do not store subtrees unless lightwalletd is enabled.
+    if (fExperimentalLightWalletd) {
         auto maybeDisconnectSubtree = [&] (ShieldedType type) {
             auto latestSubtree = view.GetLatestSubtree(type);
             if (latestSubtree.has_value()) {
@@ -3247,8 +3249,10 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     // the node had not been writing the latest subtrees to the
     // view in the past and so later in this function we will
     // not bother to add new subtrees.
-    bool fUpdateSaplingSubtrees = view.CurrentSubtreeIndex(SAPLING) == sapling_tree.current_subtree_index();
-    bool fUpdateOrchardSubtrees = view.CurrentSubtreeIndex(ORCHARD) == orchard_tree.current_subtree_index();
+    //
+    // We do not store subtrees unless lightwalletd is enabled.
+    bool fUpdateSaplingSubtrees = fExperimentalLightWalletd && (view.CurrentSubtreeIndex(SAPLING) == sapling_tree.current_subtree_index());
+    bool fUpdateOrchardSubtrees = fExperimentalLightWalletd && (view.CurrentSubtreeIndex(ORCHARD) == orchard_tree.current_subtree_index());
 
     // Grab the consensus branch ID for this block and its parent
     auto consensusBranchId = CurrentEpochBranchId(pindex->nHeight, chainparams.GetConsensus());
