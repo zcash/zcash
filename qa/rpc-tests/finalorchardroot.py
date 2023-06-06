@@ -126,7 +126,6 @@ class FinalOrchardRootTest(BitcoinTestFramework):
         # Verify that there are no complete Orchard subtrees.
         subtrees = self.nodes[0].z_getsubtreesbyindex('orchard', 0)
         assert_equal(subtrees['pool'], 'orchard')
-        assert_equal(subtrees['depth'], 16)
         assert_equal(subtrees['start_index'], 0)
         assert_equal(len(subtrees['subtrees']), 0)
 
@@ -304,7 +303,6 @@ class FinalOrchardRootTest(BitcoinTestFramework):
         # Verify that there are still no complete subtrees (as we have not created 2^16 notes).
         subtrees = self.nodes[0].z_getsubtreesbyindex('orchard', 0)
         assert_equal(subtrees['pool'], 'orchard')
-        assert_equal(subtrees['depth'], 16)
         assert_equal(subtrees['start_index'], 0)
         assert_equal(len(subtrees['subtrees']), 0)
 

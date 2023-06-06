@@ -1453,22 +1453,23 @@ UniValue z_gettreestate(const UniValue& params, bool fHelp)
 
 UniValue z_getsubtreesbyindex(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() < 2 || params.size() > 3)
+    if (fHelp || params.size() < 2 || params.size() > 3) {
+        auto strHeight = strprintf("%d", libzcash::TRACKED_SUBTREE_HEIGHT);
         throw runtime_error(
             "z_getsubtreesbyindex \"pool\" start_index ( limit )\n"
-            "Return information about the given block's tree state.\n"
+            "Returns roots of subtrees of the the given pool's note commitment tree. Each value returned\n"
+            "in the `subtrees` field is the Merkle root of a subtree containing 2^"+strHeight+" leaves.\n"
             "\nArguments:\n"
             "1. \"pool\"        (string, required) The pool from which subtrees should be returned. Either \"sapling\" or \"orchard\".\n"
-            "2. start_index   (numeric, required) The index of the first subtree to return.\n"
+            "2. start_index   (numeric, required) The index of the first 2^"+strHeight+"-leaf subtree to return.\n"
             "2. limit         (numeric, optional) The maximum number of subtree values to return.\n"
             "\nResult:\n"
             "{\n"
             "  \"pool\" : \"sapling|orchard\", (string) The shielded pool to which the subtrees belong\n"
-            "  \"depth\": n,            (numeric) The depth of the subtrees within the pool's note commitment tree\n"
             "  \"start_index\": n,      (numeric) The index of the first subtree\n"
             "  \"subtrees\": [          (array) A sequential list of complete subtrees\n"
             "    {\n"
-            "      \"root\": \"hash\",    (string) hash of most recent block with more information\n"
+            "      \"root\": \"hash\",    (string) Merkle root of the 2^"+strHeight+"-leaf subtree\n"
             "      \"end_height\": n,   (numeric) height of the block containing the note that completed this subtree\n"
             "    }, ...\n"
             "  ]\n"
@@ -1477,6 +1478,7 @@ UniValue z_getsubtreesbyindex(const UniValue& params, bool fHelp)
             + HelpExampleCli("z_getsubtreesbyindex", "\"sapling\", 0")
             + HelpExampleRpc("z_getsubtreesbyindex", "\"orchard\", 3, 7")
         );
+    }
 
     auto strPool = params[0].get_str();
     ShieldedType pool;
@@ -1517,7 +1519,6 @@ UniValue z_getsubtreesbyindex(const UniValue& params, bool fHelp)
 
     UniValue res(UniValue::VOBJ);
     res.pushKV("pool", strPool);
-    res.pushKV("depth", libzcash::TRACKED_SUBTREE_HEIGHT);
     res.pushKV("start_index", startIndex);
     res.pushKV("subtrees", subtrees);
 
