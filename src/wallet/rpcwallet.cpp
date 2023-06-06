@@ -3976,7 +3976,11 @@ UniValue z_getbalance(const UniValue& params, bool fHelp)
             nBalance = getBalanceZaddr(addr, std::nullopt, nMinDepth, INT_MAX, false);
         },
         [&](const libzcash::UnifiedAddress& addr) {
-            auto selector = pwalletMain->ZTXOSelectorForAddress(addr, true, TransparentCoinbasePolicy::Allow, false);
+            auto selector = pwalletMain->ZTXOSelectorForAddress(
+                    addr,
+                    true,
+                    TransparentCoinbasePolicy::Allow,
+                    std::nullopt);
             if (!selector.has_value()) {
                 throw JSONRPCError(
                     RPC_INVALID_ADDRESS_OR_KEY,
@@ -4996,7 +5000,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
                 strategy.AllowRevealedSenders() && !hasTransparentRecipient
                 ? TransparentCoinbasePolicy::Allow
                 : TransparentCoinbasePolicy::Disallow,
-                strategy.AllowLinkingAccountAddresses());
+                strategy.PermittedAccountSpendingPolicy());
             if (!ztxoSelectorOpt.has_value()) {
                 throw JSONRPCError(
                         RPC_INVALID_ADDRESS_OR_KEY,
@@ -5288,7 +5292,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
                 decoded.value(),
                 true,
                 TransparentCoinbasePolicy::Require,
-                strategy.AllowLinkingAccountAddresses());
+                strategy.PermittedAccountSpendingPolicy());
 
             if (!ztxoSelectorOpt.has_value()) {
                 throw JSONRPCError(
@@ -5788,13 +5792,13 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                 allInputs.sproutNoteEntries[0].address,
                 true,
                 TransparentCoinbasePolicy::Disallow,
-                strategy.AllowLinkingAccountAddresses());
+                strategy.PermittedAccountSpendingPolicy());
     } else if (allInputs.saplingNoteEntries.size() > 0) {
         ztxoSelector = pwalletMain->ZTXOSelectorForAddress(
                 allInputs.saplingNoteEntries[0].address,
                 true,
                 TransparentCoinbasePolicy::Disallow,
-                strategy.AllowLinkingAccountAddresses());
+                strategy.PermittedAccountSpendingPolicy());
     } else {
         ztxoSelector = CWallet::LegacyTransparentZTXOSelector(true, TransparentCoinbasePolicy::Disallow);
     }

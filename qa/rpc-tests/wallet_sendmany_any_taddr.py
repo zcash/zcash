@@ -152,7 +152,7 @@ class WalletSendManyAnyTaddr(BitcoinTestFramework):
                 'ANY_TADDR',
                 [{'address': recipient, 'amount': 13}],
                 1, LEGACY_DEFAULT_FEE, 'AllowRevealedSenders'),
-            "failed", "Insufficient funds: have 0.00, need 13.00001; note that coinbase outputs will not be selected if you specify ANY_TADDR, any transparent recipients are included, or if the `privacyPolicy` parameter is not set to `AllowRevealedSenders` or weaker.")
+            "failed", "Insufficient funds: have 0.00, need 13.00001; note that coinbase outputs will not be selected if you specify ANY_TADDR, any transparent recipients are included, or if the `privacyPolicy` parameter is not set to `AllowRevealedSenders` or weaker. (This transaction may require selecting transparent coins that were sent to multiple addresses, which is not enabled by default because it would create a public link between those addresses. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` parameter set to `AllowLinkingAccountAddresses` or weaker if you wish to allow this transaction to proceed anyway.)")
 
 if __name__ == '__main__':
     WalletSendManyAnyTaddr().main()

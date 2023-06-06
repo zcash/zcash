@@ -1885,7 +1885,7 @@ std::optional<ZTXOSelector> CWallet::ZTXOSelectorForAddress(
         const libzcash::PaymentAddress& addr,
         bool requireSpendingKey,
         TransparentCoinbasePolicy transparentCoinbasePolicy,
-        bool allowAddressLinkability) const
+        std::optional<UnifiedAccountSpendingPolicy> spendingPolicy) const
 {
     auto self = this;
     std::optional<ZTXOPattern> pattern = std::nullopt;
@@ -1920,8 +1920,32 @@ std::optional<ZTXOSelector> CWallet::ZTXOSelectorForAddress(
                 // determine a local account.
                 auto accountId = this->GetUnifiedAccountId(ufvkId.value());
                 if (accountId.has_value()) {
-                    if (allowAddressLinkability) {
-                        pattern = AccountZTXOPattern(accountId.value(), ua.GetKnownReceiverTypes());
+                    if (spendingPolicy.has_value()) {
+                        auto receiverTypes = ua.GetKnownReceiverTypes();
+                        switch (spendingPolicy.value()) {
+                            case UnifiedAccountSpendingPolicy::ShieldedWithSingleTransparentAddress:
+                                // NB: If we only allow sending from a single transparent receiver,
+                                //     we check if the UA even has transparent receivers. If so, we
+                                //     use the UA directly, but if not, we can use the account
+                                //     without selecting any transparent receivers, and without
+                                //     worrying that the UA had a transparent receiver that we
+                                //     should have used.
+                                if (receiverTypes.find(ReceiverType::P2SH) != receiverTypes.end() ||
+                                    receiverTypes.find(ReceiverType::P2PKH) != receiverTypes.end())
+                                {
+                                    pattern = ua;
+                                } else {
+                                    pattern = AccountZTXOPattern(accountId.value(), receiverTypes);
+                                }
+                                break;
+                            case UnifiedAccountSpendingPolicy::ShieldedOnly:
+                                receiverTypes.erase(ReceiverType::P2SH);
+                                receiverTypes.erase(ReceiverType::P2PKH);
+                                [[fallthrough]];
+                            case UnifiedAccountSpendingPolicy::AnyAddresses:
+                                pattern = AccountZTXOPattern(accountId.value(), receiverTypes);
+                                break;
+                        }
                     } else {
                         pattern = ua;
                     }
@@ -7716,6 +7740,16 @@ bool TransactionStrategy::AllowLinkingAccountAddresses() const {
 
 bool TransactionStrategy::IsCompatibleWith(PrivacyPolicy policy) const {
     return requestedLevel == PrivacyPolicyMeet(requestedLevel, policy);
+}
+
+UnifiedAccountSpendingPolicy
+TransactionStrategy::PermittedAccountSpendingPolicy() const {
+    if (!AllowRevealedSenders())
+        return UnifiedAccountSpendingPolicy::ShieldedOnly;
+    if (AllowLinkingAccountAddresses())
+        return UnifiedAccountSpendingPolicy::AnyAddresses;
+    else
+        return UnifiedAccountSpendingPolicy::ShieldedWithSingleTransparentAddress;
 }
 
 bool ZTXOSelector::SelectsTransparent() const {

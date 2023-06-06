@@ -1905,7 +1905,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                     zaddr.value(),
                     true,
                     TransparentCoinbasePolicy::Allow,
-                    false);
+                    std::nullopt);
             minerAddressInLocalWallet = ztxoSelector.has_value();
         }
         if (GetBoolArg("-minetolocalwallet", true) && !minerAddressInLocalWallet) {

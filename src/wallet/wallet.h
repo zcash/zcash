@@ -763,6 +763,18 @@ public:
 };
 
 /**
+ * Indicates which addresses can be used when selecting notes to spend from a unified account.
+ */
+enum UnifiedAccountSpendingPolicy {
+    /// Can only send from non-transparent receivers in the account.
+    ShieldedOnly,
+    /// Can send from a single transparent address in the account.
+    ShieldedWithSingleTransparentAddress,
+    /// Can send from any combination of receivers in the account.
+    AnyAddresses,
+};
+
+/**
  * A strategy to use for managing privacy when constructing a transaction.
  *
  * **NB**: These are intentionally in an order where `<` will never do the right
@@ -826,6 +838,11 @@ public:
      * is not allowed by `AllowLinkingAccountAddresses`.
      */
     bool IsCompatibleWith(PrivacyPolicy policy) const;
+
+    /**
+     * This lets us know which combinations of notes we can select from a unified account.
+     */
+    UnifiedAccountSpendingPolicy PermittedAccountSpendingPolicy() const;
 };
 
 /**
@@ -1573,7 +1590,10 @@ public:
             const libzcash::PaymentAddress& addr,
             bool requireSpendingKey,
             TransparentCoinbasePolicy transparentCoinbasePolicy,
-            bool allowAddressLinkability) const;
+            /// This determines if and how we treat a UA `addr` as a proxy for an account. It should
+            /// be `std::nullopt` when it’s not desirable to use the UA as a proxy (e.g., getting a
+            /// balance for a specific UA).
+            std::optional<UnifiedAccountSpendingPolicy> spendingPolicy) const;
 
     /**
      * Returns the ZTXO selector for the specified viewing key, if that key
