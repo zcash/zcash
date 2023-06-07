@@ -101,6 +101,12 @@ criteria = "safe-to-deploy"
 delta = "0.7.1 -> 0.8.0"
 notes = "I previously reviewed the crypto-sensitive portions of these changes as well."
 
+[[audits.bridgetree]]
+who = "Kris Nuttycombe <kris@nutty.land>"
+criteria = "safe-to-deploy"
+version = "0.3.0"
+notes = "The ECC core team maintains this crate, and we have reviewed every line."
+
 [[audits.bumpalo]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -664,6 +670,12 @@ criteria = "safe-to-deploy"
 delta = "0.3.0 -> 0.3.1"
 notes = "Fixes bug in calculating altitudes from tree positions on 32-bit platforms."
 
+[[audits.incrementalmerkletree]]
+who = "Kris Nuttycombe <kris@nutty.land>"
+criteria = "safe-to-deploy"
+delta = "0.3.1 -> 0.4.0"
+notes = "Removes `bridgetree` to a separate crate & updates Frontier representation."
+
 [[audits.indexmap]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -875,6 +887,12 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = ["safe-to-deploy", "crypto-reviewed"]
 delta = "0.3.0 -> 0.4.0"
 notes = "The ECC core team maintains this crate, and we have reviewed every line."
+
+[[audits.orchard]]
+who = "Kris Nuttycombe <kris@nutty.land>"
+criteria = ["safe-to-deploy", "crypto-reviewed"]
+delta = "0.4.0 -> 0.5.0"
+notes = "Updated to use incrementalmerkletree version 0.4.0."
 
 [[audits.pairing]]
 who = "Sean Bowe <ewillbefull@gmail.com>"
@@ -1476,6 +1494,12 @@ criteria = "safe-to-deploy"
 delta = "0.2.0 -> 0.2.1"
 notes = "The ECC core team maintains this crate, and we have reviewed every line."
 
+[[audits.zcash_address]]
+who = "Kris Nuttycombe <kris@nutty.land>"
+criteria = "safe-to-deploy"
+delta = "0.2.1 -> 0.3.0"
+notes = "Updates the bs58 dependency to version 0.5."
+
 [[audits.zcash_encoding]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -1509,6 +1533,12 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = ["safe-to-deploy", "crypto-reviewed"]
 delta = "0.2.0 -> 0.3.0"
 notes = "The ECC core team maintains this crate, and we have reviewed every line."
+
+[[audits.zcash_note_encryption]]
+who = "Kris Nuttycombe <kris@nutty.land>"
+criteria = ["safe-to-deploy", "crypto-reviewed"]
+delta = "0.3.0 -> 0.4.0"
+notes = "A minor API change that removes some unused parameters."
 
 [[audits.zcash_primitives]]
 who = "Jack Grigg <jack@z.cash>"
@@ -1563,6 +1593,12 @@ criteria = ["safe-to-deploy", "crypto-reviewed"]
 delta = "0.10.2 -> 0.11.0"
 notes = "The ECC core team maintains this crate, and we have reviewed every line."
 
+[[audits.zcash_primitives]]
+who = "Kris Nuttycombe <kris@nutty.land>"
+criteria = ["safe-to-deploy", "crypto-reviewed"]
+delta = "0.11.0 -> 0.12.0"
+notes = "The ECC core team maintains this crate, and we have reviewed every line."
+
 [[audits.zcash_proofs]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = ["crypto-reviewed", "safe-to-deploy"]
@@ -1602,6 +1638,12 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = ["safe-to-deploy", "crypto-reviewed"]
 delta = "0.10.0 -> 0.11.0"
 notes = "The ECC core team maintains this crate, and we have reviewed every line."
+
+[[audits.zcash_proofs]]
+who = "Kris Nuttycombe <kris@nutty.land>"
+criteria = ["safe-to-deploy", "crypto-reviewed"]
+delta = "0.11.0 -> 0.12.0"
+notes = "The only change is that the zcash_primitives dependency has been updated to version 0.12."
 
 [[audits.zeroize]]
 who = "Daira Hopwood <daira@jacaranda.org>"
