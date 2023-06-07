@@ -1818,6 +1818,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                     assert(pcoinsdbview->GetOrchardAnchorAt(pcoinsdbview->GetBestAnchor(ORCHARD), orchard_tree));
 
                     if (pcoinsdbview->CurrentSubtreeIndex(SAPLING) != sapling_tree.current_subtree_index()) {
+                        uiInterface.InitMessage(_("Regenerating subtrees for Sapling..."));
                         LogPrintf("init: the complete subtree database for Sapling needs to be migrated. Starting RegenerateSubtrees...\n");
                         struct timeval tv_start, tv_end;
                         float elapsed;
@@ -1832,6 +1833,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                     }
 
                     if (pcoinsdbview->CurrentSubtreeIndex(ORCHARD) != orchard_tree.current_subtree_index()) {
+                        uiInterface.InitMessage(_("Regenerating subtrees for Orchard..."));
                         LogPrintf("init: the complete subtree database for Orchard needs to be migrated. Starting RegenerateSubtrees...\n");
                         struct timeval tv_start, tv_end;
                         float elapsed;
