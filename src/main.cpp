@@ -5971,7 +5971,7 @@ bool RegenerateSubtrees(ShieldedType type, const Consensus::Params& consensusPar
         // should have a hashFinalSaplingRoot/hashFinalOrchardRoot
         // because this block completed a 2^16 size subtree!) and append
         // to it until we complete the subtree.
-        if (type == SAPLING) {
+        auto pushSapling = [&]() {
             SaplingMerkleTree sapling_tree;
             assert(pcoinsTip->GetSaplingAnchorAt(pindex->pprev->hashFinalSaplingRoot, sapling_tree));
             for (const CTransaction &tx : block.vtx) {
@@ -5982,7 +5982,7 @@ bool RegenerateSubtrees(ShieldedType type, const Consensus::Params& consensusPar
                     if (completeSubtreeRoot.has_value()) {
                         libzcash::SubtreeData subtree(completeSubtreeRoot->ToRawBytes(), nHeight);
                         pcoinsTip->PushSubtree(SAPLING, subtree);
-                        goto nextsubtree; // sorry
+                        return;
                     }
                 }
             }
@@ -5990,7 +5990,9 @@ bool RegenerateSubtrees(ShieldedType type, const Consensus::Params& consensusPar
             // We should not get here; this block should have completed the subtree
             // and the goto statement above should have executed.
             assert(false);
-        } else if (type == ORCHARD) {
+        };
+
+        auto pushOrchard = [&]() {
             OrchardMerkleFrontier orchard_tree;
             assert(pcoinsTip->GetOrchardAnchorAt(pindex->pprev->hashFinalOrchardRoot, orchard_tree));
             for (const CTransaction &tx : block.vtx) {
@@ -6001,7 +6003,7 @@ bool RegenerateSubtrees(ShieldedType type, const Consensus::Params& consensusPar
                             libzcash::SubtreeData subtree(appendResult.completed_subtree_root, nHeight);
 
                             pcoinsTip->PushSubtree(ORCHARD, subtree);
-                            goto nextsubtree; // sorry
+                            return true;
                         }
                     } catch (const rust::Error& e) {
                         return false;
@@ -6009,16 +6011,19 @@ bool RegenerateSubtrees(ShieldedType type, const Consensus::Params& consensusPar
                 }
             }
 
-            // Similarly, we should not get here.
+            // Similarly we should not get here.
             assert(false);
+        };
+
+        if (type == SAPLING) {
+            pushSapling();
+        } else if (type == ORCHARD) {
+            if (!pushOrchard()) {
+                return false;
+            }
         } else {
             assert(false);
         }
-
-        nextsubtree:
-            // needed because statements need to exist
-            // after a label is defined or it won't parse
-            continue;
     }
 
     return true;

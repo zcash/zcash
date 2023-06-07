@@ -603,7 +603,7 @@ bool TestBlockValidity(CValidationState& state, const CChainParams& chainparams,
 
 /**
  * This will clear the subtree database for a given shielded type from the
- * current CCoins view and regenerate the subtree database based on the current
+ * current CCoinsView and regenerate the subtree database based on the current
  * active chain.
  *
  * Only supports Sapling and Orchard. This does nothing in the event the chain

@@ -1461,7 +1461,7 @@ UniValue z_getsubtreesbyindex(const UniValue& params, bool fHelp)
         auto strHeight = strprintf("%d", libzcash::TRACKED_SUBTREE_HEIGHT);
         throw runtime_error(
             "z_getsubtreesbyindex \"pool\" start_index ( limit )\n"
-            "Returns roots of subtrees of the the given pool's note commitment tree. Each value returned\n"
+            "Returns roots of subtrees of the given pool's note commitment tree. Each value returned\n"
             "in the `subtrees` field is the Merkle root of a subtree containing 2^"+strHeight+" leaves.\n"
             + disabledMsg +
             "\nArguments:\n"
