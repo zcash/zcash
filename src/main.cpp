@@ -5988,7 +5988,7 @@ bool RegenerateSubtrees(ShieldedType type, const Consensus::Params& consensusPar
             }
 
             // We should not get here; this block should have completed the subtree
-            // and the goto statement above should have executed.
+            // and the return statement above should have executed.
             assert(false);
         };
 

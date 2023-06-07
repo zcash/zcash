@@ -41,6 +41,8 @@ class FinalSaplingRootTest(BitcoinTestFramework):
             '-allowdeprecated=getnewaddress',
             '-allowdeprecated=z_getnewaddress',
             '-allowdeprecated=z_getbalance',
+            '-experimentalfeatures',
+            '-lightwalletd'
             ]] * self.num_nodes)
         connect_nodes_bi(self.nodes,0,1)
         self.is_network_split=False
