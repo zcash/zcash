@@ -487,6 +487,9 @@ class SubtreeCache {
     //! exception if the view has no subtrees.
     void PopSubtree(CCoinsView *parentView);
 
+    //! Effectively pops all subtrees from the view
+    void ResetSubtrees();
+
     //! Writes a child map to this cache; this clears the child map.
     void BatchWrite(CCoinsView *parentView, SubtreeCache &childMap);
 };
@@ -702,6 +705,9 @@ public:
     // supported. Throws an exception if there isn't a subtree present
     // in the database.
     void PopSubtree(ShieldedType type);
+
+    //! Effectively pops all subtrees from the view
+    void ResetSubtrees(ShieldedType type);
 
     /**
      * Return a pointer to CCoins in the cache, or NULL if not found. This is

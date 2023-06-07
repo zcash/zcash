@@ -1453,12 +1453,17 @@ UniValue z_gettreestate(const UniValue& params, bool fHelp)
 
 UniValue z_getsubtreesbyindex(const UniValue& params, bool fHelp)
 {
+    std::string disabledMsg = "";
+    if (!fExperimentalLightWalletd) {
+        disabledMsg = experimentalDisabledHelpMsg("z_getsubtreesbyindex", {"lightwalletd"});
+    }
     if (fHelp || params.size() < 2 || params.size() > 3) {
         auto strHeight = strprintf("%d", libzcash::TRACKED_SUBTREE_HEIGHT);
         throw runtime_error(
             "z_getsubtreesbyindex \"pool\" start_index ( limit )\n"
-            "Returns roots of subtrees of the the given pool's note commitment tree. Each value returned\n"
+            "Returns roots of subtrees of the given pool's note commitment tree. Each value returned\n"
             "in the `subtrees` field is the Merkle root of a subtree containing 2^"+strHeight+" leaves.\n"
+            + disabledMsg +
             "\nArguments:\n"
             "1. \"pool\"        (string, required) The pool from which subtrees should be returned. Either \"sapling\" or \"orchard\".\n"
             "2. start_index   (numeric, required) The index of the first 2^"+strHeight+"-leaf subtree to return.\n"
@@ -1478,6 +1483,11 @@ UniValue z_getsubtreesbyindex(const UniValue& params, bool fHelp)
             + HelpExampleCli("z_getsubtreesbyindex", "\"sapling\", 0")
             + HelpExampleRpc("z_getsubtreesbyindex", "\"orchard\", 3, 7")
         );
+    }
+
+    if (!fExperimentalLightWalletd) {
+        throw JSONRPCError(RPC_MISC_ERROR, "Error: z_getsubtreesbyindex is disabled. "
+            "Run './zcash-cli help z_getsubtreesbyindex' for instructions on how to enable this feature.");
     }
 
     auto strPool = params[0].get_str();
