@@ -185,11 +185,15 @@ version = "3.2.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.cxx]]
-version = "1.0.68"
+version = "1.0.95"
+criteria = "safe-to-deploy"
+
+[[exemptions.cxxbridge-flags]]
+version = "1.0.95"
 criteria = "safe-to-deploy"
 
 [[exemptions.cxxbridge-macro]]
-version = "1.0.68"
+version = "1.0.95"
 criteria = "safe-to-deploy"
 
 [[exemptions.digest]]
