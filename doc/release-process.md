@@ -98,6 +98,28 @@ manager constructs the release stabilization branch as follows:
     $ git checkout -b version-X.Y.0 <COMMIT_ID>
     $ git push 'git@github.com:zcash/zcash' $(git rev-parse --abbrev-ref HEAD)
 
+### Review & update the release notes
+
+Now is the time to make sure that all of the changes since the previous release
+are property represented in `doc/release-notes.md`. Determine the tag that will
+be used for the `RELEASE_FROM` value by manually searching for the tag for the
+latest full release in the list obtained by running
+
+    $ git tag -l --sort=-taggerdate
+
+and then finding the most recent non-release-candidate version. If you have a
+git remote for the upstream `bitcoin-core` repository, be aware that Bitcoin
+tags will also appear in this list. Then, skim the full diff since the last
+release and make certain that all user-visible changes are properly documented
+in `doc/release-notes.md`.
+
+    $ git diff <RELEASE_FROM>..HEAD
+
+If you make any changes to the release notes, add commits to do so as
+necessary, but do NOT push these commits to the `version-X.Y.Z` branch on the
+upstream repository; they will be included in the release branch that will be
+created in the next step.
+
 ### Create the release candidate branch
 
 Run the release script to create the first release candidate. This will create
@@ -122,7 +144,7 @@ Push the resulting branch to github:
     $ git push 'git@github.com:$YOUR_GITHUB_NAME/zcash' $(git rev-parse --abbrev-ref HEAD)
 
 Then create the PR on github targeting the `version-X.Y.0` branch. Complete the
-standard review process and wait for CI to complete. 
+standard review process and wait for CI to complete.
 
 ## Make a tag for the tip of the release candidate branch
 
@@ -155,12 +177,12 @@ Remember the `v` at the beginning here:
 Once CI has completed and the release candidate branch has sufficient approving
 reviews, merge the release candidate branch back to the release stabilization
 branch. Testing proceeds as normal. Any changes that need to be made during the
-release candidate period are made by submitting PRs targeting the release 
+release candidate period are made by submitting PRs targeting the release
 stabilization branch.
 
 Subsequent release candidates, and the creation of the final release, follow
 the same process as for release candidates, omitting the `-rcN` suffix for the
-final release. 
+final release.
 
 ## Make and deploy deterministic builds
 

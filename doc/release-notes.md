@@ -25,17 +25,45 @@ is not possible to compute that without knowing the number of logical actions
 in a transaction, which was not an input to `estimatefee`. The `fee_estimates.dat`
 file is no longer used.
 
+RPC Changes
+-----------
+
+A new RPC method, `z_getsubtreesbyindex`, has been added to the RPC interface.
+This method is only enabled when running with the `-experimentalfeatures=1` and
+`-lightwalletd=1` node configuration options. This method makes available to the
+caller precomputed node values within the Sapling and Orchard note commitment 
+trees. Wallets can make use of these precomputed values to make their existing
+notes spendable without needing to fully scan the sub-trees whose roots
+correspond to the returned node values.
+
+In conjunction with this change, the `getblock` RPC method now returns an
+additional `trees` field as part of its result. The value for this field is an
+object that contains the final sizes of the Sapling and Orchard note commitment
+trees after the block's note commitments have been appended to their respective
+trees.
+
+Error reporting has also been improved for a number of RPC methods.
+
 Privacy Policy Changes
 ----------------------
 
- The `AllowRevealedSenders` privacy policy no longer allows sending from
- multiple taddrs in the same transaction. This now requires
- `AllowLinkingAccountAddresses`. Care should be taken in using
- `AllowLinkingAccountAddresses` too broadly, as it can also result in linking
- UAs when transparent funds are sent from them. The practical effect is that an
- explicit privacy policy is always required for `z_mergetoaddress`,
+The `AllowRevealedSenders` privacy policy no longer allows sending from
+multiple taddrs in the same transaction. This now requires
+`AllowLinkingAccountAddresses`. Care should be taken in using
+`AllowLinkingAccountAddresses` too broadly, as it can also result in linking
+UAs when transparent funds are sent from them. The practical effect is that an
+explicit privacy policy is always required for `z_mergetoaddress`,
 `z_sendmany`, and `z_shieldcoinbase` when sending from multiple taddrs, even
 when using wildcards like `*` and `ANY_TADDR`.
+
+Wallet Updates
+--------------
+
+A number of libraries that zcashd relies upon have been updated as part of this
+release, including some changes that result in updates to wallet serialization
+formats for Orchard note commitment tree data. As always, it is recommended
+that users back up their wallets prior to upgrading to a new release to help
+guarantee the continued availability of their funds.
 
 Platform Support
 ----------------
