@@ -1241,8 +1241,8 @@ std::optional<libzcash::SubtreeData> SubtreeCache::GetSubtreeData(CCoinsView *pa
             // be located.
             auto localIndex = index - (parentLatestSubtree.value().index + 1);
             assert(newSubtrees.size() > localIndex);
-            return newSubtrees[localIndex];            
-        } 
+            return newSubtrees[localIndex];
+        }
     } else {
         // The index we've been given is the index into our local `newSubtrees`
         // since the parent view has no subtrees.
