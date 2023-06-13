@@ -317,39 +317,6 @@ who = "David Cook <dcook@divviup.org>"
 criteria = "safe-to-deploy"
 version = "1.6.1"
 
-[[audits.isrg.audits.fiat-crypto]]
-who = "David Cook <dcook@divviup.org>"
-criteria = "safe-to-deploy"
-version = "0.1.17"
-notes = """
-This crate does not contain any unsafe code, and does not use any items from
-the standard library or other crates, aside from operations backed by
-`std::ops`. All paths with array indexing use integer literals for indexes, so
-there are no panics due to indexes out of bounds (as rustc would catch an
-out-of-bounds literal index). I did not check whether arithmetic overflows
-could cause a panic, and I am relying on the Coq code having satisfied the
-necessary preconditions to ensure panics due to overflows are unreachable.
-"""
-
-[[audits.isrg.audits.fiat-crypto]]
-who = "Brandon Pitman <bran@bran.land>"
-criteria = "safe-to-deploy"
-delta = "0.1.17 -> 0.1.18"
-
-[[audits.isrg.audits.fiat-crypto]]
-who = "David Cook <dcook@divviup.org>"
-criteria = "safe-to-deploy"
-delta = "0.1.18 -> 0.1.19"
-notes = """
-This release renames many items and adds a new module. The code in the new
-module is entirely composed of arithmetic and array accesses.
-"""
-
-[[audits.isrg.audits.fiat-crypto]]
-who = "David Cook <dcook@divviup.org>"
-criteria = "safe-to-deploy"
-delta = "0.1.19 -> 0.1.20"
-
 [[audits.isrg.audits.opaque-debug]]
 who = "David Cook <dcook@divviup.org>"
 criteria = "safe-to-deploy"
