@@ -24,6 +24,16 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = ["safe-to-deploy", "crypto-reviewed"]
 delta = "0.5.1 -> 0.5.2"
 
+[[audits.allocator-api2]]
+who = "Daira Emma Hopwood <daira@jacaranda.org>"
+criteria = "safe-to-deploy"
+version = "0.2.14"
+notes = """
+This is a workaround for https://doc.rust-lang.org/unstable-book/library-features/allocator-api.html being unstable.
+It copies the unstable implementation, and inherently requires a lot of unsafe code, which was infeasible to review completely.
+However, safety requirements appear to be well-documented.
+"""
+
 [[audits.anyhow]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -401,6 +411,16 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "3.0.0 -> 3.1.0"
 
+[[audits.ed25519-zebra]]
+who = "Daira Emma Hopwood <daira@jacaranda.org>"
+criteria = "safe-to-deploy"
+delta = "3.1.0 -> 4.0.0"
+notes = """
+Changes are mainly in the pem and pkcs8 features and in Java or Scala code. These do not introduce unsafe code,
+but I cannot vouch for their cryptographic correctness or conformance to PEM or PKCS8 standards. I reviewed the
+remaining changes from 3.1.0 to 4.0.0 fully.
+"""
+
 [[audits.either]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -638,6 +658,16 @@ delta = "0.2.0 -> 0.3.0"
 notes = """
 The ECC core team maintains this crate, and we have reviewed every line.
 The crate has `deny(unsafe_code)`.
+"""
+
+[[audits.hashbrown]]
+who = "Daira Emma Hopwood <daira@jacaranda.org>"
+criteria = "safe-to-deploy"
+delta = "0.13.2 -> 0.14.0"
+notes = """
+There is some additional use of unsafe code but the changes in this crate looked plausible.
+There is a new default dependency on the `allocator-api2` crate, which itself has quite a lot of unsafe code.
+Many previously undocumented safety requirements have been documented.
 """
 
 [[audits.hdwallet]]
@@ -981,6 +1011,16 @@ into `&'static UncasedStr`. I verified that `UncasedStr` is a `#[repr(transparen
 newtype around `str`.
 """
 
+[[audits.platforms]]
+who = "Daira Emma Hopwood <daira@jacaranda.org>"
+criteria = "safe-to-deploy"
+version = "3.0.2"
+notes = """
+This crate uses `#![forbid(unsafe_code)]` and its build script is safe. It only \"provides programmatic access to
+information about valid Rust platforms, sourced from the Rust compiler\"; it does not attempt any detection that
+would require unsafety.
+"""
+
 [[audits.poly1305]]
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
@@ -1146,6 +1186,15 @@ delta = "1.0.159 -> 1.0.160"
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.95 -> 1.0.96"
+
+[[audits.signature]]
+who = "Daira Emma Hopwood <daira@jacaranda.org>"
+criteria = "safe-to-deploy"
+version = "2.1.0"
+notes = """
+This crate uses `#![forbid(unsafe_code)]`, has no build script, and only provides traits with some trivial default implementations.
+I did not review whether implementing these APIs would present any undocumented cryptographic hazards.
+"""
 
 [[audits.sketches-ddsketch]]
 who = "Jack Grigg <jack@z.cash>"
