@@ -11,4 +11,6 @@ void LoadProofParameters();
 void LoadGlobalWallet();
 void UnloadGlobalWallet();
 
+template<typename Tree> void AppendRandomLeaf(Tree &tree);
+
 #endif

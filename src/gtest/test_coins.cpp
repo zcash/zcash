@@ -475,21 +475,6 @@ uint256 appendRandomSproutCommitment(SproutMerkleTree &tree)
     return cm;
 }
 
-template<typename Tree> void AppendRandomLeaf(Tree &tree);
-template<> void AppendRandomLeaf(SproutMerkleTree &tree) { tree.append(GetRandHash()); }
-template<> void AppendRandomLeaf(SaplingMerkleTree &tree) { tree.append(GetRandHash()); }
-template<> void AppendRandomLeaf(OrchardMerkleFrontier &tree) {
-    // OrchardMerkleFrontier only has APIs to append entire bundles, but
-    // fortunately the tests only require that the tree root change.
-    // TODO: Remove the need to create proofs by having a testing-only way to
-    // append a random leaf to OrchardMerkleFrontier.
-    uint256 orchardAnchor;
-    uint256 dataToBeSigned;
-    auto builder = orchard::Builder(true, true, orchardAnchor);
-    auto bundle = builder.Build().value().ProveAndSign({}, dataToBeSigned).value();
-    tree.AppendBundle(bundle);
-}
-
 template<typename Tree> bool GetAnchorAt(const CCoinsViewCacheTest &cache, const uint256 &rt, Tree &tree);
 template<> bool GetAnchorAt(const CCoinsViewCacheTest &cache, const uint256 &rt, SproutMerkleTree &tree) { return cache.GetSproutAnchorAt(rt, tree); }
 template<> bool GetAnchorAt(const CCoinsViewCacheTest &cache, const uint256 &rt, SaplingMerkleTree &tree) { return cache.GetSaplingAnchorAt(rt, tree); }
