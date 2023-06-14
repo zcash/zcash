@@ -25,6 +25,7 @@
 #include "zcash/IncrementalMerkleTree.hpp"
 #include "zcash/util.h"
 
+#include "gtest/utils.h"
 
 #include "json_test_vectors.h"
 
@@ -321,4 +322,37 @@ TEST(orchardMerkleTree, appendBundle) {
         EXPECT_NE(newTree.root(), OrchardMerkleFrontier::empty_root());
         EXPECT_EQ(newTree.root(), readBack.root());
     }
+}
+
+TEST(saplingMerkleTree, subtree_roots)
+{
+    SaplingMerkleTree tree;
+    for (size_t i = 0; i < (1 << 16); i++) {
+        EXPECT_FALSE(tree.complete_subtree_root().has_value());
+        EXPECT_EQ(tree.current_subtree_index(), 0);
+        AppendRandomLeaf(tree);
+    }
+    EXPECT_EQ(tree.current_subtree_index(), 1);
+    auto subtree_root = tree.complete_subtree_root();
+    ASSERT_TRUE(subtree_root.has_value());
+    uint256 cur = *subtree_root;
+    for (size_t depth = 16; depth < 32; depth++) {
+        cur = libzcash::PedersenHash::combine(cur, libzcash::PedersenHash::EmptyRoot(depth), depth);
+    }
+    EXPECT_EQ(tree.root(), cur);
+    for (size_t i = 0; i < (1 << 16); i++) {
+        if (i != 0) {
+            EXPECT_FALSE(tree.complete_subtree_root().has_value());
+        }
+        EXPECT_EQ(tree.current_subtree_index(), 1);
+        AppendRandomLeaf(tree);
+    }
+    EXPECT_EQ(tree.current_subtree_index(), 2);
+    auto subtree_root2 = tree.complete_subtree_root();
+    ASSERT_TRUE(subtree_root.has_value());
+    uint256 cur2 = libzcash::PedersenHash::combine(*subtree_root, *subtree_root2, 16);
+    for (size_t depth = 17; depth < 32; depth++) {
+        cur2 = libzcash::PedersenHash::combine(cur2, libzcash::PedersenHash::EmptyRoot(depth), depth);
+    }
+    EXPECT_EQ(tree.root(), cur2);
 }

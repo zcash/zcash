@@ -4,6 +4,9 @@
 #include "wallet/wallet.h"
 #endif
 
+#include "zcash/IncrementalMerkleTree.hpp"
+#include "transaction_builder.h"
+
 int GenZero(int n)
 {
     return 0;
@@ -73,3 +76,17 @@ void UnloadGlobalWallet() {
 }
 
 #endif
+
+template<> void AppendRandomLeaf(SproutMerkleTree &tree) { tree.append(GetRandHash()); }
+template<> void AppendRandomLeaf(SaplingMerkleTree &tree) { tree.append(GetRandHash()); }
+template<> void AppendRandomLeaf(OrchardMerkleFrontier &tree) {
+    // OrchardMerkleFrontier only has APIs to append entire bundles, but
+    // fortunately the tests only require that the tree root change.
+    // TODO: Remove the need to create proofs by having a testing-only way to
+    // append a random leaf to OrchardMerkleFrontier.
+    uint256 orchardAnchor;
+    uint256 dataToBeSigned;
+    auto builder = orchard::Builder(true, true, orchardAnchor);
+    auto bundle = builder.Build().value().ProveAndSign({}, dataToBeSigned).value();
+    tree.AppendBundle(bundle);
+}
