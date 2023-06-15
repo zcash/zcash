@@ -259,9 +259,15 @@ Copyright: 2019 Will Wray
 License: Boost-Software-License-1.0
 
 Files: src/secp256k1/*
-Copyright: 2013 Pieter Wuille
+Copyright: 2013-2023 Pieter Wuille, Thomas Daede, Peter Dettman, Cory Fields, Diederik Huys, Gregory Maxwell, Jonas Nick, Russell O'Connor,
+ Andrew Poelstra, Wladimir J. van der Laan
 License: Expat
-Comment: This copyright entry excludes files explicitly listed below.
+Comment: This copyright entry excludes files explicitly listed below. Pieter Wuille is given as the overall copyright holder; the names
+ in the Copyright field are the union of those listed in files under src/secp256k1 at the commit corresponding to upstream version 0.2.0.
+
+Files: src/secp256k1/examples/*
+Copyright: 2013-2023 The Bitcoin Core developers, Elichai Turkel
+License: CC0-1.0
 
 Files: src/secp256k1/build-aux/m4/ax_jni_include_dir.m4
 Copyright: 2008 Don Anderson <dda@sleepycat.com>
