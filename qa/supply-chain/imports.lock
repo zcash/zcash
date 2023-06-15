@@ -64,6 +64,12 @@ criteria = "safe-to-deploy"
 version = "0.3.0"
 notes = "This crate uses libc and windows-sys APIs to get and set the raw OS error value."
 
+[[audits.bytecode-alliance.audits.errno-dragonfly]]
+who = "Jamey Sharp <jsharp@fastly.com>"
+criteria = "safe-to-deploy"
+version = "0.1.2"
+notes = "This should be portable to any POSIX system and seems like it should be part of the libc crate, but at any rate it's safe as is."
+
 [[audits.bytecode-alliance.audits.futures-channel]]
 who = "Pat Hickey <phickey@fastly.com>"
 criteria = "safe-to-deploy"

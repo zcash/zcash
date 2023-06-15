@@ -24,16 +24,6 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = ["safe-to-deploy", "crypto-reviewed"]
 delta = "0.5.1 -> 0.5.2"
 
-[[audits.allocator-api2]]
-who = "Daira Emma Hopwood <daira@jacaranda.org>"
-criteria = "safe-to-deploy"
-version = "0.2.14"
-notes = """
-This is a workaround for https://doc.rust-lang.org/unstable-book/library-features/allocator-api.html being unstable.
-It copies the unstable implementation, and inherently requires a lot of unsafe code, which was infeasible to review completely.
-However, safety requirements appear to be well-documented.
-"""
-
 [[audits.anyhow]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
