@@ -69,15 +69,15 @@ version = "0.8.2"
 criteria = "safe-to-deploy"
 
 [[exemptions.ahash]]
-version = "0.7.6"
-criteria = "safe-to-deploy"
-
-[[exemptions.ahash]]
 version = "0.8.3"
 criteria = "safe-to-deploy"
 
 [[exemptions.aho-corasick]]
 version = "0.7.18"
+criteria = "safe-to-deploy"
+
+[[exemptions.allocator-api2]]
+version = "0.2.14"
 criteria = "safe-to-deploy"
 
 [[exemptions.backtrace]]
@@ -181,7 +181,7 @@ version = "0.8.8"
 criteria = "safe-to-deploy"
 
 [[exemptions.curve25519-dalek]]
-version = "3.2.0"
+version = "4.0.0-rc.2"
 criteria = "safe-to-deploy"
 
 [[exemptions.cxx]]
@@ -212,12 +212,12 @@ criteria = "safe-to-deploy"
 version = "0.3.7"
 criteria = "safe-to-deploy"
 
-[[exemptions.ed25519-zebra]]
-version = "3.0.0"
+[[exemptions.ed25519]]
+version = "2.2.1"
 criteria = "safe-to-deploy"
 
-[[exemptions.errno-dragonfly]]
-version = "0.1.2"
+[[exemptions.ed25519-zebra]]
+version = "3.0.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.ff]]
@@ -345,6 +345,10 @@ version = "0.2.141"
 criteria = "safe-to-deploy"
 
 [[exemptions.libm]]
+version = "0.1.4"
+criteria = "safe-to-deploy"
+
+[[exemptions.libm]]
 version = "0.2.2"
 criteria = "safe-to-deploy"
 
@@ -426,6 +430,10 @@ criteria = "safe-to-deploy"
 
 [[exemptions.overload]]
 version = "0.1.1"
+criteria = "safe-to-deploy"
+
+[[exemptions.packed_simd_2]]
+version = "0.3.8"
 criteria = "safe-to-deploy"
 
 [[exemptions.pairing]]
@@ -514,10 +522,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.rand_chacha]]
 version = "0.3.1"
-criteria = "safe-to-deploy"
-
-[[exemptions.rand_core]]
-version = "0.5.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.rand_core]]
