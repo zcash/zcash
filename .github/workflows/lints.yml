@@ -40,6 +40,10 @@ jobs:
         if: always()
         continue-on-error: true # Temporary until we get this passing
 
+      - name: make dist
+        run: ./test/lint/lint-make-dist.sh
+        if: always()
+
       - name: Shebang
         run: ./test/lint/lint-shebang.sh
         if: always()
