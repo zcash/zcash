@@ -273,6 +273,7 @@ BITCOIN_CORE_H = \
   reverse_iterator.h \
   reverselock.h \
   rpc/client.h \
+  rpc/common.h \
   rpc/protocol.h \
   rpc/server.h \
   rpc/register.h \
@@ -501,6 +502,7 @@ libbitcoin_script_a_SOURCES = \
   hash.h \
   prevector.h \
   primitives/orchard.h \
+  primitives/sapling.h \
   primitives/transaction.cpp \
   primitives/transaction.h \
   pubkey.cpp \
