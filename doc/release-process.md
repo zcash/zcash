@@ -22,10 +22,19 @@ Check that there are no surprising performance regressions.
 
 Update `src/chainparams.cpp` nMinimumChainWork with information from the getblockchaininfo rpc.
 
-Check that dependencies are up-to-date or have been postponed:
+Check that dependencies are up-to-date or have been postponed. If necessary,
+install `cargo-upgrades` and `cargo-audit`:
+
+```
+cargo install cargo-upgrades cargo-audit
+```
+
+Then run each of the following:
 
 ```
 $ ./qa/zcash/updatecheck.py
+$ cargo upgrades
+$ cargo audit
 ```
 
 You can optionally create a file `~/.local/share/zcash/updatecheck/token` (or
@@ -120,11 +129,11 @@ necessary, but do NOT push these commits to the `version-X.Y.Z` branch on the
 upstream repository; they will be included in the release branch that will be
 created in the next step.
 
-### Create the release candidate branch
+### Create the release branch
 
-Run the release script to create the first release candidate. This will create
-a branch based upon the specified commit ID, then commit standard automated
-changes to that branch locally:
+Run the release script to create the release branch. This will create a branch
+based upon the specified commit ID, then commit standard automated changes to
+that branch locally:
 
     $ ./zcutil/make-release.py <COMMIT_ID> <RELEASE> <RELEASE_PREV> <RELEASE_FROM> <APPROX_RELEASE_HEIGHT>
 
@@ -132,6 +141,9 @@ Examples:
 
     $ ./zcutil/make-release.py 600c4acee1 v1.1.0-rc1 v1.0.0 v1.0.0 280300
     $ ./zcutil/make-release.py b89b48cda1 v1.1.0 v1.1.0-rc1 v1.0.0 300600
+
+Ordinarily, we choose a release height that is a couple hundred blocks in
+the future in order to give time for CI to run.
 
 ### Create, Review, and Merge the release branch pull request
 
@@ -146,7 +158,7 @@ Push the resulting branch to github:
 Then create the PR on github targeting the `version-X.Y.0` branch. Complete the
 standard review process and wait for CI to complete.
 
-## Make a tag for the tip of the release candidate branch
+## Make a tag for the tip of the release branch
 
 NOTE: This has changed from the previously recommended process. The tag should
 be created at the tip of the automatically-generated release branch created by
@@ -169,16 +181,22 @@ Then create the git tag. The `-s` means the release tag will be signed.  Enter
 "Release <version>." and save when prompted for a commit message.  **CAUTION:**
 Remember the `v` at the beginning here:
 
-    $ git tag -s vX.Y.Z-rcN
-    $ git push origin vX.Y.Z-rcN
+    $ git tag -s vX.Y.Z[-rcN]
 
-## Merge the release candidate branch to the release stabilization branch
+For release tags (not release candidates) copy the "Notable Changes" section of
+the release notes into the tag body when creating the tag. This makes it easy
+for command-line `git` users to review the changes in a release without having
+to check out the tag.
 
-Once CI has completed and the release candidate branch has sufficient approving
-reviews, merge the release candidate branch back to the release stabilization
-branch. Testing proceeds as normal. Any changes that need to be made during the
-release candidate period are made by submitting PRs targeting the release
-stabilization branch.
+    $ git push origin vX.Y.Z[-rcN]
+
+## Merge the release branch to the release stabilization branch
+
+Once CI has completed and the release branch has sufficient approving reviews,
+merge the release branch back to the release stabilization branch. Testing
+proceeds as normal. Any changes that need to be made during the release
+candidate period are made by submitting PRs targeting the release stabilization
+branch.
 
 Subsequent release candidates, and the creation of the final release, follow
 the same process as for release candidates, omitting the `-rcN` suffix for the
@@ -198,8 +216,9 @@ release candidates.
 
 - Go to the [GitHub tags page](https://github.com/zcash/zcash/tags).
 - Click "Add release notes" beside the tag for this release.
-- Copy the release blog post into the release description, and edit to suit
-  publication on GitHub. See previous release notes for examples.
+- Copy the "Notable Changes" section of the release notes into the release
+  description, and edit to suit publication on GitHub. See previous release
+  notes for examples.
 - Click "Publish release" if publishing the release blog post now, or
   "Save draft" to store the notes internally (and then return later to publish
   once the blog post is up).
