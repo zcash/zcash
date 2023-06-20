@@ -985,13 +985,10 @@ bool ContextualCheckTransaction(
             // https://zips.z.cash/zip-0213#specification
             uint256 ovk;
             for (const auto& output : tx.GetSaplingOutputs()) {
-              bool zip_212_enabled;
-              libzcash::SaplingPaymentAddress zaddr;
-              CAmount value;
+                bool zip_212_enabled;
+                libzcash::SaplingPaymentAddress zaddr;
+                CAmount value;
 
-              // EoS height for 5.3.3 and 5.4.2 is 2121024 (mainnet).
-              // On testnet this height will be in the past, as of the 5.5.0 release.
-              if (nHeight >= 2121200) {
                 try {
                     auto decrypted = wallet::try_sapling_output_recovery(
                         *chainparams.RustNetwork(),
@@ -1015,46 +1012,7 @@ bool ContextualCheckTransaction(
                         error("ContextualCheckTransaction(): failed to recover plaintext of coinbase output description"),
                         REJECT_INVALID, "bad-cb-output-desc-invalid-outct");
                 }
-              } else {
-                auto outPlaintext = SaplingOutgoingPlaintext::decrypt(
-                    output.out_ciphertext(),
-                    ovk,
-                    uint256::FromRawBytes(output.cv()),
-                    uint256::FromRawBytes(output.cmu()),
-                    uint256::FromRawBytes(output.ephemeral_key()));
-                if (!outPlaintext) {
-                    return state.DoS(
-                        DOS_LEVEL_BLOCK,
-                        error("ContextualCheckTransaction(): coinbase output description has invalid outCiphertext"),
-                        REJECT_INVALID, "bad-cb-output-desc-invalid-outct");
-                }
 
-                // SaplingNotePlaintext::decrypt() checks note commitment validity.
-                auto encPlaintext = SaplingNotePlaintext::decrypt(
-                    consensus,
-                    nHeight,
-                    output.enc_ciphertext(),
-                    uint256::FromRawBytes(output.ephemeral_key()),
-                    outPlaintext->esk,
-                    outPlaintext->pk_d,
-                    uint256::FromRawBytes(output.cmu()));
-
-                if (!encPlaintext) {
-                    return state.DoS(
-                        DOS_LEVEL_BLOCK,
-                        error("ContextualCheckTransaction(): coinbase output description has invalid encCiphertext"),
-                        REJECT_INVALID, "bad-cb-output-desc-invalid-encct");
-                }
-
-                auto leadByte = encPlaintext->get_leadbyte();
-                assert(leadByte == 0x01 || leadByte == 0x02);
-                zip_212_enabled = (leadByte == 0x02);
-
-                zaddr = libzcash::SaplingPaymentAddress(encPlaintext->d, outPlaintext->pk_d);
-                value = encPlaintext->value();
-              }
-
-              {
                 // ZIP 207: detect shielded funding stream elements
                 if (canopyActive) {
                     for (auto it = fundingStreamElements.begin(); it != fundingStreamElements.end(); ++it) {
@@ -1078,7 +1036,6 @@ bool ContextualCheckTransaction(
                         REJECT_INVALID,
                         "bad-cb-output-desc-invalid-note-plaintext-version");
                 }
-              }
             }
         }
     } else {

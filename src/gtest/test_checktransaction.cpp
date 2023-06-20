@@ -1204,6 +1204,7 @@ TEST(ChecktransactionTests, HeartwoodAcceptsSaplingShieldedCoinbase) {
     }
 
     // Transaction should fail with a bad encCiphertext.
+    // Error message is the same because the Rust decryptor doesn't say which failed.
     {
         sapling::test_only_replace_output_parts(
             mtx.saplingBundle.GetDetailsMut(),
@@ -1215,7 +1216,7 @@ TEST(ChecktransactionTests, HeartwoodAcceptsSaplingShieldedCoinbase) {
         EXPECT_TRUE(tx.IsCoinBase());
 
         MockCValidationState state;
-        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-output-desc-invalid-encct", false, "")).Times(1);
+        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-output-desc-invalid-outct", false, "")).Times(1);
         ContextualCheckTransaction(tx, state, chainparams, 10, 57);
     }
 
