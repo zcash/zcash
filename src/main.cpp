@@ -2019,10 +2019,7 @@ bool AcceptToMemoryPool(
             }
 
             pool.EnsureSizeLimit();
-
-            MetricsGauge("zcash.mempool.size.transactions", pool.size());
-            MetricsGauge("zcash.mempool.size.bytes", pool.GetTotalTxSize());
-            MetricsGauge("zcash.mempool.usage.bytes", pool.DynamicMemoryUsage());
+            pool.UpdateMetrics();
         }
     }
 

@@ -19,6 +19,8 @@
 #include "mempool_limit.h"
 #include "zip317.h"
 
+#include <rust/metrics.h>
+
 #include <optional>
 
 using namespace std;
@@ -1229,6 +1231,79 @@ size_t CTxMemPool::DynamicMemoryUsage() const {
     total += insight;
 
     return total;
+}
+
+void CTxMemPool::UpdateMetrics() const {
+    LOCK(cs);
+
+    static const int64_t WEIGHT_RATIO_20_PCT = WEIGHT_RATIO_SCALE / 5;
+
+    // Track the sum of unpaid actions within each transaction (as they are subject to the
+    // unpaid action limit). Transactions that have weight >= 1 have no unpaid actions by
+    // definition.
+    size_t unpaidActionsWithWeightLt20pct = 0;
+    size_t unpaidActionsWithWeightLt40pct = 0;
+    size_t unpaidActionsWithWeightLt60pct = 0;
+    size_t unpaidActionsWithWeightLt80pct = 0;
+    size_t unpaidActionsWithWeightLt1 = 0;
+
+    // Track the total number of paid actions across all transactions in the mempool. This
+    // added to the bucketed unpaid actions above is equal to the total number of
+    // conventional actions in the mempool.
+    size_t paidActions = 0;
+
+    // Track the sum of transaction sizes (the metric by which they are mainly
+    // limited) across several buckets.
+    size_t sizeWithWeightLt1 = 0;
+    size_t sizeWithWeightEq1 = 0;
+    size_t sizeWithWeightGt1 = 0;
+    size_t sizeWithWeightGt2 = 0;
+    size_t sizeWithWeightGt3 = 0;
+
+    for (auto entry : mapTx) {
+        size_t txSize = entry.GetTxSize();
+        size_t unpaidActions = entry.GetUnpaidActionCount();
+        paidActions += std::max(GRACE_ACTIONS, entry.GetTx().GetLogicalActionCount()) - unpaidActions;
+
+        int128_t weightRatio = entry.GetWeightRatio();
+        if (weightRatio > 3 * WEIGHT_RATIO_SCALE) {
+            sizeWithWeightGt3 += txSize;
+        } else if (weightRatio > 2 * WEIGHT_RATIO_SCALE) {
+            sizeWithWeightGt2 += txSize;
+        } else if (weightRatio > WEIGHT_RATIO_SCALE) {
+            sizeWithWeightGt1 += txSize;
+        } else if (weightRatio == WEIGHT_RATIO_SCALE) {
+            sizeWithWeightEq1 += txSize;
+        } else {
+            sizeWithWeightLt1 += txSize;
+            if (weightRatio < WEIGHT_RATIO_20_PCT) {
+                unpaidActionsWithWeightLt20pct += unpaidActions;
+            } else if (weightRatio < 2 * WEIGHT_RATIO_20_PCT) {
+                unpaidActionsWithWeightLt40pct += unpaidActions;
+            } else if (weightRatio < 3 * WEIGHT_RATIO_20_PCT) {
+                unpaidActionsWithWeightLt60pct += unpaidActions;
+            } else if (weightRatio < 4 * WEIGHT_RATIO_20_PCT) {
+                unpaidActionsWithWeightLt80pct += unpaidActions;
+            } else {
+                unpaidActionsWithWeightLt1 += unpaidActions;
+            }
+        }
+    }
+
+    MetricsGauge("zcash.mempool.actions.unpaid", unpaidActionsWithWeightLt20pct, "bk", "< 0.2");
+    MetricsGauge("zcash.mempool.actions.unpaid", unpaidActionsWithWeightLt40pct, "bk", "< 0.4");
+    MetricsGauge("zcash.mempool.actions.unpaid", unpaidActionsWithWeightLt60pct, "bk", "< 0.6");
+    MetricsGauge("zcash.mempool.actions.unpaid", unpaidActionsWithWeightLt80pct, "bk", "< 0.8");
+    MetricsGauge("zcash.mempool.actions.unpaid", unpaidActionsWithWeightLt1, "bk", "< 1");
+    MetricsGauge("zcash.mempool.actions.paid", paidActions);
+    MetricsGauge("zcash.mempool.size.transactions", size());
+    MetricsGauge("zcash.mempool.size.weighted", sizeWithWeightLt1, "bk", "< 1");
+    MetricsGauge("zcash.mempool.size.weighted", sizeWithWeightEq1, "bk", "1");
+    MetricsGauge("zcash.mempool.size.weighted", sizeWithWeightGt1, "bk", "> 1");
+    MetricsGauge("zcash.mempool.size.weighted", sizeWithWeightGt2, "bk", "> 2");
+    MetricsGauge("zcash.mempool.size.weighted", sizeWithWeightGt3, "bk", "> 3");
+    MetricsGauge("zcash.mempool.size.bytes", GetTotalTxSize());
+    MetricsGauge("zcash.mempool.usage.bytes", DynamicMemoryUsage());
 }
 
 void CTxMemPool::SetMempoolCostLimit(int64_t totalCostLimit, int64_t evictionMemorySeconds) {
