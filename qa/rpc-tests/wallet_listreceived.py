@@ -12,11 +12,10 @@ from test_framework.util import (
     assert_raises_message,
     connect_nodes_bi,
     nuparams,
-    LEGACY_DEFAULT_FEE,
     NU5_BRANCH_ID,
 )
 from test_framework.util import wait_and_assert_operationid_status, start_nodes
-from test_framework.zip317 import conventional_fee, conventional_fee_zats
+from test_framework.zip317 import conventional_fee, conventional_fee_zats, ZIP_317_FEE
 from decimal import Decimal
 
 my_memo_str = 'c0ffee' # stay awake
@@ -66,7 +65,7 @@ class ListReceivedTest (BitcoinTestFramework):
         opid = self.nodes[1].z_sendmany(taddr, [
             {'address': zaddr1, 'amount': 1, 'memo': my_memo},
             {'address': zaddrExt, 'amount': 2},
-        ], 1, LEGACY_DEFAULT_FEE, 'AllowFullyTransparent')
+        ], 1, ZIP_317_FEE, 'AllowFullyTransparent')
         txid = wait_and_assert_operationid_status(self.nodes[1], opid)
         self.sync_all()
 
@@ -176,7 +175,7 @@ class ListReceivedTest (BitcoinTestFramework):
         assert_equal(txid, r[0]['txid'])
         assert_equal(Decimal('0.4')-conventional_fee(2), r[0]['amount'])
         assert_equal(40000000-conventional_fee_zats(2), r[0]['amountZat'])
-        assert_equal(r[0]['change'], True, "Note valued at (0.4-"+str(LEGACY_DEFAULT_FEE)+") should be change")
+        assert_equal(r[0]['change'], True, "Note valued at (0.4-"+str(conventional_fee(2))+") should be change")
         assert_equal(no_memo, r[0]['memo'])
 
         # The old note still exists (it's immutable), even though it is spent
