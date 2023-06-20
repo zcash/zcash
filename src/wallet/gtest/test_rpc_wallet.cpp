@@ -16,6 +16,7 @@
 #include "zip317.h"
 
 #include <librustzcash.h>
+#include <rust/bridge.h>
 #include <rust/ed25519.h>
 
 namespace
@@ -270,6 +271,7 @@ TEST(WalletRPCTests, RPCZsendmanyTaddrToSapling)
     auto pa = pwalletMain->GenerateNewLegacySaplingZKey();
 
     const Consensus::Params& consensusParams = Params().GetConsensus();
+    auto rustNetwork = Params().RustNetwork();
 
     int nextBlockHeight = chainActive.Height() + 1;
 
@@ -329,43 +331,64 @@ TEST(WalletRPCTests, RPCZsendmanyTaddrToSapling)
     ASSERT_NE(tx.GetSaplingOutputsCount(), 0);
 
     auto outputs = tx.GetSaplingOutputs();
+    auto enc_ciphertext = outputs[0].enc_ciphertext();
     auto out_ciphertext = outputs[0].out_ciphertext();
-    auto cv = uint256::FromRawBytes(outputs[0].cv());
-    auto cmu = uint256::FromRawBytes(outputs[0].cmu());
-    auto ephemeral_key = uint256::FromRawBytes(outputs[0].ephemeral_key());
+    auto cv = outputs[0].cv();
+    auto cmu = outputs[0].cmu();
+    auto ephemeral_key = outputs[0].ephemeral_key();
 
     // We shouldn't be able to decrypt with the empty ovk
-    EXPECT_FALSE(AttemptSaplingOutDecryption(
-        out_ciphertext,
-        uint256(),
-        cv,
-        cmu,
-        ephemeral_key));
+    EXPECT_THROW(wallet::try_sapling_output_recovery(
+        *rustNetwork,
+        nextBlockHeight,
+        uint256().GetRawBytes(),
+        {
+            cv,
+            cmu,
+            ephemeral_key,
+            enc_ciphertext,
+            out_ciphertext,
+        }), rust::Error);
 
     // We shouldn't be able to decrypt with a random ovk
-    EXPECT_FALSE(AttemptSaplingOutDecryption(
-        out_ciphertext,
-        random_uint256(),
-        cv,
-        cmu,
-        ephemeral_key));
+    EXPECT_THROW(wallet::try_sapling_output_recovery(
+        *rustNetwork,
+        nextBlockHeight,
+        random_uint256().GetRawBytes(),
+        {
+            cv,
+            cmu,
+            ephemeral_key,
+            enc_ciphertext,
+            out_ciphertext,
+        }), rust::Error);
 
     auto accountKey = pwalletMain->GetLegacyAccountKey().ToAccountPubKey();
     auto ovks = accountKey.GetOVKsForShielding();
     // We should not be able to decrypt with the internal change OVK for shielding
-    EXPECT_FALSE(AttemptSaplingOutDecryption(
-        out_ciphertext,
-        ovks.first,
-        cv,
-        cmu,
-        ephemeral_key));
+    EXPECT_THROW(wallet::try_sapling_output_recovery(
+        *rustNetwork,
+        nextBlockHeight,
+        ovks.first.GetRawBytes(),
+        {
+            cv,
+            cmu,
+            ephemeral_key,
+            enc_ciphertext,
+            out_ciphertext,
+        }), rust::Error);
     // We should be able to decrypt with the external OVK for shielding
-    EXPECT_TRUE(AttemptSaplingOutDecryption(
-        out_ciphertext,
-        ovks.second,
-        cv,
-        cmu,
-        ephemeral_key));
+    EXPECT_NO_THROW(wallet::try_sapling_output_recovery(
+        *rustNetwork,
+        nextBlockHeight,
+        ovks.second.GetRawBytes(),
+        {
+            cv,
+            cmu,
+            ephemeral_key,
+            enc_ciphertext,
+            out_ciphertext,
+        }));
 
     // Tear down
     chainActive.SetTip(NULL);
