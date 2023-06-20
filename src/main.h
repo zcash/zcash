@@ -601,6 +601,15 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
  */
 bool TestBlockValidity(CValidationState& state, const CChainParams& chainparams, const CBlock& block, CBlockIndex* pindexPrev, bool fIsBlockTemplate);
 
+/**
+ * This will clear the subtree database for a given shielded type from the
+ * current CCoinsView and regenerate the subtree database based on the current
+ * active chain.
+ *
+ * Only supports Sapling and Orchard. This does nothing in the event the chain
+ * is fresh or if the shielded protocol has not activated yet on chain.
+ */
+bool RegenerateSubtrees(ShieldedType type, const Consensus::Params& consensusParams);
 
 /**
  * When there are blocks in the active chain with missing data (e.g. if the

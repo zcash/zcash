@@ -32,7 +32,7 @@ CTransaction FakeOrchardTx(const OrchardSpendingKey& sk, libzcash::diversifier_i
 
     // Create a shielding transaction from transparent to Orchard
     // 0.0005 t-ZEC in, 0.0004 z-ZEC out, 0.0001 fee
-    auto builder = TransactionBuilder(Params().GetConsensus(), 1, orchardAnchor, &keystore);
+    auto builder = TransactionBuilder(Params(), 1, orchardAnchor, &keystore);
     builder.SetFee(10000);
     builder.AddTransparentInput(COutPoint(uint256S("1234"), 0), scriptPubKey, 50000);
     builder.AddOrchardOutput(std::nullopt, recipient, 40000, std::nullopt);
@@ -110,7 +110,7 @@ TEST(TransactionBuilder, OrchardToOrchard) {
 
     // If we attempt to get spend info now, it will fail because the note hasn't
     // been witnessed in the Orchard commitment tree.
-    EXPECT_THROW(wallet.GetSpendInfo(notes, wallet.GetLatestAnchor()), std::logic_error);
+    EXPECT_THROW(wallet.GetSpendInfo(notes, 1, wallet.GetLatestAnchor()), std::logic_error);
 
     // Append the bundle to the wallet's commitment tree.
     CBlock fakeBlock;
@@ -119,7 +119,7 @@ TEST(TransactionBuilder, OrchardToOrchard) {
     ASSERT_TRUE(wallet.AppendNoteCommitments(2, fakeBlock));
 
     // Now we can get spend info for the note.
-    auto spendInfo = wallet.GetSpendInfo(notes, wallet.GetLatestAnchor());
+    auto spendInfo = wallet.GetSpendInfo(notes, 1, wallet.GetLatestAnchor());
     EXPECT_EQ(spendInfo[0].second.Value(), 40000);
 
     // Get the root of the commitment tree.
@@ -129,7 +129,7 @@ TEST(TransactionBuilder, OrchardToOrchard) {
 
     // Create an Orchard-only transaction
     // 0.0004 z-ZEC in, 0.00025 z-ZEC out, default fee, 0.00014 z-ZEC change
-    auto builder = TransactionBuilder(consensusParams, 2, orchardAnchor);
+    auto builder = TransactionBuilder(Params(), 2, orchardAnchor);
     EXPECT_TRUE(builder.AddOrchardSpend(sk, std::move(spendInfo[0].second)));
     builder.AddOrchardOutput(std::nullopt, recipient, 25000, std::nullopt);
     auto maybeTx = builder.Build();

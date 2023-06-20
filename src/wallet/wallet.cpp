@@ -1548,9 +1548,9 @@ std::set<std::pair<libzcash::SproutPaymentAddress, uint256>> CWallet::GetSproutN
     return nullifierSet;
 }
 
-std::set<std::pair<libzcash::SaplingPaymentAddress, uint256>> CWallet::GetSaplingNullifiers(
+std::set<std::pair<libzcash::SaplingPaymentAddress, libzcash::nullifier_t>> CWallet::GetSaplingNullifiers(
         const std::set<libzcash::SaplingPaymentAddress>& addresses) {
-    std::set<std::pair<libzcash::SaplingPaymentAddress, uint256>> nullifierSet;
+    std::set<std::pair<libzcash::SaplingPaymentAddress, libzcash::nullifier_t>> nullifierSet;
     if (!addresses.empty()) {
         // Sapling ivk -> list of addrs map
         // (There may be more than one diversified address for a given ivk.)
@@ -1568,7 +1568,7 @@ std::set<std::pair<libzcash::SaplingPaymentAddress, uint256>> CWallet::GetSaplin
                 auto & ivk = noteData.ivk;
                 if (nullifier && ivkMap.count(ivk) > 0) {
                     for (const auto & addr : ivkMap[ivk]) {
-                        nullifierSet.insert(std::make_pair(addr, nullifier.value()));
+                        nullifierSet.insert(std::make_pair(addr, nullifier->GetRawBytes()));
                     }
                 }
             }
@@ -1603,7 +1603,7 @@ bool CWallet::IsNoteSproutChange(
 }
 
 bool CWallet::IsNoteSaplingChange(
-        const std::set<std::pair<libzcash::SaplingPaymentAddress, uint256>> & nullifierSet,
+        const std::set<std::pair<libzcash::SaplingPaymentAddress, libzcash::nullifier_t>> & nullifierSet,
         const libzcash::SaplingPaymentAddress& address,
         const SaplingOutPoint & op)
 {
@@ -1706,7 +1706,7 @@ set<uint256> CWallet::GetConflicts(const uint256& txid) const
     std::pair<TxNullifiers::const_iterator, TxNullifiers::const_iterator> range_o;
 
     for (const auto& spend : wtx.GetSaplingSpends()) {
-        const uint256& nullifier = spend.nullifier();
+        const uint256 nullifier = uint256::FromRawBytes(spend.nullifier());
         if (mapTxSaplingNullifiers.count(nullifier) <= 1) {
             continue;  // No conflict if zero or one spends
         }
@@ -1885,7 +1885,7 @@ std::optional<ZTXOSelector> CWallet::ZTXOSelectorForAddress(
         const libzcash::PaymentAddress& addr,
         bool requireSpendingKey,
         TransparentCoinbasePolicy transparentCoinbasePolicy,
-        bool allowAddressLinkability) const
+        std::optional<UnifiedAccountSpendingPolicy> spendingPolicy) const
 {
     auto self = this;
     std::optional<ZTXOPattern> pattern = std::nullopt;
@@ -1920,8 +1920,32 @@ std::optional<ZTXOSelector> CWallet::ZTXOSelectorForAddress(
                 // determine a local account.
                 auto accountId = this->GetUnifiedAccountId(ufvkId.value());
                 if (accountId.has_value()) {
-                    if (allowAddressLinkability) {
-                        pattern = AccountZTXOPattern(accountId.value(), ua.GetKnownReceiverTypes());
+                    if (spendingPolicy.has_value()) {
+                        auto receiverTypes = ua.GetKnownReceiverTypes();
+                        switch (spendingPolicy.value()) {
+                            case UnifiedAccountSpendingPolicy::ShieldedWithSingleTransparentAddress:
+                                // NB: If we only allow sending from a single transparent receiver,
+                                //     we check if the UA even has transparent receivers. If so, we
+                                //     use the UA directly, but if not, we can use the account
+                                //     without selecting any transparent receivers, and without
+                                //     worrying that the UA had a transparent receiver that we
+                                //     should have used.
+                                if (receiverTypes.find(ReceiverType::P2SH) != receiverTypes.end() ||
+                                    receiverTypes.find(ReceiverType::P2PKH) != receiverTypes.end())
+                                {
+                                    pattern = ua;
+                                } else {
+                                    pattern = AccountZTXOPattern(accountId.value(), receiverTypes);
+                                }
+                                break;
+                            case UnifiedAccountSpendingPolicy::ShieldedOnly:
+                                receiverTypes.erase(ReceiverType::P2SH);
+                                receiverTypes.erase(ReceiverType::P2PKH);
+                                [[fallthrough]];
+                            case UnifiedAccountSpendingPolicy::AnyAddresses:
+                                pattern = AccountZTXOPattern(accountId.value(), receiverTypes);
+                                break;
+                        }
                     } else {
                         pattern = ua;
                     }
@@ -2261,11 +2285,17 @@ SpendableInputs CWallet::FindSpendableInputs(
 
                 // check to see if the coin conforms to the payment source
                 CTxDestination address;
+                bool hasDestination = ExtractDestination(output.scriptPubKey, address);
                 bool isSelectable =
-                    ExtractDestination(output.scriptPubKey, address) &&
-                    this->SelectorMatchesAddress(selector, address);
+                    hasDestination && this->SelectorMatchesAddress(selector, address);
                 if (isSelectable) {
-                    unspent.utxos.push_back(COutput(&wtx, i, nDepth, true, isCoinbase));
+                    unspent.utxos.emplace_back(
+                            &wtx,
+                            i,
+                            hasDestination ? std::optional(address) : std::nullopt,
+                            nDepth,
+                            true,
+                            isCoinbase);
                 }
             }
         }
@@ -2527,7 +2557,7 @@ void CWallet::AddToSpends(const uint256& wtxid)
         }
     }
     for (const auto& spend : thisTx.GetSaplingSpends()) {
-        AddToSaplingSpends(spend.nullifier(), wtxid);
+        AddToSaplingSpends(uint256::FromRawBytes(spend.nullifier()), wtxid);
     }
 
     // for Orchard, the effects of this operation are performed by
@@ -2791,11 +2821,11 @@ void CWallet::IncrementNoteWitnesses(
         }
         // Sapling
         for (const auto& spend : tx.GetSaplingSpends()) {
-            nullifiersSapling.emplace_back(spend.nullifier());
+            nullifiersSapling.emplace_back(uint256::FromRawBytes(spend.nullifier()));
         }
         uint32_t i = 0;
         for (const auto& output : tx.GetSaplingOutputs()) {
-            const uint256& note_commitment = output.cmu();
+            const uint256& note_commitment = uint256::FromRawBytes(output.cmu());
             frontiers.sapling.append(note_commitment);
             noteCommitmentsSapling.emplace_back(note_commitment);
 
@@ -2962,7 +2992,8 @@ void CWallet::DecrementNoteWitnesses(const Consensus::Params& consensus, const C
         // wallet's Orchard note commitment tree will be in an indeterminate state and it
         // will be overwritten in the next `IncrementNoteWitnesses` call, so we can skip
         // the check against `hashFinalOrchardRoot`.
-        if (orchardWallet.GetLastCheckpointHeight().has_value()) {
+        auto walletLastCheckpointHeight = orchardWallet.GetLastCheckpointHeight();
+        if (walletLastCheckpointHeight.has_value()) {
             assert(pindex->pprev->hashFinalOrchardRoot == orchardWallet.GetLatestAnchor());
         }
     }
@@ -3198,7 +3229,7 @@ void CWallet::UpdateNullifierNoteMapWithTx(const CWalletTx& wtx)
 
         for (const mapSaplingNoteData_t::value_type& item : wtx.mapSaplingNoteData) {
             if (item.second.nullifier) {
-                mapSaplingNullifiersToNotes[*item.second.nullifier] = item.first;
+                mapSaplingNullifiersToNotes[item.second.nullifier->GetRawBytes()] = item.first;
             }
         }
     }
@@ -3220,7 +3251,7 @@ void CWallet::UpdateSaplingNullifierNoteMapWithTx(CWalletTx& wtx) {
             //
             // If there are no witnesses, erase the nullifier and associated mapping.
             if (item.second.nullifier) {
-                mapSaplingNullifiersToNotes.erase(item.second.nullifier.value());
+                mapSaplingNullifiersToNotes.erase(item.second.nullifier->GetRawBytes());
             }
             item.second.nullifier = std::nullopt;
         }
@@ -3243,7 +3274,7 @@ void CWallet::UpdateSaplingNullifierNoteMapWithTx(CWalletTx& wtx) {
             // This should not happen.  If it does, maybe the position has been corrupted or miscalculated?
             assert(optNullifier != std::nullopt);
             uint256 nullifier = optNullifier.value();
-            mapSaplingNullifiersToNotes[nullifier] = op;
+            mapSaplingNullifiersToNotes[nullifier.GetRawBytes()] = op;
             item.second.nullifier = nullifier;
         }
     }
@@ -3660,10 +3691,12 @@ void CWallet::MarkAffectedTransactionsDirty(const CTransaction& tx)
     }
 
     for (const auto& spend : tx.GetSaplingSpends()) {
-        const uint256& nullifier = spend.nullifier();
-        if (mapSaplingNullifiersToNotes.count(nullifier) &&
-            mapWallet.count(mapSaplingNullifiersToNotes[nullifier].hash)) {
-            mapWallet[mapSaplingNullifiersToNotes[nullifier].hash].MarkDirty();
+        auto it = mapSaplingNullifiersToNotes.find(spend.nullifier());
+        if (it != mapSaplingNullifiersToNotes.end()) {
+            auto itTx = mapWallet.find(it->second.hash);
+            if (itTx != mapWallet.end()) {
+                itTx->second.MarkDirty();
+            }
         }
     }
 }
@@ -3797,9 +3830,9 @@ std::pair<mapSaplingNoteData_t, SaplingIncomingViewingKeyMap> CWallet::FindMySap
                     height,
                     ivk.GetRawBytes(),
                     {
-                        output.cv().GetRawBytes(),
-                        output.cmu().GetRawBytes(),
-                        output.ephemeral_key().GetRawBytes(),
+                        output.cv(),
+                        output.cmu(),
+                        output.ephemeral_key(),
                         output.enc_ciphertext(),
                         output.out_ciphertext(),
                     });
@@ -3839,12 +3872,12 @@ bool CWallet::IsSproutNullifierFromMe(const uint256& nullifier) const
     return false;
 }
 
-bool CWallet::IsSaplingNullifierFromMe(const uint256& nullifier) const
+bool CWallet::IsSaplingNullifierFromMe(const libzcash::nullifier_t& nullifier) const
 {
     {
         LOCK(cs_wallet);
-        if (mapSaplingNullifiersToNotes.count(nullifier) &&
-                mapWallet.count(mapSaplingNullifiersToNotes.at(nullifier).hash)) {
+        auto it = mapSaplingNullifiersToNotes.find(nullifier);
+        if (it != mapSaplingNullifiersToNotes.end() && mapWallet.count(it->second.hash)) {
             return true;
         }
     }
@@ -3925,10 +3958,11 @@ bool CWallet::GetSaplingNoteWitnesses(const std::vector<SaplingOutPoint>& notes,
 
 std::vector<std::pair<libzcash::OrchardSpendingKey, orchard::SpendInfo>> CWallet::GetOrchardSpendInfo(
     const std::vector<OrchardNoteMetadata>& orchardNoteMetadata,
-    uint256 anchor) const
+    unsigned int confirmations,
+    const uint256& anchor) const
 {
     AssertLockHeld(cs_wallet);
-    return orchardWallet.GetSpendInfo(orchardNoteMetadata, anchor);
+    return orchardWallet.GetSpendInfo(orchardNoteMetadata, confirmations, anchor);
 }
 
 isminetype CWallet::IsMine(const CTxIn &txin) const
@@ -4322,7 +4356,8 @@ std::optional<std::pair<
         return std::nullopt;
     }
 
-    auto output = GetSaplingOutputs()[op.n];
+    auto outputs = GetSaplingOutputs();
+    auto& output = outputs[op.n];
     auto nd = this->mapSaplingNoteData.at(op);
 
     try {
@@ -4333,9 +4368,9 @@ std::optional<std::pair<
             params.GetConsensus().vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight,
             nd.ivk.GetRawBytes(),
             {
-                output.cv().GetRawBytes(),
-                output.cmu().GetRawBytes(),
-                output.ephemeral_key().GetRawBytes(),
+                output.cv(),
+                output.cmu(),
+                output.ephemeral_key(),
                 output.enc_ciphertext(),
                 output.out_ciphertext(),
             });
@@ -4350,7 +4385,8 @@ std::optional<std::pair<
     SaplingNotePlaintext,
     SaplingPaymentAddress>> CWalletTx::RecoverSaplingNote(const CChainParams& params, SaplingOutPoint op, std::set<uint256>& ovks) const
 {
-    auto output = GetSaplingOutputs()[op.n];
+    auto outputs = GetSaplingOutputs();
+    auto& output = outputs[op.n];
 
     for (auto ovk : ovks) {
         try {
@@ -4361,9 +4397,9 @@ std::optional<std::pair<
                 params.GetConsensus().vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight,
                 ovk.GetRawBytes(),
                 {
-                    output.cv().GetRawBytes(),
-                    output.cmu().GetRawBytes(),
-                    output.ephemeral_key().GetRawBytes(),
+                    output.cv(),
+                    output.cmu(),
+                    output.ephemeral_key(),
                     output.enc_ciphertext(),
                     output.out_ciphertext(),
                 });
@@ -5160,10 +5196,12 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins,
                 if (fOnlySpendable && !isSpendable)
                     continue;
 
+                CTxDestination address;
+                bool hasDestination = ExtractDestination(output.scriptPubKey, address);
+
                 // Filter by specific destinations if needed
                 if (!onlyFilterByDests.empty()) {
-                    CTxDestination address;
-                    if (!ExtractDestination(output.scriptPubKey, address) || onlyFilterByDests.count(address) == 0) {
+                    if (!hasDestination || onlyFilterByDests.count(address) == 0) {
                         continue;
                     }
                 }
@@ -5171,7 +5209,13 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins,
                 if (!(IsSpent(wtxid, i, asOfHeight)) && mine != ISMINE_NO &&
                     !IsLockedCoin(wtxid, i) && (pcoin.vout[i].nValue > 0 || fIncludeZeroValue) &&
                     (!coinControl || !coinControl->HasSelected() || coinControl->fAllowOtherInputs || coinControl->IsSelected(wtxid, i)))
-                        vCoins.push_back(COutput(&pcoin, i, nDepth, isSpendable, isCoinbase));
+                    vCoins.emplace_back(
+                            &pcoin,
+                            i,
+                            hasDestination ? std::optional(address) : std::nullopt,
+                            nDepth,
+                            isSpendable,
+                            isCoinbase);
             }
         }
     }
@@ -7696,6 +7740,16 @@ bool TransactionStrategy::AllowLinkingAccountAddresses() const {
 
 bool TransactionStrategy::IsCompatibleWith(PrivacyPolicy policy) const {
     return requestedLevel == PrivacyPolicyMeet(requestedLevel, policy);
+}
+
+UnifiedAccountSpendingPolicy
+TransactionStrategy::PermittedAccountSpendingPolicy() const {
+    if (!AllowRevealedSenders())
+        return UnifiedAccountSpendingPolicy::ShieldedOnly;
+    if (AllowLinkingAccountAddresses())
+        return UnifiedAccountSpendingPolicy::AnyAddresses;
+    else
+        return UnifiedAccountSpendingPolicy::ShieldedWithSingleTransparentAddress;
 }
 
 bool ZTXOSelector::SelectsTransparent() const {

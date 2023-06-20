@@ -55,8 +55,7 @@ SpendableInputs FakeSpendableInputs(
 
     if (available.count(OutputPool::Transparent)) {
         for (int i = 0; i < 10; i++) {
-            COutput utxo(wtx, 0, 100, true);
-            inputs.utxos.push_back(utxo);
+            inputs.utxos.emplace_back(wtx, 0, std::nullopt, 100, true);
         }
     }
 

@@ -346,8 +346,25 @@ public:
 
     uint256 GetLatestAnchor() const {
         uint256 value;
-        orchard_wallet_commitment_tree_root(inner.get(), value.begin());
+        // there is always a valid note commitment tree root at depth 0
+        assert(orchard_wallet_commitment_tree_root(inner.get(), 0, value.begin()));
         return value;
+    }
+
+    /**
+     * Return the root of the Orchard note commitment tree having the specified number
+     * of confirmations. `confirmations` must be a value in the range `1..=100`; it is
+     * not possible to spend shielded notes with 0 confirmations.
+     */
+    std::optional<uint256> GetAnchorWithConfirmations(unsigned int confirmations) const {
+        // the checkpoint depth is equal to the number of confirmations - 1
+        assert(confirmations > 0);
+        uint256 value;
+        if (orchard_wallet_commitment_tree_root(inner.get(), (size_t) confirmations - 1, value.begin())) {
+            return value;
+        } else {
+            return std::nullopt;
+        }
     }
 
     bool TxInvolvesMyNotes(const uint256& txid) {
@@ -443,9 +460,19 @@ public:
         return result;
     }
 
+    /**
+     * Return the witness and other information required to spend a given note.
+     * `anchorConfirmations` must be a value in the range `1..=100`; it is not
+     * possible to spend shielded notes with 0 confirmations.
+     *
+     * This method checks the root of the wallet's note commitment tree having
+     * the specified `anchorConfirmations` to ensure that it corresponds to the
+     * specified anchor and will panic if this check fails.
+     */
     std::vector<std::pair<libzcash::OrchardSpendingKey, orchard::SpendInfo>> GetSpendInfo(
         const std::vector<OrchardNoteMetadata>& noteMetadata,
-        uint256 anchor) const;
+        unsigned int anchorConfirmations,
+        const uint256& anchor) const;
 
     void GarbageCollect() {
         orchard_wallet_gc_note_commitment_tree(inner.get());

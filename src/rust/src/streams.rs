@@ -23,6 +23,13 @@ pub(crate) mod ffi {
         unsafe fn write_u8(self: Pin<&mut CHashWriter>, pch: *const u8, nSize: usize)
             -> Result<()>;
 
+        type CBLAKE2bWriter;
+        unsafe fn write_u8(
+            self: Pin<&mut CBLAKE2bWriter>,
+            pch: *const u8,
+            nSize: usize,
+        ) -> Result<()>;
+
         type CSizeComputer;
         unsafe fn write_u8(
             self: Pin<&mut CSizeComputer>,
@@ -35,6 +42,7 @@ pub(crate) mod ffi {
     impl UniquePtr<CAutoFile> {}
     impl UniquePtr<CBufferedFile> {}
     impl UniquePtr<CHashWriter> {}
+    impl UniquePtr<CBLAKE2bWriter> {}
     impl UniquePtr<CSizeComputer> {}
 }
 
@@ -54,6 +62,10 @@ pub(crate) fn from_hash_writer(writer: Pin<&mut ffi::CHashWriter>) -> Box<CppStr
     Box::new(CppStream::Hash(writer))
 }
 
+pub(crate) fn from_blake2b_writer(writer: Pin<&mut ffi::CBLAKE2bWriter>) -> Box<CppStream<'_>> {
+    Box::new(CppStream::Blake2b(writer))
+}
+
 pub(crate) fn from_size_computer(sc: Pin<&mut ffi::CSizeComputer>) -> Box<CppStream<'_>> {
     Box::new(CppStream::Size(sc))
 }
@@ -63,6 +75,7 @@ pub(crate) enum CppStream<'a> {
     AutoFile(Pin<&'a mut ffi::CAutoFile>),
     BufferedFile(Pin<&'a mut ffi::CBufferedFile>),
     Hash(Pin<&'a mut ffi::CHashWriter>),
+    Blake2b(Pin<&'a mut ffi::CBLAKE2bWriter>),
     Size(Pin<&'a mut ffi::CSizeComputer>),
 }
 
@@ -83,6 +96,10 @@ impl<'a> io::Read for CppStream<'a> {
             CppStream::Hash(_) => Err(io::Error::new(
                 io::ErrorKind::Unsupported,
                 "Cannot read from CHashWriter",
+            )),
+            CppStream::Blake2b(_) => Err(io::Error::new(
+                io::ErrorKind::Unsupported,
+                "Cannot read from CBLAKE2bWriter",
             )),
             CppStream::Size(_) => Err(io::Error::new(
                 io::ErrorKind::Unsupported,
@@ -108,6 +125,9 @@ impl<'a> io::Write for CppStream<'a> {
                 "Cannot write to CBufferedFile",
             )),
             CppStream::Hash(inner) => unsafe { inner.as_mut().write_u8(pch, len) }
+                .map(|()| buf.len())
+                .map_err(|e| io::Error::new(io::ErrorKind::Other, e)),
+            CppStream::Blake2b(inner) => unsafe { inner.as_mut().write_u8(pch, len) }
                 .map(|()| buf.len())
                 .map_err(|e| io::Error::new(io::ErrorKind::Other, e)),
             CppStream::Size(inner) => unsafe { inner.as_mut().write_u8(pch, len) }

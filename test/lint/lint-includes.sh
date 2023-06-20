@@ -77,6 +77,7 @@ EXPECTED_BOOST_INCLUDES=(
     boost/program_options/parsers.hpp
     boost/random/mersenne_twister.hpp
     boost/random/uniform_int_distribution.hpp
+    boost/range/algorithm/lower_bound.hpp
     boost/range/irange.hpp
     boost/scope_exit.hpp
     boost/scoped_ptr.hpp

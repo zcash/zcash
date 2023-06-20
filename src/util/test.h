@@ -5,6 +5,7 @@
 #ifndef ZCASH_UTIL_TEST_H
 #define ZCASH_UTIL_TEST_H
 
+#include "chainparams.h"
 #include "coins.h"
 #include "key_io.h"
 #include "wallet/wallet.h"
@@ -133,15 +134,12 @@ libzcash::SaplingExtendedSpendingKey GetTestMasterSaplingSpendingKey();
 
 CKey AddTestCKeyToKeyStore(CBasicKeyStore& keyStore);
 
-SpendDescription RandomInvalidSpendDescription();
-OutputDescription RandomInvalidOutputDescription();
-
 /**
  * Generate a dummy SaplingNote and a SaplingMerkleTree with that note's commitment.
  */
 TestSaplingNote GetTestSaplingNote(const libzcash::SaplingPaymentAddress& pa, CAmount value);
 
-CWalletTx GetValidSaplingReceive(const Consensus::Params& consensusParams,
+CWalletTx GetValidSaplingReceive(const CChainParams& consensusParams,
                                  CBasicKeyStore& keyStore,
                                  const libzcash::SaplingExtendedSpendingKey &sk,
                                  CAmount value);

@@ -117,7 +117,7 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
         assert_equal(self.nodes[2].getbalance(), 30)
 
         # Shield coinbase utxos from any node 2 taddr, and set fee to 0
-        result = self.nodes[2].z_shieldcoinbase("*", myzaddr, 0)
+        result = self.nodes[2].z_shieldcoinbase("*", myzaddr, 0, None, None, 'AllowLinkingAccountAddresses')
         wait_and_assert_operationid_status(self.nodes[2], result['opid'])
         self.sync_all()
         self.nodes[1].generate(1)

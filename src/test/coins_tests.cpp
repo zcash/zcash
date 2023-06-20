@@ -301,9 +301,8 @@ public:
         jsd.nullifiers[0] = sproutNullifier;
         mutableTx.vJoinSplit.emplace_back(jsd);
 
-        SpendDescription sd = RandomInvalidSpendDescription();
-        saplingNullifier = sd.nullifier();
-        mutableTx.vShieldedSpend.push_back(sd);
+        mutableTx.saplingBundle = sapling::test_only_invalid_bundle(1, 0, 0);
+        saplingNullifier = uint256::FromRawBytes(mutableTx.saplingBundle.GetDetails().spends()[0].nullifier());
 
         // The Orchard bundle builder always pads to two Actions, so we can just
         // use an empty builder to create a dummy Orchard bundle.

@@ -1808,6 +1808,45 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                     strLoadError = _("Corrupted block database detected");
                     break;
                 }
+
+                if (fExperimentalLightWalletd) {
+                    LOCK(cs_main);
+
+                    SaplingMerkleTree sapling_tree;
+                    OrchardMerkleFrontier orchard_tree;
+                    assert(pcoinsdbview->GetSaplingAnchorAt(pcoinsdbview->GetBestAnchor(SAPLING), sapling_tree));
+                    assert(pcoinsdbview->GetOrchardAnchorAt(pcoinsdbview->GetBestAnchor(ORCHARD), orchard_tree));
+
+                    if (pcoinsdbview->CurrentSubtreeIndex(SAPLING) != sapling_tree.current_subtree_index()) {
+                        uiInterface.InitMessage(_("Regenerating subtrees for Sapling..."));
+                        LogPrintf("init: the complete subtree database for Sapling needs to be migrated. Starting RegenerateSubtrees...\n");
+                        struct timeval tv_start, tv_end;
+                        float elapsed;
+                        gettimeofday(&tv_start, 0);
+                        if (!RegenerateSubtrees(SAPLING, chainparams.GetConsensus())) {
+                            strLoadError = _("Error migrating subtree database for Sapling");
+                            break;
+                        }
+                        gettimeofday(&tv_end, 0);
+                        elapsed = float(tv_end.tv_sec-tv_start.tv_sec) + (tv_end.tv_usec-tv_start.tv_usec)/float(1000000);
+                        LogPrintf("init: Sapling subtree database migrated in %f seconds\n", elapsed);
+                    }
+
+                    if (pcoinsdbview->CurrentSubtreeIndex(ORCHARD) != orchard_tree.current_subtree_index()) {
+                        uiInterface.InitMessage(_("Regenerating subtrees for Orchard..."));
+                        LogPrintf("init: the complete subtree database for Orchard needs to be migrated. Starting RegenerateSubtrees...\n");
+                        struct timeval tv_start, tv_end;
+                        float elapsed;
+                        gettimeofday(&tv_start, 0);
+                        if (!RegenerateSubtrees(ORCHARD, chainparams.GetConsensus())) {
+                            strLoadError = _("Error migrating subtree database for Orchard");
+                            break;
+                        }
+                        gettimeofday(&tv_end, 0);
+                        elapsed = float(tv_end.tv_sec-tv_start.tv_sec) + (tv_end.tv_usec-tv_start.tv_usec)/float(1000000);
+                        LogPrintf("init: Orchard subtree database migrated in %f seconds\n", elapsed);
+                    }
+                }
             } catch (const std::exception& e) {
                 if (fDebug) LogPrintf("%s\n", e.what());
                 strLoadError = _("Error opening block database");
@@ -1886,7 +1925,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                     zaddr.value(),
                     true,
                     TransparentCoinbasePolicy::Allow,
-                    false);
+                    std::nullopt);
             minerAddressInLocalWallet = ztxoSelector.has_value();
         }
         if (GetBoolArg("-minetolocalwallet", true) && !minerAddressInLocalWallet) {

@@ -86,7 +86,7 @@ class MergeToAddressHelper:
 
         # Shield the coinbase
         myzaddr = self.new_address(test, 0)
-        result = test.nodes[0].z_shieldcoinbase("*", myzaddr, 0)
+        result = test.nodes[0].z_shieldcoinbase("*", myzaddr, 0, None, None, 'AllowLinkingAccountAddresses')
         wait_and_assert_operationid_status(test.nodes[0], result['opid'])
         test.sync_all()
         generate_and_check(test.nodes[1], 2)
@@ -164,7 +164,7 @@ class MergeToAddressHelper:
             lambda: test.nodes[0].z_mergetoaddress(["ANY_SPROUT", "ANY_SAPLING"], mytaddr))
 
         # Merge UTXOs from node 0 of value 30, default fee
-        result = test.nodes[0].z_mergetoaddress([mytaddr, mytaddr2, mytaddr3], myzaddr, None, None, None, None, 'AllowRevealedSenders')
+        result = test.nodes[0].z_mergetoaddress([mytaddr, mytaddr2, mytaddr3], myzaddr, None, None, None, None, 'AllowLinkingAccountAddresses')
         wait_and_assert_operationid_status(test.nodes[0], result['opid'])
         test.sync_all()
         generate_and_check(test.nodes[1], 2)
@@ -193,7 +193,7 @@ class MergeToAddressHelper:
         assert_equal(test.nodes[0].z_getbalance(myzaddr2), Decimal('40') - conventional_fee(5))
 
         # Shield coinbase UTXOs from any node 2 taddr, and set fee to 0
-        result = test.nodes[2].z_shieldcoinbase("*", myzaddr, 0)
+        result = test.nodes[2].z_shieldcoinbase("*", myzaddr, 0, None, None, 'AllowLinkingAccountAddresses')
         wait_and_assert_operationid_status(test.nodes[2], result['opid'])
         test.sync_all()
         generate_and_check(test.nodes[1], 2)
@@ -223,7 +223,7 @@ class MergeToAddressHelper:
         # Merge all node 0 UTXOs together into a node 1 taddr, and set fee to 0
         test.nodes[1].getnewaddress()  # Ensure we have an empty address
         n1taddr = test.nodes[1].getnewaddress()
-        result = test.nodes[0].z_mergetoaddress(["ANY_TADDR"], n1taddr, 0, None, None, None, 'AllowFullyTransparent')
+        result = test.nodes[0].z_mergetoaddress(["ANY_TADDR"], n1taddr, 0, None, None, None, 'NoPrivacy')
         wait_and_assert_operationid_status(test.nodes[0], result['opid'])
         test.sync_all()
         generate_and_check(test.nodes[1], 2)

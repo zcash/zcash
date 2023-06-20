@@ -41,6 +41,8 @@ class FinalOrchardRootTest(BitcoinTestFramework):
             '-allowdeprecated=getnewaddress',
             '-allowdeprecated=z_getnewaddress',
             '-allowdeprecated=z_getbalance',
+            '-experimentalfeatures',
+            '-lightwalletd'
             ]] * self.num_nodes)
         connect_nodes_bi(self.nodes,0,1)
         self.is_network_split=False
@@ -50,6 +52,7 @@ class FinalOrchardRootTest(BitcoinTestFramework):
         # Verify genesis block doesn't contain the final orchard root field.
         blk = self.nodes[0].getblock("0")
         assert "finalorchardroot" not in blk
+        assert "orchard" not in blk["trees"]
         treestate = self.nodes[0].z_gettreestate("0")
         assert_equal(treestate["height"], 0)
         assert_equal(treestate["hash"], self.nodes[0].getblockhash(0))
@@ -75,6 +78,7 @@ class FinalOrchardRootTest(BitcoinTestFramework):
         for height in range(1, blockcount + 1):
             blk = self.nodes[0].getblock(str(height))
             assert "finalorchardroot" not in blk
+            assert "orchard" not in blk["trees"]
 
             treestate = self.nodes[0].z_gettreestate(str(height))
             assert_equal(treestate["height"], height)
@@ -102,6 +106,7 @@ class FinalOrchardRootTest(BitcoinTestFramework):
         for height in range(200, 211):
             blk = self.nodes[0].getblock(str(height))
             assert_equal(blk["finalorchardroot"], ORCHARD_TREE_EMPTY_ROOT)
+            assert_equal(blk["trees"]["orchard"]["size"], 0)
 
             treestate = self.nodes[0].z_gettreestate(str(height))
             assert_equal(treestate["height"], height)
@@ -120,6 +125,11 @@ class FinalOrchardRootTest(BitcoinTestFramework):
             assert_equal(treestate["orchard"]["commitments"]["finalRoot"], ORCHARD_TREE_EMPTY_ROOT)
             assert_equal(treestate["orchard"]["commitments"]["finalState"], "000000")
 
+        # Verify that there are no complete Orchard subtrees.
+        subtrees = self.nodes[0].z_getsubtreesbyindex('orchard', 0)
+        assert_equal(subtrees['pool'], 'orchard')
+        assert_equal(subtrees['start_index'], 0)
+        assert_equal(len(subtrees['subtrees']), 0)
 
         # Node 0 shields some funds
         taddr0 = get_coinbase_address(self.nodes[0])
@@ -140,12 +150,13 @@ class FinalOrchardRootTest(BitcoinTestFramework):
         # Verify the final Orchard root has changed
         blk = self.nodes[0].getblock("211")
         root = blk["finalorchardroot"]
-        assert root is not ORCHARD_TREE_EMPTY_ROOT
-        assert root is not NULL_FIELD
+        assert root != ORCHARD_TREE_EMPTY_ROOT
+        assert root != NULL_FIELD
 
         # Verify there is a Orchard output description (its commitment was added to tree)
         result = self.nodes[0].getrawtransaction(mytxid, 1)
         assert_equal(len(result["orchard"]["actions"]), 2)
+        assert_equal(blk["trees"]["orchard"]["size"], 2)
 
         # Since there is a now orchard shielded input in the blockchain,
         # the orchard values should have changed
@@ -162,7 +173,9 @@ class FinalOrchardRootTest(BitcoinTestFramework):
         self.sync_all()
         self.nodes[0].generate(1)
         self.sync_all()
-        assert_equal(root, self.nodes[0].getblock("212")["finalorchardroot"])
+        blk = self.nodes[0].getblock("212")
+        assert_equal(root, blk["finalorchardroot"])
+        assert_equal(blk["trees"]["orchard"]["size"], 2)
 
         # Mine a block with a transparent tx and verify the final Orchard root does not change
         taddr1 = self.nodes[1].getnewaddress()
@@ -187,9 +200,11 @@ class FinalOrchardRootTest(BitcoinTestFramework):
         self.nodes[0].generate(1)
         self.sync_all()
 
-        assert_equal(len(self.nodes[0].getblock("214")["tx"]), 2)
+        blk = self.nodes[0].getblock("214")
+        assert_equal(len(blk["tx"]), 2)
         assert_equal(self.nodes[0].z_getbalance(zaddr0), Decimal("37.66"))
-        assert_equal(root, self.nodes[0].getblock("214")["finalorchardroot"])
+        assert_equal(root, blk["finalorchardroot"])
+        assert_equal(blk["trees"]["orchard"]["size"], 2)
 
         new_treestate = self.nodes[0].z_gettreestate(str(-1))
         assert_equal(new_treestate["orchard"]["commitments"]["finalRoot"], root)
@@ -210,9 +225,11 @@ class FinalOrchardRootTest(BitcoinTestFramework):
         self.nodes[0].generate(1)
         self.sync_all()
 
-        assert_equal(len(self.nodes[0].getblock("215")["tx"]), 2)
+        blk = self.nodes[0].getblock("215")
+        assert_equal(len(blk["tx"]), 2)
         assert_equal(self.nodes[1].z_getbalance(saplingAddr1), Decimal("2.34"))
-        assert_equal(root, self.nodes[0].getblock("215")["finalorchardroot"])
+        assert_equal(root, blk["finalorchardroot"])
+        assert_equal(blk["trees"]["orchard"]["size"], 2)
 
         new_treestate = self.nodes[0].z_gettreestate(str(-1))
         assert_equal(new_treestate["orchard"]["commitments"]["finalRoot"], root)
@@ -237,13 +254,15 @@ class FinalOrchardRootTest(BitcoinTestFramework):
         self.nodes[0].generate(1)
         self.sync_all()
 
-        assert_equal(len(self.nodes[0].getblock("216")["tx"]), 2)
+        blk = self.nodes[0].getblock("216")
+        assert_equal(len(blk["tx"]), 2)
         assert_equal(self.nodes[1].z_getbalance(orchardAddr1), Decimal("2.34"))
-        assert root is not self.nodes[0].getblock("216")["finalorchardroot"]
+        assert root != blk["finalorchardroot"]
 
         # Verify there is a Orchard output description (its commitment was added to tree)
         result = self.nodes[0].getrawtransaction(mytxid, 1)
         assert_equal(len(result["orchard"]["actions"]), 2)  # there is Orchard shielded change
+        assert_equal(blk["trees"]["orchard"]["size"], 4)
 
         new_treestate = self.nodes[0].z_gettreestate(str(-1))
         assert_equal(new_treestate["sprout"], treestate["sprout"])
@@ -265,13 +284,15 @@ class FinalOrchardRootTest(BitcoinTestFramework):
         self.nodes[0].generate(1)
         self.sync_all()
 
-        assert_equal(len(self.nodes[0].getblock("217")["tx"]), 2)
+        blk = self.nodes[0].getblock("217")
+        assert_equal(len(blk["tx"]), 2)
         assert_equal(self.nodes[0].z_getbalance(taddr2), Decimal("2.34"))
-        assert root is not self.nodes[0].getblock("217")["finalorchardroot"]
+        assert root != blk["finalorchardroot"]
 
         # Verify there is a Orchard output description (its commitment was added to tree)
         result = self.nodes[0].getrawtransaction(mytxid, 1)
         assert_equal(len(result["orchard"]["actions"]), 2)  # there is Orchard shielded change
+        assert_equal(blk["trees"]["orchard"]["size"], 6)
 
         new_treestate = self.nodes[0].z_gettreestate(str(-1))
         assert_equal(new_treestate["sprout"], treestate["sprout"])
@@ -281,6 +302,11 @@ class FinalOrchardRootTest(BitcoinTestFramework):
         assert_equal(len(new_treestate["orchard"]["commitments"]["finalRoot"]), 64)
         assert_equal(len(new_treestate["orchard"]["commitments"]["finalState"]), 260)
 
+        # Verify that there are still no complete subtrees (as we have not created 2^16 notes).
+        subtrees = self.nodes[0].z_getsubtreesbyindex('orchard', 0)
+        assert_equal(subtrees['pool'], 'orchard')
+        assert_equal(subtrees['start_index'], 0)
+        assert_equal(len(subtrees['subtrees']), 0)
 
 
 if __name__ == '__main__':

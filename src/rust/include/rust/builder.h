@@ -86,18 +86,6 @@ OrchardBundlePtr* orchard_unauthorized_bundle_prove_and_sign(
     size_t keys_len,
     const unsigned char* sighash);
 
-/// Calculates a ZIP 244 shielded signature digest for the given under-construction
-/// transaction.
-///
-/// Returns `false` if any of the parameters are invalid; in this case, `sighash_ret`
-/// will be unaltered.
-///
-/// `preTx` is always freed by this method.
-bool zcash_builder_zip244_shielded_signature_digest(
-    PrecomputedTxParts* preTx,
-    const OrchardUnauthorizedBundlePtr* bundle,
-    unsigned char* sighash_ret);
-
 #ifdef __cplusplus
 }
 #endif

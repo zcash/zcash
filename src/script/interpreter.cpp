@@ -1122,8 +1122,9 @@ uint256 GetShieldedSpendsHash(const CTransaction& txTo) {
 
 uint256 GetShieldedOutputsHash(const CTransaction& txTo) {
     CBLAKE2bWriter ss(SER_GETHASH, 0, ZCASH_SHIELDED_OUTPUTS_HASH_PERSONALIZATION);
+    auto ssRs = ToRustStream(ss);
     for (const auto& output : txTo.GetSaplingOutputs()) {
-        ss << output;
+        output.serialize_v4(*ssRs);
     }
     return ss.GetHash();
 }

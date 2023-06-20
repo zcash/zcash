@@ -37,7 +37,7 @@ CWalletTx FakeWalletTx() {
 void ExpectConsistentFee(const TransactionStrategy& strategy, const TransactionEffects& effects)
 {
     auto buildResult = effects.ApproveAndBuild(
-            Params().GetConsensus(),
+            Params(),
             *pwalletMain,
             chainActive,
             strategy);
@@ -111,7 +111,7 @@ TEST(WalletRPCTests, PrepareTransaction)
             TransactionStrategy strategy(PrivacyPolicy::AllowRevealedSenders);
 
             SpendableInputs inputs;
-            inputs.utxos.emplace_back(COutput(&wtx, 0, 100, true));
+            inputs.utxos.emplace_back(&wtx, 0, std::nullopt, 100, true);
 
             builder.PrepareTransaction(
                     *pwalletMain,
@@ -199,7 +199,7 @@ TEST(WalletRPCTests, RPCZMergeToAddressInternals)
 
     SpendableInputs inputs;
     auto wtx = FakeWalletTx();
-    inputs.utxos.emplace_back(&wtx, 0, 100, true);
+    inputs.utxos.emplace_back(&wtx, 0, std::nullopt, 100, true);
 
     // Can’t send to Sprout
     builder.PrepareTransaction(
@@ -305,7 +305,7 @@ TEST(WalletRPCTests, RPCZsendmanyTaddrToSapling)
             taddr,
             true,
             TransparentCoinbasePolicy::Disallow,
-            false).value();
+            strategy.PermittedAccountSpendingPolicy()).value();
     std::vector<Payment> recipients = { Payment(pa, 1*COIN, Memo::FromBytes({0xAB, 0xCD})) };
     std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 0, 0, strategy, std::nullopt));
     std::shared_ptr<AsyncRPCOperation_sendmany> ptr = std::dynamic_pointer_cast<AsyncRPCOperation_sendmany> (operation);
@@ -326,40 +326,46 @@ TEST(WalletRPCTests, RPCZsendmanyTaddrToSapling)
     CDataStream ss(ParseHex(hexTx), SER_NETWORK, PROTOCOL_VERSION);
     CTransaction tx;
     ss >> tx;
-    ASSERT_FALSE(tx.GetSaplingOutputsCount() == 0);
+    ASSERT_NE(tx.GetSaplingOutputsCount(), 0);
+
+    auto outputs = tx.GetSaplingOutputs();
+    auto out_ciphertext = outputs[0].out_ciphertext();
+    auto cv = uint256::FromRawBytes(outputs[0].cv());
+    auto cmu = uint256::FromRawBytes(outputs[0].cmu());
+    auto ephemeral_key = uint256::FromRawBytes(outputs[0].ephemeral_key());
 
     // We shouldn't be able to decrypt with the empty ovk
     EXPECT_FALSE(AttemptSaplingOutDecryption(
-        tx.GetSaplingOutputs()[0].out_ciphertext(),
+        out_ciphertext,
         uint256(),
-        tx.GetSaplingOutputs()[0].cv(),
-        tx.GetSaplingOutputs()[0].cmu(),
-        tx.GetSaplingOutputs()[0].ephemeral_key()));
+        cv,
+        cmu,
+        ephemeral_key));
 
     // We shouldn't be able to decrypt with a random ovk
     EXPECT_FALSE(AttemptSaplingOutDecryption(
-        tx.GetSaplingOutputs()[0].out_ciphertext(),
+        out_ciphertext,
         random_uint256(),
-        tx.GetSaplingOutputs()[0].cv(),
-        tx.GetSaplingOutputs()[0].cmu(),
-        tx.GetSaplingOutputs()[0].ephemeral_key()));
+        cv,
+        cmu,
+        ephemeral_key));
 
     auto accountKey = pwalletMain->GetLegacyAccountKey().ToAccountPubKey();
     auto ovks = accountKey.GetOVKsForShielding();
     // We should not be able to decrypt with the internal change OVK for shielding
     EXPECT_FALSE(AttemptSaplingOutDecryption(
-        tx.GetSaplingOutputs()[0].out_ciphertext(),
+        out_ciphertext,
         ovks.first,
-        tx.GetSaplingOutputs()[0].cv(),
-        tx.GetSaplingOutputs()[0].cmu(),
-        tx.GetSaplingOutputs()[0].ephemeral_key()));
+        cv,
+        cmu,
+        ephemeral_key));
     // We should be able to decrypt with the external OVK for shielding
     EXPECT_TRUE(AttemptSaplingOutDecryption(
-        tx.GetSaplingOutputs()[0].out_ciphertext(),
+        out_ciphertext,
         ovks.second,
-        tx.GetSaplingOutputs()[0].cv(),
-        tx.GetSaplingOutputs()[0].cmu(),
-        tx.GetSaplingOutputs()[0].ephemeral_key()));
+        cv,
+        cmu,
+        ephemeral_key));
 
     // Tear down
     chainActive.SetTip(NULL);
@@ -436,7 +442,9 @@ TEST(WalletRPCTests, ZIP317Fee)
 
             SpendableInputs inputs;
             for (size_t i = 0; i < utxoCount; i++) {
-                inputs.utxos.emplace_back(&wtx, i, 100, true);
+                CTxDestination address;
+                ExtractDestination(scriptPubKey, address);
+                inputs.utxos.emplace_back(&wtx, i, address, 100, true);
             }
 
             auto effects = builder.PrepareTransaction(
@@ -471,7 +479,9 @@ TEST(WalletRPCTests, ZIP317Fee)
 
             SpendableInputs inputs;
             for (size_t i = 0; i < utxoCount; i++) {
-                inputs.utxos.emplace_back(&wtx, i, 100, true);
+                CTxDestination address;
+                ExtractDestination(scriptPubKey, address);
+                inputs.utxos.emplace_back(&wtx, i, address, 100, true);
             }
 
             auto effects = builder.PrepareTransaction(

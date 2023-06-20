@@ -398,10 +398,22 @@ public:
     //! Get current history root
     virtual uint256 GetHistoryRoot(uint32_t epochId) const = 0;
 
-    //! Get the largest completed subtree data for the TRACKED_SUBTREE_HEIGHT subtrees known
+    //! Get the largest completed subtree data for the TRACKED_SUBTREE_HEIGHT depth subtrees known
     //! to the node for a given protocol. std::nullopt is returned in the event there are no
     //! complete subtrees.
     virtual std::optional<libzcash::LatestSubtree> GetLatestSubtree(ShieldedType type) const = 0;
+
+    //! Returns the index of the (expected) current TRACKED_SUBTREE_HEIGHT depth subtree. This
+    //! is essentially just one larger than the latest complete subtree's index (or zero, if
+    //! there is no latest subtree)
+    libzcash::SubtreeIndex CurrentSubtreeIndex(ShieldedType type) const {
+        auto latestSubtree = GetLatestSubtree(type);
+        if (latestSubtree.has_value()) {
+            return latestSubtree->index + 1;
+        } else {
+            return 0;
+        }
+    }
 
     //! Gets the cached data about the TRACKED_SUBTREE_HEIGHT subtree for the specified
     //! protocol at the provided index, if that subtree is complete.
@@ -474,6 +486,9 @@ class SubtreeCache {
     //! Removes the last subtree added to the view; this will throw an
     //! exception if the view has no subtrees.
     void PopSubtree(CCoinsView *parentView);
+
+    //! Effectively pops all subtrees from the view
+    void ResetSubtrees();
 
     //! Writes a child map to this cache; this clears the child map.
     void BatchWrite(CCoinsView *parentView, SubtreeCache &childMap);
@@ -690,6 +705,9 @@ public:
     // supported. Throws an exception if there isn't a subtree present
     // in the database.
     void PopSubtree(ShieldedType type);
+
+    //! Effectively pops all subtrees from the view
+    void ResetSubtrees(ShieldedType type);
 
     /**
      * Return a pointer to CCoins in the cache, or NULL if not found. This is

@@ -869,8 +869,22 @@ std::pair<uint256, uint256> WalletTxBuilder::SelectOVKs(
 PrivacyPolicy TransactionEffects::GetRequiredPrivacyPolicy() const
 {
     if (!spendable.utxos.empty()) {
-        // TODO: Add a check for whether we need AllowLinkingAccountAddresses here. (#6467)
-        if (payments.HasTransparentRecipient()) {
+        std::set<CTxDestination> receivedAddrs;
+        for (const auto& utxo : spendable.utxos) {
+            if (utxo.destination.has_value()) {
+                receivedAddrs.insert(utxo.destination.value());
+            } else {
+                throw std::runtime_error("Can’t spend a multisig UTXO via WalletTxBuilder.");
+            }
+        }
+
+        if (receivedAddrs.size() > 1) {
+            if (payments.HasTransparentRecipient()) {
+                return PrivacyPolicy::NoPrivacy;
+            } else {
+                return PrivacyPolicy::AllowLinkingAccountAddresses;
+            }
+        } else if (payments.HasTransparentRecipient()) {
             return PrivacyPolicy::AllowFullyTransparent;
         } else {
             return PrivacyPolicy::AllowRevealedSenders;
@@ -893,7 +907,7 @@ bool TransactionEffects::InvolvesOrchard() const
 }
 
 TransactionBuilderResult TransactionEffects::ApproveAndBuild(
-        const Consensus::Params& consensus,
+        const CChainParams& params,
         const CWallet& wallet,
         const CChain& chain,
         const TransactionStrategy& strategy) const
@@ -923,7 +937,7 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
         orchardAnchor = anchorBlockIndex->hashFinalOrchardRoot;
     }
 
-    auto builder = TransactionBuilder(consensus, nextBlockHeight, orchardAnchor, &wallet);
+    auto builder = TransactionBuilder(params, nextBlockHeight, orchardAnchor, &wallet);
     builder.SetFee(fee);
 
     // Track the total of notes that we've added to the builder. This
@@ -947,18 +961,26 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
     }
 
     // Fetch Sapling anchor and witnesses, and Orchard Merkle paths.
-    uint256 anchor;
+    uint256 saplingAnchor;
     std::vector<std::optional<SaplingWitness>> witnesses;
     std::vector<std::pair<libzcash::OrchardSpendingKey, orchard::SpendInfo>> orchardSpendInfo;
     {
         LOCK(wallet.cs_wallet);
-        if (!wallet.GetSaplingNoteWitnesses(saplingOutPoints, anchorConfirmations, witnesses, anchor)) {
+        if (!wallet.GetSaplingNoteWitnesses(
+                    saplingOutPoints,
+                    anchorConfirmations,
+                    witnesses,
+                    saplingAnchor)) {
             // This error should not appear once we're nAnchorConfirmations blocks past
             // Sapling activation.
             return TransactionBuilderResult("Insufficient Sapling witnesses.");
         }
-        if (builder.GetOrchardAnchor().has_value()) {
-            orchardSpendInfo = wallet.GetOrchardSpendInfo(spendable.orchardNoteMetadata, builder.GetOrchardAnchor().value());
+
+        if (orchardAnchor.has_value()) {
+            orchardSpendInfo = wallet.GetOrchardSpendInfo(
+                    spendable.orchardNoteMetadata,
+                    anchorConfirmations,
+                    orchardAnchor.value());
         }
     }
 
@@ -986,7 +1008,7 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
             ));
         }
 
-        builder.AddSaplingSpend(saplingKeys[i].expsk, saplingNotes[i], anchor, witnesses[i].value());
+        builder.AddSaplingSpend(saplingKeys[i], saplingNotes[i], witnesses[i].value());
     }
 
     // Add outputs

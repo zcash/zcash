@@ -1,18 +1,21 @@
 use core::mem::size_of_val;
 
-use incrementalmerkletree::{bridgetree, Altitude, Frontier, Hashable};
+use incrementalmerkletree::{
+    frontier::{CommitmentTree, Frontier},
+    Hashable, Level,
+};
 use orchard::tree::MerkleHashOrchard;
-use tracing::error;
-use zcash_primitives::merkle_tree::{
-    incremental::{read_frontier_v1, write_frontier_v1},
-    CommitmentTree, HashSer,
+use zcash_primitives::{
+    merkle_tree::{read_frontier_v1, write_commitment_tree, write_frontier_v1, HashSer},
+    sapling::NOTE_COMMITMENT_TREE_DEPTH,
 };
 
-use crate::{orchard_bundle, streams::CppStream, wallet::Wallet};
+use crate::{bridge::ffi, orchard_bundle, streams::CppStream, wallet::Wallet};
 
-pub const MERKLE_DEPTH: u8 = 32;
+// This is also defined in `IncrementalMerkleTree.hpp`
+pub const TRACKED_SUBTREE_HEIGHT: u8 = 16;
 
-type Inner<H> = bridgetree::Frontier<H, MERKLE_DEPTH>;
+type Inner<H> = Frontier<H, NOTE_COMMITMENT_TREE_DEPTH>;
 
 /// An incremental Merkle frontier.
 #[derive(Clone)]
@@ -41,7 +44,7 @@ impl<H: Copy + Hashable + HashSer> MerkleFrontier<H> {
     /// Serializes the frontier to the given C++ stream in the legacy frontier encoding.
     pub(crate) fn serialize_legacy(&self, writer: &mut CppStream<'_>) -> Result<(), String> {
         let commitment_tree = CommitmentTree::from_frontier(&self.0);
-        commitment_tree.write(writer).map_err(|e| {
+        write_commitment_tree(&commitment_tree, writer).map_err(|e| {
             format!(
                 "Failed to serialize Merkle frontier in legacy format: {}",
                 e,
@@ -67,16 +70,16 @@ impl<H: Copy + Hashable + HashSer> MerkleFrontier<H> {
         root
     }
 
-    /// Returns the number of leaves appended to the frontier.
+    /// Returns the number of leaves in the Merkle tree for which this is the frontier.
     pub(crate) fn size(&self) -> u64 {
-        self.0.position().map_or(0, |p| <u64>::from(p) + 1)
+        self.0.value().map_or(0, |f| u64::from(f.position()) + 1)
     }
 }
 
 /// Returns the root of an empty Orchard Merkle tree.
 pub(crate) fn orchard_empty_root() -> [u8; 32] {
-    let altitude = Altitude::from(MERKLE_DEPTH);
-    MerkleHashOrchard::empty_root(altitude).to_bytes()
+    let level = Level::from(NOTE_COMMITMENT_TREE_DEPTH);
+    MerkleHashOrchard::empty_root(level).to_bytes()
 }
 
 /// An Orchard incremental Merkle frontier.
@@ -96,17 +99,45 @@ pub(crate) struct OrchardWallet;
 
 impl Orchard {
     /// Appends the note commitments in the given bundle to this frontier.
-    pub(crate) fn append_bundle(&mut self, bundle: &orchard_bundle::Bundle) -> bool {
+    pub(crate) fn append_bundle(
+        &mut self,
+        bundle: &orchard_bundle::Bundle,
+    ) -> Result<ffi::OrchardAppendResult, &'static str> {
         if let Some(bundle) = bundle.inner() {
+            // A single bundle can't contain 2^TRACKED_SUBTREE_HEIGHT actions, so we'll never cross
+            // more than one subtree boundary while processing that bundle. This means we only need
+            // to find a single subtree root while processing an individual bundle, so `Option` is
+            // sufficient; we don't need a `Vec`.
+            let mut tracked_root: Option<MerkleHashOrchard> = None;
             for action in bundle.actions().iter() {
-                if !self.0.append(&MerkleHashOrchard::from_cmx(action.cmx())) {
-                    error!("Orchard note commitment tree is full.");
-                    return false;
+                if !self.0.append(MerkleHashOrchard::from_cmx(action.cmx())) {
+                    return Err("Orchard note commitment tree is full.");
+                }
+
+                if let Some(non_empty_frontier) = self.0.value() {
+                    let level = Level::from(TRACKED_SUBTREE_HEIGHT);
+                    let pos = non_empty_frontier.position();
+                    if pos.is_complete_subtree(level) {
+                        assert_eq!(tracked_root, None);
+                        tracked_root = Some(non_empty_frontier.root(Some(level)))
+                    }
                 }
             }
-        }
 
-        true
+            Ok(if let Some(root_hash) = tracked_root {
+                ffi::OrchardAppendResult {
+                    has_subtree_boundary: true,
+                    completed_subtree_root: root_hash.to_bytes(),
+                }
+            } else {
+                ffi::OrchardAppendResult {
+                    has_subtree_boundary: false,
+                    completed_subtree_root: [0u8; 32],
+                }
+            })
+        } else {
+            Err("null Orchard bundle pointer")
+        }
     }
 
     /// Overwrites the first bridge of the Orchard wallet's note commitment tree to have

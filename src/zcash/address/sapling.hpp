@@ -38,6 +38,8 @@ public:
         READWRITE(pk_d);
     }
 
+    std::array<uint8_t, 43> GetRawBytes() const;
+
     //! Get the 256-bit SHA256d hash of this payment address.
     uint256 GetHash() const;
 

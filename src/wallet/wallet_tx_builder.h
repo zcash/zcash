@@ -5,7 +5,7 @@
 #ifndef ZCASH_WALLET_WALLET_TX_BUILDER_H
 #define ZCASH_WALLET_WALLET_TX_BUILDER_H
 
-#include "consensus/params.h"
+#include "chainparams.h"
 #include "transaction_builder.h"
 #include "wallet/wallet.h"
 #include "zcash/memo.h"
@@ -220,7 +220,7 @@ public:
     bool InvolvesOrchard() const;
 
     TransactionBuilderResult ApproveAndBuild(
-            const Consensus::Params& consensus,
+            const CChainParams& params,
             const CWallet& wallet,
             const CChain& chain,
             const TransactionStrategy& strategy) const;

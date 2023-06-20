@@ -662,6 +662,18 @@ void CCoinsViewCache::PopSubtree(ShieldedType type)
     }
 }
 
+void CCoinsViewCache::ResetSubtrees(ShieldedType type)
+{
+    switch(type) {
+        case SAPLING:
+            return cacheSaplingSubtrees.ResetSubtrees();
+        case ORCHARD:
+            return cacheOrchardSubtrees.ResetSubtrees();
+        default:
+            throw std::runtime_error("ResetSubtrees: unsupported shielded type");
+    }
+}
+
 template<typename Tree, typename Cache, typename CacheEntry>
 void CCoinsViewCache::AbstractPopAnchor(
     const uint256 &newrt,
@@ -734,7 +746,7 @@ void CCoinsViewCache::SetNullifiers(const CTransaction& tx, bool spent) {
         }
     }
     for (const auto& spendDescription : tx.GetSaplingSpends()) {
-        std::pair<CNullifiersMap::iterator, bool> ret = cacheSaplingNullifiers.insert(std::make_pair(spendDescription.nullifier(), CNullifiersCacheEntry()));
+        std::pair<CNullifiersMap::iterator, bool> ret = cacheSaplingNullifiers.insert(std::make_pair(uint256::FromRawBytes(spendDescription.nullifier()), CNullifiersCacheEntry()));
         ret.first->second.entered = spent;
         ret.first->second.flags |= CNullifiersCacheEntry::DIRTY;
     }
@@ -1090,7 +1102,7 @@ tl::expected<void, UnsatisfiedShieldedReq> CCoinsViewCache::CheckShieldedRequire
     }
 
     for (const auto& spendDescription : tx.GetSaplingSpends()) {
-        uint256 nullifier = spendDescription.nullifier();
+        uint256 nullifier = uint256::FromRawBytes(spendDescription.nullifier());
         if (GetNullifier(nullifier, SAPLING)) { // Prevent double spends
             auto txid = tx.GetHash().ToString();
             auto nf = nullifier.ToString();
@@ -1101,7 +1113,7 @@ tl::expected<void, UnsatisfiedShieldedReq> CCoinsViewCache::CheckShieldedRequire
         }
 
         SaplingMerkleTree tree;
-        uint256 rt = spendDescription.anchor();
+        uint256 rt = uint256::FromRawBytes(spendDescription.anchor());
         if (!GetSaplingAnchorAt(rt, tree)) {
             auto txid = tx.GetHash().ToString();
             auto anchor = rt.ToString();
@@ -1229,8 +1241,8 @@ std::optional<libzcash::SubtreeData> SubtreeCache::GetSubtreeData(CCoinsView *pa
             // be located.
             auto localIndex = index - (parentLatestSubtree.value().index + 1);
             assert(newSubtrees.size() > localIndex);
-            return newSubtrees[localIndex];            
-        } 
+            return newSubtrees[localIndex];
+        }
     } else {
         // The index we've been given is the index into our local `newSubtrees`
         // since the parent view has no subtrees.
@@ -1275,6 +1287,14 @@ void SubtreeCache::PopSubtree(CCoinsView *parentView) {
     } else {
         newSubtrees.pop_back();
     }
+}
+
+void SubtreeCache::ResetSubtrees() {
+    // This ensures that all subtrees will be popped from the parent view
+    initialized = true;
+
+    parentLatestSubtree = std::nullopt;
+    newSubtrees.clear();
 }
 
 void SubtreeCache::BatchWrite(CCoinsView *parentView, SubtreeCache &childMap) {

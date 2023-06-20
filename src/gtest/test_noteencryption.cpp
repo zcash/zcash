@@ -46,56 +46,42 @@ TEST(NoteEncryption, NotePlaintext)
     for (int ver = 0; ver < zip_212_enabled.size(); ver++){
         auto params = (*activations[ver])();
 
-        SaplingNote note(addr, 39393, zip_212_enabled[ver]);
-        auto cmu_opt = note.cmu();
-        if (!cmu_opt) {
-            FAIL();
-        }
-        uint256 cmu = cmu_opt.value();
-        SaplingNotePlaintext pt(note, Memo::FromBytes(memo));
-
-        auto res = pt.encrypt(addr.pk_d);
-        if (!res) {
-            FAIL();
-        }
-
-        auto enc = res.value();
-
-        auto ct = enc.first;
-        auto encryptor = enc.second;
-        auto epk = encryptor.get_epk();
-
-        SaplingOutgoingPlaintext out_pt;
-        out_pt.pk_d = note.pk_d;
-        out_pt.esk = encryptor.get_esk();
-
         auto ovk = random_uint256();
-        auto cv = random_uint256();
-        auto cm = random_uint256();
+        auto value = 39393;
 
-        auto out_ct = out_pt.encrypt(
-            ovk,
-            cv,
-            cm,
-            encryptor
-        );
+        auto builder = sapling::new_builder(*Params().RustNetwork(), 10);
+        builder->add_recipient(
+            ovk.GetRawBytes(),
+            addr.GetRawBytes(),
+            value,
+            memo);
+        auto bundle = sapling::apply_bundle_signatures(sapling::build_bundle(std::move(builder), 10), {});
+        auto outputs = bundle->outputs();
 
-        auto decrypted_out_ct = out_pt.decrypt(
-            out_ct,
-            ovk,
-            cv,
-            cm,
-            encryptor.get_epk()
-        );
-
-        if (!decrypted_out_ct) {
-            FAIL();
+        std::optional<SaplingOutgoingPlaintext> decrypted_out_ct;
+        uint256 cmu;
+        uint256 epk;
+        libzcash::SaplingEncCiphertext ct;
+        for (auto& output : outputs) {
+            decrypted_out_ct = SaplingOutgoingPlaintext::decrypt(
+                output.out_ciphertext(),
+                ovk,
+                uint256::FromRawBytes(output.cv()),
+                uint256::FromRawBytes(output.cmu()),
+                uint256::FromRawBytes(output.ephemeral_key()));
+            if (decrypted_out_ct) {
+                cmu = uint256::FromRawBytes(output.cmu());
+                epk = uint256::FromRawBytes(output.ephemeral_key());
+                ct = output.enc_ciphertext();
+                break;
+            }
         }
+
+        ASSERT_TRUE(decrypted_out_ct.has_value());
 
         auto decrypted_out_ct_unwrapped = decrypted_out_ct.value();
 
-        ASSERT_TRUE(decrypted_out_ct_unwrapped.pk_d == out_pt.pk_d);
-        ASSERT_TRUE(decrypted_out_ct_unwrapped.esk == out_pt.esk);
+        ASSERT_TRUE(decrypted_out_ct_unwrapped.pk_d == addr.pk_d);
 
         // Test sender won't accept invalid commitments
         ASSERT_FALSE(
@@ -127,10 +113,9 @@ TEST(NoteEncryption, NotePlaintext)
 
         auto bar = foo.value();
 
-        ASSERT_TRUE(bar.value() == pt.value());
-        ASSERT_TRUE(bar.memo() == pt.memo());
-        ASSERT_TRUE(bar.d == pt.d);
-        ASSERT_TRUE(bar.rcm() == pt.rcm());
+        ASSERT_TRUE(bar.value() == value);
+        ASSERT_TRUE(bar.memo() == Memo::FromBytes(memo));
+        ASSERT_TRUE(bar.d == addr.d);
 
         (*deactivations[ver])();
     }

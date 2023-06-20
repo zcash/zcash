@@ -425,6 +425,7 @@ class TxWithNullifiers
 {
 public:
     CTransaction tx;
+    CTransaction txV5;
     uint256 sproutNullifier;
     uint256 saplingNullifier;
     uint256 orchardNullifier;
@@ -432,25 +433,31 @@ public:
     TxWithNullifiers()
     {
         CMutableTransaction mutableTx;
+        CMutableTransaction mutableTxV5;
+
+        mutableTxV5.fOverwintered = true;
+        mutableTxV5.nVersion = ZIP225_TX_VERSION;
+        mutableTxV5.nVersionGroupId = ZIP225_VERSION_GROUP_ID;
+        mutableTxV5.nConsensusBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_NU5].nBranchId;
 
         sproutNullifier = GetRandHash();
         JSDescription jsd;
         jsd.nullifiers[0] = sproutNullifier;
         mutableTx.vJoinSplit.emplace_back(jsd);
 
-        SpendDescription sd = RandomInvalidSpendDescription();
-        saplingNullifier = sd.nullifier();
-        mutableTx.vShieldedSpend.push_back(sd);
+        mutableTxV5.saplingBundle = sapling::test_only_invalid_bundle(1, 0, 0);
+        saplingNullifier = uint256::FromRawBytes(mutableTxV5.saplingBundle.GetDetails().spends()[0].nullifier());
 
         // The Orchard bundle builder always pads to two Actions, so we can just
         // use an empty builder to create a dummy Orchard bundle.
         uint256 orchardAnchor;
         uint256 dataToBeSigned;
         auto builder = orchard::Builder(true, true, orchardAnchor);
-        mutableTx.orchardBundle = builder.Build().value().ProveAndSign({}, dataToBeSigned).value();
-        orchardNullifier = mutableTx.orchardBundle.GetNullifiers().at(0);
+        mutableTxV5.orchardBundle = builder.Build().value().ProveAndSign({}, dataToBeSigned).value();
+        orchardNullifier = mutableTxV5.orchardBundle.GetNullifiers().at(0);
 
         tx = CTransaction(mutableTx);
+        txV5 = CTransaction(mutableTxV5);
     }
 };
 
@@ -466,21 +473,6 @@ uint256 appendRandomSproutCommitment(SproutMerkleTree &tree)
     auto cm = note.cm();
     tree.append(cm);
     return cm;
-}
-
-template<typename Tree> void AppendRandomLeaf(Tree &tree);
-template<> void AppendRandomLeaf(SproutMerkleTree &tree) { tree.append(GetRandHash()); }
-template<> void AppendRandomLeaf(SaplingMerkleTree &tree) { tree.append(GetRandHash()); }
-template<> void AppendRandomLeaf(OrchardMerkleFrontier &tree) {
-    // OrchardMerkleFrontier only has APIs to append entire bundles, but
-    // fortunately the tests only require that the tree root change.
-    // TODO: Remove the need to create proofs by having a testing-only way to
-    // append a random leaf to OrchardMerkleFrontier.
-    uint256 orchardAnchor;
-    uint256 dataToBeSigned;
-    auto builder = orchard::Builder(true, true, orchardAnchor);
-    auto bundle = builder.Build().value().ProveAndSign({}, dataToBeSigned).value();
-    tree.AppendBundle(bundle);
 }
 
 template<typename Tree> bool GetAnchorAt(const CCoinsViewCacheTest &cache, const uint256 &rt, Tree &tree);
@@ -521,11 +513,13 @@ TEST(CoinsTests, NullifierRegression)
 
         // Insert a nullifier into the base.
         cache1.SetNullifiers(txWithNullifiers.tx, true);
+        cache1.SetNullifiers(txWithNullifiers.txV5, true);
         checkNullifierCache(cache1, txWithNullifiers, true);
         cache1.Flush(); // Flush to base.
 
         // Remove the nullifier from cache
         cache1.SetNullifiers(txWithNullifiers.tx, false);
+        cache1.SetNullifiers(txWithNullifiers.txV5, false);
 
         // The nullifier now should be `false`.
         checkNullifierCache(cache1, txWithNullifiers, false);
@@ -541,11 +535,13 @@ TEST(CoinsTests, NullifierRegression)
 
         // Insert a nullifier into the base.
         cache1.SetNullifiers(txWithNullifiers.tx, true);
+        cache1.SetNullifiers(txWithNullifiers.txV5, true);
         checkNullifierCache(cache1, txWithNullifiers, true);
         cache1.Flush(); // Flush to base.
 
         // Remove the nullifier from cache
         cache1.SetNullifiers(txWithNullifiers.tx, false);
+        cache1.SetNullifiers(txWithNullifiers.txV5, false);
         cache1.Flush(); // Flush to base.
 
         // The nullifier now should be `false`.
@@ -561,6 +557,7 @@ TEST(CoinsTests, NullifierRegression)
         // Insert a nullifier into the base.
         TxWithNullifiers txWithNullifiers;
         cache1.SetNullifiers(txWithNullifiers.tx, true);
+        cache1.SetNullifiers(txWithNullifiers.txV5, true);
         checkNullifierCache(cache1, txWithNullifiers, true);
         cache1.Flush(); // Empties cache.
 
@@ -570,6 +567,7 @@ TEST(CoinsTests, NullifierRegression)
             CCoinsViewCacheTest cache2(&cache1);
             checkNullifierCache(cache2, txWithNullifiers, true);
             cache1.SetNullifiers(txWithNullifiers.tx, false);
+            cache1.SetNullifiers(txWithNullifiers.txV5, false);
             cache2.Flush(); // Empties cache, flushes to cache1.
         }
 
@@ -586,6 +584,7 @@ TEST(CoinsTests, NullifierRegression)
         // Insert a nullifier into the base.
         TxWithNullifiers txWithNullifiers;
         cache1.SetNullifiers(txWithNullifiers.tx, true);
+        cache1.SetNullifiers(txWithNullifiers.txV5, true);
         cache1.Flush(); // Empties cache.
 
         // Create cache on top.
@@ -593,6 +592,7 @@ TEST(CoinsTests, NullifierRegression)
             // Remove the nullifier.
             CCoinsViewCacheTest cache2(&cache1);
             cache2.SetNullifiers(txWithNullifiers.tx, false);
+            cache2.SetNullifiers(txWithNullifiers.txV5, false);
             cache2.Flush(); // Empties cache, flushes to cache1.
         }
 
@@ -813,6 +813,7 @@ TEST(CoinsTests, NullifiersTest)
         checkNullifierCache(cache, txWithNullifiers, false);
     }
     cache.SetNullifiers(txWithNullifiers.tx, true);
+    cache.SetNullifiers(txWithNullifiers.txV5, true);
     {
         SCOPED_TRACE("cache with spent nullifiers");
         checkNullifierCache(cache, txWithNullifiers, true);
@@ -826,6 +827,7 @@ TEST(CoinsTests, NullifiersTest)
         checkNullifierCache(cache2, txWithNullifiers, true);
     }
     cache2.SetNullifiers(txWithNullifiers.tx, false);
+    cache2.SetNullifiers(txWithNullifiers.txV5, false);
     {
         SCOPED_TRACE("cache2 with unspent nullifiers");
         checkNullifierCache(cache2, txWithNullifiers, false);

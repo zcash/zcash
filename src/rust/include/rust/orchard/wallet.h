@@ -174,10 +174,19 @@ bool orchard_wallet_append_bundle_commitments(
         );
 
 /**
- * Returns the root of the wallet's note commitment tree.
+ * Obtains the root of the wallet's Orchard note commitment tree at the given
+ * checkpoint depth, copying it to `root_ret` which must point to a 32-byte
+ * array. As a consequence of how checkpoints are created by the `zcashd`
+ * embedded wallet, a `checkpoint_depth` of `0` corresponds to the tree state
+ * as of the block most recently appended to the chain, a depth of `1`
+ * corresponds to the end of the previous block, and so forth.
+ *
+ * Returns `true` if it is possible to compute a valid note commitment tree
+ * root at the given depth, otherwise `false`.
  */
-void orchard_wallet_commitment_tree_root(
+bool orchard_wallet_commitment_tree_root(
         const OrchardWalletPtr* wallet,
+        const size_t checkpoint_depth,
         unsigned char* root_ret);
 
 /**
@@ -354,19 +363,21 @@ void orchard_wallet_get_potential_spends_from_nullifier(
         );
 
 /**
- * Fetches the information needed to spend the wallet note at the given outpoint,
- * relative to the current root known to the wallet of the Orchard commitment
- * tree.
+ * Fetches the information needed to spend the wallet note at the given
+ * outpoint, as of the state of the note commitment tree at the given
+ * checkpoint depth. As a consequence of how checkpoints are created by the
+ * `zcashd` embedded wallet, a `checkpoint_depth` of `0` corresponds to the
+ * tree state as of the block most recently appended to the chain, a depth of
+ * `1` corresponds to the end of the previous block, and so forth.
  *
- * Returns `null` if the outpoint is not known to the wallet, or the Orchard
- * bundle containing the note has not been passed to
- * `orchard_wallet_append_bundle_commitments`.
+ * Returns `null` if the outpoint is not known to the wallet, or the checkpoint
+ * depth exceeds the maximum number of checkpoints retained by the wallet.
  */
 OrchardSpendInfoPtr* orchard_wallet_get_spend_info(
         const OrchardWalletPtr* wallet,
         const unsigned char txid[32],
         uint32_t action_idx,
-        const unsigned char as_of_root[32]);
+        size_t checkpoint_depth);
 
 /**
  * Run the garbage collection operation on the wallet's note commitment

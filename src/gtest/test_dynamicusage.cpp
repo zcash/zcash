@@ -23,15 +23,16 @@ TEST(RecursiveDynamicUsageTests, TestTransactionTransparent)
     auto scriptPubKey = GetScriptForDestination(tsk.GetPubKey().GetID());
     CTxDestination taddr = tsk.GetPubKey().GetID();
 
-    auto builder = TransactionBuilder(consensusParams, 1, std::nullopt, &keystore);
+    auto builder = TransactionBuilder(Params(), 1, std::nullopt, &keystore);
     builder.SetFee(10000);
-    builder.AddTransparentInput(COutPoint(), scriptPubKey, 50000);
+    builder.AddTransparentInput(
+        COutPoint(uint256S("7777777777777777777777777777777777777777777777777777777777777777"), 0),
+        scriptPubKey, 50000);
     builder.AddTransparentOutput(taddr, 40000);
 
     auto tx = builder.Build().GetTxOrThrow();
     // 1 vin + 1 vout
-    // (96 + 128) + 64
-    EXPECT_EQ(288, RecursiveDynamicUsage(tx));
+    EXPECT_EQ((96 + 128) + 64, RecursiveDynamicUsage(tx));
 
     RegtestDeactivateSapling();
 }
@@ -44,8 +45,9 @@ TEST(RecursiveDynamicUsageTests, TestTransactionJoinSplit)
 
     auto wtx = GetValidSproutReceive(sproutSk, 25000, true);
     // 2 vin + 1 vJoinSplit + 1 vShieldedOutput
-    // 160 + 1856 + 976
-    EXPECT_EQ(2992, RecursiveDynamicUsage(wtx));
+    EXPECT_EQ(0, wtx.GetSaplingSpendsCount());
+    EXPECT_EQ(1, wtx.GetSaplingOutputsCount());
+    EXPECT_EQ(160 + 1856 + 1200, RecursiveDynamicUsage(wtx));
 
     RegtestDeactivateSapling();
 }
@@ -56,18 +58,22 @@ TEST(RecursiveDynamicUsageTests, TestTransactionSaplingToSapling)
 
     auto consensusParams = RegtestActivateSapling();
 
-    auto sk = libzcash::SaplingSpendingKey::random();
-    auto testNote = GetTestSaplingNote(sk.default_address(), 50000);
+    auto sk = GetTestMasterSaplingSpendingKey();
+    auto extfvk = sk.ToXFVK();
+    auto fvk = extfvk.fvk;
+    auto pa = extfvk.DefaultAddress();
+    auto testNote = GetTestSaplingNote(pa, 50000);
 
-    auto builder = TransactionBuilder(consensusParams, 1, std::nullopt);
+    auto builder = TransactionBuilder(Params(), 1, std::nullopt);
     builder.SetFee(10000);
-    builder.AddSaplingSpend(sk.expanded_spending_key(), testNote.note, testNote.tree.root(), testNote.tree.witness());
-    builder.AddSaplingOutput(sk.full_viewing_key().ovk, sk.default_address(), 5000, {});
+    builder.AddSaplingSpend(sk, testNote.note, testNote.tree.witness());
+    builder.AddSaplingOutput(fvk.ovk, pa, 5000, {});
 
     auto tx = builder.Build().GetTxOrThrow();
     // 1 vShieldedSpend + 2 vShieldedOutput
-    // 400 + 1920
-    EXPECT_EQ(2320, RecursiveDynamicUsage(tx));
+    EXPECT_EQ(1, tx.GetSaplingSpendsCount());
+    EXPECT_EQ(2, tx.GetSaplingOutputsCount());
+    EXPECT_EQ(400 + 2520, RecursiveDynamicUsage(tx));
 
     RegtestDeactivateSapling();
 }
@@ -83,15 +89,18 @@ TEST(RecursiveDynamicUsageTests, TestTransactionTransparentToSapling)
     auto scriptPubKey = GetScriptForDestination(tsk.GetPubKey().GetID());
     auto sk = libzcash::SaplingSpendingKey::random();
 
-    auto builder = TransactionBuilder(consensusParams, 1, std::nullopt, &keystore);
+    auto builder = TransactionBuilder(Params(), 1, std::nullopt, &keystore);
     builder.SetFee(10000);
-    builder.AddTransparentInput(COutPoint(), scriptPubKey, 50000);
+    builder.AddTransparentInput(
+        COutPoint(uint256S("7777777777777777777777777777777777777777777777777777777777777777"), 0),
+        scriptPubKey, 50000);
     builder.AddSaplingOutput(sk.full_viewing_key().ovk, sk.default_address(), 40000, {});
 
     auto tx = builder.Build().GetTxOrThrow();
     // 1 vin + 1 vShieldedOutput
-    // (96 + 128) + 976
-    EXPECT_EQ(1200, RecursiveDynamicUsage(tx));
+    EXPECT_EQ(0, tx.GetSaplingSpendsCount());
+    EXPECT_EQ(1, tx.GetSaplingOutputsCount());
+    EXPECT_EQ((96 + 128) + 1200, RecursiveDynamicUsage(tx));
 
     RegtestDeactivateSapling();
 }
@@ -105,18 +114,19 @@ TEST(RecursiveDynamicUsageTests, TestTransactionSaplingToTransparent)
     CBasicKeyStore keystore;
     CKey tsk = AddTestCKeyToKeyStore(keystore);
     CTxDestination taddr = tsk.GetPubKey().GetID();
-    auto sk = libzcash::SaplingSpendingKey::random();
-    auto testNote = GetTestSaplingNote(sk.default_address(), 50000);
+    auto sk = GetTestMasterSaplingSpendingKey();
+    auto testNote = GetTestSaplingNote(sk.ToXFVK().DefaultAddress(), 50000);
 
-    auto builder = TransactionBuilder(consensusParams, 1, std::nullopt, &keystore);
+    auto builder = TransactionBuilder(Params(), 1, std::nullopt, &keystore);
     builder.SetFee(10000);
-    builder.AddSaplingSpend(sk.expanded_spending_key(), testNote.note, testNote.tree.root(), testNote.tree.witness());
+    builder.AddSaplingSpend(sk, testNote.note, testNote.tree.witness());
     builder.AddTransparentOutput(taddr, 40000);
 
     auto tx = builder.Build().GetTxOrThrow();
-    // 1 vShieldedSpend + 1 vout
-    // 400 + 64
-    EXPECT_EQ(464, RecursiveDynamicUsage(tx));
+    // 1 vShieldedSpend + 2 vShieldedOutput + 1 vout
+    EXPECT_EQ(1, tx.GetSaplingSpendsCount());
+    EXPECT_EQ(2, tx.GetSaplingOutputsCount());
+    EXPECT_EQ(400 + 2520 + 64, RecursiveDynamicUsage(tx));
 
     RegtestDeactivateSapling();
 }

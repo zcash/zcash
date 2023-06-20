@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright (c) 2020 The Zcash developers
+# Copyright (c) 2023 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -38,7 +38,7 @@ class WalletGoldenV5_6_0Test(BitcoinTestFramework):
     def run_test(self):
         # Establish the persistent cache state before running the main behavior
         # of the test.
-        if not persistent_cache_exists('golden-v5.6.0'):
+        if self.cache_behavior != 'golden-v5.6.0':
             # Sanity-check the test harness
             assert_equal(self.nodes[0].getblockcount(), 200)
 
@@ -101,6 +101,9 @@ class WalletGoldenV5_6_0Test(BitcoinTestFramework):
             n0account1 = self.nodes[0].z_getnewaccount()['account']
             assert(n0account1 == 1)
             n0ua1_0 = self.nodes[0].z_getaddressforaccount(n0account1, ['orchard'], 0)['address']
+
+            # We space out transactions at 15 block increments so that some of the
+            # oldest checkpoints get dropped.
             for i in range(10):
                 if i % 2 == 0:
                     recipients = [
@@ -146,24 +149,21 @@ class WalletGoldenV5_6_0Test(BitcoinTestFramework):
         # Sanity-check the test harness
         assert_equal(self.nodes[0].getblockcount(), 353)
 
-        # 499975000 + (5 * 30000000) - (5 * 70010000) = 299925000
         assert_equal(
                 {
-                    'pools': {'orchard': {'valueZat': Decimal('299925000')}},
+                    'pools': {'orchard': {'valueZat': Decimal(499975000 + (5 * 30000000) - (5 * 70010000))}},
                     'minimum_confirmations': 1
                 },
                 self.nodes[0].z_getbalanceforaccount(n0account0))
-        # 5 * 30000000 = 150000000
         assert_equal(
                 {
-                    'pools': {'orchard': {'valueZat': Decimal('150000000')}},
+                    'pools': {'orchard': {'valueZat': Decimal(5 * 30000000)}},
                     'minimum_confirmations': 1
                 },
                 self.nodes[0].z_getbalanceforaccount(n0account1))
-        # 500000000 + (5 * 70000000) - (5 * 60020000) = 549900000
         assert_equal(
                 {
-                    'pools': {'orchard': {'valueZat': Decimal('549900000')}},
+                    'pools': {'orchard': {'valueZat': Decimal(500000000 + (5 * 70000000) - (5 * 60020000))}},
                     'minimum_confirmations': 1
                 },
                 self.nodes[2].z_getbalanceforaccount(n2account0))
@@ -198,24 +198,21 @@ class WalletGoldenV5_6_0Test(BitcoinTestFramework):
         self.nodes[0].generate(1)
         self.sync_all()
 
-        # 299925000 + (5 * 30000000) - (5 * 10010000) + 290000000 = 689875000
         assert_equal(
                 {
-                    'pools': {'orchard': {'valueZat': Decimal('689875000')}},
+                    'pools': {'orchard': {'valueZat': Decimal(299925000 + (5 * 30000000) - (5 * 10010000) + 290000000)}},
                     'minimum_confirmations': 1
                 },
                 self.nodes[0].z_getbalanceforaccount(n0account0))
-        # 150000000 + (5 * 30000000) - 290050000 = 9950000
         assert_equal(
                 {
-                    'pools': {'orchard': {'valueZat': Decimal('9950000')}},
+                    'pools': {'orchard': {'valueZat': Decimal(150000000 + (5 * 30000000) - 290050000)}},
                     'minimum_confirmations': 1
                 },
                 self.nodes[0].z_getbalanceforaccount(n0account1))
-        # 549900000 + (5 * 10000000) - (5 * 60020000) = 299800000
         assert_equal(
                 {
-                    'pools': {'orchard': {'valueZat': Decimal('299800000')}},
+                    'pools': {'orchard': {'valueZat': Decimal(549900000 + (5 * 10000000) - (5 * 60020000))}},
                     'minimum_confirmations': 1
                 },
                 self.nodes[2].z_getbalanceforaccount(n2account0))

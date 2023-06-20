@@ -5,6 +5,7 @@
 #ifndef ZCASH_TRANSACTION_BUILDER_H
 #define ZCASH_TRANSACTION_BUILDER_H
 
+#include "chainparams.h"
 #include "coins.h"
 #include "consensus/params.h"
 #include "keystore.h"
@@ -29,10 +30,12 @@
 class OrchardWallet;
 namespace orchard { class UnauthorizedBundle; }
 
-uint256 ProduceZip244SignatureHash(
+uint256 ProduceShieldedSignatureHash(
+    uint32_t consensusBranchId,
     const CTransaction& tx,
     const std::vector<CTxOut>& allPrevOutputs,
-    const orchard::UnauthorizedBundle& orchardBundle);
+    const sapling::UnauthorizedBundle& saplingBundle,
+    const std::optional<orchard::UnauthorizedBundle>& orchardBundle);
 
 namespace orchard {
 
@@ -145,12 +148,14 @@ private:
     friend class Builder;
     // The parentheses here are necessary to avoid the following compilation error:
     //     error: C++ requires a type specifier for all declarations
-    //             friend uint256 ::ProduceZip244SignatureHash(
+    //             friend uint256 ::ProduceShieldedSignatureHash(
     //             ~~~~~~           ^
-    friend uint256 (::ProduceZip244SignatureHash(
+    friend uint256 (::ProduceShieldedSignatureHash(
+        uint32_t consensusBranchId,
         const CTransaction& tx,
         const std::vector<CTxOut>& allPrevOutputs,
-        const UnauthorizedBundle& orchardBundle));
+        const sapling::UnauthorizedBundle& saplingBundle,
+        const std::optional<orchard::UnauthorizedBundle>& orchardBundle));
 
 public:
     // UnauthorizedBundle should never be copied
@@ -178,33 +183,6 @@ public:
 };
 
 } // namespace orchard
-
-struct SpendDescriptionInfo {
-    libzcash::SaplingExpandedSpendingKey expsk;
-    libzcash::SaplingNote note;
-    uint256 alpha;
-    uint256 anchor;
-    SaplingWitness witness;
-
-    SpendDescriptionInfo(
-        libzcash::SaplingExpandedSpendingKey expsk,
-        libzcash::SaplingNote note,
-        uint256 anchor,
-        SaplingWitness witness);
-};
-
-struct OutputDescriptionInfo {
-    uint256 ovk;
-    libzcash::SaplingNote note;
-    std::optional<libzcash::Memo> memo;
-
-    OutputDescriptionInfo(
-        uint256 ovk,
-        libzcash::SaplingNote note,
-        std::optional<libzcash::Memo> memo) : ovk(ovk), note(note), memo(memo) {}
-
-    std::optional<OutputDescription> Build(rust::Box<sapling::Prover>& ctx);
-};
 
 struct JSDescriptionInfo {
     ed25519::VerificationKey joinSplitPubKey;
@@ -264,11 +242,12 @@ private:
     std::optional<uint256> orchardAnchor;
     std::optional<orchard::Builder> orchardBuilder;
     CAmount valueBalanceOrchard = 0;
+    rust::Box<sapling::Builder> saplingBuilder;
+    CAmount valueBalanceSapling = 0;
 
     std::vector<libzcash::OrchardSpendingKey> orchardSpendingKeys;
     std::optional<libzcash::OrchardRawAddress> firstOrchardSpendAddr;
-    std::vector<SpendDescriptionInfo> spends;
-    std::vector<OutputDescriptionInfo> outputs;
+    std::optional<std::pair<uint256, libzcash::SaplingPaymentAddress>> firstSaplingSpendAddr;
     std::vector<libzcash::JSInput> jsInputs;
     std::vector<libzcash::JSOutput> jsOutputs;
     std::vector<CTxOut> tIns;
@@ -279,7 +258,6 @@ private:
     std::optional<CTxDestination> tChangeAddr;
 
 public:
-    TransactionBuilder() {}
     /**
      * If an Orchard anchor is provided, the resulting builder will always attempt
      * to construct a V5 transaction unless NU5 is not yet active. If an Orchard
@@ -287,7 +265,7 @@ public:
      * value of the -preferredtxversion configuration flag.
      */
     TransactionBuilder(
-        const Consensus::Params& consensusParams,
+        const CChainParams& params,
         int nHeight,
         std::optional<uint256> orchardAnchor,
         const CKeyStore* keyStore = nullptr,
@@ -308,11 +286,15 @@ public:
         orchardAnchor(std::move(builder.orchardAnchor)),
         orchardBuilder(std::move(builder.orchardBuilder)),
         valueBalanceOrchard(std::move(builder.valueBalanceOrchard)),
-        spends(std::move(builder.spends)),
-        outputs(std::move(builder.outputs)),
+        saplingBuilder(std::move(builder.saplingBuilder)),
+        valueBalanceSapling(std::move(builder.valueBalanceSapling)),
+        orchardSpendingKeys(std::move(orchardSpendingKeys)),
+        firstOrchardSpendAddr(std::move(firstOrchardSpendAddr)),
+        firstSaplingSpendAddr(std::move(firstSaplingSpendAddr)),
         jsInputs(std::move(builder.jsInputs)),
         jsOutputs(std::move(builder.jsOutputs)),
         tIns(std::move(builder.tIns)),
+        orchardChangeAddr(std::move(builder.orchardChangeAddr)),
         saplingChangeAddr(std::move(builder.saplingChangeAddr)),
         sproutChangeAddr(std::move(builder.sproutChangeAddr)),
         tChangeAddr(std::move(builder.tChangeAddr)) {}
@@ -328,11 +310,15 @@ public:
             fee = std::move(builder.fee);
             orchardBuilder = std::move(builder.orchardBuilder);
             valueBalanceOrchard = std::move(builder.valueBalanceOrchard);
-            spends = std::move(builder.spends);
-            outputs = std::move(builder.outputs);
+            saplingBuilder = std::move(builder.saplingBuilder);
+            valueBalanceSapling = std::move(builder.valueBalanceSapling);
+            orchardSpendingKeys = std::move(builder.orchardSpendingKeys),
+            firstOrchardSpendAddr = std::move(builder.firstOrchardSpendAddr),
+            firstSaplingSpendAddr = std::move(builder.firstSaplingSpendAddr),
             jsInputs = std::move(builder.jsInputs);
             jsOutputs = std::move(builder.jsOutputs);
             tIns = std::move(builder.tIns);
+            orchardChangeAddr = std::move(builder.orchardChangeAddr);
             saplingChangeAddr = std::move(builder.saplingChangeAddr);
             sproutChangeAddr = std::move(builder.sproutChangeAddr);
             tChangeAddr = std::move(builder.tChangeAddr);
@@ -361,9 +347,8 @@ public:
     // Throws if the anchor does not match the anchor used by
     // previously-added Sapling spends.
     void AddSaplingSpend(
-        libzcash::SaplingExpandedSpendingKey expsk,
+        libzcash::SaplingExtendedSpendingKey extsk,
         libzcash::SaplingNote note,
-        uint256 anchor,
         SaplingWitness witness);
 
     void AddSaplingOutput(

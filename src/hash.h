@@ -175,6 +175,11 @@ public:
     int GetType() const { return nType; }
     int GetVersion() const { return nVersion; }
 
+    void write_u8(const unsigned char* pch, size_t size)
+    {
+        state->update({pch, size});
+    }
+
     CBLAKE2bWriter& write(const char *pch, size_t size) {
         state->update({(const unsigned char*)pch, size});
         return (*this);
