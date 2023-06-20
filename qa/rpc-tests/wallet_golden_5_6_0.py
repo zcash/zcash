@@ -32,7 +32,9 @@ class WalletGoldenV5_6_0Test(BitcoinTestFramework):
     def setup_nodes(self):
         return start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[
             nuparams(NU5_BRANCH_ID, 201),
-            "-regtestwalletsetbestchaineveryblock",
+            # The following was required for correct persistence of updated wallet state,
+            # but not required for subsequent test runs.
+            #"-regtestwalletsetbestchaineveryblock",
         ]] * self.num_nodes)
 
     def run_test(self):
