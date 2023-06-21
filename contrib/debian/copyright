@@ -240,7 +240,7 @@ License: WTFPL
 
 Files: depends/*/vendored-sources/unicode-ident/src/tables.rs
 Copyright: 1991-2022 Unicode, Inc
-License: Unicode
+License: Unicode-DFS-2016
 Comment: This entry is for code in the unicode-ident crate generated from Unicode data tables.
  The license of the unicode-ident crate itself is MIT/Expat or Apache-2.0.
 
@@ -1922,7 +1922,7 @@ License: BOSL-1
  a notice of your own that is not confusingly similar to the notice in this
  License.
 
-License: Unicode
+License: Unicode-DFS-2016
  UNICODE, INC. LICENSE AGREEMENT - DATA FILES AND SOFTWARE
  .
  See Terms of Use <https://www.unicode.org/copyright.html>
