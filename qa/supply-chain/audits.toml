@@ -1345,171 +1345,6 @@ criteria = "safe-to-deploy"
 delta = "4.3.0 -> 4.4.0"
 notes = "New APIs are remixes of existing code."
 
-[[audits.windows-targets]]
-who = "Jack Grigg <jack@electriccoin.co>"
-criteria = "safe-to-deploy"
-delta = "0.42.1 -> 0.42.2"
-
-[[audits.windows_aarch64_gnullvm]]
-who = "Jack Grigg <jack@z.cash>"
-criteria = "safe-to-deploy"
-delta = "0.42.0 -> 0.42.1"
-notes = """
-This is a Windows API bindings library maintained by Microsoft themselves.
-Changes are to a bundled binary library; it looks like these were accidentally left out of 0.42.0.
-"""
-
-[[audits.windows_aarch64_gnullvm]]
-who = "Jack Grigg <jack@electriccoin.co>"
-criteria = "safe-to-deploy"
-delta = "0.42.1 -> 0.42.2"
-notes = "This is an opaque Windows API bindings library maintained by Microsoft."
-
-[[audits.windows_aarch64_msvc]]
-who = "Jack Grigg <jack@z.cash>"
-criteria = "safe-to-run"
-version = "0.36.1"
-notes = """
-Adds a binary blob to the library search path, that contains a subset of
-the Windows SDK to avoid a direct dependency on the latter. See
-https://github.com/microsoft/windows-rs/pull/1217 for context. I did not
-audit the binary blob, but the build script looks fine.
-"""
-
-[[audits.windows_aarch64_msvc]]
-who = "Jack Grigg <jack@z.cash>"
-criteria = "safe-to-deploy"
-delta = "0.42.0 -> 0.42.1"
-notes = """
-This is a Windows API bindings library maintained by Microsoft themselves.
-Changes are to a bundled binary library; it looks like these were accidentally left out of 0.42.0.
-"""
-
-[[audits.windows_aarch64_msvc]]
-who = "Jack Grigg <jack@electriccoin.co>"
-criteria = "safe-to-deploy"
-delta = "0.42.1 -> 0.42.2"
-notes = "This is an opaque Windows API bindings library maintained by Microsoft."
-
-[[audits.windows_i686_gnu]]
-who = "Jack Grigg <jack@z.cash>"
-criteria = "safe-to-run"
-version = "0.36.1"
-notes = """
-Adds a binary blob to the library search path, that contains a subset of
-the Windows SDK to avoid a direct dependency on the latter. See
-https://github.com/microsoft/windows-rs/pull/1217 for context. I did not
-audit the binary blob, but the build script looks fine.
-"""
-
-[[audits.windows_i686_gnu]]
-who = "Jack Grigg <jack@z.cash>"
-criteria = "safe-to-deploy"
-delta = "0.42.0 -> 0.42.1"
-notes = """
-This is a Windows API bindings library maintained by Microsoft themselves.
-Changes are to a bundled binary library; it looks like these were accidentally left out of 0.42.0.
-"""
-
-[[audits.windows_i686_gnu]]
-who = "Jack Grigg <jack@electriccoin.co>"
-criteria = "safe-to-deploy"
-delta = "0.42.1 -> 0.42.2"
-notes = "This is an opaque Windows API bindings library maintained by Microsoft."
-
-[[audits.windows_i686_msvc]]
-who = "Jack Grigg <jack@z.cash>"
-criteria = "safe-to-run"
-version = "0.36.1"
-notes = """
-Adds a binary blob to the library search path, that contains a subset of
-the Windows SDK to avoid a direct dependency on the latter. See
-https://github.com/microsoft/windows-rs/pull/1217 for context. I did not
-audit the binary blob, but the build script looks fine.
-"""
-
-[[audits.windows_i686_msvc]]
-who = "Jack Grigg <jack@z.cash>"
-criteria = "safe-to-deploy"
-delta = "0.42.0 -> 0.42.1"
-notes = """
-This is a Windows API bindings library maintained by Microsoft themselves.
-Changes are to a bundled binary library; it looks like these were accidentally left out of 0.42.0.
-"""
-
-[[audits.windows_i686_msvc]]
-who = "Jack Grigg <jack@electriccoin.co>"
-criteria = "safe-to-deploy"
-delta = "0.42.1 -> 0.42.2"
-notes = "This is an opaque Windows API bindings library maintained by Microsoft."
-
-[[audits.windows_x86_64_gnu]]
-who = "Jack Grigg <jack@z.cash>"
-criteria = "safe-to-run"
-version = "0.36.1"
-notes = """
-Adds a binary blob to the library search path, that contains a subset of
-the Windows SDK to avoid a direct dependency on the latter. See
-https://github.com/microsoft/windows-rs/pull/1217 for context. I did not
-audit the binary blob, but the build script looks fine.
-"""
-
-[[audits.windows_x86_64_gnu]]
-who = "Jack Grigg <jack@z.cash>"
-criteria = "safe-to-deploy"
-delta = "0.42.0 -> 0.42.1"
-notes = """
-This is a Windows API bindings library maintained by Microsoft themselves.
-Changes are to a bundled binary library; it looks like these were accidentally left out of 0.42.0.
-"""
-
-[[audits.windows_x86_64_gnu]]
-who = "Jack Grigg <jack@electriccoin.co>"
-criteria = "safe-to-deploy"
-delta = "0.42.1 -> 0.42.2"
-notes = "This is an opaque Windows API bindings library maintained by Microsoft."
-
-[[audits.windows_x86_64_gnullvm]]
-who = "Jack Grigg <jack@z.cash>"
-criteria = "safe-to-deploy"
-delta = "0.42.0 -> 0.42.1"
-notes = """
-This is a Windows API bindings library maintained by Microsoft themselves.
-Changes are to a bundled binary library; it looks like these were accidentally left out of 0.42.0.
-"""
-
-[[audits.windows_x86_64_gnullvm]]
-who = "Jack Grigg <jack@electriccoin.co>"
-criteria = "safe-to-deploy"
-delta = "0.42.1 -> 0.42.2"
-notes = "This is an opaque Windows API bindings library maintained by Microsoft."
-
-[[audits.windows_x86_64_msvc]]
-who = "Jack Grigg <jack@z.cash>"
-criteria = "safe-to-run"
-version = "0.36.1"
-notes = """
-Adds a binary blob to the library search path, that contains a subset of
-the Windows SDK to avoid a direct dependency on the latter. See
-https://github.com/microsoft/windows-rs/pull/1217 for context. I did not
-audit the binary blob, but the build script looks fine.
-"""
-
-[[audits.windows_x86_64_msvc]]
-who = "Jack Grigg <jack@z.cash>"
-criteria = "safe-to-deploy"
-delta = "0.42.0 -> 0.42.1"
-notes = """
-This is a Windows API bindings library maintained by Microsoft themselves.
-Changes are to a bundled binary library; it looks like these were accidentally left out of 0.42.0.
-"""
-
-[[audits.windows_x86_64_msvc]]
-who = "Jack Grigg <jack@electriccoin.co>"
-criteria = "safe-to-deploy"
-delta = "0.42.1 -> 0.42.2"
-notes = "This is an opaque Windows API bindings library maintained by Microsoft."
-
 [[audits.wyz]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -1710,3 +1545,57 @@ delta = "1.3.3 -> 1.4.1"
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.4.1 -> 1.4.2"
+
+[[trusted.windows-sys]]
+criteria = "safe-to-deploy"
+user-id = 64539 # Kenny Kerr (kennykerr)
+start = "2021-11-15"
+end = "2024-06-21"
+
+[[trusted.windows-targets]]
+criteria = "safe-to-deploy"
+user-id = 64539 # Kenny Kerr (kennykerr)
+start = "2022-09-09"
+end = "2024-06-21"
+
+[[trusted.windows_aarch64_gnullvm]]
+criteria = "safe-to-deploy"
+user-id = 64539 # Kenny Kerr (kennykerr)
+start = "2022-09-01"
+end = "2024-06-21"
+
+[[trusted.windows_aarch64_msvc]]
+criteria = "safe-to-deploy"
+user-id = 64539 # Kenny Kerr (kennykerr)
+start = "2021-11-05"
+end = "2024-06-21"
+
+[[trusted.windows_i686_gnu]]
+criteria = "safe-to-deploy"
+user-id = 64539 # Kenny Kerr (kennykerr)
+start = "2021-10-28"
+end = "2024-06-21"
+
+[[trusted.windows_i686_msvc]]
+criteria = "safe-to-deploy"
+user-id = 64539 # Kenny Kerr (kennykerr)
+start = "2021-10-27"
+end = "2024-06-21"
+
+[[trusted.windows_x86_64_gnu]]
+criteria = "safe-to-deploy"
+user-id = 64539 # Kenny Kerr (kennykerr)
+start = "2021-10-28"
+end = "2024-06-21"
+
+[[trusted.windows_x86_64_gnullvm]]
+criteria = "safe-to-deploy"
+user-id = 64539 # Kenny Kerr (kennykerr)
+start = "2022-09-01"
+end = "2024-06-21"
+
+[[trusted.windows_x86_64_msvc]]
+criteria = "safe-to-deploy"
+user-id = 64539 # Kenny Kerr (kennykerr)
+start = "2021-10-27"
+end = "2024-06-21"
