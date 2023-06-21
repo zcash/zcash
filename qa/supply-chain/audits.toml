@@ -284,6 +284,12 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.92 -> 1.0.94"
 
+[[audits.cxx]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.95 -> 1.0.97"
+notes = "Adds some C++ static_casts to fix MSVC warnings."
+
 [[audits.cxxbridge-flags]]
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
@@ -324,6 +330,11 @@ delta = "1.0.91 -> 1.0.92"
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.92 -> 1.0.94"
+
+[[audits.cxxbridge-flags]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.95 -> 1.0.97"
 
 [[audits.cxxbridge-macro]]
 who = "Daira Hopwood <daira@jacaranda.org>"
@@ -375,6 +386,11 @@ Migration to `syn 2`. I didn't check the logic, but the changes look reasonable
 and I didn't notice anything that seemed like it would adversely change the
 generated code.
 """
+
+[[audits.cxxbridge-macro]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.95 -> 1.0.97"
 
 [[audits.directories]]
 who = "Jack Grigg <jack@electriccoin.co>"
