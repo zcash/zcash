@@ -6663,6 +6663,14 @@ bool CWallet::InitLoadWallet(const CChainParams& params, bool clearWitnessCaches
 
     RegisterValidationInterface(walletInstance);
 
+    // Check for Orchard note commitment tree corruption and trigger a rescan
+    // if necessary.
+    auto orchardSpendable = walletInstance->orchardWallet.UnspentNotesAreSpendable();
+    if (!orchardSpendable) {
+        LogPrintf("LoadWallet: inconsistency detected between available Orchard notes & spend information; starting with -rescan.");
+        SoftSetBoolArg("-rescan", true);
+    }
+
     // chainActive.Genesis() may return null; in this case, we want rescanning
     // to happen automatically as a consequence of the genesis block (and subsequent
     // blocks) being added to the chain.

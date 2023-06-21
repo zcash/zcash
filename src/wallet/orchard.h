@@ -510,6 +510,10 @@ public:
                 PushOutputAction);
         return result;
     }
+
+    bool UnspentNotesAreSpendable() const {
+        return orchard_wallet_unspent_notes_are_spendable(inner.get());
+    }
 };
 
 class OrchardWalletNoteCommitmentTreeWriter

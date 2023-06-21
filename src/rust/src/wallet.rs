@@ -1395,3 +1395,13 @@ pub extern "C" fn orchard_wallet_init_from_frontier(
         false
     }
 }
+
+#[no_mangle]
+pub extern "C" fn orchard_wallet_unspent_notes_are_spendable(wallet: *const Wallet) -> bool {
+    let wallet = unsafe { wallet.as_ref() }.expect("Wallet pointer may not be null.");
+
+    wallet
+        .get_filtered_notes(None, true, true)
+        .iter()
+        .all(|(outpoint, _)| wallet.get_spend_info(*outpoint, 0).is_ok())
+}
