@@ -47,6 +47,10 @@ criteria = "safe-to-deploy"
 version = "0.2.14"
 criteria = "safe-to-deploy"
 
+[[exemptions.arrayvec]]
+version = "0.7.4"
+criteria = "safe-to-deploy"
+
 [[exemptions.backtrace]]
 version = "0.3.67"
 criteria = "safe-to-deploy"
@@ -128,7 +132,7 @@ version = "1.0.9"
 criteria = "safe-to-deploy"
 
 [[exemptions.cpufeatures]]
-version = "0.2.2"
+version = "0.2.8"
 criteria = "safe-to-deploy"
 
 [[exemptions.crossbeam-channel]]
@@ -287,10 +291,6 @@ criteria = "safe-to-deploy"
 version = "0.1.12"
 criteria = "safe-to-deploy"
 
-[[exemptions.io-lifetimes]]
-version = "1.0.9"
-criteria = "safe-to-deploy"
-
 [[exemptions.ipnet]]
 version = "2.5.0"
 criteria = "safe-to-deploy"
@@ -308,7 +308,7 @@ version = "0.9.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.libc]]
-version = "0.2.141"
+version = "0.2.146"
 criteria = "safe-to-deploy"
 
 [[exemptions.libm]]
@@ -408,7 +408,7 @@ version = "0.22.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.parity-scale-codec]]
-version = "3.5.0"
+version = "3.6.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.parity-scale-codec-derive]]
@@ -516,7 +516,7 @@ version = "0.4.3"
 criteria = "safe-to-deploy"
 
 [[exemptions.regex]]
-version = "1.6.0"
+version = "1.8.4"
 criteria = "safe-to-deploy"
 
 [[exemptions.regex-automata]]
@@ -525,6 +525,10 @@ criteria = "safe-to-deploy"
 
 [[exemptions.regex-syntax]]
 version = "0.6.27"
+criteria = "safe-to-deploy"
+
+[[exemptions.regex-syntax]]
+version = "0.7.2"
 criteria = "safe-to-deploy"
 
 [[exemptions.ring]]
@@ -540,7 +544,7 @@ version = "2.1.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.rustix]]
-version = "0.37.7"
+version = "0.37.20"
 criteria = "safe-to-deploy"
 
 [[exemptions.rusty-fork]]
@@ -640,7 +644,7 @@ version = "0.2.7"
 criteria = "safe-to-deploy"
 
 [[exemptions.tokio]]
-version = "1.27.0"
+version = "1.28.2"
 criteria = "safe-to-deploy"
 
 [[exemptions.toml_edit]]
@@ -692,23 +696,23 @@ version = "0.11.0+wasi-snapshot-preview1"
 criteria = "safe-to-deploy"
 
 [[exemptions.wasm-bindgen]]
-version = "0.2.84"
+version = "0.2.87"
 criteria = "safe-to-deploy"
 
 [[exemptions.wasm-bindgen-backend]]
-version = "0.2.84"
+version = "0.2.87"
 criteria = "safe-to-deploy"
 
 [[exemptions.wasm-bindgen-macro]]
-version = "0.2.84"
+version = "0.2.87"
 criteria = "safe-to-deploy"
 
 [[exemptions.wasm-bindgen-macro-support]]
-version = "0.2.84"
+version = "0.2.87"
 criteria = "safe-to-deploy"
 
 [[exemptions.web-sys]]
-version = "0.3.61"
+version = "0.3.64"
 criteria = "safe-to-deploy"
 
 [[exemptions.which]]
