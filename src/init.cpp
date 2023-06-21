@@ -1271,20 +1271,6 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     nMaxTipAge = GetArg("-maxtipage", DEFAULT_MAX_TIP_AGE);
 
-#ifdef ENABLE_MINING
-    if (mapArgs.count("-mineraddress")) {
-        KeyIO keyIO(chainparams);
-        auto addr = keyIO.DecodePaymentAddress(mapArgs["-mineraddress"]);
-        auto consensus = chainparams.GetConsensus();
-        int height = consensus.HeightOfLatestSettledUpgrade();
-        if (!(addr.has_value() && std::visit(ExtractMinerAddress(consensus, height), addr.value()).has_value())) {
-            return InitError(strprintf(
-                _("Invalid address for -mineraddress=<addr>: '%s' (must be a Sapling or transparent P2PKH address, or a Unified Address containing a valid receiver for the most recent settled network upgrade.)"),
-                mapArgs["-mineraddress"]));
-        }
-    }
-#endif
-
     if (GetArg("-blockminsize", 0) != 0) {
         InitWarning(_("The argument -blockminsize is no longer supported."));
     }
@@ -1297,6 +1283,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         return InitError(_("-blockunpaidactionlimit cannot be configured with a negative value."));
     }
 
+    auto maxUpgradeHeight = Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
     if (!mapMultiArgs["-nuparams"].empty()) {
         // Allow overriding network upgrade parameters for testing
         if (chainparams.NetworkIDString() != "regtest") {
@@ -1319,6 +1306,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             {
                 if (vDeploymentParams[0].compare(HexInt(NetworkUpgradeInfo[i].nBranchId)) == 0) {
                     UpdateNetworkUpgradeParameters(Consensus::UpgradeIndex(i), nActivationHeight);
+                    maxUpgradeHeight = std::max(maxUpgradeHeight, nActivationHeight);
                     found = true;
                     LogPrintf("Setting network upgrade activation parameters for %s to height=%d\n", vDeploymentParams[0], nActivationHeight);
                     break;
@@ -1397,6 +1385,28 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             UpdateFundingStreamParameters((Consensus::FundingStreamIndex) nFundingStreamId, fs);
         }
     }
+
+#ifdef ENABLE_MINING
+    if (mapArgs.count("-mineraddress")) {
+        KeyIO keyIO(chainparams);
+        auto addr = keyIO.DecodePaymentAddress(mapArgs["-mineraddress"]);
+        auto consensus = chainparams.GetConsensus();
+        int height = consensus.HeightOfLatestSettledUpgrade();
+        if (chainparams.NetworkIDString() == "regtest") {
+            height = std::max(height, maxUpgradeHeight);
+        }
+        if (!addr.has_value()) {
+            return InitError(strprintf(
+                _("Invalid address for -mineraddress=<addr>: Unable to parse '%s' as a Zcash address.)"),
+                mapArgs["-mineraddress"]));
+        }
+        if (!std::visit(ExtractMinerAddress(consensus, height), addr.value()).has_value()) {
+            return InitError(strprintf(
+                _("Invalid address for -mineraddress=<addr>: '%s' (must be a Sapling or transparent P2PKH address, or a Unified Address containing a valid receiver for the most recent settled network upgrade.)"),
+                mapArgs["-mineraddress"]));
+        }
+    }
+#endif
 
     // ********************************************************* Step 4: application initialization: dir lock, daemonize, pidfile, debug log
 
