@@ -33,7 +33,7 @@ class WalletGoldenV5_6_0Test(BitcoinTestFramework):
             nuparams(NU5_BRANCH_ID, 201),
             # The following was required for correct persistence of updated wallet state,
             # but not required for subsequent test runs.
-            "-regtestwalletsetbestchaineveryblock",
+            #"-regtestwalletsetbestchaineveryblock",
         ]
         return start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[
             default_extra_args,
@@ -142,7 +142,7 @@ class WalletGoldenV5_6_0Test(BitcoinTestFramework):
             # Restart the network
             self.setup_network()
 
-        tarnish = True
+        tarnish = False
         if tarnish:
             # We need to add another Orchard note to the note commitment tree. The mineraddress used when starting
             # node 3 is the default address for account 0, so here we just mine a block to shielded coinbase to
