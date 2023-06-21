@@ -76,7 +76,7 @@ static const CRPCConvertTable rpcCvtTable =
     // NB: The second argument _should_ be an object, but upstream treats it as a string, so we
     //     preserve that here.
     { "submitblock",                 {{s}, {s}} },
-    { "getblocksubsidy",             {{o}, {}} },
+    { "getblocksubsidy",             {{}, {o}} },
     // misc
     { "getinfo",                     {{}, {}} },
     { "validateaddress",             {{s}, {}} },
