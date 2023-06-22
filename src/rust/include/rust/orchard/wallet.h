@@ -402,6 +402,13 @@ bool orchard_wallet_load_note_commitment_tree(
         void* stream,
         read_callback_t read_cb);
 
+/**
+ * Returns whether the Orchard wallet's note commitment tree contains witness information
+ * for all unspent notes.
+ */
+bool orchard_wallet_unspent_notes_are_spendable(
+        const OrchardWalletPtr* wallet);
+
 #ifdef __cplusplus
 }
 #endif

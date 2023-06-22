@@ -974,6 +974,7 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
                     fNoncriticalErrors = true; // ... but do warn the user there is something wrong.
                     if (strType == "tx") {
                         // Rescan if there is a bad transaction record:
+                        LogPrintf("LoadWallet: Malformed transaction data encountered; starting with -rescan.");
                         SoftSetBoolArg("-rescan", true);
                     }
                 }

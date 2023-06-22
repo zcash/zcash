@@ -118,13 +118,25 @@ pub fn read_bridge_v2<H: HashSer + Ord + Clone, R: Read>(
 
 pub fn read_bridge<H: HashSer + Ord + Clone, R: Read>(
     mut reader: R,
+    tree_version: u8,
 ) -> io::Result<MerkleBridge<H>> {
-    match reader.read_u8()? {
-        SER_V1 => read_bridge_v1(&mut reader),
-        SER_V2 => read_bridge_v2(&mut reader),
-        flag => Err(io::Error::new(
+    match tree_version {
+        SER_V2 => read_bridge_v1(&mut reader),
+        SER_V3 => match reader.read_u8()? {
+            // This is test-only because it's needed for reading the serialized test vectors, but
+            // should never appear in persistent zcashd wallet data (and if we encounter it there,
+            // we treat it as an error).
+            #[cfg(test)]
+            SER_V1 => read_bridge_v1(&mut reader),
+            SER_V2 => read_bridge_v2(&mut reader),
+            flag => Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!("Unrecognized bridge serialization version: {:?}", flag),
+            )),
+        },
+        other => Err(io::Error::new(
             io::ErrorKind::InvalidData,
-            format!("Unrecognized serialization version: {:?}", flag),
+            format!("Unrecognized tree serialization version: {:?}", other),
         )),
     }
 }
@@ -243,14 +255,14 @@ pub fn write_checkpoint_v3<W: Write>(
 pub fn read_tree<H: Hashable + HashSer + Ord + Clone, R: Read>(
     mut reader: R,
 ) -> io::Result<BridgeTree<H, u32, NOTE_COMMITMENT_TREE_DEPTH>> {
-    let ser_version = reader.read_u8()?;
-    let prior_bridges = Vector::read(&mut reader, |r| read_bridge(r))?;
-    let current_bridge = Optional::read(&mut reader, |r| read_bridge(r))?;
+    let tree_version = reader.read_u8()?;
+    let prior_bridges = Vector::read(&mut reader, |r| read_bridge(r, tree_version))?;
+    let current_bridge = Optional::read(&mut reader, |r| read_bridge(r, tree_version))?;
     let saved: BTreeMap<Position, usize> = Vector::read_collected(&mut reader, |mut r| {
         Ok((read_position(&mut r)?, read_leu64_usize(&mut r)?))
     })?;
 
-    let checkpoints = match ser_version {
+    let checkpoints = match tree_version {
         SER_V1 => {
             // SER_V1 checkpoint serialization encoded checkpoint data from the `Checkpoint` type
             // as defined in `incrementalmerkletree` version `0.3.0-beta-2`. This version was only
@@ -361,11 +373,11 @@ mod tests {
         {
             let mut buffer = vec![];
             write_bridge(&mut buffer, b).unwrap();
-            let b0 = read_bridge(&buffer[..]).unwrap();
+            let b0 = read_bridge(&buffer[..], SER_V3).unwrap();
             assert_eq!(b, &b0);
 
             let buffer2 = hex::decode(BRIDGE_V1_VECTORS[i]).unwrap();
-            let b2 = read_bridge(&buffer2[..]).unwrap();
+            let b2 = read_bridge(&buffer2[..], SER_V3).unwrap();
             assert_eq!(b.prior_position(), b2.prior_position());
             assert_eq!(b.frontier(), b2.frontier());
             // Due to the changed nature of garbage collection, bridgetree-v0.2.0 and later
