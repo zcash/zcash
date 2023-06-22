@@ -3,7 +3,7 @@ FROM debian:11
 RUN apt-get update \
   && apt-get install -y gnupg2 apt-transport-https curl
 
-ARG ZCASH_SIGNING_KEY_ID=6DEF3BAF272766C0
+ARG ZCASH_SIGNING_KEY_ID=1D05FDC66B372CFE
 
 ARG ZCASH_VERSION=
 # The empty string for ZCASH_VERSION will install the apt default version,
