@@ -1140,7 +1140,7 @@ TEST(ChecktransactionTests, InvalidSaplingShieldedCoinbase) {
     RegtestActivateHeartwood(false, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
 
     // From Heartwood, the output description is allowed but invalid (undecryptable).
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-output-desc-invalid-outct", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-output-desc-invalid-ct", false, "")).Times(1);
     ContextualCheckTransaction(tx, state, Params(), 10, 57);
 
     RegtestDeactivateHeartwood();
@@ -1183,7 +1183,7 @@ TEST(ChecktransactionTests, HeartwoodAcceptsSaplingShieldedCoinbase) {
         EXPECT_TRUE(tx.IsCoinBase());
 
         MockCValidationState state;
-        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-output-desc-invalid-outct", false, "")).Times(1);
+        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-output-desc-invalid-ct", false, "")).Times(1);
         ContextualCheckTransaction(tx, state, chainparams, 10, 57);
     }
 
@@ -1199,7 +1199,7 @@ TEST(ChecktransactionTests, HeartwoodAcceptsSaplingShieldedCoinbase) {
         EXPECT_TRUE(tx.IsCoinBase());
 
         MockCValidationState state;
-        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-output-desc-invalid-outct", false, "")).Times(1);
+        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-output-desc-invalid-ct", false, "")).Times(1);
         ContextualCheckTransaction(tx, state, chainparams, 10, 57);
     }
 
@@ -1216,7 +1216,7 @@ TEST(ChecktransactionTests, HeartwoodAcceptsSaplingShieldedCoinbase) {
         EXPECT_TRUE(tx.IsCoinBase());
 
         MockCValidationState state;
-        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-output-desc-invalid-outct", false, "")).Times(1);
+        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-output-desc-invalid-ct", false, "")).Times(1);
         ContextualCheckTransaction(tx, state, chainparams, 10, 57);
     }
 

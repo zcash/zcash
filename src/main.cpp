@@ -1010,7 +1010,7 @@ bool ContextualCheckTransaction(
                     return state.DoS(
                         DOS_LEVEL_BLOCK,
                         error("ContextualCheckTransaction(): failed to recover plaintext of coinbase output description"),
-                        REJECT_INVALID, "bad-cb-output-desc-invalid-outct");
+                        REJECT_INVALID, "bad-cb-output-desc-invalid-ct");
                 }
 
                 // ZIP 207: detect shielded funding stream elements
