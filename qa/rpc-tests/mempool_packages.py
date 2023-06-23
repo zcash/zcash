@@ -23,12 +23,13 @@ def satoshi_round(amount):
     return  Decimal(amount).quantize(Decimal('0.00000001'), rounding=ROUND_DOWN)
 
 class MempoolPackagesTest(BitcoinTestFramework):
-    maxorphantx = 120
+    limitdescendantcount = 120
 
     def setup_network(self):
         base_args = [
+            '-limitdescendantcount=%d' % (self.limitdescendantcount,),
             '-minrelaytxfee=0',
-            '-maxorphantx=%d' % (self.maxorphantx,),
+            '-maxorphantx=%d' % (self.limitdescendantcount,),
             '-debug',
             '-allowdeprecated=getnewaddress',
         ]
@@ -145,19 +146,23 @@ class MempoolPackagesTest(BitcoinTestFramework):
         for i in range(10):
             transaction_package.append({'txid': txid, 'vout': i, 'amount': sent_value})
 
-        for i in range(self.maxorphantx):
+        errored_too_large = False
+        for i in range(self.limitdescendantcount):
             utxo = transaction_package.pop(0)
             try:
                 (txid, sent_value) = self.chain_transaction(self.nodes[0], utxo['txid'], utxo['vout'], utxo['amount'], fee, 10)
                 for j in range(10):
                     transaction_package.append({'txid': txid, 'vout': j, 'amount': sent_value})
-                if i == self.maxorphantx-2:
+                if i == self.limitdescendantcount-2:
                     mempool = self.nodes[0].getrawmempool(True)
-                    assert_equal(mempool[parent_transaction]['descendantcount'], self.maxorphantx)
+                    assert_equal(mempool[parent_transaction]['descendantcount'], self.limitdescendantcount)
             except JSONRPCException as e:
                 print(e.error['message'])
-                assert_equal(i, self.maxorphantx-1)
+                assert_equal(i, self.limitdescendantcount-1)
                 print("tx that would create too large descendant package successfully rejected")
+                errored_too_large = True
+        assert errored_too_large
+        assert_equal(len(transaction_package), self.limitdescendantcount * (10 - 1))
 
         # TODO: check that node1's mempool is as expected
 
