@@ -47,25 +47,6 @@ public:
     uint256 nullifier(const SproutSpendingKey& a_sk) const;
 };
 
-inline bool plaintext_version_is_valid(const Consensus::Params& params, int height, unsigned char leadbyte) {
-    if (params.NetworkUpgradeActive(height, Consensus::UPGRADE_CANOPY)) {
-        int gracePeriodEndHeight = params.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight + ZIP212_GRACE_PERIOD;
-
-        if (height < gracePeriodEndHeight && leadbyte != 0x01 && leadbyte != 0x02) {
-            // non-{0x01,0x02} received after Canopy activation and before grace period has elapsed
-            return false;
-        }
-        if (height >= gracePeriodEndHeight && leadbyte != 0x02) {
-            // non-0x02 received past (Canopy activation height + grace period)
-            return false;
-        }
-        return true;
-    } else {
-        // return false if non-0x01 received when Canopy is not active
-        return leadbyte == 0x01;
-    }
-};
-
 enum class Zip212Enabled {
     BeforeZip212,
     AfterZip212
@@ -154,8 +135,6 @@ public:
                                         ) const;
 };
 
-typedef std::pair<SaplingEncCiphertext, SaplingNoteEncryption> SaplingNotePlaintextEncryptionResult;
-
 class SaplingNotePlaintext : public BaseNotePlaintext {
 private:
     uint256 rseed;
@@ -169,31 +148,6 @@ public:
 
     static std::pair<SaplingNotePlaintext, SaplingPaymentAddress> from_rust(
         rust::Box<wallet::DecryptedSaplingOutput> decrypted);
-
-    static std::optional<SaplingNotePlaintext> decrypt(
-        const Consensus::Params& params,
-        int height,
-        const SaplingEncCiphertext &ciphertext,
-        const uint256 &epk,
-        const uint256 &esk,
-        const uint256 &pk_d,
-        const uint256 &cmu
-    );
-
-    static std::optional<SaplingNotePlaintext> plaintext_checks_without_height(
-        const SaplingNotePlaintext &plaintext,
-        const uint256 &epk,
-        const uint256 &esk,
-        const uint256 &pk_d,
-        const uint256 &cmu
-    );
-
-    static std::optional<SaplingNotePlaintext> attempt_sapling_enc_decryption_deserialization(
-        const SaplingEncCiphertext &ciphertext,
-        const uint256 &epk,
-        const uint256 &esk,
-        const uint256 &pk_d
-    );
 
     std::optional<SaplingNote> note(const SaplingIncomingViewingKey& ivk) const;
 
@@ -216,10 +170,6 @@ public:
     }
 
     uint256 rcm() const;
-    uint256 generate_or_derive_esk() const;
-    unsigned char get_leadbyte() const {
-        return leadbyte;
-    }
 };
 
 class SaplingOutgoingPlaintext
@@ -239,14 +189,6 @@ public:
         READWRITE(pk_d);        // 8 bytes
         READWRITE(esk);         // 8 bytes
     }
-
-    static std::optional<SaplingOutgoingPlaintext> decrypt(
-        const SaplingOutCiphertext &ciphertext,
-        const uint256& ovk,
-        const uint256& cv,
-        const uint256& cm,
-        const uint256& epk
-    );
 };
 
 

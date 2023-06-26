@@ -44,19 +44,16 @@ use std::ffi::OsString;
 #[cfg(target_os = "windows")]
 use std::os::windows::ffi::OsStringExt;
 
-use zcash_note_encryption::{Domain, EphemeralKeyBytes};
 use zcash_primitives::{
-    consensus::Network,
     constants::{CRH_IVK_PERSONALIZATION, PROOF_GENERATION_KEY_GENERATOR, SPENDING_KEY_GENERATOR},
     merkle_tree::HashSer,
     sapling::{
         keys::FullViewingKey,
         merkle_hash,
         note::{ExtractedNoteCommitment, NoteCommitment},
-        note_encryption::{PreparedIncomingViewingKey, SaplingDomain},
         redjubjub, spend_sig,
         value::NoteValue,
-        Diversifier, Node, Note, NullifierDerivingKey, PaymentAddress, Rseed, SaplingIvk,
+        Diversifier, Node, Note, NullifierDerivingKey, PaymentAddress, Rseed,
     },
     zip32::{self, sapling_address, sapling_derive_internal_fvk, sapling_find_address},
 };
@@ -473,75 +470,6 @@ pub extern "C" fn librustzcash_sapling_compute_cmu(
 
     let result = unsafe { &mut *result };
     *result = cmu.to_bytes();
-
-    true
-}
-
-/// Computes KDF^Sapling(KA^Agree(sk, P), ephemeral_key).
-///
-/// `p` and `sk` must point to 32-byte buffers. If `p` does not represent a compressed
-/// Jubjub point or `sk` does not represent a canonical Jubjub scalar, this function
-/// returns `false`. Otherwise, it writes the result to the 32-byte `result` buffer and
-/// returns `true`.
-#[no_mangle]
-pub extern "C" fn librustzcash_sapling_ka_derive_symmetric_key(
-    p: *const [c_uchar; 32],
-    sk: *const [c_uchar; 32],
-    ephemeral_key: *const [c_uchar; 32],
-    result: *mut [c_uchar; 32],
-) -> bool {
-    // Deserialize p (representing either epk or pk_d; we can handle them identically).
-    let epk = match SaplingDomain::<Network>::epk(&EphemeralKeyBytes(unsafe { *p })) {
-        Some(p) => SaplingDomain::<Network>::prepare_epk(p),
-        None => return false,
-    };
-
-    // Deserialize sk (either ivk or esk; we can handle them identically).
-    let ivk = match de_ct(jubjub::Scalar::from_bytes(unsafe { &*sk })) {
-        Some(p) => PreparedIncomingViewingKey::new(&SaplingIvk(p)),
-        None => return false,
-    };
-
-    // Compute key agreement
-    let secret = SaplingDomain::<Network>::ka_agree_dec(&ivk, &epk);
-
-    // Produce result
-    let result = unsafe { &mut *result };
-    result.clone_from_slice(
-        SaplingDomain::<Network>::kdf(secret, &EphemeralKeyBytes(unsafe { *ephemeral_key }))
-            .as_bytes(),
-    );
-
-    true
-}
-
-/// Compute g_d = GH(diversifier) and returns false if the diversifier is
-/// invalid. Computes \[esk\] g_d and writes the result to the 32-byte `result`
-/// buffer. Returns false if `esk` is not a valid scalar.
-#[no_mangle]
-pub extern "C" fn librustzcash_sapling_ka_derivepublic(
-    diversifier: *const [c_uchar; 11],
-    esk: *const [c_uchar; 32],
-    result: *mut [c_uchar; 32],
-) -> bool {
-    let diversifier = Diversifier(unsafe { *diversifier });
-
-    // Compute g_d from the diversifier
-    let g_d = match diversifier.g_d() {
-        Some(g) => g,
-        None => return false,
-    };
-
-    // Deserialize esk
-    let esk = match de_ct(jubjub::Scalar::from_bytes(unsafe { &*esk })) {
-        Some(p) => p,
-        None => return false,
-    };
-
-    let p = g_d * esk;
-
-    let result = unsafe { &mut *result };
-    *result = p.to_bytes();
 
     true
 }

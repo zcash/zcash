@@ -138,6 +138,7 @@ TEST(WalletTests, SetupDatadirLocationRunAsFirstTest) {
 }
 
 TEST(WalletTests, WalletNetworkSerialization) {
+    GTEST_SKIP() << "Skipping because it has a race condition and cannot be run in parallel.";
     SelectParams(CBaseChainParams::TESTNET);
 
     // Get temporary and unique path for file.

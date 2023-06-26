@@ -5,7 +5,6 @@ use zcash_primitives::constants::{
     VALUE_COMMITMENT_VALUE_GENERATOR,
 };
 
-mod key_agreement;
 mod key_components;
 mod mmr;
 mod notes;
