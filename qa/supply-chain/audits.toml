@@ -737,6 +737,11 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "0.14.25 -> 0.14.26"
 
+[[audits.hyper]]
+who = "Jack Grigg <thestr4d@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.14.26 -> 0.14.27"
+
 [[audits.incrementalmerkletree]]
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
@@ -781,6 +786,11 @@ who = "Sean Bowe <ewillbefull@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "2.7.1 -> 2.7.2"
 
+[[audits.ipnet]]
+who = "Jack Grigg <thestr4d@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "2.7.2 -> 2.8.0"
+
 [[audits.itoa]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -812,6 +822,28 @@ who = "Sean Bowe <ewillbefull@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "0.9.0 -> 0.10.0"
 notes = "I previously reviewed the crypto-sensitive portions of these changes as well."
+
+[[audits.known-folders]]
+who = "Jack Grigg <thestr4d@gmail.com>"
+criteria = "safe-to-deploy"
+version = "1.0.1"
+notes = """
+Uses `unsafe` blocks to interact with `windows-sys` crate.
+- `SHGetKnownFolderPath` safety requirements are met.
+- `CoTaskMemFree` has no effect if passed `NULL`, so there is no issue if some
+  future refactor created a pathway where `ffi::Guard` could be dropped before
+  `SHGetKnownFolderPath` is called.
+- Small nit: `ffi::Guard::as_pwstr` takes `&self` but returns `PWSTR` which is
+  the mutable type; it should instead return `PCWSTR` which is the const type
+  (and what `lstrlenW` takes) instead of implicitly const-casting the pointer,
+  as this would better reflect the intent to take an immutable reference.
+- The slice constructed from the `PWSTR` correctly goes out of scope before
+  `guard` is dropped.
+- A code comment says that `path_ptr` is valid for `len` bytes, but `PCWSTR` is
+  a `*const u16` and `lstrlenW` returns its length \"in characters\" (which the
+  Windows documentation confirms means the number of `WCHAR` values). This is
+  likely a typo; the code checks that `len * size_of::<u16>() <= isize::MAX`.
+"""
 
 [[audits.libm]]
 who = "Jack Grigg <jack@z.cash>"
@@ -1072,17 +1104,32 @@ Mostly modernisation, migrating to `PhfBorrow`, and making more things `&'static
 No unsafe code in the new `OrderedMap` and `OrderedSet` types.
 """
 
+[[audits.phf]]
+who = "Jack Grigg <thestr4d@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.11.1 -> 0.11.2"
+
 [[audits.phf_codegen]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "0.8.0 -> 0.11.1"
 notes = "New codegen and changes to existing codegen look fine."
 
+[[audits.phf_codegen]]
+who = "Jack Grigg <thestr4d@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.11.1 -> 0.11.2"
+
 [[audits.phf_generator]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "0.8.0 -> 0.11.1"
 notes = "Just dependency and edition bumps and code formatting."
+
+[[audits.phf_generator]]
+who = "Jack Grigg <thestr4d@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.11.1 -> 0.11.2"
 
 [[audits.phf_shared]]
 who = "Jack Grigg <jack@z.cash>"
@@ -1093,6 +1140,11 @@ Adds `uncased` dependency, and newly generates unsafe code to transmute `&'stati
 into `&'static UncasedStr`. I verified that `UncasedStr` is a `#[repr(transparent)]`
 newtype around `str`.
 """
+
+[[audits.phf_shared]]
+who = "Jack Grigg <thestr4d@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.11.1 -> 0.11.2"
 
 [[audits.platforms]]
 who = "Daira Emma Hopwood <daira@jacaranda.org>"
@@ -1290,6 +1342,11 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.96 -> 1.0.97"
 
+[[audits.serde_json]]
+who = "Jack Grigg <thestr4d@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "1.0.97 -> 1.0.99"
+
 [[audits.sha2]]
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
@@ -1456,10 +1513,20 @@ criteria = "safe-to-deploy"
 delta = "0.5.1 -> 0.6.1"
 notes = "Fixes a bug in parsing negative minutes in datetime string offsets."
 
+[[audits.toml_datetime]]
+who = "Jack Grigg <thestr4d@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.6.2 -> 0.6.3"
+
 [[audits.toml_edit]]
 who = "Sean Bowe <ewillbefull@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "0.19.7 -> 0.19.8"
+
+[[audits.toml_edit]]
+who = "Jack Grigg <thestr4d@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.19.10 -> 0.19.11"
 
 [[audits.tracing-attributes]]
 who = "Jack Grigg <jack@electriccoin.co>"
@@ -1717,6 +1784,12 @@ who = "Kris Nuttycombe <kris@nutty.land>"
 criteria = ["safe-to-deploy", "crypto-reviewed"]
 delta = "0.11.0 -> 0.12.0"
 notes = "The only change is that the zcash_primitives dependency has been updated to version 0.12."
+
+[[audits.zcash_proofs]]
+who = "Jack Grigg <thestr4d@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.12.0 -> 0.12.1"
+notes = "The ECC core team maintains this crate, and we have reviewed every line."
 
 [[audits.zeroize]]
 who = "Daira Hopwood <daira@jacaranda.org>"

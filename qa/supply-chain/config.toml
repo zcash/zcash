@@ -171,10 +171,6 @@ criteria = "safe-to-deploy"
 version = "0.9.0"
 criteria = "safe-to-deploy"
 
-[[exemptions.directories]]
-version = "4.0.1"
-criteria = "safe-to-deploy"
-
 [[exemptions.dirs]]
 version = "2.0.2"
 criteria = "safe-to-deploy"
@@ -189,6 +185,10 @@ criteria = "safe-to-deploy"
 
 [[exemptions.ed25519-zebra]]
 version = "3.0.0"
+criteria = "safe-to-deploy"
+
+[[exemptions.equivalent]]
+version = "1.0.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.ff]]
@@ -255,6 +255,10 @@ criteria = "safe-to-deploy"
 version = "0.12.1"
 criteria = "safe-to-deploy"
 
+[[exemptions.home]]
+version = "0.5.5"
+criteria = "safe-to-deploy"
+
 [[exemptions.http]]
 version = "0.2.8"
 criteria = "safe-to-deploy"
@@ -287,6 +291,10 @@ criteria = "safe-to-deploy"
 version = "1.8.1"
 criteria = "safe-to-deploy"
 
+[[exemptions.indexmap]]
+version = "2.0.0"
+criteria = "safe-to-deploy"
+
 [[exemptions.instant]]
 version = "0.1.12"
 criteria = "safe-to-deploy"
@@ -308,7 +316,7 @@ version = "0.9.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.libc]]
-version = "0.2.146"
+version = "0.2.147"
 criteria = "safe-to-deploy"
 
 [[exemptions.libm]]
@@ -467,6 +475,10 @@ criteria = "safe-to-deploy"
 version = "1.2.1"
 criteria = "safe-to-deploy"
 
+[[exemptions.proc-macro2]]
+version = "1.0.63"
+criteria = "safe-to-deploy"
+
 [[exemptions.proptest]]
 version = "1.2.0"
 criteria = "safe-to-deploy"
@@ -619,6 +631,10 @@ criteria = "safe-to-deploy"
 version = "1.0.102"
 criteria = "safe-to-deploy"
 
+[[exemptions.syn]]
+version = "2.0.22"
+criteria = "safe-to-deploy"
+
 [[exemptions.tempfile]]
 version = "3.3.0"
 criteria = "safe-to-deploy"
@@ -644,7 +660,7 @@ version = "0.2.7"
 criteria = "safe-to-deploy"
 
 [[exemptions.tokio]]
-version = "1.28.2"
+version = "1.29.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.toml_edit]]
@@ -737,6 +753,10 @@ criteria = "safe-to-deploy"
 
 [[exemptions.wyz]]
 version = "0.5.0"
+criteria = "safe-to-deploy"
+
+[[exemptions.xdg]]
+version = "2.5.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.zeroize]]
