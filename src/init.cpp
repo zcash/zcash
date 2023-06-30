@@ -70,7 +70,7 @@
 #endif
 
 #include <rust/bridge.h>
-#include <rust/init.h>
+#include <rust/init_ffi.h>
 #include <rust/metrics.h>
 
 #include "librustzcash.h"
@@ -1063,7 +1063,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     std::set_new_handler(new_handler_terminate);
 
     // Set up global Rayon threadpool.
-    zcashd_init_rayon_threadpool();
+    init::rayon_threadpool();
 
     // ********************************************************* Step 2: parameter interactions
     const CChainParams& chainparams = Params();

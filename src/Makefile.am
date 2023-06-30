@@ -57,6 +57,7 @@ CXXBRIDGE_RS = \
   rust/src/ed25519.rs \
   rust/src/equihash.rs \
   rust/src/history_ffi.rs \
+  rust/src/init_ffi.rs \
   rust/src/sprout.rs \
   rust/src/streams.rs \
   rust/src/bridge.rs
@@ -65,6 +66,7 @@ CXXBRIDGE_H = \
   rust/gen/include/rust/ed25519.h \
   rust/gen/include/rust/equihash.h \
   rust/gen/include/rust/history_ffi.h \
+  rust/gen/include/rust/init_ffi.h \
   rust/gen/include/rust/sprout.h \
   rust/gen/include/rust/streams.h \
   rust/gen/include/rust/bridge.h
@@ -73,6 +75,7 @@ CXXBRIDGE_CPP = \
   rust/gen/src/ed25519.cpp \
   rust/gen/src/equihash.cpp \
   rust/gen/src/history_ffi.cpp \
+  rust/gen/src/init_ffi.cpp \
   rust/gen/src/sprout.cpp \
   rust/gen/src/streams.cpp \
   rust/gen/src/bridge.cpp
