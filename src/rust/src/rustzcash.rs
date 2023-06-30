@@ -57,7 +57,7 @@ use zcash_primitives::{
     },
     zip32::{self, sapling_address, sapling_derive_internal_fvk, sapling_find_address},
 };
-use zcash_proofs::{load_parameters, sprout};
+use zcash_proofs::sprout;
 
 mod blake2b;
 mod ed25519;
@@ -133,12 +133,6 @@ fn fixed_scalar_mult(from: &[u8; 32], p_g: &jubjub::SubgroupPoint) -> jubjub::Su
 /// be present even if there are no shielded components to verify.
 #[no_mangle]
 pub extern "C" fn librustzcash_init_zksnark_params(
-    #[cfg(not(target_os = "windows"))] spend_path: *const u8,
-    #[cfg(target_os = "windows")] spend_path: *const u16,
-    spend_path_len: usize,
-    #[cfg(not(target_os = "windows"))] output_path: *const u8,
-    #[cfg(target_os = "windows")] output_path: *const u16,
-    output_path_len: usize,
     #[cfg(not(target_os = "windows"))] sprout_path: *const u8,
     #[cfg(target_os = "windows")] sprout_path: *const u16,
     sprout_path_len: usize,
@@ -146,45 +140,42 @@ pub extern "C" fn librustzcash_init_zksnark_params(
 ) {
     PROOF_PARAMETERS_LOADED.call_once(|| {
         #[cfg(not(target_os = "windows"))]
-        let (spend_path, output_path, sprout_path) = {
-            (
-                OsStr::from_bytes(unsafe { slice::from_raw_parts(spend_path, spend_path_len) }),
-                OsStr::from_bytes(unsafe { slice::from_raw_parts(output_path, output_path_len) }),
-                if sprout_path.is_null() {
-                    None
-                } else {
-                    Some(OsStr::from_bytes(unsafe {
-                        slice::from_raw_parts(sprout_path, sprout_path_len)
-                    }))
-                },
-            )
+        let sprout_path = if sprout_path.is_null() {
+            None
+        } else {
+            Some(OsStr::from_bytes(unsafe {
+                slice::from_raw_parts(sprout_path, sprout_path_len)
+            }))
         };
 
         #[cfg(target_os = "windows")]
-        let (spend_path, output_path, sprout_path) = {
-            (
-                OsString::from_wide(unsafe { slice::from_raw_parts(spend_path, spend_path_len) }),
-                OsString::from_wide(unsafe { slice::from_raw_parts(output_path, output_path_len) }),
-                if sprout_path.is_null() {
-                    None
-                } else {
-                    Some(OsString::from_wide(unsafe {
-                        slice::from_raw_parts(sprout_path, sprout_path_len)
-                    }))
-                },
-            )
+        let sprout_path = if sprout_path.is_null() {
+            None
+        } else {
+            Some(OsString::from_wide(unsafe {
+                slice::from_raw_parts(sprout_path, sprout_path_len)
+            }))
         };
 
-        let (spend_path, output_path, sprout_path) = (
-            Path::new(&spend_path),
-            Path::new(&output_path),
-            sprout_path.as_ref().map(Path::new),
-        );
+        let sprout_path = sprout_path.as_ref().map(Path::new);
+
+        let sprout_vk = {
+            use bellman::groth16::{prepare_verifying_key, VerifyingKey};
+            let sprout_vk_bytes = include_bytes!("sprout-groth16.vk");
+            let vk = VerifyingKey::<Bls12>::read(&sprout_vk_bytes[..])
+                .expect("should be able to parse Sprout verification key");
+            prepare_verifying_key(&vk)
+        };
 
         // Load params
-        let params = load_parameters(spend_path, output_path, sprout_path);
-        let sapling_spend_params = params.spend_params;
-        let sapling_output_params = params.output_params;
+        let (sapling_spend_params, sapling_output_params) = {
+            let (spend_buf, output_buf) = wagyu_zcash_parameters::load_sapling_parameters();
+            let spend_params = Parameters::<Bls12>::read(&spend_buf[..], false)
+                .expect("couldn't deserialize Sapling spend parameters");
+            let output_params = Parameters::<Bls12>::read(&output_buf[..], false)
+                .expect("couldn't deserialize Sapling spend parameters");
+            (spend_params, output_params)
+        };
 
         // We need to clone these because we aren't necessarily storing the proving
         // parameters in memory.
@@ -205,7 +196,7 @@ pub extern "C" fn librustzcash_init_zksnark_params(
 
             SAPLING_SPEND_VK = Some(sapling_spend_vk);
             SAPLING_OUTPUT_VK = Some(sapling_output_vk);
-            SPROUT_GROTH16_VK = params.sprout_vk;
+            SPROUT_GROTH16_VK = Some(sprout_vk);
 
             ORCHARD_PK = orchard_pk;
             ORCHARD_VK = Some(orchard_vk);
@@ -515,19 +506,51 @@ pub extern "C" fn librustzcash_sprout_prove(
     vpub_old: u64,
     vpub_new: u64,
 ) {
-    // Load parameters from disk
-    let sprout_fs =
-        File::open(unsafe { &SPROUT_GROTH16_PARAMS_PATH }.as_ref().expect(
+    let params = {
+        use std::io::Read;
+
+        // Load parameters from disk
+        let sprout_path = unsafe { &SPROUT_GROTH16_PARAMS_PATH }.as_ref().expect(
             "Parameters not loaded: SPROUT_GROTH16_PARAMS_PATH should have been initialized",
-        ))
-        .expect("couldn't load Sprout groth16 parameters file");
+        );
+        const HOW_TO_FIX: &str = "
+Please download this file from https://download.z.cash/downloads/sprout-groth16.params
+and put it at ";
+        let sprout_fs = File::open(sprout_path).unwrap_or_else(|err| {
+            panic!(
+                "Couldn't load Sprout Groth16 parameters file: {}{}{}",
+                err,
+                HOW_TO_FIX,
+                &sprout_path.to_string_lossy()
+            )
+        });
 
-    let mut sprout_fs = BufReader::with_capacity(1024 * 1024, sprout_fs);
+        let mut sprout_fs = BufReader::with_capacity(1024 * 1024, sprout_fs);
 
-    let params = Parameters::read(&mut sprout_fs, false)
-        .expect("couldn't deserialize Sprout JoinSplit parameters file");
+        let mut sprout_params_file = vec![];
+        sprout_fs
+            .read_to_end(&mut sprout_params_file)
+            .unwrap_or_else(|err| {
+                panic!(
+                    "Couldn't read Sprout Groth16 parameters file: {}{}{}",
+                    err,
+                    HOW_TO_FIX,
+                    &sprout_path.to_string_lossy()
+                )
+            });
 
-    drop(sprout_fs);
+        let hash = blake2b_simd::Params::new()
+            .hash_length(64)
+            .hash(&sprout_params_file);
+
+        // b2sum sprout-groth16.params
+        if hash.as_bytes() != hex::decode("e9b238411bd6c0ec4791e9d04245ec350c9c5744f5610dfcce4365d5ca49dfefd5054e371842b3f88fa1b9d7e8e075249b3ebabd167fa8b0f3161292d36c180a").unwrap().as_slice() {
+            panic!("Hash of Sprout Groth16 parameters file is incorrect.{}{}", HOW_TO_FIX, &sprout_path.to_string_lossy());
+        }
+
+        Parameters::read(&sprout_params_file[..], false)
+            .expect("Couldn't deserialize Sprout Groth16 parameters file")
+    };
 
     let proof = sprout::create_proof(
         unsafe { *phi },

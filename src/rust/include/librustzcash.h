@@ -30,10 +30,6 @@ extern "C" {
     /// Loads the zk-SNARK parameters into memory and saves
     /// paths as necessary. Only called once.
     void librustzcash_init_zksnark_params(
-        const codeunit* spend_path,
-        size_t spend_path_len,
-        const codeunit* output_path,
-        size_t output_path_len,
         const codeunit* sprout_path,
         size_t sprout_path_len,
         bool load_proving_keys
