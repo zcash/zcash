@@ -78,7 +78,7 @@ HistoryNode NewNode(
     }
 
     assert(buf.size() <= NODE_SERIALIZED_LENGTH);
-    std::copy(std::begin(buf), std::end(buf), result.bytes);
+    std::copy(std::begin(buf), std::end(buf), result.begin());
     return result;
 }
 
@@ -146,14 +146,10 @@ HistoryEntry NodeToEntry(const HistoryNode node, uint32_t left, uint32_t right) 
     buf << code;
     buf << left;
     buf << right;
-
-    std::array<unsigned char, NODE_SERIALIZED_LENGTH> tmpMmrNode;
-    std::copy(node.bytes, node.bytes + NODE_SERIALIZED_LENGTH, std::begin(tmpMmrNode));
-
-    buf << tmpMmrNode;
+    buf << node;
 
     assert(buf.size() <= ENTRY_SERIALIZED_LENGTH);
-    std::copy(std::begin(buf), std::end(buf), result.bytes);
+    std::copy(std::begin(buf), std::end(buf), result.begin());
 
     return result;
 }
@@ -164,14 +160,10 @@ HistoryEntry LeafToEntry(const HistoryNode node) {
 
     uint8_t code = 1;
     buf << code;
-
-    std::array<unsigned char, NODE_SERIALIZED_LENGTH> tmpMmrNode;
-    std::copy(node.bytes, node.bytes + NODE_SERIALIZED_LENGTH, std::begin(tmpMmrNode));
-
-    buf << tmpMmrNode;
+    buf << node;
 
     assert(buf.size() <= ENTRY_SERIALIZED_LENGTH);
-    std::copy(std::begin(buf), std::end(buf), result.bytes);
+    std::copy(std::begin(buf), std::end(buf), result.begin());
 
     return result;
 }

@@ -9,9 +9,14 @@
 #include "streams.h"
 #include "uint256.h"
 
-#include <rust/history.h>
-
 #include "librustzcash.h"
+
+#define NODE_V1_SERIALIZED_LENGTH 171
+#define NODE_SERIALIZED_LENGTH 244
+#define ENTRY_SERIALIZED_LENGTH (NODE_SERIALIZED_LENGTH + 9)
+
+typedef std::array<unsigned char, NODE_SERIALIZED_LENGTH> HistoryNode;
+typedef std::array<unsigned char, ENTRY_SERIALIZED_LENGTH> HistoryEntry;
 
 namespace libzcash {
 
