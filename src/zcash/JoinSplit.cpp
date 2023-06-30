@@ -16,6 +16,7 @@
 #include "version.h"
 
 #include <rust/blake2b.h>
+#include <rust/sprout.h>
 
 namespace libzcash {
 
@@ -156,48 +157,44 @@ namespace libzcash {
             return GrothProof();
         }
 
-        GrothProof proof;
-
         CDataStream ss1(SER_NETWORK, PROTOCOL_VERSION);
         ss1 << inputs[0].witness.path();
-        std::vector<unsigned char> auth1(ss1.begin(), ss1.end());
+        std::array<unsigned char, 966> auth1;
+        std::copy(ss1.begin(), ss1.end(), auth1.begin());
 
         CDataStream ss2(SER_NETWORK, PROTOCOL_VERSION);
         ss2 << inputs[1].witness.path();
-        std::vector<unsigned char> auth2(ss2.begin(), ss2.end());
+        std::array<unsigned char, 966> auth2;
+        std::copy(ss2.begin(), ss2.end(), auth2.begin());
 
-        librustzcash_sprout_prove(
-            proof.begin(),
+        return sprout::prove(
+            phi.inner().GetRawBytes(),
+            rt.GetRawBytes(),
+            h_sig.GetRawBytes(),
 
-            phi.begin(),
-            rt.begin(),
-            h_sig.begin(),
-
-            inputs[0].key.begin(),
+            inputs[0].key.inner().GetRawBytes(),
             inputs[0].note.value(),
-            inputs[0].note.rho.begin(),
-            inputs[0].note.r.begin(),
-            auth1.data(),
+            inputs[0].note.rho.GetRawBytes(),
+            inputs[0].note.r.GetRawBytes(),
+            auth1,
 
-            inputs[1].key.begin(),
+            inputs[1].key.inner().GetRawBytes(),
             inputs[1].note.value(),
-            inputs[1].note.rho.begin(),
-            inputs[1].note.r.begin(),
-            auth2.data(),
+            inputs[1].note.rho.GetRawBytes(),
+            inputs[1].note.r.GetRawBytes(),
+            auth2,
 
-            out_notes[0].a_pk.begin(),
+            out_notes[0].a_pk.GetRawBytes(),
             out_notes[0].value(),
-            out_notes[0].r.begin(),
+            out_notes[0].r.GetRawBytes(),
 
-            out_notes[1].a_pk.begin(),
+            out_notes[1].a_pk.GetRawBytes(),
             out_notes[1].value(),
-            out_notes[1].r.begin(),
+            out_notes[1].r.GetRawBytes(),
 
             vpub_old,
             vpub_new
         );
-
-        return proof;
     }
 
 template<size_t NumInputs, size_t NumOutputs>

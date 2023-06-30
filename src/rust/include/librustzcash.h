@@ -106,53 +106,6 @@ extern "C" {
         unsigned char *result
     );
 
-    /// Sprout JoinSplit proof generation.
-    void librustzcash_sprout_prove(
-        unsigned char *proof_out,
-
-        const unsigned char *phi,
-        const unsigned char *rt,
-        const unsigned char *h_sig,
-
-        const unsigned char *in_sk1,
-        uint64_t in_value1,
-        const unsigned char *in_rho1,
-        const unsigned char *in_r1,
-        const unsigned char *in_auth1,
-
-        const unsigned char *in_sk2,
-        uint64_t in_value2,
-        const unsigned char *in_rho2,
-        const unsigned char *in_r2,
-        const unsigned char *in_auth2,
-
-        const unsigned char *out_pk1,
-        uint64_t out_value1,
-        const unsigned char *out_r1,
-
-        const unsigned char *out_pk2,
-        uint64_t out_value2,
-        const unsigned char *out_r2,
-
-        uint64_t vpub_old,
-        uint64_t vpub_new
-    );
-
-    /// Sprout JoinSplit proof verification.
-    bool librustzcash_sprout_verify(
-        const unsigned char *proof,
-        const unsigned char *rt,
-        const unsigned char *h_sig,
-        const unsigned char *mac1,
-        const unsigned char *mac2,
-        const unsigned char *nf1,
-        const unsigned char *nf2,
-        const unsigned char *cm1,
-        const unsigned char *cm2,
-        uint64_t vpub_old,
-        uint64_t vpub_new
-    );
-
     /// Derive the master ExtendedSpendingKey from a seed.
     void librustzcash_zip32_sapling_xsk_master(
         const unsigned char *seed,

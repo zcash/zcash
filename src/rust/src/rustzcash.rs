@@ -26,8 +26,6 @@ use group::{cofactor::CofactorGroup, GroupEncoding};
 use incrementalmerkletree::Hashable;
 use libc::{c_uchar, size_t};
 use rand_core::{OsRng, RngCore};
-use std::fs::File;
-use std::io::BufReader;
 use std::path::{Path, PathBuf};
 use std::slice;
 use std::sync::Once;
@@ -57,7 +55,6 @@ use zcash_primitives::{
     },
     zip32::{self, sapling_address, sapling_derive_internal_fvk, sapling_find_address},
 };
-use zcash_proofs::sprout;
 
 mod blake2b;
 mod ed25519;
@@ -82,6 +79,7 @@ mod orchard_ffi;
 mod orchard_keys_ffi;
 mod params;
 mod sapling;
+mod sprout;
 mod streams;
 mod transaction_ffi;
 mod unified_keys_ffi;
@@ -468,151 +466,6 @@ pub extern "C" fn librustzcash_sapling_compute_cmu(
 const GROTH_PROOF_SIZE: usize = 48 // π_A
     + 96 // π_B
     + 48; // π_C
-
-/// Sprout JoinSplit proof generation.
-#[no_mangle]
-pub extern "C" fn librustzcash_sprout_prove(
-    proof_out: *mut [c_uchar; GROTH_PROOF_SIZE],
-
-    phi: *const [c_uchar; 32],
-    rt: *const [c_uchar; 32],
-    h_sig: *const [c_uchar; 32],
-
-    // First input
-    in_sk1: *const [c_uchar; 32],
-    in_value1: u64,
-    in_rho1: *const [c_uchar; 32],
-    in_r1: *const [c_uchar; 32],
-    in_auth1: *const [c_uchar; sprout::WITNESS_PATH_SIZE],
-
-    // Second input
-    in_sk2: *const [c_uchar; 32],
-    in_value2: u64,
-    in_rho2: *const [c_uchar; 32],
-    in_r2: *const [c_uchar; 32],
-    in_auth2: *const [c_uchar; sprout::WITNESS_PATH_SIZE],
-
-    // First output
-    out_pk1: *const [c_uchar; 32],
-    out_value1: u64,
-    out_r1: *const [c_uchar; 32],
-
-    // Second output
-    out_pk2: *const [c_uchar; 32],
-    out_value2: u64,
-    out_r2: *const [c_uchar; 32],
-
-    // Public value
-    vpub_old: u64,
-    vpub_new: u64,
-) {
-    let params = {
-        use std::io::Read;
-
-        // Load parameters from disk
-        let sprout_path = unsafe { &SPROUT_GROTH16_PARAMS_PATH }.as_ref().expect(
-            "Parameters not loaded: SPROUT_GROTH16_PARAMS_PATH should have been initialized",
-        );
-        const HOW_TO_FIX: &str = "
-Please download this file from https://download.z.cash/downloads/sprout-groth16.params
-and put it at ";
-        let sprout_fs = File::open(sprout_path).unwrap_or_else(|err| {
-            panic!(
-                "Couldn't load Sprout Groth16 parameters file: {}{}{}",
-                err,
-                HOW_TO_FIX,
-                &sprout_path.to_string_lossy()
-            )
-        });
-
-        let mut sprout_fs = BufReader::with_capacity(1024 * 1024, sprout_fs);
-
-        let mut sprout_params_file = vec![];
-        sprout_fs
-            .read_to_end(&mut sprout_params_file)
-            .unwrap_or_else(|err| {
-                panic!(
-                    "Couldn't read Sprout Groth16 parameters file: {}{}{}",
-                    err,
-                    HOW_TO_FIX,
-                    &sprout_path.to_string_lossy()
-                )
-            });
-
-        let hash = blake2b_simd::Params::new()
-            .hash_length(64)
-            .hash(&sprout_params_file);
-
-        // b2sum sprout-groth16.params
-        if hash.as_bytes() != hex::decode("e9b238411bd6c0ec4791e9d04245ec350c9c5744f5610dfcce4365d5ca49dfefd5054e371842b3f88fa1b9d7e8e075249b3ebabd167fa8b0f3161292d36c180a").unwrap().as_slice() {
-            panic!("Hash of Sprout Groth16 parameters file is incorrect.{}{}", HOW_TO_FIX, &sprout_path.to_string_lossy());
-        }
-
-        Parameters::read(&sprout_params_file[..], false)
-            .expect("Couldn't deserialize Sprout Groth16 parameters file")
-    };
-
-    let proof = sprout::create_proof(
-        unsafe { *phi },
-        unsafe { *rt },
-        unsafe { *h_sig },
-        unsafe { *in_sk1 },
-        in_value1,
-        unsafe { *in_rho1 },
-        unsafe { *in_r1 },
-        unsafe { &*in_auth1 },
-        unsafe { *in_sk2 },
-        in_value2,
-        unsafe { *in_rho2 },
-        unsafe { *in_r2 },
-        unsafe { &*in_auth2 },
-        unsafe { *out_pk1 },
-        out_value1,
-        unsafe { *out_r1 },
-        unsafe { *out_pk2 },
-        out_value2,
-        unsafe { *out_r2 },
-        vpub_old,
-        vpub_new,
-        &params,
-    );
-
-    proof
-        .write(&mut (unsafe { &mut *proof_out })[..])
-        .expect("should be able to serialize a proof");
-}
-
-/// Sprout JoinSplit proof verification.
-#[no_mangle]
-pub extern "C" fn librustzcash_sprout_verify(
-    proof: *const [c_uchar; GROTH_PROOF_SIZE],
-    rt: *const [c_uchar; 32],
-    h_sig: *const [c_uchar; 32],
-    mac1: *const [c_uchar; 32],
-    mac2: *const [c_uchar; 32],
-    nf1: *const [c_uchar; 32],
-    nf2: *const [c_uchar; 32],
-    cm1: *const [c_uchar; 32],
-    cm2: *const [c_uchar; 32],
-    vpub_old: u64,
-    vpub_new: u64,
-) -> bool {
-    sprout::verify_proof(
-        unsafe { &*proof },
-        unsafe { &*rt },
-        unsafe { &*h_sig },
-        unsafe { &*mac1 },
-        unsafe { &*mac2 },
-        unsafe { &*nf1 },
-        unsafe { &*nf2 },
-        unsafe { &*cm1 },
-        unsafe { &*cm2 },
-        vpub_old,
-        vpub_new,
-        unsafe { SPROUT_GROTH16_VK.as_ref() }
-            .expect("Parameters not loaded: SPROUT_GROTH16_VK should have been initialized"),
-    )
-}
 
 /// Computes the signature for each Spend description, given the key `ask`, the
 /// re-randomization `ar`, the 32-byte sighash `sighash`, and an output `result`

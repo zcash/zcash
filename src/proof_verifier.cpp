@@ -8,7 +8,7 @@
 
 #include <variant>
 
-#include <librustzcash.h>
+#include <rust/sprout.h>
 
 class SproutProofVerifier
 {
@@ -34,16 +34,16 @@ public:
     {
         uint256 h_sig = ZCJoinSplit::h_sig(jsdesc.randomSeed, jsdesc.nullifiers, joinSplitPubKey);
 
-        return librustzcash_sprout_verify(
-            proof.begin(),
-            jsdesc.anchor.begin(),
-            h_sig.begin(),
-            jsdesc.macs[0].begin(),
-            jsdesc.macs[1].begin(),
-            jsdesc.nullifiers[0].begin(),
-            jsdesc.nullifiers[1].begin(),
-            jsdesc.commitments[0].begin(),
-            jsdesc.commitments[1].begin(),
+        return sprout::verify(
+            proof,
+            jsdesc.anchor.GetRawBytes(),
+            h_sig.GetRawBytes(),
+            jsdesc.macs[0].GetRawBytes(),
+            jsdesc.macs[1].GetRawBytes(),
+            jsdesc.nullifiers[0].GetRawBytes(),
+            jsdesc.nullifiers[1].GetRawBytes(),
+            jsdesc.commitments[0].GetRawBytes(),
+            jsdesc.commitments[1].GetRawBytes(),
             jsdesc.vpub_old,
             jsdesc.vpub_new
         );
