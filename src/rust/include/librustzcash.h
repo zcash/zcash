@@ -27,14 +27,6 @@ extern "C" {
 
     bool librustzcash_ivk_to_pkd(const unsigned char *ivk, const unsigned char *diversifier, unsigned char *result);
 
-    /// Loads the zk-SNARK parameters into memory and saves
-    /// paths as necessary. Only called once.
-    void librustzcash_init_zksnark_params(
-        const codeunit* sprout_path,
-        size_t sprout_path_len,
-        bool load_proving_keys
-    );
-
     /// Writes the "uncommitted" note value for empty leaves
     /// of the merkle tree. `result` must be a valid pointer
     /// to 32 bytes which will be written.

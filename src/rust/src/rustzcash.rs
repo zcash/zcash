@@ -26,21 +26,9 @@ use group::{cofactor::CofactorGroup, GroupEncoding};
 use incrementalmerkletree::Hashable;
 use libc::{c_uchar, size_t};
 use rand_core::{OsRng, RngCore};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::slice;
-use std::sync::Once;
 use subtle::CtOption;
-use tracing::info;
-
-#[cfg(not(target_os = "windows"))]
-use std::ffi::OsStr;
-#[cfg(not(target_os = "windows"))]
-use std::os::unix::ffi::OsStrExt;
-
-#[cfg(target_os = "windows")]
-use std::ffi::OsString;
-#[cfg(target_os = "windows")]
-use std::os::windows::ffi::OsStringExt;
 
 use zcash_primitives::{
     constants::{CRH_IVK_PERSONALIZATION, PROOF_GENERATION_KEY_GENERATOR, SPENDING_KEY_GENERATOR},
@@ -92,7 +80,6 @@ mod test_harness_ffi;
 #[cfg(test)]
 mod tests;
 
-static PROOF_PARAMETERS_LOADED: Once = Once::new();
 static mut SAPLING_SPEND_VK: Option<groth16::VerifyingKey<Bls12>> = None;
 static mut SAPLING_OUTPUT_VK: Option<groth16::VerifyingKey<Bls12>> = None;
 static mut SPROUT_GROTH16_VK: Option<PreparedVerifyingKey<Bls12>> = None;
@@ -120,86 +107,6 @@ fn fixed_scalar_mult(from: &[u8; 32], p_g: &jubjub::SubgroupPoint) -> jubjub::Su
     let f = jubjub::Scalar::from_bytes(from).unwrap();
 
     p_g * f
-}
-
-/// Loads the zk-SNARK parameters into memory and saves paths as necessary.
-/// Only called once.
-///
-/// If `load_proving_keys` is `false`, the proving keys will not be loaded, making it
-/// impossible to create proofs. This flag is for the Boost test suite, which never
-/// creates shielded transactions, but exercises code that requires the verifying keys to
-/// be present even if there are no shielded components to verify.
-#[no_mangle]
-pub extern "C" fn librustzcash_init_zksnark_params(
-    #[cfg(not(target_os = "windows"))] sprout_path: *const u8,
-    #[cfg(target_os = "windows")] sprout_path: *const u16,
-    sprout_path_len: usize,
-    load_proving_keys: bool,
-) {
-    PROOF_PARAMETERS_LOADED.call_once(|| {
-        #[cfg(not(target_os = "windows"))]
-        let sprout_path = if sprout_path.is_null() {
-            None
-        } else {
-            Some(OsStr::from_bytes(unsafe {
-                slice::from_raw_parts(sprout_path, sprout_path_len)
-            }))
-        };
-
-        #[cfg(target_os = "windows")]
-        let sprout_path = if sprout_path.is_null() {
-            None
-        } else {
-            Some(OsString::from_wide(unsafe {
-                slice::from_raw_parts(sprout_path, sprout_path_len)
-            }))
-        };
-
-        let sprout_path = sprout_path.as_ref().map(Path::new);
-
-        let sprout_vk = {
-            use bellman::groth16::{prepare_verifying_key, VerifyingKey};
-            let sprout_vk_bytes = include_bytes!("sprout-groth16.vk");
-            let vk = VerifyingKey::<Bls12>::read(&sprout_vk_bytes[..])
-                .expect("should be able to parse Sprout verification key");
-            prepare_verifying_key(&vk)
-        };
-
-        // Load params
-        let (sapling_spend_params, sapling_output_params) = {
-            let (spend_buf, output_buf) = wagyu_zcash_parameters::load_sapling_parameters();
-            let spend_params = Parameters::<Bls12>::read(&spend_buf[..], false)
-                .expect("couldn't deserialize Sapling spend parameters");
-            let output_params = Parameters::<Bls12>::read(&output_buf[..], false)
-                .expect("couldn't deserialize Sapling spend parameters");
-            (spend_params, output_params)
-        };
-
-        // We need to clone these because we aren't necessarily storing the proving
-        // parameters in memory.
-        let sapling_spend_vk = sapling_spend_params.vk.clone();
-        let sapling_output_vk = sapling_output_params.vk.clone();
-
-        // Generate Orchard parameters.
-        info!(target: "main", "Loading Orchard parameters");
-        let orchard_pk = load_proving_keys.then(orchard::circuit::ProvingKey::build);
-        let orchard_vk = orchard::circuit::VerifyingKey::build();
-
-        // Caller is responsible for calling this function once, so
-        // these global mutations are safe.
-        unsafe {
-            SAPLING_SPEND_PARAMS = load_proving_keys.then_some(sapling_spend_params);
-            SAPLING_OUTPUT_PARAMS = load_proving_keys.then_some(sapling_output_params);
-            SPROUT_GROTH16_PARAMS_PATH = sprout_path.map(|p| p.to_owned());
-
-            SAPLING_SPEND_VK = Some(sapling_spend_vk);
-            SAPLING_OUTPUT_VK = Some(sapling_output_vk);
-            SPROUT_GROTH16_VK = Some(sprout_vk);
-
-            ORCHARD_PK = orchard_pk;
-            ORCHARD_VK = Some(orchard_vk);
-        }
-    });
 }
 
 /// Writes the "uncommitted" note value for empty leaves of the Merkle tree.

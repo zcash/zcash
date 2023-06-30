@@ -862,9 +862,10 @@ static void ZC_LoadParams(
 
     gettimeofday(&tv_start, 0);
 
-    librustzcash_init_zksnark_params(
-        reinterpret_cast<const codeunit*>(sprout_groth16_str.c_str()),
-        sprout_groth16_str.length(),
+    init::zksnark_params(
+        rust::String(
+            reinterpret_cast<const codeunit*>(sprout_groth16_str.data()),
+            sprout_groth16_str.size()),
         true
     );
 

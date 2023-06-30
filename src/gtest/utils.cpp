@@ -7,6 +7,8 @@
 #include "zcash/IncrementalMerkleTree.hpp"
 #include "transaction_builder.h"
 
+#include <rust/init_ffi.h>
+
 int GenZero(int n)
 {
     return 0;
@@ -25,9 +27,10 @@ void LoadProofParameters() {
         "librustzcash not configured correctly");
     auto sprout_groth16_str = sprout_groth16.native();
 
-    librustzcash_init_zksnark_params(
-        reinterpret_cast<const codeunit*>(sprout_groth16_str.c_str()),
-        sprout_groth16_str.length(),
+    init::zksnark_params(
+        rust::String(
+            reinterpret_cast<const codeunit*>(sprout_groth16_str.data()),
+            sprout_groth16_str.size()),
         true
     );
 }

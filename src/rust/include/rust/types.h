@@ -8,9 +8,9 @@
 #include <stdint.h>
 
 #ifdef WIN32
-typedef uint16_t codeunit;
+typedef char16_t codeunit;
 #else
-typedef uint8_t codeunit;
+typedef char codeunit;
 #endif
 
 #endif // ZCASH_RUST_INCLUDE_RUST_TYPES_H
