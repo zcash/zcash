@@ -46,6 +46,7 @@ use crate::{
 };
 
 pub(crate) mod spec;
+mod zip32;
 
 const SAPLING_TREE_DEPTH: usize = 32;
 

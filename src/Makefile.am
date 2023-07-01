@@ -59,6 +59,7 @@ CXXBRIDGE_RS = \
   rust/src/history_ffi.rs \
   rust/src/init_ffi.rs \
   rust/src/sapling/spec.rs \
+  rust/src/sapling/zip32.rs \
   rust/src/sprout.rs \
   rust/src/streams.rs \
   rust/src/bridge.rs
@@ -69,6 +70,7 @@ CXXBRIDGE_H = \
   rust/gen/include/rust/history_ffi.h \
   rust/gen/include/rust/init_ffi.h \
   rust/gen/include/rust/sapling/spec.h \
+  rust/gen/include/rust/sapling/zip32.h \
   rust/gen/include/rust/sprout.h \
   rust/gen/include/rust/streams.h \
   rust/gen/include/rust/bridge.h
@@ -79,6 +81,7 @@ CXXBRIDGE_CPP = \
   rust/gen/src/history_ffi.cpp \
   rust/gen/src/init_ffi.cpp \
   rust/gen/src/sapling/spec.cpp \
+  rust/gen/src/sapling/zip32.cpp \
   rust/gen/src/sprout.cpp \
   rust/gen/src/streams.cpp \
   rust/gen/src/bridge.cpp

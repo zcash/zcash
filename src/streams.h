@@ -172,6 +172,12 @@ public:
         Init(nTypeIn, nVersionIn);
     }
 
+    template <size_t _N>
+    CBaseDataStream(const std::array<unsigned char, _N>& vchIn, int nTypeIn, int nVersionIn) : vch(vchIn.begin(), vchIn.end())
+    {
+        Init(nTypeIn, nVersionIn);
+    }
+
     template <typename... Args>
     CBaseDataStream(int nTypeIn, int nVersionIn, Args&&... args)
     {
@@ -426,6 +432,10 @@ public:
             CBaseDataStream(vchIn, nTypeIn, nVersionIn) { }
 
     CDataStream(const std::vector<unsigned char>& vchIn, int nTypeIn, int nVersionIn) :
+            CBaseDataStream(vchIn, nTypeIn, nVersionIn) { }
+
+    template <size_t _N>
+    CDataStream(const std::array<unsigned char, _N>& vchIn, int nTypeIn, int nVersionIn) :
             CBaseDataStream(vchIn, nTypeIn, nVersionIn) { }
 
     template <typename... Args>

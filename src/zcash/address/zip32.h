@@ -12,6 +12,8 @@
 #include "util/time.h"
 #include "zcash/address/sapling.hpp"
 #include <librustzcash.h>
+
+#include <rust/sapling/zip32.h>
 #include <rust/zip339.h>
 
 #include <optional>
@@ -93,6 +95,13 @@ public:
     }
     explicit diversifier_index_t(const std::vector<unsigned char>& vch) : base_blob<88>(vch) {}
 
+    static diversifier_index_t FromRawBytes(std::array<uint8_t, 11> bytes)
+    {
+        diversifier_index_t buf;
+        std::memcpy(buf.begin(), bytes.data(), 11);
+        return buf;
+    }
+
     bool increment() {
         for (int i = 0; i < 11; i++) {
             this->data[i] += 1;
@@ -136,9 +145,7 @@ protected:
     SaplingDiversifiableFullViewingKey GetInternalDFVK() const;
 
     diversifier_index_t DecryptDiversifier(const diversifier_t& d) const {
-        diversifier_index_t j;
-        librustzcash_sapling_diversifier_index(dk.begin(), d.begin(), j.begin());
-        return j;
+        return diversifier_index_t::FromRawBytes(sapling::zip32::diversifier_index(dk.GetRawBytes(), d));
     }
 public:
     libzcash::SaplingFullViewingKey fvk;
