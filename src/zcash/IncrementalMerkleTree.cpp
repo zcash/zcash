@@ -4,7 +4,8 @@
 #include "zcash/IncrementalMerkleTree.hpp"
 #include "crypto/sha256.h"
 #include "zcash/util.h"
-#include "librustzcash.h"
+
+#include <rust/sapling/spec.h>
 
 namespace libzcash {
 
@@ -14,24 +15,15 @@ PedersenHash PedersenHash::combine(
     size_t depth
 )
 {
-    PedersenHash res = PedersenHash();
-
-    librustzcash_merkle_hash(
+    return uint256::FromRawBytes(sapling::spec::merkle_hash(
         depth,
-        a.begin(),
-        b.begin(),
-        res.begin()
-    );
-
-    return res;
+        a.GetRawBytes(),
+        b.GetRawBytes()
+    ));
 }
 
 PedersenHash PedersenHash::uncommitted() {
-    PedersenHash res = PedersenHash();
-
-    librustzcash_tree_uncommitted(res.begin());
-
-    return res;
+    return uint256::FromRawBytes(sapling::spec::tree_uncommitted());
 }
 
 static const std::array<PedersenHash, 65> pedersen_empty_roots = {

@@ -11,6 +11,7 @@
 
 #include <librustzcash.h>
 #include <rust/constants.h>
+#include <rust/sapling/spec.h>
 
 namespace libzcash {
 
@@ -34,8 +35,8 @@ uint256 SaplingPaymentAddress::GetHash() const {
 
 std::optional<SaplingPaymentAddress> SaplingIncomingViewingKey::address(diversifier_t d) const {
     uint256 pk_d;
-    if (librustzcash_check_diversifier(d.data())) {
-        librustzcash_ivk_to_pkd(this->begin(), d.data(), pk_d.begin());
+    if (sapling::spec::check_diversifier(d)) {
+        auto pk_d = uint256::FromRawBytes(sapling::spec::ivk_to_pkd(this->GetRawBytes(), d));
         return SaplingPaymentAddress(d, pk_d);
     } else {
         return std::nullopt;
@@ -49,22 +50,18 @@ uint256 SaplingFullViewingKey::GetFingerprint() const {
 }
 
 SaplingIncomingViewingKey SaplingFullViewingKey::in_viewing_key() const {
-    uint256 ivk;
-    librustzcash_crh_ivk(ak.begin(), nk.begin(), ivk.begin());
+    auto ivk = uint256::FromRawBytes(sapling::spec::crh_ivk(ak.GetRawBytes(), nk.GetRawBytes()));
     return SaplingIncomingViewingKey(ivk);
 }
 
 bool SaplingFullViewingKey::is_valid() const {
-    uint256 ivk;
-    librustzcash_crh_ivk(ak.begin(), nk.begin(), ivk.begin());
+    auto ivk = uint256::FromRawBytes(sapling::spec::crh_ivk(ak.GetRawBytes(), nk.GetRawBytes()));
     return !ivk.IsNull();
 }
 
 SaplingFullViewingKey SaplingExpandedSpendingKey::full_viewing_key() const {
-    uint256 ak;
-    uint256 nk;
-    librustzcash_ask_to_ak(ask.begin(), ak.begin());
-    librustzcash_nsk_to_nk(nsk.begin(), nk.begin());
+    auto ak = uint256::FromRawBytes(sapling::spec::ask_to_ak(ask.GetRawBytes()));
+    auto nk = uint256::FromRawBytes(sapling::spec::nsk_to_nk(nsk.GetRawBytes()));
     return SaplingFullViewingKey(ak, nk, ovk);
 }
 

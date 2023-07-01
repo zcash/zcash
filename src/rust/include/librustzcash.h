@@ -15,41 +15,6 @@
 extern "C" {
 #endif
 
-    void librustzcash_to_scalar(const unsigned char *input, unsigned char *result);
-
-    void librustzcash_ask_to_ak(const unsigned char *ask, unsigned char *result);
-
-    void librustzcash_nsk_to_nk(const unsigned char *nsk, unsigned char *result);
-
-    void librustzcash_crh_ivk(const unsigned char *ak, const unsigned char *nk, unsigned char *result);
-
-    bool librustzcash_check_diversifier(const unsigned char *diversifier);
-
-    bool librustzcash_ivk_to_pkd(const unsigned char *ivk, const unsigned char *diversifier, unsigned char *result);
-
-    /// Writes the "uncommitted" note value for empty leaves
-    /// of the merkle tree. `result` must be a valid pointer
-    /// to 32 bytes which will be written.
-    void librustzcash_tree_uncommitted(
-        unsigned char *result
-    );
-
-    /// Computes a merkle tree hash for a given depth.
-    /// The `depth` parameter should not be larger than
-    /// 62.
-    ///
-    /// `a` and `b` each must be of length 32, and must each
-    /// be scalars of BLS12-381.
-    ///
-    /// The result of the merkle tree hash is placed in
-    /// `result`, which must also be of length 32.
-    void librustzcash_merkle_hash(
-        size_t depth,
-        const unsigned char *a,
-        const unsigned char *b,
-        unsigned char *result
-    );
-
     /// Computes the signature for each Spend description, given the key
     /// `ask`, the re-randomization `ar`, the 32-byte sighash `sighash`,
     /// and an output `result` buffer of 64-bytes for the signature.
@@ -59,42 +24,6 @@ extern "C" {
         const unsigned char *ask,
         const unsigned char *ar,
         const unsigned char *sighash,
-        unsigned char *result
-    );
-
-    /// Compute a Sapling nullifier.
-    ///
-    /// The `diversifier` parameter must be 11 bytes in length.
-    /// The `pk_d`, `r`, and `nk` parameters must be of length 32.
-    /// The result is also of length 32 and placed in `result`.
-    /// Returns false if the diversifier or pk_d is not valid
-    bool librustzcash_sapling_compute_nf(
-        const unsigned char *diversifier,
-        const unsigned char *pk_d,
-        const uint64_t value,
-        const unsigned char *rcm,
-        const unsigned char *nk,
-        const uint64_t position,
-        unsigned char *result
-    );
-
-    /// Compute a Sapling commitment.
-    ///
-    /// The `diversifier` parameter must be 11 bytes in length.
-    /// The `pk_d` and `r` parameters must be of length 32.
-    /// The result is also of length 32 and placed in `result`.
-    /// Returns false if the diversifier or pk_d is not valid
-    bool librustzcash_sapling_compute_cmu(
-        const unsigned char *diversifier,
-        const unsigned char *pk_d,
-        const uint64_t value,
-        const unsigned char *rcm,
-        unsigned char *result
-    );
-
-    /// Generate uniformly random scalar in Jubjub.
-    /// The result is of length 32.
-    void librustzcash_sapling_generate_r(
         unsigned char *result
     );
 

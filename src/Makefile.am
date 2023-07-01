@@ -58,6 +58,7 @@ CXXBRIDGE_RS = \
   rust/src/equihash.rs \
   rust/src/history_ffi.rs \
   rust/src/init_ffi.rs \
+  rust/src/sapling/spec.rs \
   rust/src/sprout.rs \
   rust/src/streams.rs \
   rust/src/bridge.rs
@@ -67,6 +68,7 @@ CXXBRIDGE_H = \
   rust/gen/include/rust/equihash.h \
   rust/gen/include/rust/history_ffi.h \
   rust/gen/include/rust/init_ffi.h \
+  rust/gen/include/rust/sapling/spec.h \
   rust/gen/include/rust/sprout.h \
   rust/gen/include/rust/streams.h \
   rust/gen/include/rust/bridge.h
@@ -76,6 +78,7 @@ CXXBRIDGE_CPP = \
   rust/gen/src/equihash.cpp \
   rust/gen/src/history_ffi.cpp \
   rust/gen/src/init_ffi.cpp \
+  rust/gen/src/sapling/spec.cpp \
   rust/gen/src/sprout.cpp \
   rust/gen/src/streams.cpp \
   rust/gen/src/bridge.cpp
@@ -87,7 +90,7 @@ CXXBRIDGE_OPTS = -i rust/cxx.h
 $(CXXBRIDGE_RS): ;
 $(CXXBRIDGE_H) $(CXXBRIDGE_CPP): $(CXXBRIDGE_RS)
 	@$(MKDIR_P) $(@D)
-	$(AM_V_GEN)$(CXXBRIDGE) $(CXXBRIDGE_OPTS) rust/src/$(basename $(@F)).rs -o $@
+	$(AM_V_GEN)$(CXXBRIDGE) $(CXXBRIDGE_OPTS) $(basename $(patsubst rust/gen/include/rust/%,rust/src/%,$(patsubst rust/gen/src/%,rust/src/%,$@))).rs -o $@
 
 # We pass through CC etc. flags so they are available to Rust dependencies that internally
 # compile C or C++ code with the `cc` crate.
