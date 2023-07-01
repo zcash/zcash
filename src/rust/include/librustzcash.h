@@ -15,18 +15,6 @@
 extern "C" {
 #endif
 
-    /// Computes the signature for each Spend description, given the key
-    /// `ask`, the re-randomization `ar`, the 32-byte sighash `sighash`,
-    /// and an output `result` buffer of 64-bytes for the signature.
-    ///
-    /// This function will fail if the provided `ask` or `ar` are invalid.
-    bool librustzcash_sapling_spend_sig(
-        const unsigned char *ask,
-        const unsigned char *ar,
-        const unsigned char *sighash,
-        unsigned char *result
-    );
-
     /// Derive the master ExtendedSpendingKey from a seed.
     void librustzcash_zip32_sapling_xsk_master(
         const unsigned char *seed,

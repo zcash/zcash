@@ -28,7 +28,7 @@ use std::slice;
 use subtle::CtOption;
 
 use zcash_primitives::{
-    sapling::{keys::FullViewingKey, redjubjub, spend_sig, Diversifier},
+    sapling::{keys::FullViewingKey, Diversifier},
     zip32::{self, sapling_address, sapling_derive_internal_fvk, sapling_find_address},
 };
 
@@ -91,43 +91,6 @@ fn de_ct<T>(ct: CtOption<T>) -> Option<T> {
 const GROTH_PROOF_SIZE: usize = 48 // π_A
     + 96 // π_B
     + 48; // π_C
-
-/// Computes the signature for each Spend description, given the key `ask`, the
-/// re-randomization `ar`, the 32-byte sighash `sighash`, and an output `result`
-/// buffer of 64-bytes for the signature.
-///
-/// This function will fail if the provided `ask` or `ar` are invalid.
-#[no_mangle]
-pub extern "C" fn librustzcash_sapling_spend_sig(
-    ask: *const [c_uchar; 32],
-    ar: *const [c_uchar; 32],
-    sighash: *const [c_uchar; 32],
-    result: *mut [c_uchar; 64],
-) -> bool {
-    // The caller provides the re-randomization of `ak`.
-    let ar = match de_ct(jubjub::Scalar::from_bytes(unsafe { &*ar })) {
-        Some(p) => p,
-        None => return false,
-    };
-
-    // The caller provides `ask`, the spend authorizing key.
-    let ask = match redjubjub::PrivateKey::read(&(unsafe { &*ask })[..]) {
-        Ok(p) => p,
-        Err(_) => return false,
-    };
-
-    // Initialize secure RNG
-    let mut rng = OsRng;
-
-    // Do the signing
-    let sig = spend_sig(ask, ar, unsafe { &*sighash }, &mut rng);
-
-    // Write out the signature
-    sig.write(&mut (unsafe { &mut *result })[..])
-        .expect("result should be 64 bytes");
-
-    true
-}
 
 /// Derive the master ExtendedSpendingKey from a seed.
 #[no_mangle]
