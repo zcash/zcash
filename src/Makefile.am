@@ -56,8 +56,8 @@ CXXBRIDGE_RS = \
   rust/src/blake2b.rs \
   rust/src/ed25519.rs \
   rust/src/equihash.rs \
-  rust/src/history_ffi.rs \
-  rust/src/init_ffi.rs \
+  rust/src/history.rs \
+  rust/src/init.rs \
   rust/src/random.rs \
   rust/src/sapling/spec.rs \
   rust/src/sapling/zip32.rs \
@@ -68,8 +68,8 @@ CXXBRIDGE_H = \
   rust/gen/include/rust/blake2b.h \
   rust/gen/include/rust/ed25519.h \
   rust/gen/include/rust/equihash.h \
-  rust/gen/include/rust/history_ffi.h \
-  rust/gen/include/rust/init_ffi.h \
+  rust/gen/include/rust/history.h \
+  rust/gen/include/rust/init.h \
   rust/gen/include/rust/random.h \
   rust/gen/include/rust/sapling/spec.h \
   rust/gen/include/rust/sapling/zip32.h \
@@ -80,8 +80,8 @@ CXXBRIDGE_CPP = \
   rust/gen/src/blake2b.cpp \
   rust/gen/src/ed25519.cpp \
   rust/gen/src/equihash.cpp \
-  rust/gen/src/history_ffi.cpp \
-  rust/gen/src/init_ffi.cpp \
+  rust/gen/src/history.cpp \
+  rust/gen/src/init.cpp \
   rust/gen/src/random.cpp \
   rust/gen/src/sapling/spec.cpp \
   rust/gen/src/sapling/zip32.cpp \

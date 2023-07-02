@@ -11,7 +11,7 @@
 #include "main.h"
 #include "util/system.h"
 
-#include <rust/init_ffi.h>
+#include <rust/init.h>
 
 const std::function<std::string(const char*)> G_TRANSLATION_FUN = nullptr;
 

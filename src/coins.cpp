@@ -11,7 +11,7 @@
 
 #include <assert.h>
 
-#include <rust/history_ffi.h>
+#include <rust/history.h>
 
 #include <tracing.h>
 

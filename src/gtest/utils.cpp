@@ -7,7 +7,7 @@
 #include "zcash/IncrementalMerkleTree.hpp"
 #include "transaction_builder.h"
 
-#include <rust/init_ffi.h>
+#include <rust/init.h>
 
 int GenZero(int n)
 {

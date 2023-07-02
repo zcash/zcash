@@ -33,7 +33,7 @@
 #include <tracing.h>
 
 #include <rust/bridge.h>
-#include <rust/init_ffi.h>
+#include <rust/init.h>
 
 const std::function<std::string(const char*)> G_TRANSLATION_FUN = nullptr;
 

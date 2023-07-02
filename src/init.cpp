@@ -70,7 +70,7 @@
 #endif
 
 #include <rust/bridge.h>
-#include <rust/init_ffi.h>
+#include <rust/init.h>
 #include <rust/metrics.h>
 
 #include "librustzcash.h"
