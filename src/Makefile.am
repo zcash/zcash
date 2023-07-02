@@ -58,6 +58,7 @@ CXXBRIDGE_RS = \
   rust/src/equihash.rs \
   rust/src/history_ffi.rs \
   rust/src/init_ffi.rs \
+  rust/src/random.rs \
   rust/src/sapling/spec.rs \
   rust/src/sapling/zip32.rs \
   rust/src/sprout.rs \
@@ -69,6 +70,7 @@ CXXBRIDGE_H = \
   rust/gen/include/rust/equihash.h \
   rust/gen/include/rust/history_ffi.h \
   rust/gen/include/rust/init_ffi.h \
+  rust/gen/include/rust/random.h \
   rust/gen/include/rust/sapling/spec.h \
   rust/gen/include/rust/sapling/zip32.h \
   rust/gen/include/rust/sprout.h \
@@ -80,6 +82,7 @@ CXXBRIDGE_CPP = \
   rust/gen/src/equihash.cpp \
   rust/gen/src/history_ffi.cpp \
   rust/gen/src/init_ffi.cpp \
+  rust/gen/src/random.cpp \
   rust/gen/src/sapling/spec.cpp \
   rust/gen/src/sapling/zip32.cpp \
   rust/gen/src/sprout.cpp \

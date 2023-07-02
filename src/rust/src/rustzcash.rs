@@ -21,15 +21,14 @@
 
 use bellman::groth16::{self, Parameters, PreparedVerifyingKey};
 use bls12_381::Bls12;
-use rand_core::{OsRng, RngCore};
 use std::path::PathBuf;
-use std::slice;
 use subtle::CtOption;
 
 mod blake2b;
 mod ed25519;
 mod equihash;
 mod metrics_ffi;
+mod random;
 mod streams_ffi;
 mod tracing_ffi;
 mod zcashd_orchard;
@@ -85,9 +84,3 @@ fn de_ct<T>(ct: CtOption<T>) -> Option<T> {
 const GROTH_PROOF_SIZE: usize = 48 // π_A
     + 96 // π_B
     + 48; // π_C
-
-#[no_mangle]
-pub extern "C" fn librustzcash_getrandom(buf: *mut u8, buf_len: usize) {
-    let buf = unsafe { slice::from_raw_parts_mut(buf, buf_len) };
-    OsRng.fill_bytes(buf);
-}
