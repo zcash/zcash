@@ -731,8 +731,9 @@ UniValue getblock(const UniValue& params, bool fHelp)
         throw runtime_error(
             "getblock \"hash|height\" ( verbosity )\n"
             "\nIf verbosity is 0, returns a string that is serialized, hex-encoded data for the block.\n"
-            "If verbosity is 1, returns an Object with information about the block.\n"
+            "If verbosity is 1 (default), returns an Object with information about the block.\n"
             "If verbosity is 2, returns an Object with information about the block and information about each transaction. \n"
+            "If verbosity is 3, returns an Object with the serialized, hex-encoded block data, and the list of txids.\n"
             "\nArguments:\n"
             "1. \"hash|height\"          (string, required) The block hash or height. Height can be negative where -1 is the last known valid block\n"
             "2. verbosity              (numeric, optional, default=1) 0 for hex encoded data, 1 for a json object, and 2 for json object with transaction data\n"
@@ -826,8 +827,8 @@ UniValue getblock(const UniValue& params, bool fHelp)
         }
     }
 
-    if (verbosity < 0 || verbosity > 2) {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Verbosity must be in range from 0 to 2");
+    if (verbosity < 0 || verbosity > 3) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Verbosity must be in range from 0 to 3");
     }
 
     if (mapBlockIndex.count(hash) == 0)
@@ -842,15 +843,27 @@ UniValue getblock(const UniValue& params, bool fHelp)
     if(!ReadBlockFromDisk(block, pblockindex, Params().GetConsensus()))
         throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk");
 
-    if (verbosity == 0)
-    {
+    std::string strHex;
+    if (verbosity == 0 || verbosity == 3) {
         CDataStream ssBlock(SER_NETWORK, PROTOCOL_VERSION);
         ssBlock << block;
-        std::string strHex = HexStr(ssBlock.begin(), ssBlock.end());
-        return strHex;
+        strHex = HexStr(ssBlock.begin(), ssBlock.end());
+        if (verbosity == 0) return strHex;
+    }
+    if (verbosity == 1 || verbosity == 2) {
+        return blockToJSON(block, pblockindex, /*txDetails=*/(verbosity == 2));
     }
 
-    return blockToJSON(block, pblockindex, verbosity >= 2);
+    // verbose == 3 is used by lightwalletd
+    UniValue ret(UniValue::VOBJ);
+    ret.pushKV("hash", block.GetHash().GetHex());
+    ret.pushKV("hex", strHex);
+    UniValue txs(UniValue::VARR);
+    for (const CTransaction& tx : block.vtx) {
+        txs.push_back(tx.GetHash().GetHex());
+    }
+    ret.pushKV("tx", txs);
+    return ret;
 }
 
 UniValue gettxoutsetinfo(const UniValue& params, bool fHelp)
