@@ -23,10 +23,6 @@ url = "https://raw.githubusercontent.com/mozilla/supply-chain/main/audits.toml"
 version = "0.17.0"
 criteria = "safe-to-deploy"
 
-[[exemptions.adler]]
-version = "1.0.2"
-criteria = "safe-to-deploy"
-
 [[exemptions.aead]]
 version = "0.4.3"
 criteria = "safe-to-deploy"
@@ -251,10 +247,6 @@ criteria = "safe-to-deploy"
 version = "0.3.1"
 criteria = "safe-to-deploy"
 
-[[exemptions.hmac]]
-version = "0.12.1"
-criteria = "safe-to-deploy"
-
 [[exemptions.home]]
 version = "0.5.5"
 criteria = "safe-to-deploy"
@@ -451,10 +443,6 @@ criteria = "safe-to-deploy"
 version = "0.8.0"
 criteria = "safe-to-deploy"
 
-[[exemptions.pin-project-lite]]
-version = "0.2.9"
-criteria = "safe-to-deploy"
-
 [[exemptions.poly1305]]
 version = "0.7.2"
 criteria = "safe-to-deploy"
@@ -475,10 +463,6 @@ criteria = "safe-to-deploy"
 version = "1.2.1"
 criteria = "safe-to-deploy"
 
-[[exemptions.proc-macro2]]
-version = "1.0.63"
-criteria = "safe-to-deploy"
-
 [[exemptions.proptest]]
 version = "1.2.0"
 criteria = "safe-to-deploy"
@@ -497,14 +481,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.rand]]
 version = "0.8.5"
-criteria = "safe-to-deploy"
-
-[[exemptions.rand_chacha]]
-version = "0.3.1"
-criteria = "safe-to-deploy"
-
-[[exemptions.rand_core]]
-version = "0.6.4"
 criteria = "safe-to-deploy"
 
 [[exemptions.raw-cpuid]]
@@ -595,10 +571,6 @@ criteria = "safe-to-deploy"
 version = "1.0.81"
 criteria = "safe-to-deploy"
 
-[[exemptions.sha2]]
-version = "0.9.9"
-criteria = "safe-to-deploy"
-
 [[exemptions.sharded-slab]]
 version = "0.1.4"
 criteria = "safe-to-deploy"
@@ -649,10 +621,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.time]]
 version = "0.3.20"
-criteria = "safe-to-deploy"
-
-[[exemptions.time-core]]
-version = "0.1.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.time-macros]]
