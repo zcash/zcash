@@ -45,6 +45,9 @@ use crate::{
     streams::CppStream,
 };
 
+pub(crate) mod spec;
+mod zip32;
+
 const SAPLING_TREE_DEPTH: usize = 32;
 
 pub(crate) struct Spend(sapling::SpendDescription<sapling::Authorized>);

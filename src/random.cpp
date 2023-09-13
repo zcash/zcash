@@ -20,7 +20,7 @@
 #include <sys/time.h>
 #endif
 
-#include <librustzcash.h>
+#include <rust/random.h>
 
 static inline int64_t GetPerformanceCounter()
 {
@@ -37,7 +37,7 @@ static inline int64_t GetPerformanceCounter()
 
 void GetRandBytes(unsigned char* buf, size_t num)
 {
-    librustzcash_getrandom(buf, num);
+    rust::getrandom({buf, num});
 }
 
 uint128_t GetRandUInt128(uint128_t nMax)

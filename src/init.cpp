@@ -862,9 +862,10 @@ static void ZC_LoadParams(
 
     gettimeofday(&tv_start, 0);
 
-    librustzcash_init_zksnark_params(
-        reinterpret_cast<const codeunit*>(sprout_groth16_str.c_str()),
-        sprout_groth16_str.length(),
+    init::zksnark_params(
+        rust::String(
+            reinterpret_cast<const codeunit*>(sprout_groth16_str.data()),
+            sprout_groth16_str.size()),
         true
     );
 
@@ -1063,7 +1064,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     std::set_new_handler(new_handler_terminate);
 
     // Set up global Rayon threadpool.
-    zcashd_init_rayon_threadpool();
+    init::rayon_threadpool();
 
     // ********************************************************* Step 2: parameter interactions
     const CChainParams& chainparams = Params();

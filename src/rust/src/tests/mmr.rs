@@ -1,6 +1,6 @@
 use zcash_history::{Entry, EntryLink, NodeData, V1};
 
-use crate::history_ffi::{librustzcash_mmr_append, librustzcash_mmr_delete};
+use crate::history::{append as mmr_append, remove as mmr_remove};
 
 const NODE_DATA_16L: &[u8] = include_bytes!("./res/tree16.dat");
 const NODE_DATA_1023L: &[u8] = include_bytes!("./res/tree1023.dat");
@@ -148,9 +148,7 @@ fn append() {
     let nodes = load_nodes(NODE_DATA_16L);
     let (indices, peaks) = preload_tree_append(&nodes);
 
-    let mut rt_ret = [0u8; 32];
-
-    let mut buf_ret = Vec::<[u8; zcash_history::MAX_NODE_DATA_SIZE]>::with_capacity(32);
+    let mut buf_ret = vec![[0; zcash_history::MAX_NODE_DATA_SIZE]; 32];
 
     let mut new_node_data = [0u8; zcash_history::MAX_NODE_DATA_SIZE];
     let new_node = NodeData {
@@ -171,22 +169,21 @@ fn append() {
         .write(&mut &mut new_node_data[..])
         .expect("Failed to write node data");
 
-    let result = librustzcash_mmr_append(
+    let result = mmr_append(
         0,
         nodes.len() as u32,
-        indices.as_ptr(),
-        peaks.as_ptr(),
-        peaks.len(),
+        &indices,
+        &peaks,
         &new_node_data,
-        &mut rt_ret,
-        buf_ret.as_mut_ptr(),
-    );
+        &mut buf_ret,
+    )
+    .unwrap();
 
     unsafe {
-        buf_ret.set_len(result as usize);
+        buf_ret.set_len(result.count);
     }
 
-    assert_eq!(result, 2);
+    assert_eq!(result.count, 2);
 
     let new_node_1 =
         NodeData::from_bytes(0, &buf_ret[0][..]).expect("Failed to reconstruct return node #1");
@@ -208,18 +205,8 @@ fn delete() {
     let nodes = load_nodes(NODE_DATA_1023L);
     let (indices, nodes, peak_count) = preload_tree_delete(&nodes);
 
-    let mut rt_ret = [0u8; 32];
-
-    let result = librustzcash_mmr_delete(
-        0,
-        nodes.len() as u32,
-        indices.as_ptr(),
-        nodes.as_ptr(),
-        peak_count,
-        indices.len() - peak_count,
-        &mut rt_ret,
-    );
+    let result = mmr_remove(0, nodes.len() as u32, &indices, &nodes, peak_count).unwrap();
 
     // Deleting from full tree of 9 height would result in cascade deleting of 10 nodes
-    assert_eq!(result, 10);
+    assert_eq!(result.count, 10);
 }

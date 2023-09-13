@@ -10,7 +10,8 @@
 #include "streams.h"
 
 #include "zcash/util.h"
-#include "librustzcash.h"
+
+#include <rust/sapling/spec.h>
 
 #include <boost/thread/exceptions.hpp>
 
@@ -58,7 +59,7 @@ SaplingNote::SaplingNote(
         // Per ZIP 212, the rseed field is 32 random bytes.
         rseed = random_uint256();
     } else {
-        librustzcash_sapling_generate_r(rseed.begin());
+        rseed = uint256::FromRawBytes(sapling::spec::generate_r());
     }
 }
 
@@ -69,14 +70,14 @@ std::optional<uint256> SaplingNote::cmu() const {
     // We consider ZIP 216 active all of the time because blocks prior to NU5
     // activation (on mainnet and testnet) did not contain Sapling transactions
     // that violated its canonicity rule.
-    if (!librustzcash_sapling_compute_cmu(
-            d.data(),
-            pk_d.begin(),
+    try {
+        result = uint256::FromRawBytes(sapling::spec::compute_cmu(
+            d,
+            pk_d.GetRawBytes(),
             value(),
-            rcm_tmp.begin(),
-            result.begin()
-        ))
-    {
+            rcm_tmp.GetRawBytes()
+        ));
+    } catch (rust::Error) {
         return std::nullopt;
     }
 
@@ -90,16 +91,16 @@ std::optional<uint256> SaplingNote::nullifier(const SaplingFullViewingKey& vk, c
 
     uint256 result;
     uint256 rcm_tmp = rcm();
-    if (!librustzcash_sapling_compute_nf(
-            d.data(),
-            pk_d.begin(),
+    try {
+        result = uint256::FromRawBytes(sapling::spec::compute_nf(
+            d,
+            pk_d.GetRawBytes(),
             value(),
-            rcm_tmp.begin(),
-            nk.begin(),
-            position,
-            result.begin()
-    ))
-    {
+            rcm_tmp.GetRawBytes(),
+            nk.GetRawBytes(),
+            position
+        ));
+    } catch (rust::Error) {
         return std::nullopt;
     }
 

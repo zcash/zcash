@@ -26,7 +26,7 @@ store = { path = "./qa/supply-chain" }
 
 [lib]
 name = "rustzcash"
-path = "src/rust/src/rustzcash.rs"
+path = "src/rust/src/lib.rs"
 crate-type = ["staticlib"]
 
 [[bin]]
@@ -45,6 +45,7 @@ bls12_381 = "0.8"
 bridgetree = "0.3"
 byteorder = "1"
 crossbeam-channel = "0.5"
+getrandom = "0.2"
 group = "0.13"
 incrementalmerkletree = "0.4"
 libc = "0.2"

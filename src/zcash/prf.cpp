@@ -6,6 +6,7 @@
 #include <librustzcash.h>
 #include <rust/blake2b.h>
 #include <rust/constants.h>
+#include <rust/sapling/spec.h>
 
 const unsigned char ZCASH_EXPANDSEED_PERSONALIZATION[blake2b::PERSONALBYTES] = {'Z','c','a','s','h','_','E','x','p','a','n','d','S','e','e','d'};
 
@@ -27,34 +28,26 @@ std::array<unsigned char, 64> PRF_expand(const uint256& sk, unsigned char t)
 
 uint256 PRF_rcm(const uint256& rseed)
 {
-    uint256 rcm;
     auto tmp = PRF_expand(rseed, PRF_RCM_TAG);
-    librustzcash_to_scalar(tmp.data(), rcm.begin());
-    return rcm;
+    return uint256::FromRawBytes(sapling::spec::to_scalar(tmp));
 }
 
 uint256 PRF_esk(const uint256& rseed)
 {
-    uint256 esk;
     auto tmp = PRF_expand(rseed, PRF_ESK_TAG);
-    librustzcash_to_scalar(tmp.data(), esk.begin());
-    return esk;
+    return uint256::FromRawBytes(sapling::spec::to_scalar(tmp));
 }
 
 uint256 PRF_ask(const uint256& sk)
 {
-    uint256 ask;
     auto tmp = PRF_expand(sk, PRF_ASK_TAG);
-    librustzcash_to_scalar(tmp.data(), ask.begin());
-    return ask;
+    return uint256::FromRawBytes(sapling::spec::to_scalar(tmp));
 }
 
 uint256 PRF_nsk(const uint256& sk)
 {
-    uint256 nsk;
     auto tmp = PRF_expand(sk, PRF_NSK_TAG);
-    librustzcash_to_scalar(tmp.data(), nsk.begin());
-    return nsk;
+    return uint256::FromRawBytes(sapling::spec::to_scalar(tmp));
 }
 
 uint256 PRF_ovk(const uint256& sk)
@@ -79,7 +72,7 @@ std::array<unsigned char, 11> default_diversifier(const uint256& sk)
         state->update({blob, 34});
         state->finalize({res.data(), 11});
 
-        if (librustzcash_check_diversifier(res.data())) {
+        if (sapling::spec::check_diversifier(res)) {
             break;
         } else if (blob[33] == 255) {
             throw std::runtime_error("librustzcash_check_diversifier did not return valid diversifier");

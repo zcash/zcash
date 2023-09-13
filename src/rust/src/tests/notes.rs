@@ -1,5 +1,4 @@
-use crate::librustzcash_sapling_compute_cmu;
-use crate::librustzcash_sapling_compute_nf;
+use crate::sapling::spec::{compute_cmu, compute_nf};
 
 #[test]
 fn notes() {
@@ -647,26 +646,19 @@ fn notes() {
 
     for tv in test_vectors {
         // Compute commitment and compare with test vector
-        let mut result = [0u8; 32];
-        assert!(librustzcash_sapling_compute_cmu(
-            &tv.default_d,
-            &tv.default_pk_d,
-            tv.note_v,
-            &tv.note_r,
-            &mut result
-        ));
+        let result = compute_cmu(tv.default_d, &tv.default_pk_d, tv.note_v, &tv.note_r).unwrap();
         assert_eq!(&result, &tv.note_cm);
 
         // Compute nullifier and compare with test vector
-        assert!(librustzcash_sapling_compute_nf(
+        let result = compute_nf(
             &tv.default_d,
             &tv.default_pk_d,
             tv.note_v,
             &tv.note_r,
             &tv.nk,
             tv.note_pos,
-            &mut result
-        ));
+        )
+        .unwrap();
         assert_eq!(&result, &tv.note_nf);
     }
 }

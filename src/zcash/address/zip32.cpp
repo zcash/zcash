@@ -63,19 +63,16 @@ std::optional<SaplingExtendedFullViewingKey> SaplingExtendedFullViewingKey::Deri
 {
     CDataStream ss_p(SER_NETWORK, PROTOCOL_VERSION);
     ss_p << *this;
-    CSerializeData p_bytes(ss_p.begin(), ss_p.end());
+    std::array<unsigned char, ZIP32_XFVK_SIZE> p_bytes;
+    std::copy(ss_p.begin(), ss_p.end(), p_bytes.begin());
 
-    CSerializeData i_bytes(ZIP32_XFVK_SIZE);
-    if (librustzcash_zip32_sapling_xfvk_derive(
-        reinterpret_cast<unsigned char*>(p_bytes.data()),
-        i,
-        reinterpret_cast<unsigned char*>(i_bytes.data())
-    )) {
+    try {
+        auto i_bytes = sapling::zip32::xfvk_derive(p_bytes, i);
         CDataStream ss_i(i_bytes, SER_NETWORK, PROTOCOL_VERSION);
         SaplingExtendedFullViewingKey xfvk_i;
         ss_i >> xfvk_i;
         return xfvk_i;
-    } else {
+    } catch (rust::Error) {
         return std::nullopt;
     }
 }
@@ -89,19 +86,17 @@ std::optional<libzcash::SaplingPaymentAddress>
 {
     CDataStream ss_fvk(SER_NETWORK, PROTOCOL_VERSION);
     ss_fvk << fvk;
-    CSerializeData fvk_bytes(ss_fvk.begin(), ss_fvk.end());
+    std::array<unsigned char, 96> fvk_bytes;
+    std::copy(ss_fvk.begin(), ss_fvk.end(), fvk_bytes.begin());
 
     CSerializeData addr_bytes(libzcash::SerializedSaplingPaymentAddressSize);
-    if (librustzcash_zip32_sapling_address(
-        reinterpret_cast<unsigned char*>(fvk_bytes.data()),
-        dk.begin(),
-        j.begin(),
-        reinterpret_cast<unsigned char*>(addr_bytes.data()))) {
+    try {
+        auto addr_bytes = sapling::zip32::address(fvk_bytes, dk.GetRawBytes(), j.GetRawBytes());
         CDataStream ss_addr(addr_bytes, SER_NETWORK, PROTOCOL_VERSION);
         libzcash::SaplingPaymentAddress addr;
         ss_addr >> addr;
         return addr;
-    } else {
+    } catch (rust::Error) {
         return std::nullopt;
     }
 }
@@ -110,21 +105,22 @@ libzcash::SaplingPaymentAddress SaplingDiversifiableFullViewingKey::DefaultAddre
 {
     CDataStream ss_fvk(SER_NETWORK, PROTOCOL_VERSION);
     ss_fvk << fvk;
-    CSerializeData fvk_bytes(ss_fvk.begin(), ss_fvk.end());
+    std::array<unsigned char, 96> fvk_bytes;
+    std::copy(ss_fvk.begin(), ss_fvk.end(), fvk_bytes.begin());
 
     diversifier_index_t j_default;
     diversifier_index_t j_ret;
     CSerializeData addr_bytes_ret(libzcash::SerializedSaplingPaymentAddressSize);
-    if (librustzcash_zip32_find_sapling_address(
-        reinterpret_cast<unsigned char*>(fvk_bytes.data()),
-        dk.begin(),
-        j_default.begin(), j_ret.begin(),
-        reinterpret_cast<unsigned char*>(addr_bytes_ret.data()))) {
-        CDataStream ss_addr(addr_bytes_ret, SER_NETWORK, PROTOCOL_VERSION);
+    try {
+        auto found = sapling::zip32::find_address(
+            fvk_bytes,
+            dk.GetRawBytes(),
+            j_default.GetRawBytes());
+        CDataStream ss_addr(found.addr, SER_NETWORK, PROTOCOL_VERSION);
         libzcash::SaplingPaymentAddress addr;
         ss_addr >> addr;
         return addr;
-    } else {
+    } catch (rust::Error) {
         // If we can't obtain a default address, we are *very* unlucky...
         throw std::runtime_error("SaplingDiversifiableFullViewingKey::DefaultAddress(): No valid diversifiers out of 2^88!");
     }
@@ -133,18 +129,16 @@ libzcash::SaplingPaymentAddress SaplingDiversifiableFullViewingKey::DefaultAddre
 libzcash::SaplingDiversifiableFullViewingKey SaplingDiversifiableFullViewingKey::GetInternalDFVK() const {
     CDataStream ss_fvk(SER_NETWORK, PROTOCOL_VERSION);
     ss_fvk << fvk;
-    CSerializeData fvk_bytes(ss_fvk.begin(), ss_fvk.end());
+    std::array<unsigned char, 96> fvk_bytes;
+    std::copy(ss_fvk.begin(), ss_fvk.end(), fvk_bytes.begin());
 
     SaplingDiversifiableFullViewingKey internalDFVK;
     CSerializeData fvk_bytes_ret(libzcash::SerializedSaplingFullViewingKeySize);
-    librustzcash_zip32_sapling_derive_internal_fvk(
-        reinterpret_cast<unsigned char*>(fvk_bytes.data()),
-        dk.begin(),
-        reinterpret_cast<unsigned char*>(fvk_bytes_ret.data()),
-        internalDFVK.dk.begin());
+    auto internal = sapling::zip32::derive_internal_fvk(fvk_bytes, dk.GetRawBytes());
 
-    CDataStream ss_fvk_ret(fvk_bytes_ret, SER_NETWORK, PROTOCOL_VERSION);
+    CDataStream ss_fvk_ret(internal.fvk, SER_NETWORK, PROTOCOL_VERSION);
     ss_fvk_ret >> internalDFVK.fvk;
+    internalDFVK.dk = uint256::FromRawBytes(internal.dk);
     return internalDFVK;
 }
 
@@ -169,11 +163,7 @@ std::pair<uint256, uint256> SaplingDiversifiableFullViewingKey::GetOVKs() const 
 SaplingExtendedSpendingKey SaplingExtendedSpendingKey::Master(const HDSeed& seed)
 {
     auto rawSeed = seed.RawSeed();
-    CSerializeData m_bytes(ZIP32_XSK_SIZE);
-    librustzcash_zip32_sapling_xsk_master(
-        rawSeed.data(),
-        rawSeed.size(),
-        reinterpret_cast<unsigned char*>(m_bytes.data()));
+    auto m_bytes = sapling::zip32::xsk_master({rawSeed.data(), rawSeed.size()});
 
     CDataStream ss(m_bytes, SER_NETWORK, PROTOCOL_VERSION);
     SaplingExtendedSpendingKey xsk_m;
@@ -185,13 +175,10 @@ SaplingExtendedSpendingKey SaplingExtendedSpendingKey::Derive(uint32_t i) const
 {
     CDataStream ss_p(SER_NETWORK, PROTOCOL_VERSION);
     ss_p << *this;
-    CSerializeData p_bytes(ss_p.begin(), ss_p.end());
+    std::array<unsigned char, ZIP32_XSK_SIZE> p_bytes;
+    std::copy(ss_p.begin(), ss_p.end(), p_bytes.begin());
 
-    CSerializeData i_bytes(ZIP32_XSK_SIZE);
-    librustzcash_zip32_sapling_xsk_derive(
-        reinterpret_cast<unsigned char*>(p_bytes.data()),
-        i,
-        reinterpret_cast<unsigned char*>(i_bytes.data()));
+    auto i_bytes = sapling::zip32::xsk_derive(p_bytes, i);
 
     CDataStream ss_i(i_bytes, SER_NETWORK, PROTOCOL_VERSION);
     SaplingExtendedSpendingKey xsk_i;
@@ -251,12 +238,10 @@ SaplingExtendedFullViewingKey SaplingExtendedSpendingKey::ToXFVK() const
 SaplingExtendedSpendingKey SaplingExtendedSpendingKey::DeriveInternalKey() const {
     CDataStream ss_p(SER_NETWORK, PROTOCOL_VERSION);
     ss_p << *this;
-    CSerializeData external_key_bytes(ss_p.begin(), ss_p.end());
+    std::array<unsigned char, ZIP32_XSK_SIZE> external_key_bytes;
+    std::copy(ss_p.begin(), ss_p.end(), external_key_bytes.begin());
 
-    CSerializeData internal_key_bytes(ZIP32_XSK_SIZE);
-    librustzcash_zip32_sapling_xsk_derive_internal(
-        reinterpret_cast<unsigned char*>(external_key_bytes.data()),
-        reinterpret_cast<unsigned char*>(internal_key_bytes.data()));
+    auto internal_key_bytes = sapling::zip32::xsk_derive_internal(external_key_bytes);
 
     CDataStream ss_i(internal_key_bytes, SER_NETWORK, PROTOCOL_VERSION);
     SaplingExtendedSpendingKey xsk_internal;

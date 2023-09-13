@@ -1070,6 +1070,7 @@ dependencies = [
  "cxx",
  "ed25519-zebra",
  "equihash",
+ "getrandom",
  "group",
  "gumdrop",
  "hex",
