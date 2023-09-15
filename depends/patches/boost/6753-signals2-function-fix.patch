@@ -1,0 +1,105 @@
+From 7ca2310b15e387258e97e4cd16887f5ee4906b28 Mon Sep 17 00:00:00 2001
+From: Peter Dimov <pdimov@gmail.com>
+Date: Sun, 3 Sep 2023 17:55:50 +0300
+Subject: [PATCH] Support fn.contains(f) where f is a function. Fixes #46.
+
+---
+ boost/function/function_base.hpp      | 17 +++++++++++-
+ libs/function/test/Jamfile.v2         |  3 +++
+ libs/function/test/contains3_test.cpp | 33 ++++++++++++++++++++++++
+ 3 files changed, 52 insertions(+), 1 deletion(-)
+ create mode 100644 test/contains3_test.cpp
+
+diff --git a/boost/function/function_base.hpp b/boost/function/function_base.hpp
+index 5693e11e..00c7ce8e 100644
+--- a/boost/function/function_base.hpp
++++ b/boost/function/function_base.hpp
+@@ -25,6 +25,7 @@
+ #include <boost/type_traits/alignment_of.hpp>
+ #include <boost/type_traits/enable_if.hpp>
+ #include <boost/type_traits/integral_constant.hpp>
++#include <boost/type_traits/is_function.hpp>
+ #include <boost/assert.hpp>
+ #include <boost/config.hpp>
+ #include <boost/config/workaround.hpp>
+@@ -652,7 +653,8 @@ class function_base
+     }
+ 
+   template<typename F>
+-    bool contains(const F& f) const
++    typename boost::enable_if_< !boost::is_function<F>::value, bool >::type
++	contains(const F& f) const
+     {
+       if (const F* fp = this->template target<F>())
+       {
+@@ -662,6 +664,19 @@ class function_base
+       }
+     }
+ 
++  template<typename Fn>
++    typename boost::enable_if_< boost::is_function<Fn>::value, bool >::type
++	contains(Fn& f) const
++    {
++      typedef Fn* F;
++      if (const F* fp = this->template target<F>())
++      {
++        return function_equal(*fp, &f);
++      } else {
++        return false;
++      }
++    }
++
+ #if defined(__GNUC__) && __GNUC__ == 3 && __GNUC_MINOR__ <= 3
+   // GCC 3.3 and newer cannot copy with the global operator==, due to
+   // problems with instantiation of function return types before it
+diff --git a/libs/function/test/Jamfile.v2 b/libs/function/test/Jamfile.v2
+index 15d401ea..7be87a11 100644
+--- a/libs/function/test/Jamfile.v2
++++ b/libs/function/test/Jamfile.v2
+@@ -90,3 +90,6 @@ run fn_eq_bind_test.cpp ;
+ # /usr/include/c++/4.4/bits/shared_ptr.h:146: error: cannot use typeid with -fno-rtti
+ run contains_test.cpp : : : <rtti>off <toolset>gcc-4.4,<cxxstd>0x:<build>no : contains_test_no_rtti ;
+ run contains2_test.cpp : : : <rtti>off <toolset>gcc-4.4,<cxxstd>0x:<build>no : contains2_test_no_rtti ;
++
++run contains3_test.cpp ;
++run contains3_test.cpp : : : <rtti>off <toolset>gcc-4.4,<cxxstd>0x:<build>no : contains3_test_no_rtti ;
+diff --git a/libs/function/test/contains3_test.cpp b/libs/function/test/contains3_test.cpp
+new file mode 100644
+index 00000000..e6130bbe
+--- /dev/null
++++ b/libs/function/test/contains3_test.cpp
+@@ -0,0 +1,33 @@
++// Copyright 2023 Peter Dimov
++// Distributed under the Boost Software License, Version 1.0.
++// https://www.boost.org/LICENSE_1_0.txt
++
++#include <boost/function.hpp>
++#include <boost/core/lightweight_test.hpp>
++
++static int f()
++{
++    return 1;
++}
++
++static int g()
++{
++    return 2;
++}
++
++int main()
++{
++    {
++        boost::function<int()> fn;
++        BOOST_TEST( !fn.contains( f ) );
++        BOOST_TEST( !fn.contains( g ) );
++    }
++
++    {
++        boost::function<int()> fn( f );
++        BOOST_TEST( fn.contains( f ) );
++        BOOST_TEST( !fn.contains( g ) );
++    }
++
++    return boost::report_errors();
++}
+

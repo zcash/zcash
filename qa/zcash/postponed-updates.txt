@@ -5,27 +5,30 @@
 #
 
 # Clang and Rust are currently pinned to LLVM 15
-libcxx 15.0.7 2023-07-15
-libcxx 16.0.0 2023-07-15
-libcxx 16.0.1 2023-07-15
-libcxx 16.0.2 2023-07-15
-libcxx 16.0.2 2023-07-15
-libcxx 16.0.3 2023-07-15
-libcxx 16.0.4 2023-07-15
-libcxx 16.0.5 2023-07-15
-libcxx 16.0.6 2023-07-15
-native_clang 15.0.7 2023-07-15
-native_clang 16.0.0 2023-07-15
-native_clang 16.0.1 2023-07-15
-native_clang 16.0.2 2023-07-15
-native_clang 16.0.3 2023-07-15
-native_clang 16.0.4 2023-07-15
-native_clang 16.0.5 2023-07-15
-native_clang 16.0.6 2023-07-15
-native_rust 1.70.0 2023-07-15
+libcxx 15.0.7 2023-11-15
+libcxx 16.0.0 2023-11-15
+libcxx 16.0.1 2023-11-15
+libcxx 16.0.2 2023-11-15
+libcxx 16.0.2 2023-11-15
+libcxx 16.0.3 2023-11-15
+libcxx 16.0.4 2023-11-15
+libcxx 16.0.5 2023-11-15
+libcxx 16.0.6 2023-11-15
+native_clang 15.0.7 2023-11-15
+native_clang 16.0.0 2023-11-15
+native_clang 16.0.1 2023-11-15
+native_clang 16.0.2 2023-11-15
+native_clang 16.0.3 2023-11-15
+native_clang 16.0.4 2023-11-15
+native_clang 16.0.5 2023-11-15
+native_clang 16.0.6 2023-11-15
+native_rust 1.70.0 2023-11-15
+native_rust 1.71.0 2023-11-15
+native_rust 1.71.1 2023-11-15
+native_rust 1.72.0 2023-11-15
 
 # We follow upstream Bitcoin Core's LevelDB updates
-leveldb 1.23 2023-07-15
+leveldb 1.23 2023-11-15
 
 # We're never updating to this version
 bdb 18.1.40 2024-03-01
