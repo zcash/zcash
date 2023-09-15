@@ -398,6 +398,15 @@ criteria = "safe-to-deploy"
 delta = "1.0.95 -> 1.0.97"
 notes = "Adds some C++ static_casts to fix MSVC warnings."
 
+[[audits.cxx]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.97 -> 1.0.107"
+notes = """
+New `unsafe` blocks are to implement `CxxVector::new` (exposing `std::vector::new`). The
+remaining changes to `unsafe` code are removing uses of the wrapping `attr!` macro.
+"""
+
 [[audits.cxxbridge-flags]]
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
@@ -443,6 +452,11 @@ delta = "1.0.92 -> 1.0.94"
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.95 -> 1.0.97"
+
+[[audits.cxxbridge-flags]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.97 -> 1.0.106"
 
 [[audits.cxxbridge-macro]]
 who = "Daira Hopwood <daira@jacaranda.org>"
@@ -499,6 +513,12 @@ generated code.
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.95 -> 1.0.97"
+
+[[audits.cxxbridge-macro]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.97 -> 1.0.107"
+notes = "New generated `unsafe` block exposes `std::vector::new` from C++."
 
 [[audits.directories]]
 who = "Jack Grigg <jack@electriccoin.co>"
