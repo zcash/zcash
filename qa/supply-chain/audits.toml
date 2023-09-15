@@ -35,6 +35,12 @@ notes = """
   requirements appear to be satisfied.
 """
 
+[[audits.allocator-api2]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.2.15 -> 0.2.16"
+notes = "Change to `unsafe` block is to fix the `Drop` impl of `Box` to drop its value."
+
 [[audits.anyhow]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -57,10 +63,41 @@ who = "Sean Bowe <ewillbefull@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "1.0.69 -> 1.0.70"
 
+[[audits.anyhow]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.71 -> 1.0.75"
+notes = """
+`unsafe` changes are migrating from `core::any::Demand` to `std::error::Request` when the
+nightly features are available.
+"""
+
 [[audits.arrayref]]
 who = "Sean Bowe <ewillbefull@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "0.3.6 -> 0.3.7"
+
+[[audits.backtrace]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.3.67 -> 0.3.69"
+notes = """
+Changes to `unsafe` blocks:
+- New call to `GetCurrentProcessId` on Windows, to help generate a process-unique name to
+  use inside an existing `CreateMutexA` call.
+- Uses `libc::mmap64` on Linux instead of `libc::mmap`.
+- Alters `Stash` to allow caching more than one `Mmap`; the existing `unsafe` safety
+  condition continues to be applicable.
+
+There are also several more places where DWARF data is mmapped from a filesystem path and
+then loaded. These appear to all derive from existing paths that themselves were already
+being mmapped and loaded.
+"""
+
+[[audits.base64]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.21.3 -> 0.21.4"
 
 [[audits.bech32]]
 who = "Jack Grigg <jack@electriccoin.co>"
@@ -83,17 +120,34 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "0.9.0 -> 0.10.1"
 
+[[audits.bitflags]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "2.3.3 -> 2.4.0"
+
 [[audits.blake2b_simd]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "1.0.0 -> 1.0.1"
 notes = "Switches to `constant_time_eq 0.2.4`, which bumps its MSRV to 1.59."
 
+[[audits.blake2b_simd]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.1 -> 1.0.2"
+notes = "Switches to `constant_time_eq 0.3.0`, which bumps its MSRV to 1.66."
+
 [[audits.blake2s_simd]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "1.0.0 -> 1.0.1"
 notes = "Switches to `constant_time_eq 0.2.4`, which bumps its MSRV to 1.59."
+
+[[audits.blake2s_simd]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.1 -> 1.0.2"
+notes = "Switches to `constant_time_eq 0.3.0`, which bumps its MSRV to 1.66."
 
 [[audits.block-buffer]]
 who = "Jack Grigg <jack@electriccoin.co>"
@@ -137,6 +191,17 @@ notes = """
 Adds a `mem::forget` as part of avoiding `Vec::into_boxed_slice` when it would reallocate.
 I checked that the required semantics of `mem::forget` are maintained, but it seems like
 `ManuallyDrop` should also work here and be compatible with their MSRV.
+"""
+
+[[audits.bytes]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.4.0 -> 1.5.0"
+notes = """
+- Introduces new `unsafe` blocks inside new `UninitSlice` constructors, but these replace
+  existing equivalent `unsafe` blocks that were directly constructing `UninitSlice`.
+- Adds `unsafe impl BufMut for &mut [core::mem::MaybeUninit<u8>]`, which is implemented
+  almost identically to the existing `unsafe impl BufMut for &mut [u8]`.
 """
 
 [[audits.chacha20]]
@@ -206,6 +271,12 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "0.2.5 -> 0.2.6"
 
+[[audits.constant_time_eq]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.2.6 -> 0.3.0"
+notes = "Replaces some `unsafe` code by bumping MSRV to 1.66 (to access `core::hint::black_box`)."
+
 [[audits.cpufeatures]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -216,6 +287,11 @@ notes = "Unsafe changes just introduce `#[inline(never)]` wrappers."
 who = "Sean Bowe <ewillbefull@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "0.2.5 -> 0.2.6"
+
+[[audits.cpufeatures]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.2.8 -> 0.2.9"
 
 [[audits.crossbeam-channel]]
 who = "Jack Grigg <jack@electriccoin.co>"
@@ -322,6 +398,15 @@ criteria = "safe-to-deploy"
 delta = "1.0.95 -> 1.0.97"
 notes = "Adds some C++ static_casts to fix MSVC warnings."
 
+[[audits.cxx]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.97 -> 1.0.107"
+notes = """
+New `unsafe` blocks are to implement `CxxVector::new` (exposing `std::vector::new`). The
+remaining changes to `unsafe` code are removing uses of the wrapping `attr!` macro.
+"""
+
 [[audits.cxxbridge-flags]]
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
@@ -367,6 +452,11 @@ delta = "1.0.92 -> 1.0.94"
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.95 -> 1.0.97"
+
+[[audits.cxxbridge-flags]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.97 -> 1.0.106"
 
 [[audits.cxxbridge-macro]]
 who = "Daira Hopwood <daira@jacaranda.org>"
@@ -424,6 +514,12 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.95 -> 1.0.97"
 
+[[audits.cxxbridge-macro]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.97 -> 1.0.107"
+notes = "New generated `unsafe` block exposes `std::vector::new` from C++."
+
 [[audits.directories]]
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
@@ -444,6 +540,11 @@ Changes to `unsafe` code are migrating from `winapi` to `windows-sys`. The APIs
 are equivalent, with the `windows-sys` ones being slightly more type-safe.
 """
 
+[[audits.ed25519]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "2.2.1 -> 2.2.2"
+
 [[audits.ed25519-zebra]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -459,10 +560,36 @@ but I cannot vouch for their cryptographic correctness or conformance to PEM or 
 remaining changes from 3.1.0 to 4.0.0 fully.
 """
 
+[[audits.ed25519-zebra]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = ["safe-to-deploy", "crypto-reviewed"]
+delta = "4.0.0 -> 4.0.3"
+notes = """
+`SigningKey::from([u8; 32])` parsing now uses `Scalar::from_bytes_mod_order` instead of
+`Scalar::from_bits`. This means that the clamped scalar bits are now reduced before they
+are used, which removes the implicit mul-by-cofactor during scalar multiplication (as the
+last 3 bits of the scalar are no longer guaranteed to be zero). However, this happens to
+be fine in the context of this crate:
+
+- `SigningKey` does not expose its inner `Scalar` directly, so we only need to consider
+  how it is used within the crate.
+- For multiplication within a prime-order (sub)group, we get the same result whether we
+  reduce before or not. This means that the field-element multiplication during signing,
+  and the prime-order subgroup component of any group-element scalar multiplication, are
+  unaffected.
+- The only group element that the `Scalar` is multiplied by is the Ed25519 basepoint,
+  which is torsion free (so the implicit mul-by-cofactor is unnecessary).
+"""
+
 [[audits.either]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "1.8.0 -> 1.8.1"
+
+[[audits.either]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.8.1 -> 1.9.0"
 
 [[audits.equihash]]
 who = "Jack Grigg <jack@z.cash>"
@@ -476,11 +603,26 @@ criteria = "safe-to-deploy"
 delta = "0.1.0 -> 0.2.0"
 notes = "The ECC core team maintains this crate, and we have reviewed every line."
 
+[[audits.equivalent]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.0 -> 1.0.1"
+
+[[audits.errno]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.3.1 -> 0.3.3"
+
 [[audits.f4jumble]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = ["crypto-reviewed", "safe-to-deploy"]
 version = "0.1.0"
 notes = "The ECC core team maintains this crate, and we have reviewed every line."
+
+[[audits.fastrand]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.9.0 -> 2.0.0"
 
 [[audits.ff]]
 who = "Jack Grigg <jack@z.cash>"
@@ -718,6 +860,11 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "0.3.1 -> 0.4.1"
 
+[[audits.hermit-abi]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.3.1 -> 0.3.2"
+
 [[audits.http]]
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
@@ -802,6 +949,11 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.5 -> 1.0.6"
 
+[[audits.itoa]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.6 -> 1.0.9"
+
 [[audits.js-sys]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -882,6 +1034,11 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "0.4.18 -> 0.4.19"
 
+[[audits.log]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.4.19 -> 0.4.20"
+
 [[audits.maybe-rayon]]
 who = "Sean Bowe <ewillbefull@gmail.com>"
 criteria = "safe-to-deploy"
@@ -908,6 +1065,12 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "0.19.0 -> 0.20.1"
 
+[[audits.metrics]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.21.0 -> 0.21.1"
+notes = "Removes an unused `unsafe` public API."
+
 [[audits.metrics-exporter-prometheus]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -922,6 +1085,11 @@ delta = "0.5.1 -> 0.6.0"
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "0.13.0 -> 0.14.0"
+
+[[audits.metrics-util]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.15.0 -> 0.15.1"
 
 [[audits.mio]]
 who = "Jack Grigg <jack@z.cash>"
@@ -970,6 +1138,19 @@ criteria = "safe-to-deploy"
 delta = "0.26.1 -> 0.26.2"
 notes = "Fixes `SockaddrIn6` endianness bug."
 
+[[audits.nix]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.26.2 -> 0.26.4"
+notes = """
+Most of the `unsafe` changes are cleaning up their usage:
+- Replacing `data.len() * std::mem::size_of::<$ty>()` with `std::mem::size_of_val(data)`.
+- Removing some `mem::transmute`s.
+- Using `*mut` instead of `*const` to convey intended semantics.
+
+A new unsafe trait method `SockaddrLike::set_length` is added; it's impls look fine.
+"""
+
 [[audits.num-integer]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -980,6 +1161,12 @@ notes = "Fixes some argument-handling panic bugs."
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "1.14.0 -> 1.15.0"
+
+[[audits.num_cpus]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.15.0 -> 1.16.0"
+notes = "New unsafe code calls AIX `getsystemcfg` API exposed by `libc` to access the SMT mode."
 
 [[audits.object]]
 who = "Jack Grigg <jack@z.cash>"
@@ -995,6 +1182,11 @@ delta = "0.30.2 -> 0.30.3"
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "0.30.3 -> 0.30.4"
+
+[[audits.object]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.32.0 -> 0.32.1"
 
 [[audits.once_cell]]
 who = "Jack Grigg <jack@z.cash>"
@@ -1044,6 +1236,11 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "3.2.1 -> 3.4.0"
 notes = "No new code, just refactoring to remove the `full` feature flag."
+
+[[audits.parity-scale-codec]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "3.6.1 -> 3.6.5"
 
 [[audits.parity-scale-codec-derive]]
 who = "Jack Grigg <jack@z.cash>"
@@ -1146,6 +1343,11 @@ who = "Jack Grigg <thestr4d@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "0.11.1 -> 0.11.2"
 
+[[audits.pin-project-lite]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.2.9 -> 0.2.13"
+
 [[audits.platforms]]
 who = "Daira Emma Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
@@ -1155,6 +1357,11 @@ This crate uses `#![forbid(unsafe_code)]` and its build script is safe. It only 
 information about valid Rust platforms, sourced from the Rust compiler\"; it does not attempt any detection that
 would require unsafety.
 """
+
+[[audits.platforms]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "3.0.2 -> 3.1.2"
 
 [[audits.poly1305]]
 who = "Daira Hopwood <daira@jacaranda.org>"
@@ -1199,6 +1406,11 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.59 -> 1.0.60"
 
+[[audits.proc-macro2]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.66 -> 1.0.67"
+
 [[audits.quanta]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -1208,6 +1420,11 @@ delta = "0.9.3 -> 0.10.1"
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.23 -> 1.0.26"
+
+[[audits.quote]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.31 -> 1.0.33"
 
 [[audits.rand_xorshift]]
 who = "Sean Bowe <ewillbefull@gmail.com>"
@@ -1232,6 +1449,11 @@ I did not verify that the change was move-only, but there is no unsafe code affe
 who = "Sean Bowe <ewillbefull@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "0.3.0 -> 0.5.0"
+
+[[audits.reddsa]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.5.0 -> 0.5.1"
 
 [[audits.redjubjub]]
 who = "Daira Emma Hopwood <daira@jacaranda.org>"
@@ -1265,6 +1487,11 @@ who = "Sean Bowe <ewillbefull@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "0.6.28 -> 0.6.29"
 
+[[audits.regex-syntax]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.7.2 -> 0.7.5"
+
 [[audits.rustc-demangle]]
 who = "Sean Bowe <ewillbefull@gmail.com>"
 criteria = "safe-to-deploy"
@@ -1275,10 +1502,40 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "0.1.22 -> 0.1.23"
 
+[[audits.rustc_version]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+version = "0.4.0"
+notes = """
+Most of the crate is code to parse and validate the output of `rustc -vV`. The caller can
+choose which `rustc` to use, or can use `rustc_version::{version, version_meta}` which will
+try `$RUSTC` followed by `rustc`.
+
+If an adversary can arbitrarily set the `$RUSTC` environment variable then this crate will
+execute arbitrary code. But when this crate is used within a build script, `$RUSTC` should
+be set correctly by `cargo`.
+"""
+
 [[audits.ryu]]
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.12 -> 1.0.13"
+
+[[audits.ryu]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.13 -> 1.0.15"
+
+[[audits.scopeguard]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.1.0 -> 1.2.0"
+notes = "Only change to an `unsafe` block is to replace a `mem::forget` with `ManuallyDrop`."
+
+[[audits.semver]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.17 -> 1.0.18"
 
 [[audits.serde]]
 who = "Jack Grigg <jack@z.cash>"
@@ -1306,6 +1563,12 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.163 -> 1.0.164"
 
+[[audits.serde]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.179 -> 1.0.188"
+notes = "Mostly a bunch of cleanups after bumping MSRV."
+
 [[audits.serde_derive]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -1332,6 +1595,11 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.163 -> 1.0.164"
 
+[[audits.serde_derive]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.179 -> 1.0.188"
+
 [[audits.serde_json]]
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
@@ -1346,6 +1614,16 @@ delta = "1.0.96 -> 1.0.97"
 who = "Jack Grigg <thestr4d@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "1.0.97 -> 1.0.99"
+
+[[audits.serde_json]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.99 -> 1.0.106"
+
+[[audits.serde_json]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.106 -> 1.0.107"
 
 [[audits.sha2]]
 who = "Jack Grigg <jack@electriccoin.co>"
@@ -1366,6 +1644,11 @@ notes = """
 This crate uses `#![forbid(unsafe_code)]`, has no build script, and only provides traits with some trivial default implementations.
 I did not review whether implementing these APIs would present any undocumented cryptographic hazards.
 """
+
+[[audits.siphasher]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.3.10 -> 0.3.11"
 
 [[audits.sketches-ddsketch]]
 who = "Jack Grigg <jack@z.cash>"
@@ -1414,11 +1697,21 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "2.0.15 -> 2.0.18"
 
+[[audits.syn]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "2.0.26 -> 2.0.33"
+
 [[audits.tempfile]]
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "3.5.0 -> 3.6.0"
 notes = "New `build.rs` file uses `autocfg` crate to conditionally enable new trait impls."
+
+[[audits.tempfile]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "3.6.0 -> 3.8.0"
 
 [[audits.terminfo]]
 who = "Jack Grigg <jack@z.cash>"
@@ -1438,6 +1731,11 @@ criteria = "safe-to-deploy"
 delta = "1.0.32 -> 1.0.37"
 notes = "The new build script invokes rustc to determine whether it supports the Provider API. The only side-effect is it overwrites `$OUT_DIR/probe.rs`, which is fine because it is unique to the thiserror package."
 
+[[audits.thiserror]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.43 -> 1.0.48"
+
 [[audits.thiserror-impl]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -1449,6 +1747,11 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "1.0.32 -> 1.0.37"
 notes = "Proc macro changes migrating to the Provider API look fine."
+
+[[audits.thiserror-impl]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.43 -> 1.0.48"
 
 [[audits.thread_local]]
 who = "Jack Grigg <jack@z.cash>"
@@ -1494,6 +1797,15 @@ notes = """
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "0.2.8 -> 0.2.9"
+
+[[audits.time-macros]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.2.9 -> 0.2.14"
+notes = """
+New `unsafe` blocks are because a previously-unsafe macro helper now declares its
+unsafety; no actual logic changes.
+"""
 
 [[audits.tinyvec_macros]]
 who = "Jack Grigg <jack@z.cash>"
@@ -1559,6 +1871,11 @@ criteria = "safe-to-deploy"
 delta = "0.2.3 -> 0.2.4"
 notes = "Fixes unsoundness."
 
+[[audits.typenum]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.16.0 -> 1.17.0"
+
 [[audits.uint]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -1573,6 +1890,11 @@ version = "1.0.2"
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.6 -> 1.0.8"
+
+[[audits.unicode-ident]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.9 -> 1.0.12"
 
 [[audits.universal-hash]]
 who = "Daira Hopwood <daira@jacaranda.org>"
@@ -1641,6 +1963,15 @@ criteria = "safe-to-deploy"
 delta = "4.3.0 -> 4.4.0"
 notes = "New APIs are remixes of existing code."
 
+[[audits.which]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "4.4.0 -> 4.4.2"
+notes = """
+Crate now has `#![forbid(unsafe_code)]`, replacing its last `unsafe` block with a
+dependency on the `rustix` crate.
+"""
+
 [[audits.winnow]]
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
@@ -1651,6 +1982,11 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "0.5.0 -> 0.5.1"
 notes = "Only change to unsafe code is to extract a drop impl into a method. I note however that most of the changes in the published 0.5.1 are not present in the v0.5.1 tag on the GitHub repository."
+
+[[audits.xdg]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "2.5.0 -> 2.5.2"
 
 [[audits.zcash_address]]
 who = "Jack Grigg <jack@z.cash>"
