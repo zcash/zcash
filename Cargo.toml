@@ -42,17 +42,17 @@ bellman = "0.14"
 blake2b_simd = "1"
 blake2s_simd = "1"
 bls12_381 = "0.8"
-bridgetree = "0.3"
+bridgetree = "0.4"
 byteorder = "1"
 crossbeam-channel = "0.5"
 getrandom = "0.2"
 group = "0.13"
-incrementalmerkletree = "0.4"
+incrementalmerkletree = "0.5"
 libc = "0.2"
 jubjub = "0.10"
 memuse = "0.2"
 nonempty = "0.7"
-orchard = "0.5"
+orchard = "0.6"
 secp256k1 = "0.26"
 subtle = "2.2"
 rand_core = "0.6"
@@ -63,8 +63,8 @@ zcash_address = "0.3"
 zcash_encoding = "0.2"
 zcash_history = "0.3"
 zcash_note_encryption = "0.4"
-zcash_primitives = { version = "0.12", features = ["temporary-zcashd", "transparent-inputs"] }
-zcash_proofs = { version = "0.12", features = ["directories"] }
+zcash_primitives = { version = "=0.13.0-rc.1", features = ["temporary-zcashd", "transparent-inputs"] }
+zcash_proofs = { version = "=0.13.0-rc.1", features = ["directories"] }
 ed25519-zebra = "4"
 zeroize = "1.4.2"
 wagyu-zcash-parameters = "0.2"
@@ -107,9 +107,9 @@ thiserror = "1"
 time = { version = "0.3", features = ["formatting", "macros"] }
 
 [dev-dependencies]
-incrementalmerkletree = { version = "0.4", features = ["test-dependencies"] }
+incrementalmerkletree = { version = "0.5", features = ["test-dependencies"] }
 proptest = "1.0.0"
-zcash_primitives = { version = "0.12", features = ["temporary-zcashd", "transparent-inputs", "test-dependencies"] }
+zcash_primitives = { version = "=0.13.0-rc.1", features = ["temporary-zcashd", "transparent-inputs", "test-dependencies"] }
 
 [dependencies.tracing-subscriber]
 version = "0.3"

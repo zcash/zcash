@@ -279,10 +279,6 @@ criteria = "safe-to-deploy"
 version = "0.2.2"
 criteria = "safe-to-deploy"
 
-[[exemptions.incrementalmerkletree]]
-version = "0.3.0"
-criteria = "safe-to-deploy"
-
 [[exemptions.indexmap]]
 version = "1.8.1"
 criteria = "safe-to-deploy"

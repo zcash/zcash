@@ -241,9 +241,9 @@ dependencies = [
 
 [[package]]
 name = "bridgetree"
-version = "0.3.0"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3a813dadc684e4c78a4547757debd99666282545d90e4ccc3210913ed4337ad2"
+checksum = "fbfcb6c5a091e80cb3d3b0c1a7f126af4631cd5065b1f9929b139f1be8f3fb62"
 dependencies = [
  "incrementalmerkletree",
 ]
@@ -940,9 +940,9 @@ dependencies = [
 
 [[package]]
 name = "incrementalmerkletree"
-version = "0.4.0"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2eb91780c91bfc79769006a55c49127b83e1c1a6cf2b3b149ce3f247cbe342f0"
+checksum = "361c467824d4d9d4f284be4b2608800839419dccc4d4608f28345237fe354623"
 dependencies = [
  "either",
  "proptest",
@@ -1359,9 +1359,9 @@ checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 
 [[package]]
 name = "orchard"
-version = "0.5.0"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5f4e7a52f510cb8c39e639e662a353adbaf86025478af89ae54a0551f8ca35e2"
+checksum = "5d31e68534df32024dcc89a8390ec6d7bef65edd87d91b45cfb481a2eb2d77c5"
 dependencies = [
  "aes",
  "bitvec",
@@ -2633,9 +2633,9 @@ dependencies = [
 
 [[package]]
 name = "zcash_primitives"
-version = "0.12.0"
+version = "0.13.0-rc.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "de1a231e6a58d3dcdd6e21d229db33d7c10f9b54d8c170e122b267f6826bb48f"
+checksum = "0cc4391d9325e0a51a7cbff02b5c4b5472d66087bd9c903ddb12dea7ec22f3e0"
 dependencies = [
  "aes",
  "bip0039",
@@ -2670,16 +2670,15 @@ dependencies = [
 
 [[package]]
 name = "zcash_proofs"
-version = "0.12.1"
+version = "0.13.0-rc.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "59d2e066a717f28451a081f2ebd483ddda896cf00d572972c10979d645ffa6c4"
+checksum = "48f22eff3bdc382327ef28f809024ddc89ec6d903ba71be629b2cbea34afdda2"
 dependencies = [
  "bellman",
  "blake2b_simd",
  "bls12_381",
  "group",
  "home",
- "incrementalmerkletree",
  "jubjub",
  "known-folders",
  "lazy_static",
