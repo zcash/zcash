@@ -2,11 +2,10 @@
 # cargo-vet imports lock
 
 [[publisher.bridgetree]]
-version = "0.3.0"
-when = "2023-06-06"
-user-id = 169181
-user-login = "nuttycom"
-user-name = "Kris Nuttycombe"
+version = "0.4.0"
+when = "2023-09-08"
+user-id = 6289
+user-login = "str4d"
 
 [[publisher.bumpalo]]
 version = "3.14.0"
@@ -47,17 +46,16 @@ user-id = 1244
 user-login = "ebfull"
 
 [[publisher.incrementalmerkletree]]
-version = "0.4.0"
-when = "2023-06-06"
-user-id = 169181
-user-login = "nuttycom"
-user-name = "Kris Nuttycombe"
+version = "0.5.0"
+when = "2023-09-08"
+user-id = 6289
+user-login = "str4d"
 
 [[publisher.orchard]]
-version = "0.5.0"
-when = "2023-06-06"
-user-id = 1244
-user-login = "ebfull"
+version = "0.6.0"
+when = "2023-09-08"
+user-id = 6289
+user-login = "str4d"
 
 [[publisher.windows-sys]]
 version = "0.48.0"
@@ -148,14 +146,14 @@ user-login = "nuttycom"
 user-name = "Kris Nuttycombe"
 
 [[publisher.zcash_primitives]]
-version = "0.12.0"
-when = "2023-06-06"
-user-id = 1244
-user-login = "ebfull"
+version = "0.13.0-rc.1"
+when = "2023-09-08"
+user-id = 6289
+user-login = "str4d"
 
 [[publisher.zcash_proofs]]
-version = "0.12.1"
-when = "2023-06-28"
+version = "0.13.0-rc.1"
+when = "2023-09-08"
 user-id = 6289
 user-login = "str4d"
 
