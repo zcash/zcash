@@ -1,8 +1,8 @@
 package=native_cmake
-$(package)_version=3.27.5
+$(package)_version=3.27.6
 $(package)_download_path=https://github.com/Kitware/CMake/releases/download/v$($(package)_version)
 $(package)_file_name=cmake-$($(package)_version).tar.gz
-$(package)_sha256_hash=5175e8fe1ca9b1dd09090130db7201968bcce1595971ff9e9998c2f0765004c9
+$(package)_sha256_hash=ef3056df528569e0e8956f6cf38806879347ac6de6a4ff7e4105dc4578732cfb
 
 define $(package)_set_vars
 $(package)_config_opts += -DCMAKE_BUILD_TYPE:STRING=Release
