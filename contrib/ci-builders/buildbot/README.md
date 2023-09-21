@@ -38,5 +38,4 @@ Currently available images are hosted at https://hub.docker.com/r/electriccoinco
 Additional buildbot workers for Centos8 and Arch.
 
 - Dockerfile-bbworker.arch
-- Dockerfile-bbworker.centos8
 

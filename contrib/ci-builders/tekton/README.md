@@ -31,5 +31,4 @@ Currently available images are hosted at https://hub.docker.com/r/electriccoinco
 Additional Tekton base builders for Centos8 and Arch. Can be used with `Dockerfile-tekton-worker` to create Tekton workers.
 
 - Dockerfile-build.arch
-- Dockerfile-build.centos8
 
