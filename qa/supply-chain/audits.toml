@@ -166,12 +166,6 @@ criteria = "safe-to-deploy"
 delta = "0.7.1 -> 0.8.0"
 notes = "I previously reviewed the crypto-sensitive portions of these changes as well."
 
-[[audits.bridgetree]]
-who = "Kris Nuttycombe <kris@nutty.land>"
-criteria = "safe-to-deploy"
-version = "0.3.0"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
-
 [[audits.bumpalo]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -591,18 +585,6 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.8.1 -> 1.9.0"
 
-[[audits.equihash]]
-who = "Jack Grigg <jack@z.cash>"
-criteria = "safe-to-deploy"
-version = "0.1.0"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
-
-[[audits.equihash]]
-who = "Jack Grigg <jack@z.cash>"
-criteria = "safe-to-deploy"
-delta = "0.1.0 -> 0.2.0"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
-
 [[audits.equivalent]]
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
@@ -612,12 +594,6 @@ delta = "1.0.0 -> 1.0.1"
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "0.3.1 -> 0.3.3"
-
-[[audits.f4jumble]]
-who = "Jack Grigg <jack@z.cash>"
-criteria = ["crypto-reviewed", "safe-to-deploy"]
-version = "0.1.0"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
 
 [[audits.fastrand]]
 who = "Jack Grigg <jack@electriccoin.co>"
@@ -800,51 +776,6 @@ who = "Sean Bowe <ewillbefull@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "0.12.1 -> 0.13.0"
 
-[[audits.halo2_gadgets]]
-who = "Jack Grigg <jack@z.cash>"
-criteria = ["crypto-reviewed", "safe-to-deploy"]
-version = "0.1.0"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
-
-[[audits.halo2_gadgets]]
-who = "Jack Grigg <jack@z.cash>"
-criteria = ["crypto-reviewed", "safe-to-deploy"]
-delta = "0.1.0 -> 0.2.0"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
-
-[[audits.halo2_gadgets]]
-who = "Jack Grigg <jack@electriccoin.co>"
-criteria = ["safe-to-deploy", "crypto-reviewed"]
-delta = "0.2.0 -> 0.3.0"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
-
-[[audits.halo2_legacy_pdqsort]]
-who = "Sean Bowe <ewillbefull@gmail.com>"
-criteria = "safe-to-deploy"
-version = "0.1.0"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
-
-[[audits.halo2_proofs]]
-who = "Jack Grigg <jack@z.cash>"
-criteria = ["crypto-reviewed", "safe-to-deploy"]
-version = "0.1.0"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
-
-[[audits.halo2_proofs]]
-who = "Jack Grigg <jack@z.cash>"
-criteria = ["crypto-reviewed", "safe-to-deploy"]
-delta = "0.1.0 -> 0.2.0"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
-
-[[audits.halo2_proofs]]
-who = "Jack Grigg <jack@electriccoin.co>"
-criteria = ["safe-to-deploy", "crypto-reviewed"]
-delta = "0.2.0 -> 0.3.0"
-notes = """
-The ECC core team maintains this crate, and we have reviewed every line.
-The crate has `deny(unsafe_code)`.
-"""
-
 [[audits.hashbrown]]
 who = "Daira Emma Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
@@ -888,18 +819,6 @@ delta = "0.14.25 -> 0.14.26"
 who = "Jack Grigg <thestr4d@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "0.14.26 -> 0.14.27"
-
-[[audits.incrementalmerkletree]]
-who = "Jack Grigg <jack@electriccoin.co>"
-criteria = "safe-to-deploy"
-delta = "0.3.0 -> 0.3.1"
-notes = "Fixes bug in calculating altitudes from tree positions on 32-bit platforms."
-
-[[audits.incrementalmerkletree]]
-who = "Kris Nuttycombe <kris@nutty.land>"
-criteria = "safe-to-deploy"
-delta = "0.3.1 -> 0.4.0"
-notes = "Removes `bridgetree` to a separate crate & updates Frontier representation."
 
 [[audits.indexmap]]
 who = "Jack Grigg <jack@z.cash>"
@@ -1196,35 +1115,6 @@ notes = """
 Small refactor that reduces the overall amount of `unsafe` code. The new strict provenance
 approach looks reasonable.
 """
-
-[[audits.orchard]]
-who = "Jack Grigg <jack@z.cash>"
-criteria = ["crypto-reviewed", "safe-to-deploy"]
-version = "0.1.0"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
-
-[[audits.orchard]]
-who = "Jack Grigg <jack@z.cash>"
-criteria = ["crypto-reviewed", "safe-to-deploy"]
-delta = "0.1.0 -> 0.2.0"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
-
-[[audits.orchard]]
-who = "Kris Nuttycombe <kris@nutty.land>"
-criteria = "safe-to-deploy"
-delta = "0.2.0 -> 0.3.0"
-
-[[audits.orchard]]
-who = "Jack Grigg <jack@electriccoin.co>"
-criteria = ["safe-to-deploy", "crypto-reviewed"]
-delta = "0.3.0 -> 0.4.0"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
-
-[[audits.orchard]]
-who = "Kris Nuttycombe <kris@nutty.land>"
-criteria = ["safe-to-deploy", "crypto-reviewed"]
-delta = "0.4.0 -> 0.5.0"
-notes = "Updated to use incrementalmerkletree version 0.4.0."
 
 [[audits.pairing]]
 who = "Sean Bowe <ewillbefull@gmail.com>"
@@ -1988,180 +1878,6 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "2.5.0 -> 2.5.2"
 
-[[audits.zcash_address]]
-who = "Jack Grigg <jack@z.cash>"
-criteria = "safe-to-deploy"
-version = "0.1.0"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
-
-[[audits.zcash_address]]
-who = "Kris Nuttycombe <kris@nutty.land>"
-criteria = "safe-to-deploy"
-delta = "0.1.0 -> 0.2.0"
-
-[[audits.zcash_address]]
-who = "Jack Grigg <jack@electriccoin.co>"
-criteria = "safe-to-deploy"
-delta = "0.2.0 -> 0.2.1"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
-
-[[audits.zcash_address]]
-who = "Kris Nuttycombe <kris@nutty.land>"
-criteria = "safe-to-deploy"
-delta = "0.2.1 -> 0.3.0"
-notes = "Updates the bs58 dependency to version 0.5."
-
-[[audits.zcash_encoding]]
-who = "Jack Grigg <jack@z.cash>"
-criteria = "safe-to-deploy"
-version = "0.1.0"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
-
-[[audits.zcash_encoding]]
-who = "Kris Nuttycombe <kris@nutty.land>"
-criteria = "safe-to-deploy"
-delta = "0.1.0 -> 0.2.0"
-
-[[audits.zcash_history]]
-who = "Jack Grigg <jack@z.cash>"
-criteria = "safe-to-deploy"
-version = "0.3.0"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
-
-[[audits.zcash_note_encryption]]
-who = "Jack Grigg <jack@z.cash>"
-criteria = ["crypto-reviewed", "safe-to-deploy"]
-version = "0.1.0"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
-
-[[audits.zcash_note_encryption]]
-who = "Kris Nuttycombe <kris@nutty.land>"
-criteria = "safe-to-deploy"
-delta = "0.1.0 -> 0.2.0"
-
-[[audits.zcash_note_encryption]]
-who = "Jack Grigg <jack@electriccoin.co>"
-criteria = ["safe-to-deploy", "crypto-reviewed"]
-delta = "0.2.0 -> 0.3.0"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
-
-[[audits.zcash_note_encryption]]
-who = "Kris Nuttycombe <kris@nutty.land>"
-criteria = ["safe-to-deploy", "crypto-reviewed"]
-delta = "0.3.0 -> 0.4.0"
-notes = "A minor API change that removes some unused parameters."
-
-[[audits.zcash_primitives]]
-who = "Jack Grigg <jack@z.cash>"
-criteria = ["crypto-reviewed", "safe-to-deploy"]
-version = "0.6.0"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
-
-[[audits.zcash_primitives]]
-who = "Jack Grigg <jack@z.cash>"
-criteria = ["crypto-reviewed", "safe-to-deploy"]
-delta = "0.6.0 -> 0.7.0"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
-
-[[audits.zcash_primitives]]
-who = "Kris Nuttycombe <kris@nutty.land>"
-criteria = "safe-to-deploy"
-delta = "0.7.0 -> 0.8.1"
-
-[[audits.zcash_primitives]]
-who = "Jack Grigg <jack@z.cash>"
-criteria = "safe-to-deploy"
-delta = "0.8.1 -> 0.9.1"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
-
-[[audits.zcash_primitives]]
-who = "Jack Grigg <jack@electriccoin.co>"
-criteria = ["safe-to-deploy", "crypto-reviewed"]
-delta = "0.9.1 -> 0.10.0"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
-
-[[audits.zcash_primitives]]
-who = "Jack Grigg <jack@electriccoin.co>"
-criteria = ["safe-to-deploy", "crypto-reviewed"]
-delta = "0.10.0 -> 0.10.1"
-notes = """
-The ECC core team maintains this crate, and we have reviewed every line.
-This point release temporarily re-exposes some constructors.
-"""
-
-[[audits.zcash_primitives]]
-who = "Jack Grigg <jack@electriccoin.co>"
-criteria = ["safe-to-deploy", "crypto-reviewed"]
-delta = "0.10.1 -> 0.10.2"
-notes = """
-The ECC core team maintains this crate, and we have reviewed every line.
-This point release temporarily re-exposes a constructor.
-"""
-
-[[audits.zcash_primitives]]
-who = "Jack Grigg <jack@electriccoin.co>"
-criteria = ["safe-to-deploy", "crypto-reviewed"]
-delta = "0.10.2 -> 0.11.0"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
-
-[[audits.zcash_primitives]]
-who = "Kris Nuttycombe <kris@nutty.land>"
-criteria = ["safe-to-deploy", "crypto-reviewed"]
-delta = "0.11.0 -> 0.12.0"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
-
-[[audits.zcash_proofs]]
-who = "Jack Grigg <jack@z.cash>"
-criteria = ["crypto-reviewed", "safe-to-deploy"]
-version = "0.6.0"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
-
-[[audits.zcash_proofs]]
-who = "Jack Grigg <jack@z.cash>"
-criteria = ["crypto-reviewed", "safe-to-deploy"]
-delta = "0.6.0 -> 0.7.0"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
-
-[[audits.zcash_proofs]]
-who = "Jack Grigg <jack@z.cash>"
-criteria = ["crypto-reviewed", "safe-to-deploy"]
-delta = "0.7.0 -> 0.7.1"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
-
-[[audits.zcash_proofs]]
-who = "Kris Nuttycombe <kris@nutty.land>"
-criteria = "safe-to-deploy"
-delta = "0.7.1 -> 0.8.0"
-
-[[audits.zcash_proofs]]
-who = "Jack Grigg <jack@z.cash>"
-criteria = "safe-to-deploy"
-delta = "0.8.0 -> 0.9.0"
-
-[[audits.zcash_proofs]]
-who = "Jack Grigg <jack@electriccoin.co>"
-criteria = ["safe-to-deploy", "crypto-reviewed"]
-delta = "0.9.0 -> 0.10.0"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
-
-[[audits.zcash_proofs]]
-who = "Jack Grigg <jack@electriccoin.co>"
-criteria = ["safe-to-deploy", "crypto-reviewed"]
-delta = "0.10.0 -> 0.11.0"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
-
-[[audits.zcash_proofs]]
-who = "Kris Nuttycombe <kris@nutty.land>"
-criteria = ["safe-to-deploy", "crypto-reviewed"]
-delta = "0.11.0 -> 0.12.0"
-notes = "The only change is that the zcash_primitives dependency has been updated to version 0.12."
-
-[[audits.zcash_proofs]]
-who = "Jack Grigg <thestr4d@gmail.com>"
-criteria = "safe-to-deploy"
-delta = "0.12.0 -> 0.12.1"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
-
 [[audits.zeroize]]
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
@@ -2188,6 +1904,78 @@ delta = "1.3.3 -> 1.4.1"
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.4.1 -> 1.4.2"
+
+[[trusted.bridgetree]]
+criteria = "safe-to-deploy"
+user-id = 6289 # str4d
+start = "2023-09-08"
+end = "2024-09-21"
+
+[[trusted.bridgetree]]
+criteria = "safe-to-deploy"
+user-id = 169181 # Kris Nuttycombe (nuttycom)
+start = "2022-07-22"
+end = "2024-09-21"
+
+[[trusted.equihash]]
+criteria = "safe-to-deploy"
+user-id = 6289 # str4d
+start = "2020-06-26"
+end = "2024-09-21"
+
+[[trusted.f4jumble]]
+criteria = ["safe-to-deploy", "crypto-reviewed"]
+user-id = 6289 # str4d
+start = "2021-09-22"
+end = "2024-09-21"
+
+[[trusted.halo2_gadgets]]
+criteria = ["safe-to-deploy", "crypto-reviewed"]
+user-id = 1244 # ebfull
+start = "2022-05-10"
+end = "2024-09-21"
+
+[[trusted.halo2_legacy_pdqsort]]
+criteria = ["safe-to-deploy", "crypto-reviewed"]
+user-id = 199950 # Daira Hopwood (daira)
+start = "2023-02-24"
+end = "2024-09-21"
+
+[[trusted.halo2_proofs]]
+criteria = ["safe-to-deploy", "crypto-reviewed"]
+user-id = 1244 # ebfull
+start = "2022-05-10"
+end = "2024-09-21"
+
+[[trusted.incrementalmerkletree]]
+criteria = "safe-to-deploy"
+user-id = 6289 # str4d
+start = "2021-12-17"
+end = "2024-09-21"
+
+[[trusted.incrementalmerkletree]]
+criteria = "safe-to-deploy"
+user-id = 1244 # ebfull
+start = "2021-06-24"
+end = "2024-09-21"
+
+[[trusted.incrementalmerkletree]]
+criteria = "safe-to-deploy"
+user-id = 169181 # Kris Nuttycombe (nuttycom)
+start = "2023-02-28"
+end = "2024-09-21"
+
+[[trusted.orchard]]
+criteria = ["safe-to-deploy", "crypto-reviewed", "license-reviewed"]
+user-id = 6289 # str4d
+start = "2021-01-07"
+end = "2024-09-21"
+
+[[trusted.orchard]]
+criteria = ["safe-to-deploy", "crypto-reviewed", "license-reviewed"]
+user-id = 1244 # ebfull
+start = "2022-10-19"
+end = "2024-09-21"
 
 [[trusted.windows-sys]]
 criteria = "safe-to-deploy"
@@ -2242,3 +2030,45 @@ criteria = "safe-to-deploy"
 user-id = 64539 # Kenny Kerr (kennykerr)
 start = "2021-10-27"
 end = "2024-06-21"
+
+[[trusted.zcash_address]]
+criteria = "safe-to-deploy"
+user-id = 1244 # ebfull
+start = "2022-10-19"
+end = "2024-09-21"
+
+[[trusted.zcash_encoding]]
+criteria = "safe-to-deploy"
+user-id = 1244 # ebfull
+start = "2022-10-19"
+end = "2024-09-21"
+
+[[trusted.zcash_history]]
+criteria = "safe-to-deploy"
+user-id = 1244 # ebfull
+start = "2020-03-04"
+end = "2024-09-21"
+
+[[trusted.zcash_note_encryption]]
+criteria = ["safe-to-deploy", "crypto-reviewed"]
+user-id = 169181 # Kris Nuttycombe (nuttycom)
+start = "2023-03-22"
+end = "2024-09-21"
+
+[[trusted.zcash_primitives]]
+criteria = ["safe-to-deploy", "crypto-reviewed", "license-reviewed"]
+user-id = 6289 # str4d
+start = "2021-03-26"
+end = "2024-09-21"
+
+[[trusted.zcash_primitives]]
+criteria = ["safe-to-deploy", "crypto-reviewed", "license-reviewed"]
+user-id = 1244 # ebfull
+start = "2019-10-08"
+end = "2024-09-21"
+
+[[trusted.zcash_proofs]]
+criteria = ["safe-to-deploy", "crypto-reviewed", "license-reviewed"]
+user-id = 6289 # str4d
+start = "2021-03-26"
+end = "2024-09-21"
