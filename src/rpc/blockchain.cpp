@@ -308,9 +308,10 @@ UniValue getblockcount(const UniValue& params, bool fHelp)
     if (fHelp || params.size() != 0)
         throw runtime_error(
             "getblockcount\n"
-            "\nReturns the number of blocks in the best valid block chain.\n"
+            "\nReturns the height of the most recent block in the best valid block chain (equivalently,\n"
+            "the number of blocks in this chain excluding the genesis block).\n"
             "\nResult:\n"
-            "n    (numeric) The current block count\n"
+            "n    (numeric) The height of the most recent block.\n"
             "\nExamples:\n"
             + HelpExampleCli("getblockcount", "")
             + HelpExampleRpc("getblockcount", "")
