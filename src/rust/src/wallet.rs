@@ -713,13 +713,19 @@ impl Wallet {
         outpoint: OutPoint,
         checkpoint_depth: usize,
     ) -> Result<OrchardSpendInfo, SpendRetrievalError> {
-        tracing::trace!("Searching for spend information for note at {:?}", outpoint);
+        tracing::trace!(
+            "Searching for spend information for Orchard note at {:?}",
+            outpoint
+        );
         let dnote = self
             .wallet_received_notes
             .get(&outpoint.txid)
             .and_then(|tx_notes| tx_notes.decrypted_notes.get(&outpoint.action_idx))
             .ok_or(SpendRetrievalError::DecryptedNoteNotFound(outpoint))?;
-        tracing::trace!("Wallet has decrypted note for outpoint: {:?}", outpoint);
+        tracing::trace!(
+            "Wallet has decrypted Orchard note for outpoint: {:?}",
+            outpoint
+        );
 
         let fvk = self
             .key_store
@@ -731,7 +737,7 @@ impl Wallet {
                     .get(ivk)
                     .ok_or_else(|| SpendRetrievalError::FvkNotFound(ivk.clone()))
             })?;
-        tracing::trace!("Wallet has FVK for note at {:?}", outpoint);
+        tracing::trace!("Wallet has FVK for Orchard note at {:?}", outpoint);
 
         let position = self
             .wallet_note_positions
@@ -1413,7 +1419,7 @@ pub extern "C" fn orchard_wallet_unspent_notes_are_spendable(wallet: *const Wall
         .all(|(outpoint, _)| match wallet.get_spend_info(*outpoint, 0) {
             Err(spend_info_error) => {
                 tracing::warn!(
-                    "Encountered an error retrieving spend information for unspent note {:?}: {:?}",
+                    "Encountered an error retrieving spend information for unspent Orchard note {:?}: {:?}",
                     outpoint,
                     spend_info_error
                 );
