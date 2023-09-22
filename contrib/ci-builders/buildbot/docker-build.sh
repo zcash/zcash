@@ -49,12 +49,6 @@ docker push electriccoinco/zcashd-gitian-ubuntu2004
 docker build . -f Dockerfile-bbworker.apt --build-arg BASEOS=ubuntu --build-arg FROMBASEOS=ubuntu --build-arg FROMBASEOS_BUILD_TAG=2004 -t electriccoinco/zcashd-bbworker-ubuntu2004
 docker push electriccoinco/zcashd-bbworker-ubuntu2004
 
-# Centos8
-docker build . -f Dockerfile-build.centos8 -t electriccoinco/zcashd-build-centos8
-docker build . -f Dockerfile-bbworker.centos8  -t electriccoinco/zcashd-bbworker-centos8
-docker push electriccoinco/zcashd-build-centos8
-docker push electriccoinco/zcashd-bbworker-centos8
-
 # Arch 20200908
 docker build . -f Dockerfile-build.arch --build-arg ARCHLINUX_TAG=20200908 -t electriccoinco/zcashd-build-arch
 docker build . -f Dockerfile-bbworker.arch  -t electriccoinco/zcashd-bbworker-arch

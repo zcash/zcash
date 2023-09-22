@@ -45,13 +45,6 @@ docker push electriccoinco/zcashd-build-ubuntu2004
 docker build . -f Dockerfile-tekton-worker --build-arg BASEOS=ubuntu --build-arg FROMBASEOS=ubuntu --build-arg FROMBASEOS_BUILD_TAG=2004 -t electriccoinco/zcashd-worker-ubuntu2004
 docker push electriccoinco/zcashd-worker-ubuntu2004
 
-# Centos8
-docker build . -f Dockerfile-build.centos8 -t electriccoinco/zcashd-build-centos8
-docker push electriccoinco/zcashd-build-centos8
-
-docker build . -f Dockerfile-tekton-worker --build-arg FROMBASEOS=centos --build-arg FROMBASEOS_BUILD_TAG=8  -t electriccoinco/zcashd-worker-centos8
-docker push electriccoinco/zcashd-worker-centos8
-
 # Arch 20210418.0.20194
 docker build . -f Dockerfile-build.arch --build-arg FROMBASEOS=archlinux --build-arg FROMBASEOS_BUILD_TAG=base-20210418.0.20194 -t electriccoinco/zcashd-build-archlinux
 docker push electriccoinco/zcashd-build-archlinux
