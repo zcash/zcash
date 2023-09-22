@@ -267,7 +267,7 @@ UniValue getrawchangeaddress(const UniValue& params, bool fHelp)
 
 static void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew)
 {
-    CAmount curBalance = pwalletMain->GetBalance(std::nullopt);
+    CAmount curBalance = pwalletMain->GetBalance(std::nullopt, ISMINE_LEGACY_SPENDABLE, 0);
 
     // Check amount
     if (nValue <= 0)
@@ -1151,9 +1151,12 @@ UniValue getbalance(const UniValue& params, bool fHelp)
     if (fHelp || params.size() > 5)
         throw runtime_error(
             "getbalance ( \"(dummy)\" minconf includeWatchonly inZat asOfHeight )\n"
-            "\nReturns the wallet's available transparent balance. This total\n"
-            "currently includes transparent balances associated with unified\n"
-            "accounts. Prefer to use `z_getbalanceforaccount` instead.\n"
+            "\nReturns the wallet's available balance associated with legacy\n"
+            "transparent addresses. Prefer to use `z_getbalanceforaccount` when\n"
+            "possible.\n"
+            "NOTE: starting in zcashd v4.7.0, this method incorrectly returned\n"
+            "transparent value associated with transparent receivers of the wallet's\n"
+            "unified addresses. This error was corrected in zcashd v5.7.0.\n"
             "\nArguments:\n"
             "1. (dummy)          (string, optional) Remains for backward compatibility. Must be excluded or set to \"*\" or \"\".\n"
             "2. minconf          (numeric, optional, default=0) Only include transactions confirmed at least this many times.\n"
@@ -1184,7 +1187,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
 
     int min_depth = parseMinconf(0, params, 1, asOfHeight);
 
-    isminefilter filter = ISMINE_SPENDABLE;
+    isminefilter filter = ISMINE_LEGACY_SPENDABLE;
     if (!params[2].isNull() && params[2].get_bool()) {
         filter = filter | ISMINE_WATCH_ONLY;
     }
@@ -1209,7 +1212,7 @@ UniValue getunconfirmedbalance(const UniValue &params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    return ValueFromAmount(pwalletMain->GetUnconfirmedTransparentBalance());
+    return ValueFromAmount(pwalletMain->GetUnconfirmedTransparentBalance(ISMINE_LEGACY_SPENDABLE));
 }
 
 
@@ -1312,7 +1315,7 @@ UniValue sendmany(const UniValue& params, bool fHelp)
     EnsureWalletIsUnlocked();
 
     // Check funds
-    if (totalAmount > pwalletMain->GetLegacyBalance(ISMINE_SPENDABLE, nMinDepth)) {
+    if (totalAmount > pwalletMain->GetLegacyBalance(ISMINE_LEGACY_SPENDABLE, nMinDepth)) {
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Wallet has insufficient funds");
     }
 
@@ -1421,7 +1424,7 @@ UniValue ListReceived(const UniValue& params)
     if (params.size() > 1)
         fIncludeEmpty = params[1].get_bool();
 
-    isminefilter filter = ISMINE_SPENDABLE;
+    isminefilter filter = ISMINE_LEGACY_SPENDABLE;
     if(params.size() > 2)
         if(params[2].get_bool())
             filter = filter | ISMINE_WATCH_ONLY;
@@ -1508,9 +1511,9 @@ UniValue listreceivedbyaddress(const UniValue& params, bool fHelp)
         throw runtime_error(
             "listreceivedbyaddress ( minconf includeempty includeWatchonly addressFilter includeImmatureCoinbase asOfHeight )\n"
             "\nList balances by transparent receiving address. This API does not provide\n"
-            "any information for associated with shielded addresses and should only be used\n"
-            "in circumstances where it is necessary to interoperate with legacy Bitcoin\n"
-            "infrastructure.\n"
+            "any information for funds associated with shielded addresses or transparent\n"
+            "receivers of unified addresses and should only be used in circumstances where\n"
+            "it is necessary to interoperate with legacy Bitcoin infrastructure.\n"
             "\nArguments:\n"
             "1. minconf       (numeric, optional, default=1) The minimum number of confirmations before payments are included.\n"
             "2. includeempty  (numeric, optional, default=false) Whether to include addresses that haven't received any payments.\n"
@@ -1641,9 +1644,10 @@ UniValue listtransactions(const UniValue& params, bool fHelp)
             "\nReturns up to 'count' of the most recent transactions associated with legacy transparent\n"
             "addresses of this wallet, skipping the first 'from' transactions.\n"
             "\nThis API does not provide any information about transactions containing shielded inputs\n"
-            "or outputs, and should only be used in circumstances where it is necessary to interoperate\n"
-            "with legacy Bitcoin infrastructure. Use z_listreceivedbyaddress to obtain information about\n"
-            "the wallet's shielded transactions.\n"
+            "or outputs or associated with transparent receivers of unified addresses, and should only\n"
+            "be used in circumstances where it is necessary to interoperate with legacy Bitcoin\n"
+            "infrastructure. Use z_listreceivedbyaddress to obtain information about the wallet's \n"
+            "shielded transactions.\n"
             "\nArguments:\n"
             "1. (dummy)        (string, optional) If set, should be \"*\" for backwards compatibility.\n"
             "2. count          (numeric, optional, default=10) The number of transactions to return\n"
@@ -1699,7 +1703,7 @@ UniValue listtransactions(const UniValue& params, bool fHelp)
     int nFrom = 0;
     if (params.size() > 2)
         nFrom = params[2].get_int();
-    isminefilter filter = ISMINE_SPENDABLE;
+    isminefilter filter = ISMINE_LEGACY_SPENDABLE;
     if(params.size() > 3)
         if(params[3].get_bool())
             filter = filter | ISMINE_WATCH_ONLY;
@@ -1762,6 +1766,10 @@ UniValue listsinceblock(const UniValue& params, bool fHelp)
         throw runtime_error(
             "listsinceblock ( \"blockhash\" target-confirmations includeWatchonly includeRemoved includeChange asOfHeight )\n"
             "\nGet all transactions in blocks since block [blockhash], or all transactions if omitted\n"
+            "\nThis API does not provide any information about transactions containing shielded inputs\n"
+            "or outputs or associated with transparent receivers of unified addresses, and should only\n"
+            "be used in circumstances where it is necessary to interoperate with legacy Bitcoin\n"
+            "infrastructure.\n"
             "\nArguments:\n"
             "1. \"blockhash\"   (string, optional) The block hash to list transactions since\n"
             "2. target-confirmations:    (numeric, optional) The confirmations required, must be 1 or more\n"
@@ -1807,7 +1815,7 @@ UniValue listsinceblock(const UniValue& params, bool fHelp)
 
     CBlockIndex *pindex = NULL;
     int target_confirms = 1;
-    isminefilter filter = ISMINE_SPENDABLE;
+    isminefilter filter = ISMINE_LEGACY_SPENDABLE;
 
     if (params.size() > 0)
     {
@@ -1876,8 +1884,10 @@ UniValue gettransaction(const UniValue& params, bool fHelp)
         throw runtime_error(
             "gettransaction \"txid\" ( includeWatchonly verbose asOfHeight )\n"
             "\nReturns detailed information about in-wallet transaction <txid>. This does not\n"
-            "include complete information about shielded components of the transaction; to obtain\n"
-            "details about shielded components of the transaction use `z_viewtransaction`.\n"
+            "include complete information about shielded components of the transaction, and it\n"
+            "does not include any value associated with transparent receivers of unified addresses;\n"
+            "to obtain details about a transaction with shielded component, or received at a\n"
+            "unified address use `z_viewtransaction`.\n"
             "\nArguments:\n"
             "1. \"txid\"    (string, required) The transaction id\n"
             "2. includeWatchonly    (bool, optional, default=false) Whether to include watchonly addresses in balance calculation and details[]\n"
@@ -1899,7 +1909,7 @@ UniValue gettransaction(const UniValue& params, bool fHelp)
             "  \"details\" : [\n"
             "    {\n"
             "      \"address\" : \"zcashaddress\",   (string) The Zcash address involved in the transaction\n"
-            "      \"category\" : \"send|receive\",    (string) The category, either 'send' or 'receive'\n"
+            "      \"category\" : \"send|receive\",  (string) The category, either 'send' or 'receive'\n"
             "      \"amount\" : x.xxx                  (numeric) The amount in " + CURRENCY_UNIT + "\n"
             "      \"amountZat\" : x                   (numeric) The amount in " + MINOR_CURRENCY_UNIT + "\n"
             "      \"vout\" : n,                       (numeric) the vout value\n"
@@ -1932,7 +1942,7 @@ UniValue gettransaction(const UniValue& params, bool fHelp)
     uint256 hash;
     hash.SetHex(params[0].get_str());
 
-    isminefilter filter = ISMINE_SPENDABLE;
+    isminefilter filter = ISMINE_LEGACY_SPENDABLE;
     if(params.size() > 1)
         if(params[1].get_bool())
             filter = filter | ISMINE_WATCH_ONLY;
@@ -2494,6 +2504,8 @@ UniValue getwalletinfo(const UniValue& params, bool fHelp)
             "{\n"
             "  \"walletversion\": xxxxx,     (numeric) the wallet version\n"
             "  \"balance\": xxxxxxx,         (numeric) the total confirmed transparent balance of the wallet in " + CURRENCY_UNIT + "\n"
+            "                              This includes all value controlled by keys in the wallet, irrespective of what unified \n"
+            "                              account the funds may be associated with (if any).\n"
             "  \"unconfirmed_balance\": xxx, (numeric, optional) the total unconfirmed transparent balance of the wallet in " + CURRENCY_UNIT + ".\n"
             "                              Not included if `asOfHeight` is specified.\n"
             "  \"immature_balance\": xxxxxx, (numeric) the total immature transparent balance of the wallet in " + CURRENCY_UNIT + "\n"
@@ -2521,9 +2533,9 @@ UniValue getwalletinfo(const UniValue& params, bool fHelp)
 
     UniValue obj(UniValue::VOBJ);
     obj.pushKV("walletversion", pwalletMain->GetVersion());
-    obj.pushKV("balance",       ValueFromAmount(pwalletMain->GetBalance(asOfHeight)));
+    obj.pushKV("balance",       ValueFromAmount(pwalletMain->GetBalance(asOfHeight, ISMINE_SPENDABLE_ANY, 0)));
     if (!asOfHeight.has_value()) {
-        obj.pushKV("unconfirmed_balance", ValueFromAmount(pwalletMain->GetUnconfirmedTransparentBalance()));
+        obj.pushKV("unconfirmed_balance", ValueFromAmount(pwalletMain->GetUnconfirmedTransparentBalance(ISMINE_SPENDABLE_ANY)));
     }
     obj.pushKV("immature_balance",    ValueFromAmount(pwalletMain->GetImmatureBalance(asOfHeight)));
     obj.pushKV("shielded_balance",    FormatMoney(getBalanceZaddr(std::nullopt, asOfHeight, 1, INT_MAX)));
@@ -2657,15 +2669,13 @@ UniValue listunspent(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     UniValue results(UniValue::VARR);
-    vector<COutput> vecOutputs;
-    pwalletMain->AvailableCoins(
-            vecOutputs,
+    vector<COutput> vecOutputs = pwalletMain->AvailableCoins(
             asOfHeight,
             false,        // fOnlyConfirmed
             nullptr,      // coinControl
             true,         // fIncludeZeroValue
             true,         // fIncludeCoinBase
-            false,        // fOnlySpendable
+            ISMINE_LEGACY_SPENDABLE,
             nMinDepth,
             destinations);
     for (const COutput& out : vecOutputs) {
@@ -3594,17 +3604,20 @@ UniValue z_listunifiedreceivers(const UniValue& params, bool fHelp)
 }
 
 CAmount getBalanceTaddr(const std::optional<CTxDestination>& taddr, const std::optional<int>& asOfHeight, int minDepth=1, bool ignoreUnspendable=true) {
-    vector<COutput> vecOutputs;
     CAmount balance = 0;
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    pwalletMain->AvailableCoins(vecOutputs, asOfHeight, false, NULL, true);
-    for (const COutput& out : vecOutputs) {
-        if (out.nDepth < minDepth) {
-            continue;
-        }
+    vector<COutput> vecOutputs = pwalletMain->AvailableCoins(
+            asOfHeight,
+            false,        // fOnlyConfirmed
+            nullptr,      // coinControl
+            true,         // fIncludeZeroValue
+            true,         // fIncludeCoinBase
+            ignoreUnspendable ? ISMINE_LEGACY_SPENDABLE : ISMINE_LEGACY_ALL,
+            minDepth);
 
+    for (const COutput& out : vecOutputs) {
         if (ignoreUnspendable && !out.fSpendable) {
             continue;
         }
@@ -5614,8 +5627,13 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
 
     if (useAnyUTXO || taddrs.size() > 0) {
         // Get available utxos
-        vector<COutput> vecOutputs;
-        pwalletMain->AvailableCoins(vecOutputs, std::nullopt, true, NULL, false, false);
+        vector<COutput> vecOutputs = pwalletMain->AvailableCoins(
+            std::nullopt,
+            true,        // fOnlyConfirmed
+            nullptr,     // coinControl
+            false,       // fIncludeZeroValue
+            false,        // fIncludeCoinBase
+            ISMINE_SPENDABLE_ANY);
 
         // Find unspent utxos and update estimated size
         for (const COutput& out : vecOutputs) {

@@ -94,7 +94,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
 #ifdef ENABLE_WALLET
     if (pwalletMain) {
         obj.pushKV("walletversion", pwalletMain->GetVersion());
-        obj.pushKV("balance",       ValueFromAmount(pwalletMain->GetBalance(std::nullopt)));
+        obj.pushKV("balance",       ValueFromAmount(pwalletMain->GetBalance(std::nullopt, ISMINE_SPENDABLE_ANY, 0)));
     }
 #endif
     obj.pushKV("blocks",        (int)chainActive.Height());
@@ -207,7 +207,7 @@ UniValue validateaddress(const UniValue& params, bool fHelp)
 
 #ifdef ENABLE_WALLET
         isminetype mine = pwalletMain ? IsMine(*pwalletMain, dest) : ISMINE_NO;
-        ret.pushKV("ismine", (mine & ISMINE_SPENDABLE) ? true : false);
+        ret.pushKV("ismine", (mine & ISMINE_SPENDABLE_ANY) ? true : false);
         ret.pushKV("iswatchonly", (mine & ISMINE_WATCH_ONLY) ? true: false);
         UniValue detail = std::visit(DescribeAddressVisitor(), dest);
         ret.pushKVs(detail);

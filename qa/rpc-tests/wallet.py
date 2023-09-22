@@ -6,6 +6,7 @@
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
+from test_framework.mininode import COIN
 from test_framework.util import assert_equal, start_nodes, start_node, \
     connect_nodes_bi, sync_blocks, sync_mempools
 from test_framework.zip317 import conventional_fee
@@ -227,6 +228,30 @@ class WalletTest (BitcoinTestFramework):
         assert_equal(0, len(myvjoinsplits))
         assert("joinSplitPubKey" not in mytxdetails)
         assert("joinSplitSig" not in mytxdetails)
+
+        # Get a new transparent address by extracting from a unified address
+        acct0 = self.nodes[0].z_getnewaccount()['account']
+        ua = self.nodes[0].z_getaddressforaccount(acct0)['address']
+        ua_taddr = self.nodes[0].z_listunifiedreceivers(ua)['p2pkh']
+
+        # Check that the ua has no funds.
+        assert_equal(
+                {'pools': {}, 'minimum_confirmations': 1}, 
+                self.nodes[0].z_getbalanceforaccount(acct0))
+        pre_balance = self.nodes[0].getbalance("*", 1, False, True)
+
+        # Send some funds to the transparent receiver of the UA
+        self.nodes[2].sendtoaddress(ua_taddr, 5.0)
+        self.sync_all()
+        self.nodes[2].generate(1)
+        self.sync_all()
+
+        # Check that the funds were received by the unified account, but that
+        # the balance returned by the legacy getbalance method is unchanged
+        assert_equal(
+                self.nodes[0].z_getbalanceforaccount(acct0)['pools']['transparent']['valueZat'], 
+                Decimal(5) * COIN)
+        assert_equal(self.nodes[0].getbalance("*", 1, False, True), pre_balance)
 
 if __name__ == '__main__':
     WalletTest ().main ()

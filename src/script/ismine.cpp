@@ -12,7 +12,6 @@
 #include "script/standard.h"
 #include "script/sign.h"
 
-
 using namespace std;
 
 namespace {
@@ -67,12 +66,17 @@ isminetype IsMineInner(const CKeyStore& keystore, const CScript& scriptPubKey, I
     case TX_PUBKEY:
         keyID = CPubKey(vSolutions[0]).GetID();
         if (keystore.HaveKey(keyID))
-            return ISMINE_SPENDABLE;
+            return ISMINE_LEGACY_SPENDABLE;
         break;
     case TX_PUBKEYHASH:
         keyID = CKeyID(uint160(vSolutions[0]));
-        if (keystore.HaveKey(keyID))
-            return ISMINE_SPENDABLE;
+        if (keystore.HaveKey(keyID)) {
+            if (keystore.GetUFVKMetadataForReceiver(keyID).has_value()) {
+                return ISMINE_ACCOUNT_SPENDABLE;
+            } else {
+                return ISMINE_LEGACY_SPENDABLE;
+            }
+        }
         break;
     case TX_SCRIPTHASH:
     {
@@ -80,8 +84,13 @@ isminetype IsMineInner(const CKeyStore& keystore, const CScript& scriptPubKey, I
         CScript subscript;
         if (keystore.GetCScript(scriptID, subscript)) {
             isminetype ret = IsMineInner(keystore, subscript, IsMineSigVersion::P2SH);
-            if (ret == ISMINE_SPENDABLE)
-                return ret;
+            if (ret & ISMINE_SPENDABLE_ANY) {
+                if (keystore.GetUFVKMetadataForReceiver(scriptID).has_value()) {
+                    return ISMINE_ACCOUNT_SPENDABLE;
+                } else {
+                    return ISMINE_LEGACY_SPENDABLE;
+                }
+            }
         }
         break;
     }
@@ -98,7 +107,7 @@ isminetype IsMineInner(const CKeyStore& keystore, const CScript& scriptPubKey, I
         // in shared-wallet situations.
         vector<valtype> keys(vSolutions.begin()+1, vSolutions.begin()+vSolutions.size()-1);
         if (HaveKeys(keys, keystore) == keys.size())
-            return ISMINE_SPENDABLE;
+            return ISMINE_LEGACY_SPENDABLE;
         break;
     }
     }

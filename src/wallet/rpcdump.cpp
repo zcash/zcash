@@ -158,7 +158,7 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
 void ImportAddress(const CTxDestination& dest, const string& strLabel);
 void ImportScript(const CScript& script, const string& strLabel, bool isRedeemScript)
 {
-    if (!isRedeemScript && ::IsMine(*pwalletMain, script) == ISMINE_SPENDABLE)
+    if (!isRedeemScript && (::IsMine(*pwalletMain, script) & ISMINE_SPENDABLE_ANY) != ISMINE_NO)
         throw JSONRPCError(RPC_WALLET_ERROR, "The wallet already contains the private key for this address or script");
 
     pwalletMain->MarkDirty();
