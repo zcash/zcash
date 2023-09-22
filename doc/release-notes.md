@@ -24,3 +24,10 @@ space as they are no longer read or used by zcashd. If you do wish to use the
 Sprout pool, you will need the `sprout-groth16.params` file in the
 aforementioned directory. This file is currently available for download
 [here](https://download.z.cash/downloads/sprout-groth16.params).
+
+Logging
+-------
+
+A `-trace` command-line option has been added to to allow trace-level logging
+for specific log categories to be enabled at `zcashd` startup. The trace-level
+log output should be assumed to reveal private information.
