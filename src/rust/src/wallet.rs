@@ -583,7 +583,10 @@ impl Wallet {
         // update the block height recorded for the transaction
         let my_notes_for_tx = self.wallet_received_notes.get(txid);
         if my_notes_for_tx.is_some() {
-            tracing::trace!("Tx is ours, marking as mined");
+            tracing::trace!(
+                "transaction {:?} belongs to this wallet, marking as mined",
+                txid
+            );
             assert!(self
                 .wallet_note_positions
                 .insert(
@@ -611,7 +614,11 @@ impl Wallet {
                 .and_then(|n| n.decrypted_notes.get(&action_idx))
                 .is_some()
             {
-                tracing::trace!("Witnessing Orchard note ({}, {})", txid, action_idx);
+                tracing::trace!(
+                    "tracking Orchard note commitment for action {} in tx {}",
+                    action_idx,
+                    txid
+                );
                 let pos = self.commitment_tree.mark().expect("tree is not empty");
                 assert!(self
                     .wallet_note_positions
@@ -655,7 +662,7 @@ impl Wallet {
         ignore_mined: bool,
         require_spending_key: bool,
     ) -> Vec<(OutPoint, DecryptedNote)> {
-        tracing::trace!("Filtering notes");
+        tracing::trace!("Filtering Orchard notes");
         self.wallet_received_notes
             .iter()
             .flat_map(|(txid, tx_notes)| {
@@ -679,7 +686,7 @@ impl Wallet {
                                 {
                                     None
                                 } else {
-                                    tracing::trace!("Selected note at {:?}", outpoint);
+                                    tracing::trace!("Selected Orchard note at {:?}", outpoint);
                                     Some((outpoint, (*dnote).clone()))
                                 }
                             })
@@ -706,13 +713,19 @@ impl Wallet {
         outpoint: OutPoint,
         checkpoint_depth: usize,
     ) -> Result<OrchardSpendInfo, SpendRetrievalError> {
-        tracing::trace!("Searching for {:?}", outpoint);
+        tracing::trace!(
+            "Searching for spend information for Orchard note at {:?}",
+            outpoint
+        );
         let dnote = self
             .wallet_received_notes
             .get(&outpoint.txid)
             .and_then(|tx_notes| tx_notes.decrypted_notes.get(&outpoint.action_idx))
             .ok_or(SpendRetrievalError::DecryptedNoteNotFound(outpoint))?;
-        tracing::trace!("Found decrypted note for outpoint: {:?}", dnote);
+        tracing::trace!(
+            "Wallet has decrypted Orchard note for outpoint: {:?}",
+            outpoint
+        );
 
         let fvk = self
             .key_store
@@ -724,7 +737,7 @@ impl Wallet {
                     .get(ivk)
                     .ok_or_else(|| SpendRetrievalError::FvkNotFound(ivk.clone()))
             })?;
-        tracing::trace!("Found FVK for note");
+        tracing::trace!("Wallet has FVK for Orchard note at {:?}", outpoint);
 
         let position = self
             .wallet_note_positions
@@ -1403,5 +1416,15 @@ pub extern "C" fn orchard_wallet_unspent_notes_are_spendable(wallet: *const Wall
     wallet
         .get_filtered_notes(None, true, true)
         .iter()
-        .all(|(outpoint, _)| wallet.get_spend_info(*outpoint, 0).is_ok())
+        .all(|(outpoint, _)| match wallet.get_spend_info(*outpoint, 0) {
+            Err(spend_info_error) => {
+                tracing::warn!(
+                    "Encountered an error retrieving spend information for unspent Orchard note {:?}: {:?}",
+                    outpoint,
+                    spend_info_error
+                );
+                false
+            }
+            Ok(_) => true,
+        })
 }

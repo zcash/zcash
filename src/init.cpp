@@ -456,6 +456,8 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-debug=<category>", strprintf(_("Output debugging information (default: %u, supplying <category> is optional)"), 0) + ". " +
         _("If <category> is not supplied or if <category> = 1, output all debugging information.") + " " + _("<category> can be:") + " " + debugCategories + ". " +
         _("For multiple specific categories use -debug=<category> multiple times."));
+    strUsage += HelpMessageOpt("-trace=<category>", _("Output trace-level logging information for a specific category. For multiple categories use -trace=<category> multiple times. "
+        "The trace-level log output should be assumed to reveal private information."));
     strUsage += HelpMessageOpt("-experimentalfeatures", _("Enable use of experimental features"));
     if (showDebug)
         strUsage += HelpMessageOpt("-nodebug", "Turn off debugging messages, same as -debug=0");

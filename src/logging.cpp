@@ -77,14 +77,23 @@ std::string LogConfigFilter()
     // With no -debug flags, show errors and LogPrintf lines.
     std::string filter = "error,main=info";
 
-    auto& categories = mapMultiArgs["-debug"];
-    std::set<std::string> setCategories(categories.begin(), categories.end());
-    if (setCategories.count(string("")) != 0 || setCategories.count(string("1")) != 0) {
+    auto& debugCategories = mapMultiArgs["-debug"];
+    std::set<std::string> setDebugCategories(debugCategories.begin(), debugCategories.end());
+    if (setDebugCategories.count(string("")) != 0 || setDebugCategories.count(string("1")) != 0) {
         // Turn on the firehose!
         filter = "debug";
     } else {
-        for (auto category : setCategories) {
+        for (auto category : setDebugCategories) {
             filter += "," + category + "=debug";
+        }
+    }
+
+    auto& traceCategories = mapMultiArgs["-trace"];
+    std::set<std::string> setTraceCategories(traceCategories.begin(), traceCategories.end());
+    for (auto category : setTraceCategories) {
+        // trace-level categories must be enabled individually
+        if (category != string("") && category != string("1")) {
+            filter += "," + category + "=trace";
         }
     }
 
