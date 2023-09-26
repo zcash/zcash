@@ -42,9 +42,9 @@ The [ZIP 317 weight ratio][weight_ratio] of a transaction is used to bucket its
 logical actions and byte size. A weight ratio of at least 1 means that the
 transaction's fee is at least the ZIP 317 conventional fee, and all of its
 logical actions are considered "paid". A weight ratio lower than 1 corresponds
-to the fraction of the transaction's logical actions that are "unpaid", and
-subject to the unpaid action limit that miners configure for their blocks with
-`-blockunpaidactionlimit`.
+to the fraction of the transaction's logical actions that are "paid". The
+remaining fraction (i.e. 1 - weight ratio) are subject to the unpaid action
+limit that miners configure for their blocks with `-blockunpaidactionlimit`.
 
 [logical actions]: https://zips.z.cash/zip-0317#fee-calculation
 [weight_ratio]: https://zips.z.cash/zip-0317#recommended-algorithm-for-block-template-construction
