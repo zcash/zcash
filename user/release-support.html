@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-<html lang="en" class="sidebar-visible no-js light">
+<html lang="en" class="light" dir="ltr">
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
@@ -10,7 +10,7 @@
         
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="theme-color" content="#ffffff" />
+        <meta name="theme-color" content="#ffffff">
 
         <link rel="icon" href="../favicon.svg">
         <link rel="shortcut icon" href="../favicon.png">
@@ -31,7 +31,7 @@
         <!-- Custom theme stylesheets -->
 
     </head>
-    <body>
+    <body class="sidebar-visible no-js">
     <div id="body-container">
         <!-- Provide site root to javascript -->
         <script>
@@ -61,24 +61,29 @@
             try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
             if (theme === null || theme === undefined) { theme = default_theme; }
             var html = document.querySelector('html');
-            html.classList.remove('no-js')
             html.classList.remove('light')
             html.classList.add(theme);
-            html.classList.add('js');
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
         </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
 
         <!-- Hide / unhide sidebar before it is displayed -->
         <script>
-            var html = document.querySelector('html');
+            var body = document.querySelector('body');
             var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
             if (document.body.clientWidth >= 1080) {
                 try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
                 sidebar = sidebar || 'visible';
             } else {
                 sidebar = 'hidden';
             }
-            html.classList.remove('sidebar-visible');
-            html.classList.add("sidebar-" + sidebar);
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
@@ -116,9 +121,9 @@
                                 <div id="menu-bar-hover-placeholder"></div>
                 <div id="menu-bar" class="menu-bar sticky">
                     <div class="left-buttons">
-                        <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
                             <i class="fa fa-bars"></i>
-                        </button>
+                        </label>
                         <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
                             <i class="fa fa-paint-brush"></i>
                         </button>
@@ -200,14 +205,11 @@ automatically updated during each release. &quot;End of Support&quot; dates are 
 time, and may shift due to changes in network solution power.</p>
 <!-- RELEASE_SCRIPT_START_MARKER - If you make changes here, check make-release.py -->
 <div class="table-wrapper"><table><thead><tr><th><code>zcashd</code> version</th><th>Release date</th><th>Halt height</th><th>End of Support</th></tr></thead><tbody>
-<tr><td>5.5.0-rc1</td><td>2023-04-20</td><td>2188024</td><td>2023-08-10</td></tr>
-<tr><td>5.5.0-rc2</td><td>2023-04-25</td><td>2193300</td><td>2023-08-15</td></tr>
-<tr><td>5.5.0-rc3</td><td>2023-04-27</td><td>2195224</td><td>2023-08-17</td></tr>
-<tr><td>5.5.0</td><td>2023-04-27</td><td>2196024</td><td>2023-08-17</td></tr>
-<tr><td>5.5.1</td><td>2023-05-16</td><td>2217487</td><td>2023-09-05</td></tr>
 <tr><td>5.6.0-rc1</td><td>2023-06-08</td><td>2243024</td><td>2023-09-28</td></tr>
 <tr><td>5.6.0</td><td>2023-06-14</td><td>2250924</td><td>2023-10-04</td></tr>
 <tr><td>5.6.1</td><td>2023-06-21</td><td>2258800</td><td>2023-10-11</td></tr>
+<tr><td>5.7.0-rc1</td><td>2023-09-22</td><td>2365300</td><td>2024-01-12</td></tr>
+<tr><td>5.7.0</td><td>2023-09-28</td><td>2372200</td><td>2024-01-18</td></tr>
 </tbody></table>
 </div><!-- RELEASE_SCRIPT_END_MARKER -->
 
@@ -219,7 +221,7 @@ time, and may shift due to changes in network solution power.</p>
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next" href="../user/platform-support.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../user/platform-support.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -233,7 +235,7 @@ time, and may shift due to changes in network solution power.</p>
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next" href="../user/platform-support.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../user/platform-support.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
