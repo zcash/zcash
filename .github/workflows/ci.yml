@@ -1,10 +1,10 @@
-name: Build
+name: CI
 
 on: [push, pull_request]
 
 jobs:
   build:
-    name: Tier ${{ matrix.tier }} platform ${{ matrix.platform }}
+    name: Build tier ${{ matrix.tier }} platform ${{ matrix.platform }}
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ matrix.tier == 3 }}
     strategy:
