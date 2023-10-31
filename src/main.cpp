@@ -6984,12 +6984,19 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
 
     else if (strCommand == "verack")
     {
-        pfrom->SetRecvVersion(min(pfrom->nVersion, PROTOCOL_VERSION));
+        LOCK(cs_main);
+        CNodeState* state = State(pfrom->GetId());
+        if (state->fCurrentlyConnected) {
+            // Reject duplicate verack
+            pfrom->PushMessage("reject", strCommand, REJECT_DUPLICATE, string("Duplicate verack message"));
+            Misbehaving(pfrom->GetId(), 1);
+            return false;
+        }
 
+        pfrom->SetRecvVersion(min(pfrom->nVersion, PROTOCOL_VERSION));
         // Mark this node as currently connected, so we update its timestamp later.
         if (pfrom->fNetworkNode) {
-            LOCK(cs_main);
-            State(pfrom->GetId())->fCurrentlyConnected = true;
+            state->fCurrentlyConnected = true;
         }
     }
 
