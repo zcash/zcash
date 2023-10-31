@@ -6849,8 +6849,6 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
             return false;
         }
 
-        if (pfrom->nVersion == 10300)
-            pfrom->nVersion = 300;
         if (!vRecv.empty())
             vRecv >> addrFrom >> nNonce;
         if (!vRecv.empty()) {
