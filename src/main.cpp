@@ -6802,19 +6802,20 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
             return false;
         }
 
-        int64_t nTime;
+        int32_t nVersion = 0;
+        int64_t nTime = 0;
         CAddress addrMe;
         CAddress addrFrom;
         uint64_t nNonce = 1;
         std::string strSubVer;
         std::string cleanSubVer;
         uint64_t nServices;
-        vRecv >> pfrom->nVersion >> nServices >> nTime >> addrMe;
-        pfrom->nServices = nServices;
-        if (pfrom->nVersion < MIN_PEER_PROTO_VERSION)
+        vRecv >> nVersion >> nServices >> nTime >> addrMe;
+
+        if (nVersion < MIN_PEER_PROTO_VERSION)
         {
             // disconnect from peers older than this proto version
-            LogPrintf("peer=%d using obsolete version %i; disconnecting\n", pfrom->id, pfrom->nVersion);
+            LogPrintf("peer=%d using obsolete version %i; disconnecting\n", pfrom->id, nVersion);
             pfrom->PushMessage("reject", strCommand, REJECT_OBSOLETE,
                                strprintf("Version must be %d or greater", MIN_PEER_PROTO_VERSION));
             pfrom->fDisconnect = true;
@@ -6822,10 +6823,10 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
         }
 
         if (chainparams.NetworkIDString() == "test" &&
-            pfrom->nVersion < MIN_TESTNET_PEER_PROTO_VERSION)
+            nVersion < MIN_TESTNET_PEER_PROTO_VERSION)
         {
             // disconnect from testnet peers older than this proto version
-            LogPrintf("peer=%d using obsolete version %i; disconnecting\n", pfrom->id, pfrom->nVersion);
+            LogPrintf("peer=%d using obsolete version %i; disconnecting\n", pfrom->id, nVersion);
             pfrom->PushMessage("reject", strCommand, REJECT_OBSOLETE,
                                strprintf("Version must be %d or greater", MIN_TESTNET_PEER_PROTO_VERSION));
             pfrom->fDisconnect = true;
@@ -6835,13 +6836,13 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
         // Reject incoming connections from nodes that don't know about the current epoch
         const Consensus::Params& consensusParams = chainparams.GetConsensus();
         auto currentEpoch = CurrentEpoch(GetHeight(), consensusParams);
-        if (pfrom->nVersion < consensusParams.vUpgrades[currentEpoch].nProtocolVersion &&
+        if (nVersion < consensusParams.vUpgrades[currentEpoch].nProtocolVersion &&
             !(
                 chainparams.NetworkIDString() == "regtest" &&
                 !GetBoolArg("-nurejectoldversions", DEFAULT_NU_REJECT_OLD_VERSIONS)
             )
         ) {
-            LogPrintf("peer=%d using obsolete version %i; disconnecting\n", pfrom->id, pfrom->nVersion);
+            LogPrintf("peer=%d using obsolete version %i; disconnecting\n", pfrom->id, nVersion);
             pfrom->PushMessage("reject", strCommand, REJECT_OBSOLETE,
                             strprintf("Version must be %d or greater",
                             consensusParams.vUpgrades[currentEpoch].nProtocolVersion));
@@ -6849,23 +6850,30 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
             return false;
         }
 
-        if (!vRecv.empty())
+        // We've successfully parsed the mandatory fields and checked the version.
+        // It's safe to leave these set even if subsequent parsing fails.
+        pfrom->nVersion = nVersion;
+        pfrom->nServices = nServices;
+
+        if (!vRecv.empty()) {
             vRecv >> addrFrom >> nNonce;
+        }
         if (!vRecv.empty()) {
             vRecv >> LIMITED_STRING(strSubVer, MAX_SUBVERSION_LENGTH);
             cleanSubVer = SanitizeString(strSubVer, SAFE_CHARS_SUBVERSION);
         }
         if (!vRecv.empty()) {
-            int nStartingHeight;
+            int32_t nStartingHeight;
             vRecv >> nStartingHeight;
             pfrom->nStartingHeight = nStartingHeight;
         }
         {
             LOCK(pfrom->cs_filter);
-            if (!vRecv.empty())
+            if (!vRecv.empty()) {
                 vRecv >> pfrom->fRelayTxes; // set to true after we get the first filter* message
-            else
+            } else {
                 pfrom->fRelayTxes = true;
+            }
         }
 
         // Disconnect if we connected to ourself
@@ -6947,6 +6955,7 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
                 item.second.RelayTo(pfrom);
         }
 
+        pfrom->nTimeOffset = timeWarning.AddTimeData(pfrom->addr, nTime, GetTime());
         pfrom->fSuccessfullyConnected = true;
 
         string remoteAddr;
@@ -6957,8 +6966,6 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
                   cleanSubVer, pfrom->nVersion,
                   pfrom->nStartingHeight, addrMe.ToString(), pfrom->id,
                   remoteAddr);
-
-        pfrom->nTimeOffset = timeWarning.AddTimeData(pfrom->addr, nTime, GetTime());
     }
 
 
