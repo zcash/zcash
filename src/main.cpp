@@ -6816,12 +6816,13 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
 
         // Consume all available payload
         // This block might throw an IO exception. If that's the case then
-        // nothing in pfrom will be changed.
+        // nothing in pfrom's state will be changed.
         vRecv >> nVersion >> nServices >> nTime >> addrMe;
         if (nVersion >= 106) {
             if (vRecv.in_avail() < 39) {
                 // Be strict about size of addr_from + nonce + user_agent + start_height
                 pfrom->PushMessage("reject", strCommand, REJECT_MALFORMED, string("Error in message size"));
+                pfrom->fDisconnect = true;
                 return false;
             }
             vRecv >> addrFrom >> nNonce >> LIMITED_STRING(strSubVer, MAX_SUBVERSION_LENGTH) >> nStartingHeight;
@@ -6830,6 +6831,7 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
                 if (vRecv.in_avail() < 1) {
                     // Be strict about relay size
                     pfrom->PushMessage("reject", strCommand, REJECT_MALFORMED, string("Error in message size"));
+                    pfrom->fDisconnect = true;
                     return false;
                 }
                 vRecv >> fRelay;
@@ -6840,6 +6842,7 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
         // have been deliberately bloated on sender's side
         if (vRecv.in_avail() > 0) {
             pfrom->PushMessage("reject", strCommand, REJECT_MALFORMED, string("Error in message size"));
+            pfrom->fDisconnect = true;
             return false;
         }
 
