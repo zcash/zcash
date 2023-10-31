@@ -6802,32 +6802,56 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
             return false;
         }
 
-        int64_t nTime;
-        CAddress addrMe;
-        CAddress addrFrom;
-        uint64_t nNonce = 1;
-        std::string strSubVer;
-        std::string cleanSubVer;
-        uint64_t nServices;
-        vRecv >> pfrom->nVersion >> nServices >> nTime >> addrMe;
-        pfrom->nServices = nServices;
-        if (pfrom->nVersion < MIN_PEER_PROTO_VERSION)
-        {
-            // disconnect from peers older than this proto version
-            LogPrintf("peer=%d using obsolete version %i; disconnecting\n", pfrom->id, pfrom->nVersion);
-            pfrom->PushMessage("reject", strCommand, REJECT_OBSOLETE,
-                               strprintf("Version must be %d or greater", MIN_PEER_PROTO_VERSION));
-            pfrom->fDisconnect = true;
+        // Initialize all temporaries defaults
+        int32_t nVersion{0};
+        uint64_t nServices{0};
+        int64_t nTime{0};
+        CAddress addrMe{};
+        CAddress addrFrom{};
+        uint64_t nNonce{1U};
+        std::string strSubVer{};
+        std::string cleanSubVer{};
+        int32_t nStartingHeight{0};
+        bool fRelay{true};
+
+        // Consume all available payload
+        // This block might throw an IO exception. If that's the case then
+        // nothing in pfrom will be changed.
+        vRecv >> nVersion >> nServices >> nTime >> addrMe;
+        if (nVersion >= 106) {
+            if (vRecv.in_avail() < 39) {
+                // Be strict about size of addr_from + nonce + user_agent + start_height
+                pfrom->PushMessage("reject", strCommand, REJECT_MALFORMED, string("Error in message size"));
+                return false;
+            }
+            vRecv >> addrFrom >> nNonce >> LIMITED_STRING(strSubVer, MAX_SUBVERSION_LENGTH) >> nStartingHeight;
+            cleanSubVer = SanitizeString(strSubVer, SAFE_CHARS_SUBVERSION);
+            if (nVersion >= 70001) {
+                if (vRecv.in_avail() < 1) {
+                    // Be strict about relay size
+                    pfrom->PushMessage("reject", strCommand, REJECT_MALFORMED, string("Error in message size"));
+                    return false;
+                }
+                vRecv >> fRelay;
+            }
+        }
+
+        // Should we still have unconsumed leftover in payload's datastream the message
+        // have been deliberately bloated on sender's side
+        if (vRecv.in_avail() > 0) {
+            pfrom->PushMessage("reject", strCommand, REJECT_MALFORMED, string("Error in message size"));
             return false;
         }
 
-        if (chainparams.NetworkIDString() == "test" &&
-            pfrom->nVersion < MIN_TESTNET_PEER_PROTO_VERSION)
-        {
-            // disconnect from testnet peers older than this proto version
-            LogPrintf("peer=%d using obsolete version %i; disconnecting\n", pfrom->id, pfrom->nVersion);
+        // Validate Payload
+
+        // Minimum allowed protocol version
+        const int32_t nVersion_min{chainparams.NetworkIDString() == "test" ? MIN_TESTNET_PEER_PROTO_VERSION : MIN_PEER_PROTO_VERSION};
+        if (nVersion < nVersion_min) {
+            // disconnect from peers older than this proto version
+            LogPrintf("peer=%d using obsolete version %i; disconnecting\n", pfrom->id, nVersion);
             pfrom->PushMessage("reject", strCommand, REJECT_OBSOLETE,
-                               strprintf("Version must be %d or greater", MIN_TESTNET_PEER_PROTO_VERSION));
+                               strprintf("Version must be %d or greater", nVersion_min));
             pfrom->fDisconnect = true;
             return false;
         }
@@ -6835,65 +6859,54 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
         // Reject incoming connections from nodes that don't know about the current epoch
         const Consensus::Params& consensusParams = chainparams.GetConsensus();
         auto currentEpoch = CurrentEpoch(GetHeight(), consensusParams);
-        if (pfrom->nVersion < consensusParams.vUpgrades[currentEpoch].nProtocolVersion &&
+        if (nVersion < consensusParams.vUpgrades[currentEpoch].nProtocolVersion &&
             !(
                 chainparams.NetworkIDString() == "regtest" &&
-                !GetBoolArg("-nurejectoldversions", DEFAULT_NU_REJECT_OLD_VERSIONS)
-            )
-        ) {
-            LogPrintf("peer=%d using obsolete version %i; disconnecting\n", pfrom->id, pfrom->nVersion);
+                !GetBoolArg("-nurejectoldversions", DEFAULT_NU_REJECT_OLD_VERSIONS))) {
+            LogPrintf("peer=%d using obsolete version %i; disconnecting\n", pfrom->id, nVersion);
             pfrom->PushMessage("reject", strCommand, REJECT_OBSOLETE,
-                            strprintf("Version must be %d or greater",
-                            consensusParams.vUpgrades[currentEpoch].nProtocolVersion));
+                               strprintf("Version must be %d or greater",
+                                         consensusParams.vUpgrades[currentEpoch].nProtocolVersion));
             pfrom->fDisconnect = true;
             return false;
         }
 
-        if (pfrom->nVersion == 10300)
-            pfrom->nVersion = 300;
-        if (!vRecv.empty())
-            vRecv >> addrFrom >> nNonce;
-        if (!vRecv.empty()) {
-            vRecv >> LIMITED_STRING(strSubVer, MAX_SUBVERSION_LENGTH);
-            cleanSubVer = SanitizeString(strSubVer, SAFE_CHARS_SUBVERSION);
-        }
-        if (!vRecv.empty()) {
-            int nStartingHeight;
-            vRecv >> nStartingHeight;
-            pfrom->nStartingHeight = nStartingHeight;
-        }
-        {
-            LOCK(pfrom->cs_filter);
-            if (!vRecv.empty())
-                vRecv >> pfrom->fRelayTxes; // set to true after we get the first filter* message
-            else
-                pfrom->fRelayTxes = true;
-        }
-
         // Disconnect if we connected to ourself
-        if (nNonce == nLocalHostNonce && nNonce > 1)
-        {
+        if (nNonce > 1 && nNonce == nLocalHostNonce) {
             LogPrintf("connected to self at %s, disconnecting\n", pfrom->addr.ToString());
             pfrom->fDisconnect = true;
-            return true;
+            return false;
         }
 
-        pfrom->SetAddrLocal(addrMe);
-        if (pfrom->fInbound && addrMe.IsRoutable())
-        {
-            SeenLocal(addrMe);
-        }
 
-        // Be shy and don't send version until we hear
-        if (pfrom->fInbound)
-            pfrom->PushVersion();
-
+        // Store in node's members
+        pfrom->nVersion = nVersion;
+        pfrom->nServices = nServices;
+        pfrom->fClient = !(nServices & NODE_NETWORK);
+        pfrom->nStartingHeight = nStartingHeight;
         {
             LOCK(pfrom->cs_SubVer);
             pfrom->strSubVer = strSubVer;
             pfrom->cleanSubVer = cleanSubVer;
         }
-        pfrom->fClient = !(pfrom->nServices & NODE_NETWORK);
+        {
+            LOCK(pfrom->cs_filter);
+            pfrom->fRelayTxes = fRelay;
+        }
+
+        pfrom->SetAddrLocal(addrMe);
+        if (pfrom->fInbound && addrMe.IsRoutable()) {
+            SeenLocal(addrMe);
+        }
+
+        // Be shy and don't send our version until we hear
+        if (pfrom->fInbound)
+            pfrom->PushVersion();
+
+        // Change version
+        pfrom->PushMessage("verack");
+        pfrom->ssSend.SetVersion(min(pfrom->nVersion, PROTOCOL_VERSION));
+
 
         // Potentially mark this peer as a preferred download peer.
         {
@@ -6901,9 +6914,6 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
             UpdatePreferredDownload(pfrom, State(pfrom->GetId()));
         }
 
-        // Change version
-        pfrom->PushMessage("verack");
-        pfrom->ssSend.SetVersion(min(pfrom->nVersion, PROTOCOL_VERSION));
 
         if (!pfrom->fInbound)
         {
@@ -6949,8 +6959,6 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
                 item.second.RelayTo(pfrom);
         }
 
-        pfrom->fSuccessfullyConnected = true;
-
         string remoteAddr;
         if (fLogIPs)
             remoteAddr = ", peeraddr=" + pfrom->addr.ToString();
@@ -6961,6 +6969,7 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
                   remoteAddr);
 
         pfrom->nTimeOffset = timeWarning.AddTimeData(pfrom->addr, nTime, GetTime());
+        pfrom->fSuccessfullyConnected = true;
     }
 
 
