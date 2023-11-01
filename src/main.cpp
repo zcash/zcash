@@ -7194,6 +7194,19 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
 
     else if (strCommand == "getdata")
     {
+        const auto nNumItems = ReadCompactSize(vRecv);
+        if (nNumItems > MAX_INV_SZ) {
+            LOCK(cs_main);
+            Misbehaving(pfrom->GetId(), 20);
+            return error("message getdata size() = %u", nNumItems);
+        }
+        if (const auto nExpectedSize = (nNumItems + sizeof(CInv)); nExpectedSize != vRecv.in_avail()) {
+            LOCK(cs_main);
+            Misbehaving(pfrom->GetId(), 20);
+            return error("malformed 'getdata' payload. expected %u bytes, got %u instead", nExpectedSize, vRecv.in_avail());
+        }
+        vRecv.Rewind(GetSizeOfCompactSize(nNumItems));
+
         vector<CInv> vInv;
         vRecv >> vInv;
         if (vInv.size() > MAX_INV_SZ)
