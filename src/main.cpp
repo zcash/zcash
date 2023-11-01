@@ -7120,7 +7120,7 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
 
     else if (strCommand == "inv")
     {
-        if (!ValidateMessageVectorizePayload(pfrom, strCommand, vRecv, /*nMaxItems=*/MAX_INV_SZ, /*nMinItems=*/1, /*nItemSize=*/static_cast<uint32_t>(sizeof(CInv))))
+        if (!ValidateMessageVectorizePayload(pfrom, strCommand, vRecv, /*nMaxItems=*/MAX_INV_SZ, /*nMinItems=*/1, /*nItemSize=*/0))
             return false;
 
         vector<CInv> vInv;
@@ -7191,7 +7191,7 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
 
     else if (strCommand == "getdata")
     {
-        if (!ValidateMessageVectorizePayload(pfrom, strCommand, vRecv, /*nMaxItems=*/MAX_INV_SZ, /*nMinItems=*/1, /*nItemSize=*/static_cast<uint32_t>(sizeof(CInv))))
+        if (!ValidateMessageVectorizePayload(pfrom, strCommand, vRecv, /*nMaxItems=*/MAX_INV_SZ, /*nMinItems=*/1, /*nItemSize=*/0))
             return false;
 
         vector<CInv> vInv;
