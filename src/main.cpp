@@ -7017,7 +7017,7 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
             Misbehaving(pfrom->GetId(), 20);
             return error("message addr size() = %u", nNumItems);
         }
-        if (const auto nExpectedSize = (nNumItems + sizeof(CAddress)); nExpectedSize != vRecv.in_avail()) {
+        if (const auto nExpectedSize = (nNumItems * sizeof(CAddress)); nExpectedSize != vRecv.in_avail()) {
             LOCK(cs_main);
             Misbehaving(pfrom->GetId(), 20);
             return error("malformed 'addr' payload. expected %u bytes, got %u instead", nExpectedSize, vRecv.in_avail());
@@ -7119,7 +7119,7 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
             Misbehaving(pfrom->GetId(), 20);
             return error("message inv size() = %u", nNumItems);
         }
-        if (const auto nExpectedSize = (nNumItems + sizeof(CInv)); nExpectedSize != vRecv.in_avail()) {
+        if (const auto nExpectedSize = (nNumItems * sizeof(CInv)); nExpectedSize != vRecv.in_avail()) {
             LOCK(cs_main);
             Misbehaving(pfrom->GetId(), 20);
             return error("malformed 'inv' payload. expected %u bytes, got %u instead", nExpectedSize, vRecv.in_avail());
@@ -7200,7 +7200,7 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
             Misbehaving(pfrom->GetId(), 20);
             return error("message getdata size() = %u", nNumItems);
         }
-        if (const auto nExpectedSize = (nNumItems + sizeof(CInv)); nExpectedSize != vRecv.in_avail()) {
+        if (const auto nExpectedSize = (nNumItems * sizeof(CInv)); nExpectedSize != vRecv.in_avail()) {
             LOCK(cs_main);
             Misbehaving(pfrom->GetId(), 20);
             return error("malformed 'getdata' payload. expected %u bytes, got %u instead", nExpectedSize, vRecv.in_avail());
