@@ -7012,7 +7012,7 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
             return true;
 
         const auto nNumItems = ReadCompactSize(vRecv);
-        if (nNumItems > 1000) {
+        if (nNumItems > MAX_ADDR_SZ) {
             LOCK(cs_main);
             Misbehaving(pfrom->GetId(), 20);
             return error("message addr size() = %u", nNumItems);
