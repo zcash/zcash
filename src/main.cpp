@@ -6781,7 +6781,7 @@ void static ProcessGetData(CNode* pfrom, const Consensus::Params& consensusParam
     }
 }
 
-bool static ValidateMessageVectorizePayload(CNode* pfrom, const std::string& strCommand, CDataStream& vRecv, uint32_t nMaxItems, uint32_t nMinItems, uint32_t nItemSize) {
+bool static ValidateMessageVectorizedPayload(CNode* pfrom, const std::string& strCommand, CDataStream& vRecv, uint32_t nMaxItems, uint32_t nMinItems, uint32_t nItemSize) {
     const auto nNumItems = ReadCompactSize(vRecv);
     if (nNumItems > nMaxItems || nNumItems < nMinItems) {
         LOCK(cs_main);
@@ -7029,7 +7029,7 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
             return true;
 
         const uint32_t nItemSize = 30U; // static_cast<uint32_t>(sizeof(CAddress)) returns 40 (?!)
-        if (!ValidateMessageVectorizePayload(pfrom, strCommand, vRecv, /*nMaxItems=*/MAX_ADDR_SZ, /*nMinItems=*/1, nItemSize))
+        if (!ValidateMessageVectorizedPayload(pfrom, strCommand, vRecv, /*nMaxItems=*/MAX_ADDR_SZ, /*nMinItems=*/1, nItemSize))
             return false;
 
         vector<CAddress> vAddr;
@@ -7120,7 +7120,7 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
 
     else if (strCommand == "inv")
     {
-        if (!ValidateMessageVectorizePayload(pfrom, strCommand, vRecv, /*nMaxItems=*/MAX_INV_SZ, /*nMinItems=*/1, /*nItemSize=*/0))
+        if (!ValidateMessageVectorizedPayload(pfrom, strCommand, vRecv, /*nMaxItems=*/MAX_INV_SZ, /*nMinItems=*/1, /*nItemSize=*/0))
             return false;
 
         vector<CInv> vInv;
@@ -7191,7 +7191,7 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
 
     else if (strCommand == "getdata")
     {
-        if (!ValidateMessageVectorizePayload(pfrom, strCommand, vRecv, /*nMaxItems=*/MAX_INV_SZ, /*nMinItems=*/1, /*nItemSize=*/0))
+        if (!ValidateMessageVectorizedPayload(pfrom, strCommand, vRecv, /*nMaxItems=*/MAX_INV_SZ, /*nMinItems=*/1, /*nItemSize=*/0))
             return false;
 
         vector<CInv> vInv;
