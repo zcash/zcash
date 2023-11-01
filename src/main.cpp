@@ -7011,15 +7011,16 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
         if (pfrom->nVersion < CADDR_TIME_VERSION && addrman.size() > 1000)
             return true;
 
-        vector<CAddress> vAddr;
-        vRecv >> vAddr;
-
-        if (vAddr.size() > 1000)
-        {
+        const auto nNumItems = ReadCompactSize(vRecv);
+        if (nNumItems > 1000) {
             LOCK(cs_main);
             Misbehaving(pfrom->GetId(), 20);
-            return error("message addr size() = %u", vAddr.size());
+            return error("message addr size() = %u", nNumItems);
         }
+        vRecv.Rewind(GetSizeOfCompactSize(nNumItems));
+        
+        vector<CAddress> vAddr;
+        vRecv >> vAddr;
 
         // Store the new addresses
         vector<CAddress> vAddrOk;
