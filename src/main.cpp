@@ -7028,7 +7028,8 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
         if (pfrom->nVersion < CADDR_TIME_VERSION && addrman.size() > 1000)
             return true;
 
-        if (!ValidateMessageVectorizePayload(pfrom, strCommand, vRecv, /*nMaxItems=*/MAX_ADDR_SZ, /*nMinItems=*/1, /*nItemSize=*/static_cast<uint32_t>(sizeof(CAddress))))
+        const uint32_t nItemSize = 30U; // static_cast<uint32_t>(sizeof(CAddress)) returns 40 (?!)
+        if (!ValidateMessageVectorizePayload(pfrom, strCommand, vRecv, /*nMaxItems=*/MAX_ADDR_SZ, /*nMinItems=*/1, nItemSize))
             return false;
 
         vector<CAddress> vAddr;
