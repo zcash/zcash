@@ -7007,12 +7007,13 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
 
     else if (strCommand == "addr")
     {
-        vector<CAddress> vAddr;
-        vRecv >> vAddr;
-
         // Don't want addr from older versions unless seeding
         if (pfrom->nVersion < CADDR_TIME_VERSION && addrman.size() > 1000)
             return true;
+
+        vector<CAddress> vAddr;
+        vRecv >> vAddr;
+
         if (vAddr.size() > 1000)
         {
             LOCK(cs_main);
