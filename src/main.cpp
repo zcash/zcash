@@ -6781,6 +6781,23 @@ void static ProcessGetData(CNode* pfrom, const Consensus::Params& consensusParam
     }
 }
 
+bool static ValidateMessageVectorizePayload(CNode* pfrom, const std::string& strCommand, CDataStream& vRecv, uint32_t nMaxItems, uint32_t nMinItems, uint32_t nItemSize) {
+    const auto nNumItems = ReadCompactSize(vRecv);
+    if (nNumItems > nMaxItems || nNumItems < nMinItems) {
+        LOCK(cs_main);
+        Misbehaving(pfrom->GetId(), 20);
+        return error("malformed message '%s' max items %u : got %u instead", strCommand, nMaxItems, nNumItems);
+    }
+    if (nItemSize > 0) {
+        if (const auto nExpectedBytes = (nNumItems * nItemSize); nExpectedBytes != static_cast<uint64_t>(vRecv.in_avail())) {
+            LOCK(cs_main);
+            Misbehaving(pfrom->GetId(), 20);
+            return error("malformed message '%s' payload. expected %u bytes, got %u instead", strCommand, nExpectedBytes, static_cast<uint64_t>(vRecv.in_avail()));
+        }
+    }
+    return vRecv.Rewind(GetSizeOfCompactSize(nNumItems));
+}
+
 bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string strCommand, CDataStream& vRecv, int64_t nTimeReceived)
 {
     LogPrint("net", "received: %s (%u bytes) peer=%d\n", SanitizeString(strCommand), vRecv.size(), pfrom->id);
@@ -7011,18 +7028,8 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
         if (pfrom->nVersion < CADDR_TIME_VERSION && addrman.size() > 1000)
             return true;
 
-        const auto nNumItems = ReadCompactSize(vRecv);
-        if (nNumItems > MAX_ADDR_SZ) {
-            LOCK(cs_main);
-            Misbehaving(pfrom->GetId(), 20);
-            return error("message addr size() = %u", nNumItems);
-        }
-        if (const auto nExpectedSize = (nNumItems * sizeof(CAddress)); nExpectedSize != static_cast<uint64_t>(vRecv.in_avail())) {
-            LOCK(cs_main);
-            Misbehaving(pfrom->GetId(), 20);
-            return error("malformed 'addr' payload. expected %u bytes, got %u instead", nExpectedSize, static_cast<uint64_t>(vRecv.in_avail()));
-        }
-        vRecv.Rewind(GetSizeOfCompactSize(nNumItems));
+        if (!ValidateMessageVectorizePayload(pfrom, strCommand, vRecv, /*nMaxItems=*/MAX_ADDR_SZ, /*nMinItems=*/1, /*nItemSize=*/static_cast<uint32_t>(sizeof(CAddress))))
+            return false;
 
         vector<CAddress> vAddr;
         vRecv >> vAddr;
@@ -7112,18 +7119,8 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
 
     else if (strCommand == "inv")
     {
-        const auto nNumItems = ReadCompactSize(vRecv);
-        if (nNumItems > MAX_INV_SZ) {
-            LOCK(cs_main);
-            Misbehaving(pfrom->GetId(), 20);
-            return error("message inv size() = %u", nNumItems);
-        }
-        if (const auto nExpectedSize = (nNumItems * sizeof(CInv)); nExpectedSize != static_cast<uint64_t>(vRecv.in_avail())) {
-            LOCK(cs_main);
-            Misbehaving(pfrom->GetId(), 20);
-            return error("malformed 'inv' payload. expected %u bytes, got %u instead", nExpectedSize, static_cast<uint64_t>(vRecv.in_avail()));
-        }
-        vRecv.Rewind(GetSizeOfCompactSize(nNumItems));
+        if (!ValidateMessageVectorizePayload(pfrom, strCommand, vRecv, /*nMaxItems=*/MAX_INV_SZ, /*nMinItems=*/1, /*nItemSize=*/static_cast<uint32_t>(sizeof(CInv))))
+            return false;
 
         vector<CInv> vInv;
         vRecv >> vInv;
@@ -7193,27 +7190,11 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
 
     else if (strCommand == "getdata")
     {
-        const auto nNumItems = ReadCompactSize(vRecv);
-        if (nNumItems > MAX_INV_SZ) {
-            LOCK(cs_main);
-            Misbehaving(pfrom->GetId(), 20);
-            return error("message getdata size() = %u", nNumItems);
-        }
-        if (const auto nExpectedSize = (nNumItems * sizeof(CInv)); nExpectedSize != static_cast<uint64_t>(vRecv.in_avail())) {
-            LOCK(cs_main);
-            Misbehaving(pfrom->GetId(), 20);
-            return error("malformed 'getdata' payload. expected %u bytes, got %u instead", nExpectedSize, static_cast<uint64_t>(vRecv.in_avail()));
-        }
-        vRecv.Rewind(GetSizeOfCompactSize(nNumItems));
+        if (!ValidateMessageVectorizePayload(pfrom, strCommand, vRecv, /*nMaxItems=*/MAX_INV_SZ, /*nMinItems=*/1, /*nItemSize=*/static_cast<uint32_t>(sizeof(CInv))))
+            return false;
 
         vector<CInv> vInv;
         vRecv >> vInv;
-        if (vInv.size() > MAX_INV_SZ)
-        {
-            LOCK(cs_main);
-            Misbehaving(pfrom->GetId(), 20);
-            return error("message getdata size() = %u", vInv.size());
-        }
 
         if (fDebug || (vInv.size() != 1))
             LogPrint("net", "received getdata (%u invsz) peer=%d\n", vInv.size(), pfrom->id);
