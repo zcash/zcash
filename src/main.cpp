@@ -6782,20 +6782,26 @@ void static ProcessGetData(CNode* pfrom, const Consensus::Params& consensusParam
 }
 
 bool static ValidateMessageVectorizedPayload(CNode* pfrom, const std::string& strCommand, CDataStream& vRecv, uint32_t nMaxItems, uint32_t nMinItems, uint32_t nItemSize) {
-    const auto nNumItems = ReadCompactSize(vRecv);
-    if (nNumItems > nMaxItems || nNumItems < nMinItems) {
-        LOCK(cs_main);
-        Misbehaving(pfrom->GetId(), 20);
-        return error("malformed message '%s' max items %u : got %u instead", strCommand, nMaxItems, nNumItems);
-    }
-    if (nItemSize > 0) {
-        if (const auto nExpectedBytes = (nNumItems * nItemSize); nExpectedBytes != static_cast<uint64_t>(vRecv.in_avail())) {
+    try {
+        const auto nNumItems = ReadCompactSize(vRecv);
+        if (nNumItems > nMaxItems || nNumItems < nMinItems) {
             LOCK(cs_main);
             Misbehaving(pfrom->GetId(), 20);
-            return error("malformed message '%s' payload. expected %u bytes, got %u instead", strCommand, nExpectedBytes, static_cast<uint64_t>(vRecv.in_avail()));
+            return error("malformed message '%s' max items %u : got %u instead", strCommand, nMaxItems, nNumItems);
         }
+        if (nItemSize > 0) {
+            if (const auto nExpectedBytes = (nNumItems * nItemSize); nExpectedBytes != static_cast<uint64_t>(vRecv.in_avail())) {
+                LOCK(cs_main);
+                Misbehaving(pfrom->GetId(), 20);
+                return error("malformed message '%s' payload. expected %u bytes, got %u instead", strCommand, nExpectedBytes, static_cast<uint64_t>(vRecv.in_avail()));
+            }
+        }
+        return vRecv.Rewind(GetSizeOfCompactSize(nNumItems));
+    } catch (const std::ios_base::failure& exception) {
+        LOCK(cs_main);
+        Misbehaving(pfrom->GetId(), 20);
+        return error("malformed message '%s' payload. %s", strCommand, exception.what());
     }
-    return vRecv.Rewind(GetSizeOfCompactSize(nNumItems));
 }
 
 bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string strCommand, CDataStream& vRecv, int64_t nTimeReceived)
