@@ -7112,14 +7112,22 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
 
     else if (strCommand == "inv")
     {
-        vector<CInv> vInv;
-        vRecv >> vInv;
-        if (vInv.size() > MAX_INV_SZ)
-        {
+
+        const auto nNumItems = ReadCompactSize(vRecv);
+        if (nNumItems > MAX_INV_SZ) {
             LOCK(cs_main);
             Misbehaving(pfrom->GetId(), 20);
-            return error("message inv size() = %u", vInv.size());
+            return error("message inv size() = %u", nNumItems);
         }
+        if (const auto nExpectedSize = (nNumItems + sizeof(CInv)); nExpectedSize != vRecv.in_avail()) {
+            LOCK(cs_main);
+            Misbehaving(pfrom->GetId(), 20);
+            return error("malformed 'inv' payload. expected %u bytes, got %u instead", nExpectedSize, vRecv.in_avail());
+        }
+        vRecv.Rewind(GetSizeOfCompactSize(nNumItems));
+
+        vector<CInv> vInv;
+        vRecv >> vInv;
 
         bool fBlocksOnly = GetBoolArg("-blocksonly", DEFAULT_BLOCKSONLY);
 
