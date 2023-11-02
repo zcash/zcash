@@ -74,7 +74,7 @@ Build Zcash along with most dependencies from source by running the following co
 ```
 
 Currently, Zcash is only officially supported on Debian and Ubuntu. See the
-[Debian / Ubuntu build](https://zcash.readthedocs.io/en/latest/rtd_pages/Debian-Ubuntu-build.html)
+[Debian / Ubuntu build](https://zcash.readthedocs.io/en/master/rtd_pages/Debian-Ubuntu-build.html)
 for detailed instructions.
 
 License
