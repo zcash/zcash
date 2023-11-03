@@ -7458,11 +7458,11 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
 
     else if (strCommand == "headers" && !fImporting && !fReindex) // Ignore headers received while importing
     {
-        std::vector<CBlockHeader> headers;
+        
 
         // Bypass the normal CBlock deserialization, as we don't want to risk deserializing 2000 full blocks.
         unsigned int nCount = ReadCompactSize(vRecv);
-        
+
         if (nCount == 0) {
             // Nothing interesting. Stop asking this peer for more headers.
             return true;
@@ -7473,7 +7473,8 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
             Misbehaving(pfrom->GetId(), 20);
             return error("headers message size = %u", nCount);
         }
-        headers.resize(nCount);
+
+        std::vector<CBlockHeader> headers(nCount);
         for (unsigned int n = 0; n < nCount; n++) {
             vRecv >> headers[n];
             ReadCompactSize(vRecv); // ignore tx count; assume it is 0.
