@@ -7459,9 +7459,8 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
     else if (strCommand == "headers" && !fImporting && !fReindex) // Ignore headers received while importing
     {
         
-
         // Bypass the normal CBlock deserialization, as we don't want to risk deserializing 2000 full blocks.
-        unsigned int nCount = ReadCompactSize(vRecv);
+        const unsigned int nCount = ReadCompactSize(vRecv);
 
         if (nCount == 0) {
             // Nothing interesting. Stop asking this peer for more headers.
