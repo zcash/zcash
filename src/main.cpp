@@ -7476,7 +7476,7 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
         std::vector<CBlockHeader> headers(nCount);
         for (unsigned int n = 0; n < nCount; n++) {
             vRecv >> headers[n];
-            ReadCompactSize(vRecv); // ignore tx count; assume it is 0.
+            std::ignore = ReadCompactSize(vRecv); // ignore tx count; assume it is 0.
         }
 
         {
