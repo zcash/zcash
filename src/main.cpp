@@ -7462,6 +7462,12 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
 
         // Bypass the normal CBlock deserialization, as we don't want to risk deserializing 2000 full blocks.
         unsigned int nCount = ReadCompactSize(vRecv);
+        
+        if (nCount == 0) {
+            // Nothing interesting. Stop asking this peer for more headers.
+            return true;
+        }
+
         if (nCount > MAX_HEADERS_RESULTS) {
             LOCK(cs_main);
             Misbehaving(pfrom->GetId(), 20);
@@ -7475,11 +7481,6 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
 
         {
         LOCK(cs_main);
-
-        if (nCount == 0) {
-            // Nothing interesting. Stop asking this peer for more headers.
-            return true;
-        }
 
         // If we already know the last header in the message, then it contains
         // no new information for us.  In this case, we do not request
