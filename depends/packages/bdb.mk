@@ -20,6 +20,7 @@ $(package)_config_opts_darwin=--disable-atomicsupport
 endif
 $(package)_config_opts_aarch64=--disable-atomicsupport
 $(package)_cxxflags+=-std=c++17
+$(package)_cflags+=-Wno-deprecated-non-prototype
 
 ifeq ($(host_os),freebsd)
   $(package)_ldflags+=-static-libstdc++ -lcxxrt
