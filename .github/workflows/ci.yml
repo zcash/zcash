@@ -1,10 +1,13 @@
-name: Build
+name: CI
 
-on: [push, pull_request]
+on:
+  pull_request:
+  push:
+    branches: master
 
 jobs:
   build:
-    name: Tier ${{ matrix.tier }} platform ${{ matrix.platform }}
+    name: Build tier ${{ matrix.tier }} platform ${{ matrix.platform }}
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ matrix.tier == 3 }}
     strategy:
@@ -13,12 +16,12 @@ jobs:
           - name: ubuntu-20.04
             tier: 1
             platform: Ubuntu 20.04
-            os: ubuntu-20.04
+            os: ubuntu-20.04-8cores
 
           - name: ubuntu-22.04
             tier: 3
             platform: Ubuntu 22.04
-            os: ubuntu-22.04
+            os: ubuntu-22.04-8cores
 
           - name: macos-11
             tier: 3
@@ -34,7 +37,7 @@ jobs:
           - name: mingw32
             tier: 3
             platform: Windows (64-bit MinGW)
-            os: ubuntu-latest
+            os: ubuntu-22.04-8cores
             cross_deps: >
               mingw-w64
             host: HOST=x86_64-w64-mingw32
@@ -42,7 +45,7 @@ jobs:
           - name: aarch64-linux
             tier: 3
             platform: ARM64 Linux
-            os: ubuntu-latest
+            os: ubuntu-22.04-8cores
             cross_deps: >
               g++-aarch64-linux-gnu
             host: HOST=aarch64-linux-gnu
