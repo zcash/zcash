@@ -3416,7 +3416,10 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         }
 
         for (const auto& out : tx.vout) {
-            transparentValueDelta += out.nValue;
+            // if the outputs are unspendable, we should not include them in the transparent pool
+            if (!out.scriptPubKey.IsUnspendable()) {
+                transparentValueDelta += out.nValue;
+            }
         }
 
         if (tx.GetSaplingBundle().IsPresent()) {
@@ -4632,7 +4635,9 @@ bool ReceivedBlockTransactions(
         if (pindexNew->pprev == nullptr) {
             chainSupplyDelta = tx.GetValueOut();
             for (const auto& out : tx.vout) {
-                transparentValueDelta += out.nValue;
+                if (!out.scriptPubKey.IsUnspendable()) {
+                    transparentValueDelta += out.nValue;
+                }
             }
         }
 
