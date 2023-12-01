@@ -1,5 +1,0 @@
----
-buildbot_worker_user: zcbbworker
-buildbot_master_host: dev-ci.z.cash
-buildbot_master_port: 9899
-buildbot_worker_host_template: templates/host.j2

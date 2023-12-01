@@ -1,2 +1,0 @@
-export PATH=$HOME/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-export EDITOR=vim

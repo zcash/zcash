@@ -1,6 +1,0 @@
----
-buildbot_deps:
-  - coreutils # For gnproc etc.
-# Most are already installed
-build_deps:
-  - cmake
