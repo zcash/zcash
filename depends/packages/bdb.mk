@@ -22,10 +22,11 @@ $(package)_config_opts_aarch64=--disable-atomicsupport
 $(package)_cxxflags+=-std=c++17
 $(package)_cflags+=-Wno-deprecated-non-prototype
 
+$(package)_ldflags+=-static-libstdc++ -Wno-unused-command-line-argument
 ifeq ($(host_os),freebsd)
-  $(package)_ldflags+=-static-libstdc++ -lcxxrt
+  $(package)_ldflags+=-lcxxrt
 else
-  $(package)_ldflags+=-static-libstdc++ -lc++abi
+  $(package)_ldflags+=-lc++abi
 endif
 
 endef
