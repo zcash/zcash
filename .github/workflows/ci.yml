@@ -41,6 +41,7 @@ jobs:
               cross_deps: >
                 mingw-w64
               host: HOST=x86_64-w64-mingw32
+              file_ext: ".exe"
 
             - name: aarch64-linux
               tier: 3
@@ -117,6 +118,14 @@ jobs:
           ${{ matrix.host }}
           ./zcutil/build.sh
           -j"${{ steps.nproc.outputs.count }}"
+
+      - name: Upload zcashd artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: zcashd-${{ matrix.name }}
+          path: |
+            ${{ format('src/zcash-cli{0}', matrix.file_ext) }}
+            ${{ format('src/zcashd{0}', matrix.file_ext) }}
 
       - name: Build zcashd with libraries enabled
         if: ${{ always() && steps.build.outcome == 'success' }}
