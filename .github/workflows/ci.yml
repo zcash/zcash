@@ -16,17 +16,17 @@ jobs:
             - name: ubuntu-20.04
               tier: 1
               platform: Ubuntu 20.04
-              os: ubuntu-20.04-8cores
+              build_os: ubuntu-20.04-8cores
 
             - name: ubuntu-22.04
               tier: 3
               platform: Ubuntu 22.04
-              os: ubuntu-22.04-8cores
+              build_os: ubuntu-22.04-8cores
 
             - name: macos-11
               tier: 3
               platform: macOS Big Sur 11
-              os: macos-11
+              build_os: macos-11
               brew_deps: >
                 autoconf
                 automake
@@ -37,7 +37,7 @@ jobs:
             - name: mingw32
               tier: 3
               platform: Windows (64-bit MinGW)
-              os: ubuntu-22.04-8cores
+              build_os: ubuntu-22.04-8cores
               cross_deps: >
                 mingw-w64
               host: HOST=x86_64-w64-mingw32
@@ -45,7 +45,7 @@ jobs:
             - name: aarch64-linux
               tier: 3
               platform: ARM64 Linux
-              os: ubuntu-22.04-8cores
+              build_os: ubuntu-22.04-8cores
               cross_deps: >
                 g++-aarch64-linux-gnu
               host: HOST=aarch64-linux-gnu
@@ -62,7 +62,7 @@ jobs:
   build:
     name: Build tier ${{ matrix.tier }} platform ${{ matrix.platform }}
     needs: matrices
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.build_os }}
     continue-on-error: ${{ matrix.tier == 3 }}
     strategy:
       matrix:
