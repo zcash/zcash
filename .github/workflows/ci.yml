@@ -108,7 +108,7 @@ jobs:
       - name: Cache ccache files
         uses: actions/cache@v3
         with:
-          path: ~/.cache/ccache
+          path: ${{ runner.os == 'macOS' && '~/Library/Caches/ccache' || '~/.cache/ccache' }}
           key: ${{ matrix.name }}-ccache-${{ steps.ccache_cache_timestamp.outputs.timestamp }}
           restore-keys: |
             ${{ matrix.name }}-ccache-
@@ -189,7 +189,7 @@ jobs:
       - name: Cache ccache files
         uses: actions/cache@v3
         with:
-          path: ~/.cache/ccache
+          path: ${{ runner.os == 'macOS' && '~/Library/Caches/ccache' || '~/.cache/ccache' }}
           key: ${{ matrix.name }}-ccache-${{ steps.ccache_cache_timestamp.outputs.timestamp }}
           restore-keys: |
             ${{ matrix.name }}-ccache-
