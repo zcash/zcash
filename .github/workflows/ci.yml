@@ -17,16 +17,19 @@ jobs:
               tier: 1
               platform: Ubuntu 20.04
               build_os: ubuntu-20.04-8cores
+              test_os: ubuntu-20.04
 
             - name: ubuntu-22.04
               tier: 3
               platform: Ubuntu 22.04
               build_os: ubuntu-22.04-8cores
+              test_os: ubuntu-22.04
 
             - name: macos-11
               tier: 3
               platform: macOS Big Sur 11
               build_os: macos-11
+              test_os: macos-11
               brew_deps: >
                 autoconf
                 automake
@@ -38,6 +41,7 @@ jobs:
               tier: 3
               platform: Windows (64-bit MinGW)
               build_os: ubuntu-22.04-8cores
+              test_os: windows-latest
               cross_deps: >
                 mingw-w64
               host: HOST=x86_64-w64-mingw32
@@ -53,12 +57,14 @@ jobs:
 
     outputs:
       build_matrix: ${{ steps.set-matrices.outputs.build_matrix }}
+      test_matrix: ${{ steps.set-matrices.outputs.test_matrix }}
     steps:
       - id: set-matrices
         env:
           CFG: ${{ toJSON(matrix.cfg) }}
         run: |
           jq -r -n 'env.CFG | fromjson | @json "build_matrix=\(.data)"' >> $GITHUB_OUTPUT
+          jq -r -n 'env.CFG | fromjson | [.data[] | select(.test_os)] | @json "test_matrix=\(.)"' >> $GITHUB_OUTPUT
 
   build:
     name: Build tier ${{ matrix.tier }} platform ${{ matrix.platform }}
@@ -127,6 +133,20 @@ jobs:
             ${{ format('src/zcash-cli{0}', matrix.file_ext) }}
             ${{ format('src/zcashd{0}', matrix.file_ext) }}
 
+      - name: Upload zcash-btest artifact
+        if: matrix.test_os != ''
+        uses: actions/upload-artifact@v3
+        with:
+          name: zcash-btest-${{ matrix.name }}
+          path: ${{ format('src/test/test_bitcoin{0}', matrix.file_ext) }}
+
+      - name: Upload zcash-gtest artifact
+        if: matrix.test_os != ''
+        uses: actions/upload-artifact@v3
+        with:
+          name: zcash-gtest-${{ matrix.name }}
+          path: ${{ format('src/zcash-gtest{0}', matrix.file_ext) }}
+
       - name: Build zcashd with libraries enabled
         if: ${{ always() && steps.build.outcome == 'success' }}
         run: >
@@ -150,3 +170,59 @@ jobs:
           ${{ matrix.host }}
           ./zcutil/build.sh
           -j"${{ steps.nproc.outputs.count }}"
+
+  test-btest:
+    name: Boost.Test tier ${{ matrix.tier }} platform ${{ matrix.platform }}
+    needs: [matrices, build]
+    runs-on: ${{ matrix.test_os }}
+    continue-on-error: ${{ matrix.tier != 1 }}
+    strategy:
+      matrix:
+        include: ${{ fromJson(needs.matrices.outputs.test_matrix) }}
+    steps:
+      - name: Download zcash-btest artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: zcash-btest-${{ matrix.name }}
+      - name: Make artifact executable
+        if: runner.os != 'Windows'
+        run: chmod +x ${{ format('./test_bitcoin{0}', matrix.file_ext) }}
+      - name: Run Boost.Tests
+        run: ${{ format('./test_bitcoin{0}', matrix.file_ext) }} -p
+
+  test-gtest:
+    name: GoogleTest tier ${{ matrix.tier }} platform ${{ matrix.platform }}
+    needs: [matrices, build]
+    runs-on: ${{ matrix.test_os }}
+    continue-on-error: ${{ matrix.tier != 1 }}
+    strategy:
+      matrix:
+        include: ${{ fromJson(needs.matrices.outputs.test_matrix) }}
+    steps:
+      - name: Download zcash-gtest artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: zcash-gtest-${{ matrix.name }}
+      - name: Make artifact executable
+        if: runner.os != 'Windows'
+        run: chmod +x ${{ format('./zcash-gtest{0}', matrix.file_ext) }}
+      - name: Get environment variables
+        id: env
+        shell: bash
+        run: |
+          echo "appdata=$APPDATA" >> "$GITHUB_OUTPUT"
+          echo "home=$HOME" >> "$GITHUB_OUTPUT"
+      - name: Download Sprout parameters
+        uses: carlosperate/download-file-action@v2.0.1
+        with:
+          file-url: "https://download.z.cash/downloads/sprout-groth16.params"
+          location: >
+            ${{
+              runner.os == 'Windows' && steps.env.outputs.appdata || steps.env.outputs.home
+            }}${{
+              runner.os == 'macOS' && '/Library/Application Support/' || '/'
+            }}${{
+              runner.os == 'Linux' && '.zcash-params' || 'ZcashParams'
+            }}
+      - name: Run GoogleTests
+        run: ${{ format('./zcash-gtest{0}', matrix.file_ext) }}
