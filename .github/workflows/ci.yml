@@ -6,49 +6,74 @@ on:
     branches: master
 
 jobs:
+  matrices:
+    name: Define CI matrix
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        cfg:
+          - data:
+            - name: ubuntu-20.04
+              tier: 1
+              platform: Ubuntu 20.04
+              build_os: ubuntu-20.04-8cores
+              test_os: ubuntu-20.04
+
+            - name: ubuntu-22.04
+              tier: 3
+              platform: Ubuntu 22.04
+              build_os: ubuntu-22.04-8cores
+              test_os: ubuntu-22.04
+
+            - name: macos-11
+              tier: 3
+              platform: macOS Big Sur 11
+              build_os: macos-11
+              test_os: macos-11
+              brew_deps: >
+                autoconf
+                automake
+                coreutils
+                libtool
+                pkgconfig
+
+            - name: mingw32
+              tier: 3
+              platform: Windows (64-bit MinGW)
+              build_os: ubuntu-22.04-8cores
+              test_os: windows-latest
+              cross_deps: >
+                mingw-w64
+              host: HOST=x86_64-w64-mingw32
+              file_ext: ".exe"
+
+            - name: aarch64-linux
+              tier: 3
+              platform: ARM64 Linux
+              build_os: ubuntu-22.04-8cores
+              cross_deps: >
+                g++-aarch64-linux-gnu
+              host: HOST=aarch64-linux-gnu
+
+    outputs:
+      build_matrix: ${{ steps.set-matrices.outputs.build_matrix }}
+      test_matrix: ${{ steps.set-matrices.outputs.test_matrix }}
+    steps:
+      - id: set-matrices
+        env:
+          CFG: ${{ toJSON(matrix.cfg) }}
+        run: |
+          jq -r -n 'env.CFG | fromjson | @json "build_matrix=\(.data)"' >> $GITHUB_OUTPUT
+          jq -r -n 'env.CFG | fromjson | [.data[] | select(.test_os)] | @json "test_matrix=\(.)"' >> $GITHUB_OUTPUT
+
   build:
     name: Build tier ${{ matrix.tier }} platform ${{ matrix.platform }}
-    runs-on: ${{ matrix.os }}
+    needs: matrices
+    runs-on: ${{ matrix.build_os }}
     continue-on-error: ${{ matrix.tier == 3 }}
     strategy:
       matrix:
-        include:
-          - name: ubuntu-20.04
-            tier: 1
-            platform: Ubuntu 20.04
-            os: ubuntu-20.04-8cores
-
-          - name: ubuntu-22.04
-            tier: 3
-            platform: Ubuntu 22.04
-            os: ubuntu-22.04-8cores
-
-          - name: macos-11
-            tier: 3
-            platform: macOS Big Sur 11
-            os: macos-11
-            brew_deps: >
-              autoconf
-              automake
-              coreutils
-              libtool
-              pkgconfig
-
-          - name: mingw32
-            tier: 3
-            platform: Windows (64-bit MinGW)
-            os: ubuntu-22.04-8cores
-            cross_deps: >
-              mingw-w64
-            host: HOST=x86_64-w64-mingw32
-
-          - name: aarch64-linux
-            tier: 3
-            platform: ARM64 Linux
-            os: ubuntu-22.04-8cores
-            cross_deps: >
-              g++-aarch64-linux-gnu
-            host: HOST=aarch64-linux-gnu
+        include: ${{ fromJson(needs.matrices.outputs.build_matrix) }}
 
     steps:
       - uses: actions/checkout@v4
@@ -83,7 +108,7 @@ jobs:
       - name: Cache ccache files
         uses: actions/cache@v3
         with:
-          path: ~/.cache/ccache
+          path: ${{ runner.os == 'macOS' && '~/Library/Caches/ccache' || '~/.cache/ccache' }}
           key: ${{ matrix.name }}-ccache-${{ steps.ccache_cache_timestamp.outputs.timestamp }}
           restore-keys: |
             ${{ matrix.name }}-ccache-
@@ -100,8 +125,81 @@ jobs:
           ./zcutil/build.sh
           -j"${{ steps.nproc.outputs.count }}"
 
+      - name: Upload zcashd artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: zcashd-${{ matrix.name }}
+          path: |
+            ${{ format('src/zcash-cli{0}', matrix.file_ext) }}
+            ${{ format('src/zcashd{0}', matrix.file_ext) }}
+
+      - name: Upload zcash-btest artifact
+        if: matrix.test_os != ''
+        uses: actions/upload-artifact@v3
+        with:
+          name: zcash-btest-${{ matrix.name }}
+          path: ${{ format('src/test/test_bitcoin{0}', matrix.file_ext) }}
+
+      - name: Upload zcash-gtest artifact
+        if: matrix.test_os != ''
+        uses: actions/upload-artifact@v3
+        with:
+          name: zcash-gtest-${{ matrix.name }}
+          path: ${{ format('src/zcash-gtest{0}', matrix.file_ext) }}
+
+  bitrot:
+    name: Bitrot check tier ${{ matrix.tier }} platform ${{ matrix.platform }}
+    needs: [matrices, build]
+    runs-on: ${{ matrix.build_os }}
+    continue-on-error: ${{ matrix.tier == 3 }}
+    strategy:
+      matrix:
+        include: ${{ fromJson(needs.matrices.outputs.build_matrix) }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Homebrew build dependencies
+        if: matrix.brew_deps != ''
+        run: brew install ${{ matrix.brew_deps }}
+
+      - name: Install cross-compilation build dependencies
+        if: matrix.cross_deps != ''
+        run: sudo apt update && sudo apt install ${{ matrix.cross_deps }}
+
+      - name: Configure MinGW to use POSIX variant
+        if: matrix.name == 'mingw32'
+        run: |
+          sudo update-alternatives --set x86_64-w64-mingw32-gcc $(update-alternatives --query x86_64-w64-mingw32-gcc | grep Alternative | grep posix | cut -d' ' -f2)
+          sudo update-alternatives --set x86_64-w64-mingw32-g++ $(update-alternatives --query x86_64-w64-mingw32-g++ | grep Alternative | grep posix | cut -d' ' -f2)
+
+      - name: Cache built dependencies
+        uses: actions/cache@v3
+        with:
+          path: depends/built
+          key: ${{ matrix.name }}-built-${{ hashFiles('depends/Makefile', 'depends/funcs.mk') }}-${{ hashFiles('depends/packages/*.mk', 'depends/patches/**/*') }}
+          restore-keys: |
+            ${{ matrix.name }}-built-${{ hashFiles('depends/Makefile', 'depends/funcs.mk') }}-
+
+      - name: Prepare ccache timestamp
+        id: ccache_cache_timestamp
+        shell: bash
+        run: echo "timestamp=$(date +'%Y-%m-%d-%H;%M;%S')" >> "$GITHUB_OUTPUT"
+
+      - name: Cache ccache files
+        uses: actions/cache@v3
+        with:
+          path: ${{ runner.os == 'macOS' && '~/Library/Caches/ccache' || '~/.cache/ccache' }}
+          key: ${{ matrix.name }}-ccache-${{ steps.ccache_cache_timestamp.outputs.timestamp }}
+          restore-keys: |
+            ${{ matrix.name }}-ccache-
+
+      - name: Get the number of available processing cores
+        id: nproc
+        shell: bash
+        run: echo "count=$(nproc 2> /dev/null || sysctl -n hw.logicalcpu)" >> "$GITHUB_OUTPUT"
+
       - name: Build zcashd with libraries enabled
-        if: ${{ always() && steps.build.outcome == 'success' }}
         run: >
           CONFIGURE_FLAGS="--with-libs"
           ${{ matrix.host }}
@@ -109,7 +207,6 @@ jobs:
           -j"${{ steps.nproc.outputs.count }}"
 
       - name: Build zcashd with wallet disabled
-        if: ${{ always() && steps.build.outcome == 'success' }}
         run: >
           CONFIGURE_FLAGS="--disable-wallet"
           ${{ matrix.host }}
@@ -117,9 +214,64 @@ jobs:
           -j"${{ steps.nproc.outputs.count }}"
 
       - name: Build zcashd with mining disabled
-        if: ${{ always() && steps.build.outcome == 'success' }}
         run: >
           CONFIGURE_FLAGS="--disable-mining"
           ${{ matrix.host }}
           ./zcutil/build.sh
           -j"${{ steps.nproc.outputs.count }}"
+
+  test-btest:
+    name: Boost.Test tier ${{ matrix.tier }} platform ${{ matrix.platform }}
+    needs: [matrices, build]
+    runs-on: ${{ matrix.test_os }}
+    continue-on-error: ${{ matrix.tier != 1 }}
+    strategy:
+      matrix:
+        include: ${{ fromJson(needs.matrices.outputs.test_matrix) }}
+    steps:
+      - name: Download zcash-btest artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: zcash-btest-${{ matrix.name }}
+      - name: Make artifact executable
+        if: runner.os != 'Windows'
+        run: chmod +x ${{ format('./test_bitcoin{0}', matrix.file_ext) }}
+      - name: Run Boost.Tests
+        run: ${{ format('./test_bitcoin{0}', matrix.file_ext) }} -p
+
+  test-gtest:
+    name: GoogleTest tier ${{ matrix.tier }} platform ${{ matrix.platform }}
+    needs: [matrices, build]
+    runs-on: ${{ matrix.test_os }}
+    continue-on-error: ${{ matrix.tier != 1 }}
+    strategy:
+      matrix:
+        include: ${{ fromJson(needs.matrices.outputs.test_matrix) }}
+    steps:
+      - name: Download zcash-gtest artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: zcash-gtest-${{ matrix.name }}
+      - name: Make artifact executable
+        if: runner.os != 'Windows'
+        run: chmod +x ${{ format('./zcash-gtest{0}', matrix.file_ext) }}
+      - name: Get environment variables
+        id: env
+        shell: bash
+        run: |
+          echo "appdata=$APPDATA" >> "$GITHUB_OUTPUT"
+          echo "home=$HOME" >> "$GITHUB_OUTPUT"
+      - name: Download Sprout parameters
+        uses: carlosperate/download-file-action@v2.0.1
+        with:
+          file-url: "https://download.z.cash/downloads/sprout-groth16.params"
+          location: >
+            ${{
+              runner.os == 'Windows' && steps.env.outputs.appdata || steps.env.outputs.home
+            }}${{
+              runner.os == 'macOS' && '/Library/Application Support/' || '/'
+            }}${{
+              runner.os == 'Linux' && '.zcash-params' || 'ZcashParams'
+            }}
+      - name: Run GoogleTests
+        run: ${{ format('./zcash-gtest{0}', matrix.file_ext) }}
