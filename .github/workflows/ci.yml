@@ -232,7 +232,7 @@ jobs:
         include: ${{ fromJson(needs.matrices.outputs.test_matrix) }}
     steps:
       - name: Download zcash-btest artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: zcash-btest-${{ matrix.name }}
       - name: Make artifact executable
@@ -253,7 +253,7 @@ jobs:
         include: ${{ fromJson(needs.matrices.outputs.test_matrix) }}
     steps:
       - name: Download zcash-gtest artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: zcash-gtest-${{ matrix.name }}
       - name: Make artifact executable
