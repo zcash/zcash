@@ -58,6 +58,7 @@ jobs:
     outputs:
       build_matrix: ${{ steps.set-matrices.outputs.build_matrix }}
       test_matrix: ${{ steps.set-matrices.outputs.test_matrix }}
+      test_names: ${{ steps.set-matrices.outputs.test_names }}
     steps:
       - id: set-matrices
         env:
@@ -65,6 +66,7 @@ jobs:
         run: |
           jq -r -n 'env.CFG | fromjson | @json "build_matrix=\(.data)"' >> $GITHUB_OUTPUT
           jq -r -n 'env.CFG | fromjson | [.data[] | select(.test_os)] | @json "test_matrix=\(.)"' >> $GITHUB_OUTPUT
+          jq -r -n 'env.CFG | fromjson | [.data[] | select(.test_os) | .name] | @json "test_names=\(.)"' >> $GITHUB_OUTPUT
 
   build:
     name: Build tier ${{ matrix.tier }} platform ${{ matrix.platform }}
@@ -240,12 +242,14 @@ jobs:
         run: ${{ format('./test_bitcoin{0}', matrix.file_ext) }} -p
 
   test-gtest:
-    name: GoogleTest tier ${{ matrix.tier }} platform ${{ matrix.platform }}
+    name: GoogleTest tier ${{ matrix.tier }} platform ${{ matrix.platform }} - shard ${{ matrix.gtest_shards }}
     needs: [matrices, build]
     runs-on: ${{ matrix.test_os }}
     continue-on-error: ${{ matrix.tier != 1 }}
     strategy:
       matrix:
+        name: ${{ fromJson(needs.matrices.outputs.test_names) }}
+        shard_index: [0, 1]
         include: ${{ fromJson(needs.matrices.outputs.test_matrix) }}
     steps:
       - name: Download zcash-gtest artifact
@@ -274,4 +278,7 @@ jobs:
               runner.os == 'Linux' && '.zcash-params' || 'ZcashParams'
             }}
       - name: Run GoogleTests
+        env:
+          GTEST_TOTAL_SHARDS: 2
+          GTEST_SHARD_INDEX: ${{ matrix.shard_index }}
         run: ${{ format('./zcash-gtest{0}', matrix.file_ext) }}
