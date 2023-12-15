@@ -128,7 +128,7 @@ jobs:
           -j"${{ steps.nproc.outputs.count }}"
 
       - name: Upload zcashd artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: zcashd-${{ matrix.name }}
           path: |
@@ -137,14 +137,14 @@ jobs:
 
       - name: Upload zcash-btest artifact
         if: matrix.test_os != ''
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: zcash-btest-${{ matrix.name }}
           path: ${{ format('src/test/test_bitcoin{0}', matrix.file_ext) }}
 
       - name: Upload zcash-gtest artifact
         if: matrix.test_os != ''
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: zcash-gtest-${{ matrix.name }}
           path: ${{ format('src/zcash-gtest{0}', matrix.file_ext) }}
