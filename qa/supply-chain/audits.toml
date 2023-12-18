@@ -469,6 +469,12 @@ New `unsafe` blocks are to implement `CxxVector::new` (exposing `std::vector::ne
 remaining changes to `unsafe` code are removing uses of the wrapping `attr!` macro.
 """
 
+[[audits.cxx]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.107 -> 1.0.111"
+notes = "Build script change is to look for `src/cxx.cc` in the same folder as `include/cxx.h`."
+
 [[audits.cxxbridge-flags]]
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
@@ -519,6 +525,11 @@ delta = "1.0.95 -> 1.0.97"
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.97 -> 1.0.106"
+
+[[audits.cxxbridge-flags]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.107 -> 1.0.111"
 
 [[audits.cxxbridge-macro]]
 who = "Daira Hopwood <daira@jacaranda.org>"
@@ -581,6 +592,17 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.97 -> 1.0.107"
 notes = "New generated `unsafe` block exposes `std::vector::new` from C++."
+
+[[audits.cxxbridge-macro]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.107 -> 1.0.111"
+notes = """
+Many more `unsafe` blocks are now added in generated code, but these appear to
+all be inside `unsafe fn`s, and are added to make the safety contracts in the
+generated code clearer (instead of using the `unsafe fn`'s implicit `unsafe`
+block).
+"""
 
 [[audits.directories]]
 who = "Jack Grigg <jack@electriccoin.co>"
