@@ -1,9 +1,9 @@
 package=zeromq
-$(package)_version=4.3.4
+$(package)_version=4.3.5
 $(package)_download_path=https://github.com/zeromq/libzmq/releases/download/v$($(package)_version)/
 $(package)_file_name=$(package)-$($(package)_version).tar.gz
-$(package)_sha256_hash=c593001a89f5a85dd2ddf564805deb860e02471171b3f204944857336295c3e5
-$(package)_patches=windows-unused-variables.diff use-snprintf-not-sprintf.patch check_snprintf_return.patch
+$(package)_sha256_hash=6653ef5910f17954861fe72332e68b03ca6e4d9c7160eb3a8de5a5a913bfab43
+$(package)_patches=stats_proxy-missing-braces.diff
 
 ifneq ($(host_os),darwin)
 $(package)_dependencies=libcxx
@@ -27,9 +27,7 @@ define $(package)_set_vars
 endef
 
 define $(package)_preprocess_cmds
-  patch -p1 < $($(package)_patch_dir)/windows-unused-variables.diff && \
-  patch -p1 < $($(package)_patch_dir)/use-snprintf-not-sprintf.patch && \
-  patch -p1 < $($(package)_patch_dir)/check_snprintf_return.patch
+  patch -p1 < $($(package)_patch_dir)/stats_proxy-missing-braces.diff
 endef
 
 define $(package)_config_cmds
