@@ -1,0 +1,13 @@
+diff -ur zeromq-4.3.5-orig/src/proxy.cpp zeromq-4.3.5/src/proxy.cpp
+--- zeromq-4.3.5-orig/src/proxy.cpp	2023-10-09 09:37:00.000000000 +0000
++++ zeromq-4.3.5/src/proxy.cpp	2023-12-18 21:24:25.551814814 +0000
+@@ -499,7 +499,7 @@
+     zmq_pollitem_t itemsout[] = {{frontend_, 0, ZMQ_POLLOUT, 0},
+                                  {backend_, 0, ZMQ_POLLOUT, 0}};
+ 
+-    stats_proxy stats = {0};
++    stats_proxy stats = {{{0}}};
+ 
+     //  Proxy can be in these three states
+     proxy_state_t state = active;
+Only in zeromq-4.3.5/src: .proxy.cpp.swp
