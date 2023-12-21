@@ -107,19 +107,19 @@ def check_security_hardening():
 
     # The remaining checks are only for ELF binaries
     # Assume that if zcashd is an ELF binary, they all are
-    with open('./src/zcashd', 'rb') as f:
+    with open(repofile('src/zcashd'), 'rb') as f:
         magic = f.read(4)
         if not magic.startswith(b'\x7fELF'):
             return ret
 
-    for binary in CXX_BINARIES + RUST_BINARIES:
-        ret &= test_rpath_runpath(binary)
+    for bin in CXX_BINARIES + RUST_BINARIES:
+        ret &= test_rpath_runpath(bin)
 
     # NOTE: checksec.sh does not reliably determine whether FORTIFY_SOURCE
     # is enabled for the entire binary. See issue #915.
     # FORTIFY_SOURCE is not applicable to Rust binaries.
-    for binary in CXX_BINARIES:
-        ret &= test_fortify_source(binary)
+    for bin in CXX_BINARIES:
+        ret &= test_fortify_source(bin)
 
     return ret
 
