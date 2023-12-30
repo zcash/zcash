@@ -63,8 +63,8 @@ zcash_address = "0.3"
 zcash_encoding = "0.2"
 zcash_history = "0.3"
 zcash_note_encryption = "0.4"
-zcash_primitives = { version = "=0.13.0-rc.1", features = ["temporary-zcashd", "transparent-inputs"] }
-zcash_proofs = { version = "=0.13.0-rc.1", features = ["directories"] }
+zcash_primitives = { version = "0.13", features = ["temporary-zcashd", "transparent-inputs"] }
+zcash_proofs = { version = "0.13", features = ["directories"] }
 ed25519-zebra = "4"
 zeroize = "1.4.2"
 wagyu-zcash-parameters = "0.2"
@@ -109,7 +109,7 @@ time = { version = "0.3", features = ["formatting", "macros"] }
 [dev-dependencies]
 incrementalmerkletree = { version = "0.5", features = ["test-dependencies"] }
 proptest = "1.0.0"
-zcash_primitives = { version = "=0.13.0-rc.1", features = ["temporary-zcashd", "transparent-inputs", "test-dependencies"] }
+zcash_primitives = { version = "0.13", features = ["temporary-zcashd", "transparent-inputs", "test-dependencies"] }
 
 [dependencies.tracing-subscriber]
 version = "0.3"
