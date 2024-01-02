@@ -57,6 +57,7 @@ jobs:
 
     outputs:
       build_matrix: ${{ steps.set-matrices.outputs.build_matrix }}
+      build_names: ${{ steps.set-matrices.outputs.build_names }}
       test_matrix: ${{ steps.set-matrices.outputs.test_matrix }}
       test_names: ${{ steps.set-matrices.outputs.test_names }}
     steps:
@@ -65,6 +66,7 @@ jobs:
           CFG: ${{ toJSON(matrix.cfg) }}
         run: |
           jq -r -n 'env.CFG | fromjson | @json "build_matrix=\(.data)"' >> $GITHUB_OUTPUT
+          jq -r -n 'env.CFG | fromjson | [.data[] | .name] | @json "build_names=\(.)"' >> $GITHUB_OUTPUT
           jq -r -n 'env.CFG | fromjson | [.data[] | select(.test_os)] | @json "test_matrix=\(.)"' >> $GITHUB_OUTPUT
           jq -r -n 'env.CFG | fromjson | [.data[] | select(.test_os) | .name] | @json "test_names=\(.)"' >> $GITHUB_OUTPUT
 
@@ -150,12 +152,17 @@ jobs:
           path: ${{ format('src/zcash-gtest{0}', matrix.file_ext) }}
 
   bitrot:
-    name: Bitrot check tier ${{ matrix.tier }} platform ${{ matrix.platform }}
+    name: Bitrot check tier ${{ matrix.tier }} platform ${{ matrix.platform }} flag '${{ matrix.configure_flag }}'
     needs: [matrices, build]
     runs-on: ${{ matrix.build_os }}
     continue-on-error: ${{ matrix.tier == 3 }}
     strategy:
       matrix:
+        name: ${{ fromJson(needs.matrices.outputs.build_names) }}
+        configure_flag:
+          - '--with-libs'
+          - '--disable-wallet'
+          - '--disable-mining'
         include: ${{ fromJson(needs.matrices.outputs.build_matrix) }}
 
     steps:
@@ -201,23 +208,9 @@ jobs:
         shell: bash
         run: echo "count=$(nproc 2> /dev/null || sysctl -n hw.logicalcpu)" >> "$GITHUB_OUTPUT"
 
-      - name: Build zcashd with libraries enabled
+      - name: Build zcashd with the flag being checked
         run: >
-          CONFIGURE_FLAGS="--with-libs"
-          ${{ matrix.host }}
-          ./zcutil/build.sh
-          -j"${{ steps.nproc.outputs.count }}"
-
-      - name: Build zcashd with wallet disabled
-        run: >
-          CONFIGURE_FLAGS="--disable-wallet"
-          ${{ matrix.host }}
-          ./zcutil/build.sh
-          -j"${{ steps.nproc.outputs.count }}"
-
-      - name: Build zcashd with mining disabled
-        run: >
-          CONFIGURE_FLAGS="--disable-mining"
+          CONFIGURE_FLAGS="${{ matrix.configure_flag }}"
           ${{ matrix.host }}
           ./zcutil/build.sh
           -j"${{ steps.nproc.outputs.count }}"
