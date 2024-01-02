@@ -531,6 +531,11 @@ criteria = "safe-to-deploy"
 delta = "1.0.107 -> 1.0.111"
 notes = "Build script change is to look for `src/cxx.cc` in the same folder as `include/cxx.h`."
 
+[[audits.cxx]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.111 -> 1.0.113"
+
 [[audits.cxxbridge-flags]]
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
@@ -586,6 +591,11 @@ delta = "1.0.97 -> 1.0.106"
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.107 -> 1.0.111"
+
+[[audits.cxxbridge-flags]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.111 -> 1.0.113"
 
 [[audits.cxxbridge-macro]]
 who = "Daira Hopwood <daira@jacaranda.org>"
@@ -659,6 +669,11 @@ all be inside `unsafe fn`s, and are added to make the safety contracts in the
 generated code clearer (instead of using the `unsafe fn`'s implicit `unsafe`
 block).
 """
+
+[[audits.cxxbridge-macro]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.111 -> 1.0.113"
 
 [[audits.deranged]]
 who = "Jack Grigg <jack@electriccoin.co>"
