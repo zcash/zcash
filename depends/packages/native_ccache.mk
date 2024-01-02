@@ -1,8 +1,8 @@
 package=native_ccache
-$(package)_version=4.8.3
+$(package)_version=4.9
 $(package)_download_path=https://github.com/ccache/ccache/releases/download/v$($(package)_version)
 $(package)_file_name=ccache-$($(package)_version).tar.gz
-$(package)_sha256_hash=d59dd569ad2bbc826c0bc335c8ebd73e78ed0f2f40ba6b30069347e63585d9ef
+$(package)_sha256_hash=866b2223d59333640f0e7a003cbb85b32d9ca3c9445bd9e3cf142942e69dd3ec
 $(package)_build_subdir=build
 $(package)_dependencies=native_cmake native_zstd
 
