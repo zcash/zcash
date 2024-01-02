@@ -242,7 +242,7 @@ jobs:
         run: ${{ format('./test_bitcoin{0}', matrix.file_ext) }} -p
 
   test-gtest:
-    name: GoogleTest tier ${{ matrix.tier }} platform ${{ matrix.platform }} - shard ${{ matrix.gtest_shards }}
+    name: GoogleTest tier ${{ matrix.tier }} platform ${{ matrix.platform }} - shard ${{ matrix.shard_index }}
     needs: [matrices, build]
     runs-on: ${{ matrix.test_os }}
     continue-on-error: ${{ matrix.tier != 1 }}
