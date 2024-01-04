@@ -13,10 +13,11 @@ Vcs-Browser: https://github.com/zcash/zcash
 Package: zcash
 Architecture: amd64
 Depends: ${shlibs:Depends}
-Description: Zcash libraries and tools
- Based on Bitcoin's code, it intends to offer a far higher standard
- of privacy and anonymity through a sophisticiated zero-knowledge
- proving scheme which preserves confidentiality of transaction metadata.
- Think of it as HTTPS for money.
- This package provides the daemon, zcashd, and the CLI tool,
- zcash-cli, to interact with the daemon.
+Description: Zcash is HTTPS for money
+ Initially based on Bitcoin's design, Zcash has been developed from
+ the Zerocash protocol to offer a far higher standard of privacy and
+ anonymity. It uses a sophisticated zero-knowledge proving scheme to
+ preserve confidentiality and hide the connections between shielded
+ transactions.
+ This package provides the daemon, zcashd, and a CLI tool, zcash-cli,
+ to interact with the daemon.

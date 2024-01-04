@@ -5,12 +5,14 @@ Zcash 5.8.0
 What is Zcash?
 --------------
 
-[Zcash](https://z.cash/) is an implementation of the "Zerocash" protocol.
-Initially based on Bitcoin's design, Zcash intends to offer a far
-higher standard of privacy through a sophisticated zero-knowledge
-proving scheme that preserves confidentiality of transaction
-metadata. More technical details are available in our [Protocol
-Specification](https://zips.z.cash/protocol/protocol.pdf).
+[Zcash](https://z.cash/) is HTTPS for money.
+
+Initially based on Bitcoin's design, Zcash has been developed from
+the Zerocash protocol to offer a far higher standard of privacy and
+anonymity. It uses a sophisticated zero-knowledge proving scheme to
+preserve confidentiality and hide the connections between shielded
+transactions. More technical details are available in our
+[Protocol Specification](https://zips.z.cash/protocol/protocol.pdf).
 
 ## The `zcashd` Full Node
 
