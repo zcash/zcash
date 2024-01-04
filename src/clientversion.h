@@ -31,6 +31,11 @@
 
 #endif //HAVE_CONFIG_H
 
+#define DAEMON_NAME "zcashd"
+#define WALLET_TOOL_NAME "zcashd-wallet-tool"
+#define CLI_NAME "zcash-cli"
+#define TX_UTILITY_NAME "zcash-tx"
+
 /**
  * Converts the parameter X to a string after macro replacement on X has been performed.
  * Don't merge these into one macro!

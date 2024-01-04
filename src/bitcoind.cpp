@@ -90,7 +90,7 @@ bool AppInit(int argc, char* argv[])
         else
         {
             strUsage += "\n" + _("Usage:") + "\n" +
-                  "  zcashd [options]                     " + strprintf(_("Start %s Daemon"), _(PACKAGE_NAME)) + "\n";
+                  "  " DAEMON_NAME " [options]                     " + strprintf(_("Start %s Daemon"), _(PACKAGE_NAME)) + "\n";
 
             strUsage += "\n" + HelpMessage(HMM_BITCOIND);
         }
@@ -112,19 +112,21 @@ bool AppInit(int argc, char* argv[])
         } catch (const missing_zcash_conf& e) {
             auto confFilename = GetArg("-conf", BITCOIN_CONF_FILENAME);
             fprintf(stderr,
-                (_("Before starting zcashd, you need to create a configuration file:\n"
-                   "%s\n"
-                   "It can be completely empty! That indicates you are happy with the default\n"
-                   "configuration of zcashd. But requiring a configuration file to start ensures\n"
-                   "that zcashd won't accidentally compromise your privacy if there was a default\n"
-                   "option you needed to change.\n"
-                   "\n"
-                   "You can look at the example configuration file for suggestions of default\n"
-                   "options that you may want to change. It should be in one of these locations,\n"
-                   "depending on how you installed Zcash:\n") +
-                 _("- Source code:  %s%s\n"
-                   "- .deb package: %s%s\n")).c_str(),
+                _("Before starting %s, you need to create a configuration file:\n"
+                  "%s\n"
+                  "It can be completely empty! That indicates you are happy with the default\n"
+                  "configuration of %s. But requiring a configuration file to start ensures\n"
+                  "that %s won't accidentally compromise your privacy if there was a default\n"
+                  "option you needed to change.\n"
+                  "\n"
+                  "You can look at the example configuration file for suggestions of default\n"
+                  "options that you may want to change. It should be in one of these locations,\n"
+                  "depending on how you installed %s:\n"
+                  "- Source code:  %s%s\n"
+                  "- .deb package: %s%s\n").c_str(),
+                DAEMON_NAME,
                 GetConfigFile(confFilename).string().c_str(),
+                DAEMON_NAME, DAEMON_NAME, _(PACKAGE_NAME).c_str(),
                 "contrib/debian/examples/", confFilename.c_str(),
                 "/usr/share/doc/zcash/examples/", confFilename.c_str());
             return false;
@@ -156,14 +158,14 @@ bool AppInit(int argc, char* argv[])
 
         if (fCommandLine)
         {
-            fprintf(stderr, "Error: There is no RPC client functionality in zcashd. Use the zcash-cli utility instead.\n");
+            fprintf(stderr, "Error: There is no RPC client functionality in " DAEMON_NAME ". Use the " CLI_NAME " utility instead.\n");
             exit(EXIT_FAILURE);
         }
 #ifndef WIN32
         fDaemon = GetBoolArg("-daemon", false);
         if (fDaemon)
         {
-            fprintf(stdout, "Zcash server starting\n");
+            fprintf(stdout, DAEMON_NAME " starting\n");
 
             // Daemonize
             pid_t pid = fork();

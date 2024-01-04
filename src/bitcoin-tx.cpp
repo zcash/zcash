@@ -58,10 +58,10 @@ static int AppInitRawTx(int argc, char* argv[])
     if (argc<2 || mapArgs.count("-?") || mapArgs.count("-h") || mapArgs.count("-help"))
     {
         // First part of help message is specific to this utility
-        std::string strUsage = strprintf(_("%s zcash-tx utility version"), _(PACKAGE_NAME)) + " " + FormatFullVersion() + "\n\n" +
+        std::string strUsage = strprintf(_("%s %s utility version"), _(PACKAGE_NAME), TX_UTILITY_NAME) + " " + FormatFullVersion() + "\n\n" +
             _("Usage:") + "\n" +
-              "  zcash-tx [options] <hex-tx> [commands]  " + _("Update hex-encoded zcash transaction") + "\n" +
-              "  zcash-tx [options] -create [commands]   " + _("Create hex-encoded zcash transaction") + "\n" +
+              "  " + TX_UTILITY_NAME + " [options] <hex-tx> [commands]  " + strprintf(_("Update hex-encoded %s transaction"), _(PACKAGE_NAME)) + "\n" +
+              "  " + TX_UTILITY_NAME + " [options] -create [commands]   " + strprintf(_("Create hex-encoded %s transaction"), _(PACKAGE_NAME)) + "\n" +
               "\n";
 
         fprintf(stdout, "%s", strUsage.c_str());
