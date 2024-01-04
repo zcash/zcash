@@ -72,7 +72,8 @@ void ThreadSendAlert()
     CAlert alert;
     alert.nRelayUntil   = GetTime() + 15 * 60;
     alert.nExpiration   = GetTime() + 10 * 365 * 24 * 60 * 60;
-    alert.nID           = 1007;  // use https://github.com/zcash/zcash/wiki/specification#assigned-numbers to keep track of alert IDs
+    alert.nID           = 1007;  // https://github.com/zcash/zcash/wiki/specification#assigned-numbers was
+                                 // previously used to keep track of alert IDs; no new ones will be assigned
     alert.nCancel       = 1006;  // cancels previous messages up to this ID number
 
     // These versions are protocol versions
