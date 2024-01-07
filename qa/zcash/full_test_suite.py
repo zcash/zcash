@@ -87,11 +87,12 @@ def test_fortify_source(filename):
 def check_security_hardening():
     ret = True
 
-    ret &= subprocess.call(['make', '-C', repofile('src'), 'check-security']) == 0
+    Makefile_file_path = './src/Makefile'
 
-    # Equivalent to make check-security (this is just for CI purpose)
-    if not ret:
-        ret = True
+    if os.path.exists(Makefile_file_path):
+        ret &= subprocess.call(['make', '-C', repofile('src'), 'check-security']) == 0
+    else:
+        # Equivalent to make check-security (this is just for CI purpose)
         bin_programs = ['./src/zcashd', './src/zcash-cli', './src/zcash-tx', './src/bench/bench_bitcoin']  # Replace with actual values
         bin_scripts = ['./src/zcash-inspect', './src/zcashd-wallet-tool']   # Replace with actual values
 
@@ -107,19 +108,19 @@ def check_security_hardening():
 
     # The remaining checks are only for ELF binaries
     # Assume that if zcashd is an ELF binary, they all are
-    with open(repofile('src/zcashd'), 'rb') as f:
+    with open('./src/zcashd', 'rb') as f:
         magic = f.read(4)
         if not magic.startswith(b'\x7fELF'):
             return ret
 
-    for bin in CXX_BINARIES + RUST_BINARIES:
-        ret &= test_rpath_runpath(bin)
+    for binary in CXX_BINARIES + RUST_BINARIES:
+        ret &= test_rpath_runpath(binary)
 
     # NOTE: checksec.sh does not reliably determine whether FORTIFY_SOURCE
     # is enabled for the entire binary. See issue #915.
     # FORTIFY_SOURCE is not applicable to Rust binaries.
-    for bin in CXX_BINARIES:
-        ret &= test_fortify_source(bin)
+    for binary in CXX_BINARIES:
+        ret &= test_fortify_source(binary)
 
     return ret
 
