@@ -6,7 +6,7 @@ on:
     branches: master
 
 jobs:
-  matrices:
+  setup:
     name: Define CI matrix
     runs-on: ubuntu-latest
     strategy:
@@ -73,14 +73,27 @@ jobs:
           jq -r -n 'env.CFG | fromjson | [.data[] | select(.test_os)] | @json "test_matrix=\(.)"' >> $GITHUB_OUTPUT
           jq -r -n 'env.CFG | fromjson | [.data[] | select(.test_os) | .name] | @json "test_names=\(.)"' >> $GITHUB_OUTPUT
 
+      - name: Download Sprout parameters
+        run: |
+          mkdir zcash-params
+          cd zcash-params
+          wget -c https://download.z.cash/downloads/sprout-groth16.params
+
+      - name: Cache Sprout parameters
+        uses: actions/cache/save@v3
+        with:
+          enableCrossOsArchive: true
+          path: zcash-params
+          key: zcash-params
+
   build:
     name: Build tier ${{ matrix.tier }} platform ${{ matrix.platform }}
-    needs: matrices
+    needs: setup
     runs-on: ${{ matrix.build_os }}
     continue-on-error: ${{ matrix.tier == 3 }}
     strategy:
       matrix:
-        include: ${{ fromJson(needs.matrices.outputs.build_matrix) }}
+        include: ${{ fromJson(needs.setup.outputs.build_matrix) }}
 
     steps:
       - uses: actions/checkout@v4
@@ -157,17 +170,17 @@ jobs:
 
   bitrot:
     name: Bitrot check tier ${{ matrix.tier }} platform ${{ matrix.platform }} flag '${{ matrix.configure_flag }}'
-    needs: [matrices, build]
+    needs: [setup, build]
     runs-on: ${{ matrix.build_os }}
     continue-on-error: ${{ matrix.tier == 3 }}
     strategy:
       matrix:
-        name: ${{ fromJson(needs.matrices.outputs.build_names) }}
+        name: ${{ fromJson(needs.setup.outputs.build_names) }}
         configure_flag:
           - '--with-libs'
           - '--disable-wallet'
           - '--disable-mining'
-        include: ${{ fromJson(needs.matrices.outputs.build_matrix) }}
+        include: ${{ fromJson(needs.setup.outputs.build_matrix) }}
 
     steps:
       - uses: actions/checkout@v4
@@ -222,12 +235,12 @@ jobs:
 
   test-btest:
     name: Boost.Test tier ${{ matrix.tier }} platform ${{ matrix.platform }}
-    needs: [matrices, build]
+    needs: [setup, build]
     runs-on: ${{ matrix.test_os }}
     continue-on-error: ${{ matrix.tier != 1 }}
     strategy:
       matrix:
-        include: ${{ fromJson(needs.matrices.outputs.test_matrix) }}
+        include: ${{ fromJson(needs.setup.outputs.test_matrix) }}
     steps:
       - name: Download zcash-btest artifact
         uses: actions/download-artifact@v4
@@ -241,14 +254,14 @@ jobs:
 
   test-gtest:
     name: GoogleTest tier ${{ matrix.tier }} platform ${{ matrix.platform }} - shard ${{ matrix.shard_index }}
-    needs: [matrices, build]
+    needs: [setup, build]
     runs-on: ${{ matrix.test_os }}
     continue-on-error: ${{ matrix.tier != 1 }}
     strategy:
       matrix:
-        name: ${{ fromJson(needs.matrices.outputs.test_names) }}
+        name: ${{ fromJson(needs.setup.outputs.test_names) }}
         shard_index: [0, 1]
-        include: ${{ fromJson(needs.matrices.outputs.test_matrix) }}
+        include: ${{ fromJson(needs.setup.outputs.test_matrix) }}
     steps:
       - name: Download zcash-gtest artifact
         uses: actions/download-artifact@v4
@@ -257,24 +270,25 @@ jobs:
       - name: Make artifact executable
         if: runner.os != 'Windows'
         run: chmod +x ${{ format('./zcash-gtest{0}', matrix.file_ext) }}
-      - name: Get environment variables
-        id: env
+
+      - name: Get Sprout parameters
+        uses: actions/cache/restore@v3
+        with:
+          enableCrossOsArchive: true
+          path: zcash-params
+          key: zcash-params
+
+      - name: Setup zcash-params
         shell: bash
         run: |
-          echo "appdata=$APPDATA" >> "$GITHUB_OUTPUT"
-          echo "home=$HOME" >> "$GITHUB_OUTPUT"
-      - name: Download Sprout parameters
-        uses: carlosperate/download-file-action@v2.0.1
-        with:
-          file-url: "https://download.z.cash/downloads/sprout-groth16.params"
-          location: >
-            ${{
-              runner.os == 'Windows' && steps.env.outputs.appdata || steps.env.outputs.home
-            }}${{
-              runner.os == 'macOS' && '/Library/Application Support/' || '/'
-            }}${{
-              runner.os == 'Linux' && '.zcash-params' || 'ZcashParams'
-            }}
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            mv zcash-params "$APPDATA/ZcashParams"
+          elif [ "${{ runner.os }}" == "macOS" ]; then
+            mv zcash-params "$HOME/Library/Application Support/ZcashParams"
+          elif [ "${{ runner.os }}" == "Linux" ]; then
+            mv zcash-params "$HOME/.zcash-params"
+          fi
+
       - name: Run GoogleTests
         env:
           GTEST_TOTAL_SHARDS: 2
