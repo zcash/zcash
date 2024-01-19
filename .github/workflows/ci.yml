@@ -146,27 +146,34 @@ jobs:
           ./zcutil/build.sh
           -j"${{ steps.nproc.outputs.count }}"
 
-      - name: Upload zcashd artifact
-        uses: actions/upload-artifact@v4
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
         with:
-          name: zcashd-${{ matrix.name }}
-          path: |
-            ${{ format('src/zcash-cli{0}', matrix.file_ext) }}
-            ${{ format('src/zcashd{0}', matrix.file_ext) }}
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Upload zcashd artifact
+        uses: google-github-actions/upload-cloud-storage@v2
+        with:
+          path: ${{ format('./src/zcashd{0}', matrix.file_ext) }}
+          destination: gh-zcash/${{ github.run_id }}/${{ matrix.name }}/src
+
+      - name: Upload zcash-cli artifact
+        uses: google-github-actions/upload-cloud-storage@v2
+        with:
+          path: ${{ format('./src/zcash-cli{0}', matrix.file_ext) }}
+          destination: gh-zcash/${{ github.run_id }}/${{ matrix.name }}/src
 
       - name: Upload zcash-btest artifact
-        if: matrix.test_os != ''
-        uses: actions/upload-artifact@v4
+        uses: google-github-actions/upload-cloud-storage@v2
         with:
-          name: zcash-btest-${{ matrix.name }}
-          path: ${{ format('src/test/test_bitcoin{0}', matrix.file_ext) }}
+          path: ${{ format('./src/test/test_bitcoin{0}', matrix.file_ext) }}
+          destination: gh-zcash/${{ github.run_id }}/${{ matrix.name }}/src/test
 
       - name: Upload zcash-gtest artifact
-        if: matrix.test_os != ''
-        uses: actions/upload-artifact@v4
+        uses: google-github-actions/upload-cloud-storage@v2
         with:
-          name: zcash-gtest-${{ matrix.name }}
-          path: ${{ format('src/zcash-gtest{0}', matrix.file_ext) }}
+          path: ${{ format('./src/zcash-gtest{0}', matrix.file_ext) }}
+          destination: gh-zcash/${{ github.run_id }}/${{ matrix.name }}/src
 
   bitrot:
     name: Bitrot check tier ${{ matrix.tier }} platform ${{ matrix.platform }} flag '${{ matrix.configure_flag }}'
@@ -242,13 +249,24 @@ jobs:
       matrix:
         include: ${{ fromJson(needs.setup.outputs.test_matrix) }}
     steps:
-      - name: Download zcash-btest artifact
-        uses: actions/download-artifact@v4
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
         with:
-          name: zcash-btest-${{ matrix.name }}
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Download zcash-btest artifact
+        uses: ./.github/actions/gcs-download-cloud-storage
+        with:
+          path-prefix: ${{ github.run_id }}/${{ matrix.name }}
+          source: ${{ format('src/test/test_bitcoin{0}', matrix.file_ext) }}
+          destination: ./
+
       - name: Make artifact executable
         if: runner.os != 'Windows'
         run: chmod +x ${{ format('./test_bitcoin{0}', matrix.file_ext) }}
+
       - name: Run Boost.Tests
         run: ${{ format('./test_bitcoin{0}', matrix.file_ext) }} -p
 
@@ -263,10 +281,20 @@ jobs:
         shard_index: [0, 1]
         include: ${{ fromJson(needs.setup.outputs.test_matrix) }}
     steps:
-      - name: Download zcash-gtest artifact
-        uses: actions/download-artifact@v4
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
         with:
-          name: zcash-gtest-${{ matrix.name }}
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Download zcash-gtest artifact
+        uses: ./.github/actions/gcs-download-cloud-storage
+        with:
+          path-prefix: ${{ github.run_id }}/${{ matrix.name }}
+          source: ${{ format('src/zcash-gtest{0}', matrix.file_ext) }}
+          destination: ./
+
       - name: Make artifact executable
         if: runner.os != 'Windows'
         run: chmod +x ${{ format('./zcash-gtest{0}', matrix.file_ext) }}
