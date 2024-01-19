@@ -10,6 +10,8 @@ inputs:
   destination:
     description: 'The directory into which the files will be downloaded'
     required: true
+  remove-first-if-exists:
+    description: 'Deletes the given path first (if it exists) before downloading files'
 
 runs:
   using: 'composite'
@@ -36,6 +38,11 @@ runs:
         cp -r
         gs://gh-zcash/${{ inputs.path-prefix }}/${{ inputs.source }}
         $RUNNER_TEMP/gcs-download
+
+    - name: Remove the specified path if it exists
+      if: inputs.remove-first-if-exists != ''
+      shell: bash
+      run: rm -rf ${{ inputs.remove-first-if-exists }}
 
     - name: Ensure the target directory exists
       shell: bash
