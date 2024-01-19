@@ -34,6 +34,12 @@ def get_arch_dir():
         # Just try the first one; there will only be one in CI
         return arch_dirs[0]
 
+    # Not MacOS, try Windows
+    arch_dirs = glob(os.path.join(depends_dir, 'x86_64-w64-mingw32*'))
+    if arch_dirs:
+        # Just try the first one; there will only be one in CI
+        return arch_dirs[0]
+
     print("!!! cannot find architecture dir under depends/ !!!")
     return None
 

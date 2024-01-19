@@ -175,6 +175,12 @@ jobs:
           path: ${{ format('./src/zcash-gtest{0}', matrix.file_ext) }}
           destination: gh-zcash/${{ github.run_id }}/${{ matrix.name }}/src
 
+      - name: Upload depends/${{ matrix.host }}/lib
+        uses: google-github-actions/upload-cloud-storage@v2
+        with:
+          path: ./depends/${{ matrix.host }}/lib
+          destination: gh-zcash/${{ github.run_id }}/${{ matrix.name }}/depends/${{ matrix.host }}
+
   bitrot:
     name: Bitrot check tier ${{ matrix.tier }} platform ${{ matrix.platform }} flag '${{ matrix.configure_flag }}'
     needs: [setup, build]
@@ -322,3 +328,32 @@ jobs:
           GTEST_TOTAL_SHARDS: 2
           GTEST_SHARD_INDEX: ${{ matrix.shard_index }}
         run: ${{ format('./zcash-gtest{0}', matrix.file_ext) }}
+
+  no-dot-so:
+    name: not-dot-so tier ${{ matrix.tier }} platform ${{ matrix.platform }}
+    needs: [setup, build]
+    runs-on: ${{ matrix.test_os }}
+    continue-on-error: ${{ matrix.tier != 1 }}
+    strategy:
+      matrix:
+        include: ${{ fromJson(needs.setup.outputs.test_matrix) }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Download depends/${{ matrix.host }}/lib artifact
+        uses: ./.github/actions/gcs-download-cloud-storage
+        with:
+          path-prefix: ${{ github.run_id }}/${{ matrix.name }}
+          source: depends/${{ matrix.host }}/lib
+          destination: ./depends/${{ matrix.host }}/
+
+      - name: Run no-dot-so test
+        run: python3 ./qa/zcash/full_test_suite.py no-dot-so
+        env:
+          HOST: ${{ matrix.host }}
