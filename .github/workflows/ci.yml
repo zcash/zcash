@@ -63,7 +63,17 @@ jobs:
       build_names: ${{ steps.set-matrices.outputs.build_names }}
       test_matrix: ${{ steps.set-matrices.outputs.test_matrix }}
       test_names: ${{ steps.set-matrices.outputs.test_names }}
+      unix_test_matrix: ${{ steps.set-matrices.outputs.unix_test_matrix }}
+      unix_test_names: ${{ steps.set-matrices.outputs.unix_test_names }}
+
     steps:
+      # Configure the build and test matrices. Notes:
+      # - The `*_names` lists of platforms are combined with job-specific lists to build
+      #   strategy matrices. The `*_matrix` lists then augment the matrix with parameters
+      #   for each platform.
+      # - We can only run tests on the subset of platforms that have a compatible runner
+      #   (i.e. excluding cross-compiled platforms).
+      # - Some tests don't currently work on Windows platforms, so we have a Unix subset.
       - id: set-matrices
         env:
           CFG: ${{ toJSON(matrix.cfg) }}
@@ -72,6 +82,8 @@ jobs:
           jq -r -n 'env.CFG | fromjson | [.data[] | .name] | @json "build_names=\(.)"' >> $GITHUB_OUTPUT
           jq -r -n 'env.CFG | fromjson | [.data[] | select(.test_os)] | @json "test_matrix=\(.)"' >> $GITHUB_OUTPUT
           jq -r -n 'env.CFG | fromjson | [.data[] | select(.test_os) | .name] | @json "test_names=\(.)"' >> $GITHUB_OUTPUT
+          jq -r -n 'env.CFG | fromjson | [.data[] | select(.test_os and .test_os != "windows-latest")] | @json "unix_test_matrix=\(.)"' >> $GITHUB_OUTPUT
+          jq -r -n 'env.CFG | fromjson | [.data[] | select(.test_os and .test_os != "windows-latest") | .name] | @json "unix_test_names=\(.)"' >> $GITHUB_OUTPUT
 
       - name: Download Sprout parameters
         run: |
@@ -163,6 +175,24 @@ jobs:
           path: ${{ format('./src/zcash-cli{0}', matrix.file_ext) }}
           destination: gh-zcash/${{ github.run_id }}/${{ matrix.name }}/src
 
+      - name: Upload zcashd-wallet-tool artifact
+        uses: google-github-actions/upload-cloud-storage@v2
+        with:
+          path: ${{ format('./src/zcashd-wallet-tool{0}', matrix.file_ext) }}
+          destination: gh-zcash/${{ github.run_id }}/${{ matrix.name }}/src
+
+      - name: Upload zcash-inspect artifact
+        uses: google-github-actions/upload-cloud-storage@v2
+        with:
+          path: ${{ format('./src/zcash-inspect{0}', matrix.file_ext) }}
+          destination: gh-zcash/${{ github.run_id }}/${{ matrix.name }}/src
+
+      - name: Upload zcash-tx artifact
+        uses: google-github-actions/upload-cloud-storage@v2
+        with:
+          path: ${{ format('./src/zcash-tx{0}', matrix.file_ext) }}
+          destination: gh-zcash/${{ github.run_id }}/${{ matrix.name }}/src
+
       - name: Upload zcash-btest artifact
         uses: google-github-actions/upload-cloud-storage@v2
         with:
@@ -180,6 +210,12 @@ jobs:
         with:
           path: ./depends/${{ matrix.host }}/lib
           destination: gh-zcash/${{ github.run_id }}/${{ matrix.name }}/depends/${{ matrix.host }}
+
+      - name: Upload bench_bitcoin artifact
+        uses: google-github-actions/upload-cloud-storage@v2
+        with:
+          path: ${{ format('./src/bench/bench_bitcoin{0}', matrix.file_ext) }}
+          destination: gh-zcash/${{ github.run_id }}/${{ matrix.name }}/src/bench
 
   bitrot:
     name: Bitrot check tier ${{ matrix.tier }} platform ${{ matrix.platform }} flag '${{ matrix.configure_flag }}'
@@ -355,5 +391,96 @@ jobs:
 
       - name: Run no-dot-so test
         run: python3 ./qa/zcash/full_test_suite.py no-dot-so
+        env:
+          HOST: ${{ matrix.host }}
+
+  # Not working in Windows
+  sec-hard:
+    name: sec-hard tier ${{ matrix.tier }} platform ${{ matrix.platform }}
+    needs: [setup, build]
+    runs-on: ${{ matrix.test_os }}
+    continue-on-error: ${{ matrix.tier != 1 }}
+    strategy:
+      matrix:
+        include: ${{ fromJson(needs.setup.outputs.unix_test_matrix) }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Download ${{ format('src/zcash-inspect{0}', matrix.file_ext) }} artifact
+        uses: ./.github/actions/gcs-download-cloud-storage
+        with:
+          path-prefix: ${{ github.run_id }}/${{ matrix.name }}
+          source: ${{ format('src/zcash-inspect{0}', matrix.file_ext) }}
+          destination: ./src/
+
+      - name: Download ${{ format('src/bench/bench_bitcoin{0}', matrix.file_ext) }}  artifact
+        uses: ./.github/actions/gcs-download-cloud-storage
+        with:
+          path-prefix: ${{ github.run_id }}/${{ matrix.name }}
+          source: ${{ format('src/bench/bench_bitcoin{0}', matrix.file_ext) }}
+          destination: ./src/bench/
+
+      - name: Download ${{ format('src/test/test_bitcoin{0}', matrix.file_ext) }}  artifact
+        uses: ./.github/actions/gcs-download-cloud-storage
+        with:
+          path-prefix: ${{ github.run_id }}/${{ matrix.name }}
+          source: ${{ format('src/test/test_bitcoin{0}', matrix.file_ext) }}
+          destination: ./src/test/
+
+      - name: Download ${{ format('src/zcashd-wallet-tool{0}', matrix.file_ext) }}  artifact
+        uses: ./.github/actions/gcs-download-cloud-storage
+        with:
+          path-prefix: ${{ github.run_id }}/${{ matrix.name }}
+          source: ${{ format('src/zcashd-wallet-tool{0}', matrix.file_ext) }}
+          destination: ./src/
+
+      - name: Download ${{ format('src/zcash-tx{0}', matrix.file_ext) }}  artifact
+        uses: ./.github/actions/gcs-download-cloud-storage
+        with:
+          path-prefix: ${{ github.run_id }}/${{ matrix.name }}
+          source: ${{ format('src/zcash-tx{0}', matrix.file_ext) }}
+          destination: ./src/
+
+      - name: Download ${{ format('src/zcash-gtest{0}', matrix.file_ext) }}  artifact
+        uses: ./.github/actions/gcs-download-cloud-storage
+        with:
+          path-prefix: ${{ github.run_id }}/${{ matrix.name }}
+          source: ${{ format('src/zcash-gtest{0}', matrix.file_ext) }}
+          destination: ./src/
+
+      - name: Download ${{ format('src/zcashd{0}', matrix.file_ext) }} artifact
+        uses: ./.github/actions/gcs-download-cloud-storage
+        with:
+          path-prefix: ${{ github.run_id }}/${{ matrix.name }}
+          source: ${{ format('src/zcashd{0}', matrix.file_ext) }}
+          destination: ./src/
+
+      - name: Download ${{ format('src/zcash-cli{0}', matrix.file_ext) }} artifact
+        uses: ./.github/actions/gcs-download-cloud-storage
+        with:
+          path-prefix: ${{ github.run_id }}/${{ matrix.name }}
+          source: ${{ format('src/zcash-cli{0}', matrix.file_ext) }}
+          destination: ./src/
+
+      - name: Make artifact executable
+        if: runner.os != 'Windows'
+        run: |
+          chmod +x ${{ format('./src/test/test_bitcoin{0}', matrix.file_ext) }}
+          chmod +x ${{ format('./src/bench/bench_bitcoin{0}', matrix.file_ext) }}
+          chmod +x ${{ format('./src/zcashd{0}', matrix.file_ext) }}
+          chmod +x ${{ format('./src/zcash-cli{0}', matrix.file_ext) }}
+          chmod +x ${{ format('./src/zcash-gtest{0}', matrix.file_ext) }}
+          chmod +x ${{ format('./src/zcashd-wallet-tool{0}', matrix.file_ext) }}
+          chmod +x ${{ format('./src/zcash-tx{0}', matrix.file_ext) }}
+
+      - name: Run sec-hard test
+        shell: bash
+        run: python3 ./qa/zcash/full_test_suite.py sec-hard
         env:
           HOST: ${{ matrix.host }}
