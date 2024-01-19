@@ -18,12 +18,14 @@ jobs:
               platform: Ubuntu 20.04
               build_os: ubuntu-20.04-8cores
               test_os: ubuntu-20.04
+              host: x86_64-pc-linux-gnu
 
             - name: ubuntu-22.04
               tier: 3
               platform: Ubuntu 22.04
               build_os: ubuntu-22.04-8cores
               test_os: ubuntu-22.04
+              host: x86_64-pc-linux-gnu
 
             - name: macos-11
               tier: 3
@@ -36,6 +38,7 @@ jobs:
                 coreutils
                 libtool
                 pkgconfig
+              host: x86_64-apple-darwin
 
             - name: mingw32
               tier: 3
@@ -44,7 +47,7 @@ jobs:
               test_os: windows-latest
               cross_deps: >
                 mingw-w64
-              host: HOST=x86_64-w64-mingw32
+              host: x86_64-w64-mingw32
               file_ext: ".exe"
 
             - name: aarch64-linux
@@ -53,7 +56,7 @@ jobs:
               build_os: ubuntu-22.04-8cores
               cross_deps: >
                 g++-aarch64-linux-gnu
-              host: HOST=aarch64-linux-gnu
+              host: aarch64-linux-gnu
 
     outputs:
       build_matrix: ${{ steps.set-matrices.outputs.build_matrix }}
@@ -124,8 +127,9 @@ jobs:
 
       - name: Build zcashd
         id: build
+        env:
+          HOST: ${{ matrix.host }}
         run: >
-          ${{ matrix.host }}
           ./zcutil/build.sh
           -j"${{ steps.nproc.outputs.count }}"
 
@@ -209,9 +213,10 @@ jobs:
         run: echo "count=$(nproc 2> /dev/null || sysctl -n hw.logicalcpu)" >> "$GITHUB_OUTPUT"
 
       - name: Build zcashd with the flag being checked
+        env:
+          CONFIGURE_FLAGS: "${{ matrix.configure_flag }}"
+          HOST: ${{ matrix.host }}
         run: >
-          CONFIGURE_FLAGS="${{ matrix.configure_flag }}"
-          ${{ matrix.host }}
           ./zcutil/build.sh
           -j"${{ steps.nproc.outputs.count }}"
 
