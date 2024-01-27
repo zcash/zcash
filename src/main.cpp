@@ -6825,9 +6825,22 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
         uint64_t nNonce = 1;
         std::string strSubVer;
         std::string cleanSubVer;
-        uint64_t nServices;
-        vRecv >> pfrom->nVersion >> nServices >> nTime >> addrMe;
-        pfrom->nServices = nServices;
+        uint64_t nServiceInt;
+        vRecv >> pfrom->nVersion >> nServiceInt >> nTime >> addrMe;
+        pfrom->nServices = ServiceFlags(nServiceInt);
+        if (!pfrom->fInbound)
+        {
+            addrman.SetServices(pfrom->addr, pfrom->nServices);
+        }
+        if (pfrom->nServicesExpected & ~pfrom->nServices)
+        {
+            LogPrint("net", "peer=%d does not offer the expected services (%08x offered, %08x expected); disconnecting\n", pfrom->id, pfrom->nServices, pfrom->nServicesExpected);
+            pfrom->PushMessage(NetMsgType::REJECT, strCommand, REJECT_NONSTANDARD,
+                               strprintf("Expected to offer services %08x", pfrom->nServicesExpected));
+            pfrom->fDisconnect = true;
+            return false;
+        }
+
         if (pfrom->nVersion < MIN_PEER_PROTO_VERSION)
         {
             // disconnect from peers older than this proto version
@@ -7058,6 +7071,9 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
         for (CAddress& addr : vAddr)
         {
             boost::this_thread::interruption_point();
+
+            if ((addr.nServices & REQUIRED_SERVICES) != REQUIRED_SERVICES)
+                continue;
 
             // Apply rate limiting if the address is not whitelisted
             if (pfrom->m_addr_token_bucket < 1.0) {

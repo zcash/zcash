@@ -263,6 +263,9 @@ protected:
     //! Mark an entry as currently-connected-to.
     void Connected_(const CService &addr, int64_t nTime);
 
+    //! Update an entry's service bits.
+    void SetServices_(const CService &addr, ServiceFlags nServices);
+
 public:
     /**
      * serialized format:
@@ -580,6 +583,14 @@ public:
         LOCK(cs);
         Check();
         Connected_(addr, nTime);
+        Check();
+    }
+
+    void SetServices(const CService &addr, ServiceFlags nServices)
+    {
+        LOCK(cs);
+        Check();
+        SetServices_(addr, nServices);
         Check();
     }
 
