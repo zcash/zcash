@@ -389,6 +389,24 @@ CNode* ConnectNode(CAddress addrConnect, const char *pszDest, bool fCountFailure
             return NULL;
         }
 
+        if (pszDest && addrConnect.IsValid()) {
+            // It is possible that we already have a connection to the IP/port pszDest resolved to.
+            // In that case, drop the connection that was just created, and return the existing CNode instead.
+            // Also store the name we used to connect in that CNode, so that future FindNode() calls to that
+            // name catch this early.
+            CNode* pnode = FindNode((CService)addrConnect);
+            if (pnode)
+            {
+                pnode->AddRef();
+                {
+                    LOCK(cs_vNodes);
+                    pnode->MaybeSetAddrName(std::string(pszDest));
+                }
+                CloseSocket(hSocket);
+                return pnode;
+            }
+        }
+
         addrman.Attempt(addrConnect, fCountFailure);
 
         // Add node
@@ -1606,6 +1624,59 @@ void ThreadOpenConnections()
     }
 }
 
+std::vector<AddedNodeInfo> GetAddedNodeInfo()
+{
+    std::vector<AddedNodeInfo> ret;
+
+    std::list<std::string> lAddresses(0);
+    {
+        LOCK(cs_vAddedNodes);
+        ret.reserve(vAddedNodes.size());
+        for (const std::string& strAddNode : vAddedNodes)
+            lAddresses.push_back(strAddNode);
+    }
+
+
+    // Build a map of all already connected addresses (by IP:port and by name) to inbound/outbound and resolved CService
+    std::map<CService, bool> mapConnected;
+    std::map<std::string, std::pair<bool, CService>> mapConnectedByName;
+    {
+        LOCK(cs_vNodes);
+        for (const CNode* pnode : vNodes) {
+            if (pnode->addr.IsValid()) {
+                mapConnected[pnode->addr] = pnode->fInbound;
+            }
+            std::string addrName = pnode->GetAddrName();
+            if (!addrName.empty()) {
+                mapConnectedByName[std::move(addrName)] = std::make_pair(pnode->fInbound, static_cast<const CService&>(pnode->addr));
+            }
+        }
+    }
+
+    for (const std::string& strAddNode : lAddresses) {
+        CService service(strAddNode, Params().GetDefaultPort());
+        if (service.IsValid()) {
+            // strAddNode is an IP:port
+            auto it = mapConnected.find(service);
+            if (it != mapConnected.end()) {
+                ret.push_back(AddedNodeInfo{strAddNode, service, true, it->second});
+            } else {
+                ret.push_back(AddedNodeInfo{strAddNode, CService(), false, false});
+            }
+        } else {
+            // strAddNode is a name
+            auto it = mapConnectedByName.find(strAddNode);
+            if (it != mapConnectedByName.end()) {
+                ret.push_back(AddedNodeInfo{strAddNode, it->second.second, true, it->second.first});
+            } else {
+                ret.push_back(AddedNodeInfo{strAddNode, CService(), false, false});
+            }
+        }
+    }
+
+    return ret;
+}
+
 void ThreadOpenAddedConnections()
 {
     {
@@ -1613,63 +1684,20 @@ void ThreadOpenAddedConnections()
         vAddedNodes = mapMultiArgs["-addnode"];
     }
 
-    if (HaveNameProxy()) {
-        while(true) {
-            std::list<std::string> lAddresses(0);
-            {
-                LOCK(cs_vAddedNodes);
-                for (const std::string& strAddNode : vAddedNodes)
-                    lAddresses.push_back(strAddNode);
-            }
-            for (const std::string& strAddNode : lAddresses) {
-                CAddress addr;
-                CSemaphoreGrant grant(*semOutbound);
-                OpenNetworkConnection(addr, false, &grant, strAddNode.c_str());
-                MilliSleep(500);
-            }
-            MilliSleep(120000); // Retry every 2 minutes
-        }
-    }
-
     for (unsigned int i = 0; true; i++)
     {
-        std::list<std::string> lAddresses(0);
-        {
-            LOCK(cs_vAddedNodes);
-            for (const std::string& strAddNode : vAddedNodes)
-                lAddresses.push_back(strAddNode);
-        }
-
-        std::list<std::vector<CService> > lservAddressesToAdd(0);
-        for (const std::string& strAddNode : lAddresses) {
-            std::vector<CService> vservNode(0);
-            if(Lookup(strAddNode.c_str(), vservNode, Params().GetDefaultPort(), fNameLookup, 0))
-            {
-                lservAddressesToAdd.push_back(vservNode);
+        std::vector<AddedNodeInfo> vInfo = GetAddedNodeInfo();
+        for (const AddedNodeInfo& info : vInfo) {
+            if (!info.fConnected) {
+                CSemaphoreGrant grant(*semOutbound);
+                // If strAddedNode is an IP/port, decode it immediately, so
+                // OpenNetworkConnection can detect existing connections to that IP/port.
+                CService service(info.strAddedNode, Params().GetDefaultPort());
+                OpenNetworkConnection(CAddress(service, NODE_NONE), false, &grant, info.strAddedNode.c_str(), false);
+                MilliSleep(500);
             }
         }
-        // Attempt to connect to each IP for each addnode entry until at least one is successful per addnode entry
-        // (keeping in mind that addnode entries can have many IPs if fNameLookup)
-        {
-            LOCK(cs_vNodes);
-            for (CNode* pnode : vNodes)
-                for (std::list<std::vector<CService> >::iterator it = lservAddressesToAdd.begin(); it != lservAddressesToAdd.end(); it++)
-                    for (const CService& addrNode : *(it))
-                        if (pnode->addr == addrNode)
-                        {
-                            it = lservAddressesToAdd.erase(it);
-                            it--;
-                            break;
-                        }
-        }
-        for (std::vector<CService>& vserv : lservAddressesToAdd)
-        {
-            CSemaphoreGrant grant(*semOutbound);
-            /* We want -addnode to work even for nodes that don't provide all
-             * wanted services, so pass in nServices=NODE_NONE to CAddress. */
-            OpenNetworkConnection(CAddress(vserv[i % vserv.size()], NODE_NONE), false, &grant);
-            MilliSleep(500);
-        }
+
         MilliSleep(120000); // Retry every 2 minutes
     }
 }
