@@ -70,11 +70,11 @@ class NUPeerManagementTest(BitcoinTestFramework):
         nodes = []
         for x in range(10):
             nodes.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0],
-                test, "regtest", SPROUT_PROTO_VERSION))
+                test, "regtest", protocol_version=SPROUT_PROTO_VERSION))
             nodes.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0],
-                test, "regtest", OVERWINTER_PROTO_VERSION))
+                test, "regtest", protocol_version=OVERWINTER_PROTO_VERSION))
             nodes.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0],
-                test, "regtest", SAPLING_PROTO_VERSION))
+                test, "regtest", protocol_version=SAPLING_PROTO_VERSION))
 
         # Start up network handling in another thread
         NetworkThread().start()
@@ -115,17 +115,17 @@ class NUPeerManagementTest(BitcoinTestFramework):
         self.nodes[0].generate(1)
 
         # Connect a new Overwinter mininode to the zcashd node, which is accepted.
-        nodes.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], test, "regtest", OVERWINTER_PROTO_VERSION))
+        nodes.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], test, "regtest", protocol_version=OVERWINTER_PROTO_VERSION))
         time.sleep(3)
         assert_equal(21, len(self.nodes[0].getpeerinfo()))
 
         # Connect a new Sapling mininode to the zcashd node, which is accepted.
-        nodes.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], test, "regtest", SAPLING_PROTO_VERSION))
+        nodes.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], test, "regtest", protocol_version=SAPLING_PROTO_VERSION))
         time.sleep(3)
         assert_equal(22, len(self.nodes[0].getpeerinfo()))
 
         # Try to connect a new Sprout mininode to the zcashd node, which is rejected.
-        sprout = NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], test, "regtest", SPROUT_PROTO_VERSION)
+        sprout = NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], test, "regtest", protocol_version=SPROUT_PROTO_VERSION)
         nodes.append(sprout)
         time.sleep(3)
         assert("Version must be 170003 or greater" in str(sprout.rejectMessage))
@@ -162,18 +162,18 @@ class NUPeerManagementTest(BitcoinTestFramework):
         self.nodes[0].generate(1)
 
         # Connect a new Sapling mininode to the zcashd node, which is accepted.
-        nodes.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], test, "regtest", SAPLING_PROTO_VERSION))
+        nodes.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], test, "regtest", protocol_version=SAPLING_PROTO_VERSION))
         time.sleep(3)
         assert_equal(12, len(self.nodes[0].getpeerinfo()))
 
         # Try to connect a new Sprout mininode to the zcashd node, which is rejected.
-        sprout = NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], test, "regtest", SPROUT_PROTO_VERSION)
+        sprout = NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], test, "regtest", protocol_version=SPROUT_PROTO_VERSION)
         nodes.append(sprout)
         time.sleep(3)
         assert("Version must be 170006 or greater" in str(sprout.rejectMessage))
 
         # Try to connect a new Overwinter mininode to the zcashd node, which is rejected.
-        sprout = NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], test, "regtest", OVERWINTER_PROTO_VERSION)
+        sprout = NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], test, "regtest", protocol_version=OVERWINTER_PROTO_VERSION)
         nodes.append(sprout)
         time.sleep(3)
         assert("Version must be 170006 or greater" in str(sprout.rejectMessage))
