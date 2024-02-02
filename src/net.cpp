@@ -60,7 +60,8 @@ const static std::string logAllowIncomingMsgCmds[] = {
     "version", "addr", "inv", "getdata", "merkleblock",
     "getblocks", "getheaders", "tx", "headers", "block",
     "getaddr", "mempool", "ping", "pong", "alert", "notfound",
-    "filterload", "filteradd", "filterclear", "reject"};
+    "filterload", "filteradd", "filterclear", "reject",
+    "verack"};
 
 const static std::string NET_MESSAGE_COMMAND_OTHER = "*other*";
 
