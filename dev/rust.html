@@ -184,10 +184,10 @@ CI will fail until corresponding audits have been added.</p>
 that are excluded from auditing checks. We aim to reduce this list over time.
 New entries should not be added to the exclusion list without justification.</p>
 <p>To audit a dependency, first <a href="https://mozilla.github.io/cargo-vet/install.html">install <code>cargo-vet</code></a> and then follow the
-<a href="https://mozilla.github.io/cargo-vet/performing-audits.html">&quot;Performing Audits&quot; guide</a>. If you are updating a dependency then instead of
+<a href="https://mozilla.github.io/cargo-vet/performing-audits.html">"Performing Audits" guide</a>. If you are updating a dependency then instead of
 auditing the new version in its entirety, you can optionally just audit the
 delta between the old and new versions - even if the old version is in the
-&quot;unaudited&quot; exclusion list.</p>
+"unaudited" exclusion list.</p>
 <h2 id="adding-new-dependencies-in-online-rust-mode"><a class="header" href="#adding-new-dependencies-in-online-rust-mode">Adding new dependencies in online-Rust mode</a></h2>
 <p>The <code>zcashd</code> build system pins all dependencies, and in order to facilitate
 reproducible builds, <code>cargo</code> is configured to run in offline mode with vendored
@@ -204,7 +204,7 @@ required by package `librustzcash v0.2.0 (/path/to/zcash)`
 <pre><code>git stash
 </code></pre>
 </li>
-<li>Next, reconfigure the build system for &quot;online&quot; mode:
+<li>Next, reconfigure the build system for "online" mode:
 <pre><code>CONFIGURE_FLAGS=--enable-online-rust ./zcutil/build.sh
 </code></pre>
 </li>
@@ -236,11 +236,11 @@ a new API, add the following patch to <code>Cargo.toml</code>:</p>
 <pre><code>[dependencies]
 # This dependency is listed with a version, meaning it comes from crates.io; the
 # patch goes into a [patch.crates-io] section.
-orchard = &quot;0.4&quot;
+orchard = "0.4"
 ...
 
 [patch.crates-io]
-orchard = { git = &quot;https://github.com/zcash/orchard.git&quot;, rev = &quot;...&quot; }
+orchard = { git = "https://github.com/zcash/orchard.git", rev = "..." }
 </code></pre>
 <p>Note that if the git repository contains a workspace of interconnected crates
 (for example, https://github.com/zcash/librustzcash), you will need to provide
@@ -259,15 +259,15 @@ API, add the following patch to <code>Cargo.toml</code>:</p>
 <pre><code>[dependencies]
 # This dependency is listed with a version, meaning it comes from crates.io; the
 # patch goes into a [patch.crates-io] section.
-orchard = &quot;0.0&quot;
+orchard = "0.0"
 ...
 
 [patch.crates-io]
 # Comment out any existing patch, if present.
-# orchard = { git = &quot;https://github.com/zcash/orchard.git&quot;, rev = &quot;...&quot; }
+# orchard = { git = "https://github.com/zcash/orchard.git", rev = "..." }
 
 # Add this patch (both relative and absolute paths work):
-orchard = { path = &quot;../relative/path/to/orchard&quot; }
+orchard = { path = "../relative/path/to/orchard" }
 </code></pre>
 <p>Usually you can apply a patch to use a locally checked out dependency without
 needing to build <code>zcashd</code> in online-Rust mode. However, if your local changes

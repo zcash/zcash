@@ -214,7 +214,7 @@ An example is below.</p>
 <pre><code class="language-yaml">############### This section is just for location-hidden services ###
 
 ## Once you have configured a hidden service, you can look at the
-## contents of the file &quot;.../hidden_service/hostname&quot; for the address
+## contents of the file ".../hidden_service/hostname" for the address
 ## to tell people.
 ##
 ## HiddenServicePort x y:z says to redirect requests on port x to the
@@ -271,39 +271,39 @@ correctly advertising its Onion address to the network.</p>
 <pre><code class="language-bash">$ zcash-cli getnetworkinfo
 </code></pre>
 <pre><code class="language-javascript">{
-  &quot;version&quot;: 4020050,
-  &quot;subversion&quot;: &quot;/MagicBean:4.2.0/&quot;,
-  &quot;protocolversion&quot;: 170013,
-  &quot;connections&quot;: 9,
-  &quot;networks&quot;: [
+  "version": 4020050,
+  "subversion": "/MagicBean:4.2.0/",
+  "protocolversion": 170013,
+  "connections": 9,
+  "networks": [
     {
-    &quot;name&quot;: &quot;ipv4&quot;,
-    &quot;limited&quot;: true,
-    &quot;reachable&quot;: false,
-    &quot;proxy&quot;: &quot;127.0.0.1:9050&quot;,
-    &quot;proxy_randomize_credentials&quot;: true
+    "name": "ipv4",
+    "limited": true,
+    "reachable": false,
+    "proxy": "127.0.0.1:9050",
+    "proxy_randomize_credentials": true
     },
     {
-    &quot;name&quot;: &quot;ipv6&quot;,
-    &quot;limited&quot;: true,
-    &quot;reachable&quot;: false,
-    &quot;proxy&quot;: &quot;127.0.0.1:9050&quot;,
-    &quot;proxy_randomize_credentials&quot;: true
+    "name": "ipv6",
+    "limited": true,
+    "reachable": false,
+    "proxy": "127.0.0.1:9050",
+    "proxy_randomize_credentials": true
     },
     {
-    &quot;name&quot;: &quot;onion&quot;,
-    &quot;limited&quot;: false,
-    &quot;reachable&quot;: true,
-    &quot;proxy&quot;: &quot;127.0.0.1:9050&quot;,
-    &quot;proxy_randomize_credentials&quot;: true
+    "name": "onion",
+    "limited": false,
+    "reachable": true,
+    "proxy": "127.0.0.1:9050",
+    "proxy_randomize_credentials": true
     }
   ],
-  &quot;relayfee&quot;: 0.00000100,
-  &quot;localaddresses&quot;: [
+  "relayfee": 0.00000100,
+  "localaddresses": [
     {
-    &quot;address&quot;: &quot;ynizm2wpla6ec22q.onion&quot;,
-    &quot;port&quot;: 8233,
-    &quot;score&quot;: 10
+    "address": "ynizm2wpla6ec22q.onion",
+    "port": 8233,
+    "score": 10
     }
   ],
 }
@@ -375,12 +375,12 @@ or <code>-connect=0</code> alone to disable automatic connections</li>
 </code></pre>
 <pre><code class="language-javascript">[
   {
-    &quot;id&quot;: 1,
-    &quot;addr&quot;: &quot;ynizm2wpla6ec22q.onion&quot;,
+    "id": 1,
+    "addr": "ynizm2wpla6ec22q.onion",
     ...
-    &quot;version&quot;: 170013,
-    &quot;subver&quot;: &quot;/MagicBean:4.2.0/&quot;,
-    &quot;inbound&quot;: false,
+    "version": 170013,
+    "subver": "/MagicBean:4.2.0/",
+    "inbound": false,
     ...
   }
 ]

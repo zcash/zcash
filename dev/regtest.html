@@ -174,13 +174,13 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="regtest"><a class="header" href="#regtest">Regtest</a></h1>
-<p><em>Regtest</em> (&quot;regression test&quot;) is one of the three <em>network types</em>
+<p><em>Regtest</em> ("regression test") is one of the three <em>network types</em>
 supported by Zcash, the others being <code>testnet</code> and <code>mainnet</code>.
 Regtest is an entirely local, self-contained mode -- your node or nodes
 do not talk with peers out in the world. It gives you complete
 control of the state of the blockchain and the sequence of events.
 You start with an empty blockchain (just the genesis block, block 0).
-Blocks can be mined instantly, and must be created explicitly. </p>
+Blocks can be mined instantly, and must be created explicitly.</p>
 <p>You can run one or more regtest nodes on the same system.
 The <a href="https://github.com/zcash/zcash/tree/master/qa/rpc-tests">RPC tests</a>
 use <code>regtest</code> mode (usually starting multiple nodes), but you may use it
@@ -202,25 +202,25 @@ It may also be useful to start <code>zcashd</code> with <code>-debug</code> to g
 more logging. Now we can send RPCs to the node:</p>
 <pre><code>$ src/zcash-cli -datadir=/tmp/regtest-datadir getblockchaininfo
 {
-  &quot;chain&quot;: &quot;regtest&quot;,
-  &quot;blocks&quot;: 0,
-  &quot;initial_block_download_complete&quot;: false,
-  &quot;headers&quot;: 0,
+  "chain": "regtest",
+  "blocks": 0,
+  "initial_block_download_complete": false,
+  "headers": 0,
   (...)
 }
 # Generate (mine) three blocks:
 $ src/zcash-cli -datadir=/tmp/regtest-datadir generate 3
 [
-  &quot;05040271f43f78e3870a88697eba201aa361ea5802c69eadaf920ff376787242&quot;,
-  &quot;0469f2df43dda69d521c482679b2db3c637b1721222511302584ac75e057c859&quot;,
-  &quot;0ab7a26e7b3b5dfca077728de90da0cfd1c49e1edbc130a52de4062b1aecac75&quot;
+  "05040271f43f78e3870a88697eba201aa361ea5802c69eadaf920ff376787242",
+  "0469f2df43dda69d521c482679b2db3c637b1721222511302584ac75e057c859",
+  "0ab7a26e7b3b5dfca077728de90da0cfd1c49e1edbc130a52de4062b1aecac75"
 ]
 $ src/zcash-cli -datadir=/tmp/regtest-datadir getblockchaininfo
 {
-  &quot;chain&quot;: &quot;regtest&quot;,
-  &quot;blocks&quot;: 3,
-  &quot;initial_block_download_complete&quot;: true,
-  &quot;headers&quot;: 3,
+  "chain": "regtest",
+  "blocks": 3,
+  "initial_block_download_complete": true,
+  "headers": 3,
   (...)
 }
 $ src/zcash-cli -datadir=/tmp/regtest-datadir stop
@@ -235,7 +235,7 @@ fixed, known block heights (<a href="https://github.com/zcash/zcash/blob/master/
 In <code>regtest</code> mode, you determine the activation heights. Upgrades may occur at
 any height greater than 0, and multiple upgrades can occur at the same height. The upgrades
 have a strict ordering (as shown in the upgrades source file); for example, Canopy can't
-be activated before Blossom. </p>
+be activated before Blossom.</p>
 <p>You specify the upgrade heights using multiple <code>-nuparams=</code><em>&lt;branch-id&gt;</em> arguments.
 (The branch IDs are available in the
 <a href="https://github.com/zcash/zcash/blob/master/src/consensus/upgrades.cpp">upgrades.cpp file</a>)
@@ -259,32 +259,32 @@ by removing the data directory, otherwise you'll encounter strange errors.</p>
 <pre><code>$ src/zcash-cli -datadir=/tmp/regtest-datadir generate 2
 $ src/zcash-cli -datadir=/tmp/regtest-datadir getblockchaininfo
 {
-  &quot;blocks&quot;: 2,
+  "blocks": 2,
   (...)
-    &quot;upgrades&quot;: {
-    &quot;5ba81b19&quot;: {
-      &quot;name&quot;: &quot;Overwinter&quot;,
-      &quot;activationheight&quot;: 1,
-      &quot;status&quot;: &quot;active&quot;,
-      &quot;info&quot;: &quot;See https://z.cash/upgrade/overwinter/ for details.&quot;
+    "upgrades": {
+    "5ba81b19": {
+      "name": "Overwinter",
+      "activationheight": 1,
+      "status": "active",
+      "info": "See https://z.cash/upgrade/overwinter/ for details."
     },
-    &quot;76b809bb&quot;: {
-      &quot;name&quot;: &quot;Sapling&quot;,
-      &quot;activationheight&quot;: 1,
-      &quot;status&quot;: &quot;active&quot;,
-      &quot;info&quot;: &quot;See https://z.cash/upgrade/sapling/ for details.&quot;
+    "76b809bb": {
+      "name": "Sapling",
+      "activationheight": 1,
+      "status": "active",
+      "info": "See https://z.cash/upgrade/sapling/ for details."
     },
-    &quot;2bb40e60&quot;: {
-      &quot;name&quot;: &quot;Blossom&quot;,
-      &quot;activationheight&quot;: 5,
-      &quot;status&quot;: &quot;pending&quot;,
-      &quot;info&quot;: &quot;See https://z.cash/upgrade/blossom/ for details.&quot;
+    "2bb40e60": {
+      "name": "Blossom",
+      "activationheight": 5,
+      "status": "pending",
+      "info": "See https://z.cash/upgrade/blossom/ for details."
     },
-    &quot;f5b9230b&quot;: {
-      &quot;name&quot;: &quot;Heartwood&quot;,
-      &quot;activationheight&quot;: 5,
-      &quot;status&quot;: &quot;pending&quot;,
-      &quot;info&quot;: &quot;See https://z.cash/upgrade/heartwood/ for details.&quot;
+    "f5b9230b": {
+      "name": "Heartwood",
+      "activationheight": 5,
+      "status": "pending",
+      "info": "See https://z.cash/upgrade/heartwood/ for details."
     }
   },
   (...)
@@ -293,7 +293,7 @@ $ src/zcash-cli -datadir=/tmp/regtest-datadir getblockchaininfo
 <h2 id="manual-testing-within-an-rpc-python-test-run"><a class="header" href="#manual-testing-within-an-rpc-python-test-run">Manual testing within an RPC (Python) test run</a></h2>
 <p>It is often useful, either when debugging an issue or simply when you want to put
 the node into a certain state, to use the RPC test framework to produce the desired
-state and then be able to manually interrogate and modify that state using <code>zcash-cli</code> 
+state and then be able to manually interrogate and modify that state using <code>zcash-cli</code>
 to execute RPC calls. An easy way to do that is as follows:</p>
 <p>Add the line <code>import time; time.sleep(999999)</code> (the units are seconds) somewhere
 within an RPC test to pause its execution at that point. Start the test, and then:</p>

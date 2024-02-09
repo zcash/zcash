@@ -177,7 +177,7 @@
                         <h1>Zcash 5.8.0
 <img align="right" width="120" height="80" src="doc/imgs/logo.png"></h1>
 <h2 id="what-is-zcash"><a class="header" href="#what-is-zcash">What is Zcash?</a></h2>
-<p><a href="https://z.cash/">Zcash</a> is an implementation of the &quot;Zerocash&quot; protocol.
+<p><a href="https://z.cash/">Zcash</a> is an implementation of the "Zerocash" protocol.
 Initially based on Bitcoin's design, Zcash intends to offer a far
 higher standard of privacy through a sophisticated zero-knowledge
 proving scheme that preserves confidentiality of transaction
@@ -265,7 +265,7 @@ Upgrade will have shut down by the time the Network Upgrade activates.</li>
 <p>The End-of-Support height for a running <code>zcashd</code> can be queried over JSON-RPC using the
 <code>getdeprecationinfo</code> method.</p>
 <p>The following table shows End-of-Support information for recent <code>zcashd</code> releases. It is
-automatically updated during each release. &quot;End of Support&quot; dates are estimated at that
+automatically updated during each release. "End of Support" dates are estimated at that
 time, and may shift due to changes in network solution power.</p>
 <!-- RELEASE_SCRIPT_START_MARKER - If you make changes here, check make-release.py -->
 <div class="table-wrapper"><table><thead><tr><th><code>zcashd</code> version</th><th>Release date</th><th>Halt height</th><th>End of Support</th></tr></thead><tbody>
@@ -276,14 +276,14 @@ time, and may shift due to changes in network solution power.</p>
 </tbody></table>
 </div><!-- RELEASE_SCRIPT_END_MARKER -->
 <div style="break-before: page; page-break-before: always;"></div><h1 id="platform-support"><a class="header" href="#platform-support">Platform Support</a></h1>
-<p>Support for different platforms (build &quot;targets&quot; and operating systems) are organised into
+<p>Support for different platforms (build "targets" and operating systems) are organised into
 three tiers, each with a different set of guarantees. For more information on the policies
 for targets at each tier, see the <a href="user/../dev/platform-tier-policy.html">Platform Tier Policy</a>.</p>
 <h2 id="tier-1"><a class="header" href="#tier-1">Tier 1</a></h2>
-<p>Tier 1 platforms can be thought of as &quot;guaranteed to work&quot;. ECC builds official binary
+<p>Tier 1 platforms can be thought of as "guaranteed to work". ECC builds official binary
 releases for each tier 1 platform, and automated testing ensures that each tier 1 platform
 builds and passes tests after each change.</p>
-<p>&quot;End of Support&quot; dates are the latest currently-known date after which the platform will
+<p>"End of Support" dates are the latest currently-known date after which the platform will
 be removed from tier 1. These dates are subject to change.</p>
 <div class="table-wrapper"><table><thead><tr><th>target</th><th>OS</th><th>End of Support</th></tr></thead><tbody>
 <tr><td><code>x86_64-pc-linux-gnu</code></td><td>Debian 10</td><td>June 2024</td></tr>
@@ -292,12 +292,12 @@ be removed from tier 1. These dates are subject to change.</p>
 </tbody></table>
 </div>
 <h2 id="tier-2"><a class="header" href="#tier-2">Tier 2</a></h2>
-<p>Tier 2 platforms can be thought of as &quot;guaranteed to build&quot;. ECC builds official binary
+<p>Tier 2 platforms can be thought of as "guaranteed to build". ECC builds official binary
 releases for each tier 2 platform, and automated builds ensure that each tier 2 platform
 builds after each change. Automated tests are not always run so it's not guaranteed to
 produce a working build, but tier 2 platforms often work to quite a good degree, and
 patches are always welcome!</p>
-<p>&quot;End of Support&quot; dates are the latest currently-known date after which the platform will
+<p>"End of Support" dates are the latest currently-known date after which the platform will
 be removed from tier 2. These dates are subject to change.</p>
 <div class="table-wrapper"><table><thead><tr><th>target</th><th>OS</th><th>End of Support</th></tr></thead><tbody>
 <tr><td>N/A</td><td></td><td></td></tr>
@@ -428,14 +428,14 @@ UTXOs to shield is 50.</p>
 </code></pre>
 <p>Sweep up coinbase UTXOs from multiple transparent addresses to a shielded
 address:</p>
-<pre><code>zcash-cli z_shieldcoinbase &quot;*&quot; zMyPrivateAddress
+<pre><code>zcash-cli z_shieldcoinbase "*" zMyPrivateAddress
 </code></pre>
 <p>Sweep up with a fee of 1.23 ZEC:</p>
 <pre><code>zcash-cli z_shieldcoinbase tMyMiningAddress zMyPrivateAddress 1.23
 </code></pre>
 <p>Sweep up with a fee of 0.1 ZEC and set limit on the maximum number of UTXOs to
 shield at 25:</p>
-<pre><code>zcash-cli z_shieldcoinbase &quot;*&quot; zMyPrivateAddress 0.1 25
+<pre><code>zcash-cli z_shieldcoinbase "*" zMyPrivateAddress 0.1 25
 </code></pre>
 <h3 id="asynchronous-call"><a class="header" href="#asynchronous-call">Asynchronous Call</a></h3>
 <p>The <code>z_shieldcoinbase</code> RPC call is an asynchronous call, so you can queue up
@@ -575,7 +575,7 @@ zcash_net_in_bytes_total 3701998
 zcash_net_in_messages 184
 
 # TYPE zcashd_build_info counter
-zcashd_build_info{version=&quot;v4.2.0&quot;} 1
+zcashd_build_info{version="v4.2.0"} 1
 
 # TYPE zcash_chain_verified_block_total counter
 zcash_chain_verified_block_total 162
@@ -595,7 +595,7 @@ charts several of the various metrics exposed by <code>zcashd</code>'s <code>pro
 endpoint. Note that both <code>docker</code> and <code>docker-compose</code> must ordinarily be run
 with superuser permissions (use <code>sudo</code>) when running on Linux.</p>
 <p><code>docker-compose up</code><sup class="footnote-reference"><a href="#1">1</a></sup> will start local instances of <code>prometheus</code> and <code>grafana</code>,
-accessible over HTTP on ports <code>9090</code> and <code>3030</code>, respectively. </p>
+accessible over HTTP on ports <code>9090</code> and <code>3030</code>, respectively.</p>
 <pre><code>cd &lt;zcash_root&gt;/contrib/metrics
 docker-compose up -d
 </code></pre>
@@ -604,8 +604,8 @@ repository for <code>&lt;zcash_root&gt;</code>)</p>
 <p><code>~/.zcash/zcash.conf</code> must be updated to enable <code>prometheus</code> and to allow the
 <code>prometheus</code> server launched via <code>docker-compose</code> to connect to the <code>zcashd</code>
 prometheus endpoint. The following commands can be used to detect the local IP
-address for the <code>prometheus</code> server and add it to the <code>~/.zcash/zcash.conf</code> 
-file. </p>
+address for the <code>prometheus</code> server and add it to the <code>~/.zcash/zcash.conf</code>
+file.</p>
 <p>First, figure out where <code>prometheus</code> is running.</p>
 <pre><code>export PROMETHEUS_DOCKER_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' zcashd-prometheus)
 </code></pre>
@@ -691,7 +691,7 @@ An example is below.</p>
 <pre><code class="language-yaml">############### This section is just for location-hidden services ###
 
 ## Once you have configured a hidden service, you can look at the
-## contents of the file &quot;.../hidden_service/hostname&quot; for the address
+## contents of the file ".../hidden_service/hostname" for the address
 ## to tell people.
 ##
 ## HiddenServicePort x y:z says to redirect requests on port x to the
@@ -748,39 +748,39 @@ correctly advertising its Onion address to the network.</p>
 <pre><code class="language-bash">$ zcash-cli getnetworkinfo
 </code></pre>
 <pre><code class="language-javascript">{
-  &quot;version&quot;: 4020050,
-  &quot;subversion&quot;: &quot;/MagicBean:4.2.0/&quot;,
-  &quot;protocolversion&quot;: 170013,
-  &quot;connections&quot;: 9,
-  &quot;networks&quot;: [
+  "version": 4020050,
+  "subversion": "/MagicBean:4.2.0/",
+  "protocolversion": 170013,
+  "connections": 9,
+  "networks": [
     {
-    &quot;name&quot;: &quot;ipv4&quot;,
-    &quot;limited&quot;: true,
-    &quot;reachable&quot;: false,
-    &quot;proxy&quot;: &quot;127.0.0.1:9050&quot;,
-    &quot;proxy_randomize_credentials&quot;: true
+    "name": "ipv4",
+    "limited": true,
+    "reachable": false,
+    "proxy": "127.0.0.1:9050",
+    "proxy_randomize_credentials": true
     },
     {
-    &quot;name&quot;: &quot;ipv6&quot;,
-    &quot;limited&quot;: true,
-    &quot;reachable&quot;: false,
-    &quot;proxy&quot;: &quot;127.0.0.1:9050&quot;,
-    &quot;proxy_randomize_credentials&quot;: true
+    "name": "ipv6",
+    "limited": true,
+    "reachable": false,
+    "proxy": "127.0.0.1:9050",
+    "proxy_randomize_credentials": true
     },
     {
-    &quot;name&quot;: &quot;onion&quot;,
-    &quot;limited&quot;: false,
-    &quot;reachable&quot;: true,
-    &quot;proxy&quot;: &quot;127.0.0.1:9050&quot;,
-    &quot;proxy_randomize_credentials&quot;: true
+    "name": "onion",
+    "limited": false,
+    "reachable": true,
+    "proxy": "127.0.0.1:9050",
+    "proxy_randomize_credentials": true
     }
   ],
-  &quot;relayfee&quot;: 0.00000100,
-  &quot;localaddresses&quot;: [
+  "relayfee": 0.00000100,
+  "localaddresses": [
     {
-    &quot;address&quot;: &quot;ynizm2wpla6ec22q.onion&quot;,
-    &quot;port&quot;: 8233,
-    &quot;score&quot;: 10
+    "address": "ynizm2wpla6ec22q.onion",
+    "port": 8233,
+    "score": 10
     }
   ],
 }
@@ -852,12 +852,12 @@ or <code>-connect=0</code> alone to disable automatic connections</li>
 </code></pre>
 <pre><code class="language-javascript">[
   {
-    &quot;id&quot;: 1,
-    &quot;addr&quot;: &quot;ynizm2wpla6ec22q.onion&quot;,
+    "id": 1,
+    "addr": "ynizm2wpla6ec22q.onion",
     ...
-    &quot;version&quot;: 170013,
-    &quot;subver&quot;: &quot;/MagicBean:4.2.0/&quot;,
-    &quot;inbound&quot;: false,
+    "version": 170013,
+    "subver": "/MagicBean:4.2.0/",
+    "inbound": false,
     ...
   }
 ]
@@ -1019,7 +1019,7 @@ continues to be available and function as normal. While features at this
 stage remain enabled by default, they may be explicitly disabled by
 specifying <code>-allowdeprecated=none</code> on the command line when starting the
 node, or by including <code>allowdeprecated=none</code> as a line in the <code>zcash.conf</code>
-file. </li>
+file.</li>
 <li>In the next stage of deprecation, the feature will be disabled by default.
 Disabled features may be reenabled via use of the <code>-allowdeprecated</code> flag.</li>
 <li>In the third stage, the feature is fully removed and is no longer available.</li>
@@ -1031,7 +1031,7 @@ features will only be fully removed after a total of at least 6 minor-version up
 version every 6 weeks, so deprecated features remain accessible by default for
 approximately 18 weeks, and then can be expected to be removed no less than 36
 weeks after their initial deprecation. Deprecation and removal timelines might
-be extended beyond this on a case-by-case basis to satisfy user requirements. </p>
+be extended beyond this on a case-by-case basis to satisfy user requirements.</p>
 <h1 id="currently-deprecated"><a class="header" href="#currently-deprecated">Currently Deprecated</a></h1>
 <h2 id="stage-1"><a class="header" href="#stage-1">Stage 1</a></h2>
 <p>The following features are deprecated, but remain enabled by default. These features
@@ -1049,7 +1049,7 @@ the node, or if an <code>allowdeprecated=none</code> line is added to <code>zcas
 to the CLI arguments when starting the node, or by adding an <code>allowdeprecated=&lt;feature&gt;</code>
 line to <code>zcash.conf</code>.</p>
 <div class="table-wrapper"><table><thead><tr><th><code>feature</code></th><th>Deprecated</th><th>Feature details</th></tr></thead><tbody>
-<tr><td><code>legacy_privacy</code></td><td>5.0.0</td><td>The default &quot;legacy&quot; privacy policy for <code>z_sendmany</code> has been replaced by the <code>FullPrivacy</code> directive.</td></tr>
+<tr><td><code>legacy_privacy</code></td><td>5.0.0</td><td>The default "legacy" privacy policy for <code>z_sendmany</code> has been replaced by the <code>FullPrivacy</code> directive.</td></tr>
 <tr><td><code>getnewaddress</code></td><td>5.0.0</td><td>The <code>getnewaddress</code> RPC method.</td></tr>
 <tr><td><code>getrawchangeaddress</code></td><td>5.0.0</td><td>The <code>getrawchangeaddress</code> RPC method.</td></tr>
 <tr><td><code>z_getnewaddress</code></td><td>5.0.0</td><td>The <code>z_getnewaddress</code> RPC method.</td></tr>
@@ -1129,10 +1129,10 @@ CI will fail until corresponding audits have been added.</p>
 that are excluded from auditing checks. We aim to reduce this list over time.
 New entries should not be added to the exclusion list without justification.</p>
 <p>To audit a dependency, first <a href="https://mozilla.github.io/cargo-vet/install.html">install <code>cargo-vet</code></a> and then follow the
-<a href="https://mozilla.github.io/cargo-vet/performing-audits.html">&quot;Performing Audits&quot; guide</a>. If you are updating a dependency then instead of
+<a href="https://mozilla.github.io/cargo-vet/performing-audits.html">"Performing Audits" guide</a>. If you are updating a dependency then instead of
 auditing the new version in its entirety, you can optionally just audit the
 delta between the old and new versions - even if the old version is in the
-&quot;unaudited&quot; exclusion list.</p>
+"unaudited" exclusion list.</p>
 <h2 id="adding-new-dependencies-in-online-rust-mode"><a class="header" href="#adding-new-dependencies-in-online-rust-mode">Adding new dependencies in online-Rust mode</a></h2>
 <p>The <code>zcashd</code> build system pins all dependencies, and in order to facilitate
 reproducible builds, <code>cargo</code> is configured to run in offline mode with vendored
@@ -1149,7 +1149,7 @@ required by package `librustzcash v0.2.0 (/path/to/zcash)`
 <pre><code>git stash
 </code></pre>
 </li>
-<li>Next, reconfigure the build system for &quot;online&quot; mode:
+<li>Next, reconfigure the build system for "online" mode:
 <pre><code>CONFIGURE_FLAGS=--enable-online-rust ./zcutil/build.sh
 </code></pre>
 </li>
@@ -1181,11 +1181,11 @@ a new API, add the following patch to <code>Cargo.toml</code>:</p>
 <pre><code>[dependencies]
 # This dependency is listed with a version, meaning it comes from crates.io; the
 # patch goes into a [patch.crates-io] section.
-orchard = &quot;0.4&quot;
+orchard = "0.4"
 ...
 
 [patch.crates-io]
-orchard = { git = &quot;https://github.com/zcash/orchard.git&quot;, rev = &quot;...&quot; }
+orchard = { git = "https://github.com/zcash/orchard.git", rev = "..." }
 </code></pre>
 <p>Note that if the git repository contains a workspace of interconnected crates
 (for example, https://github.com/zcash/librustzcash), you will need to provide
@@ -1204,27 +1204,27 @@ API, add the following patch to <code>Cargo.toml</code>:</p>
 <pre><code>[dependencies]
 # This dependency is listed with a version, meaning it comes from crates.io; the
 # patch goes into a [patch.crates-io] section.
-orchard = &quot;0.0&quot;
+orchard = "0.0"
 ...
 
 [patch.crates-io]
 # Comment out any existing patch, if present.
-# orchard = { git = &quot;https://github.com/zcash/orchard.git&quot;, rev = &quot;...&quot; }
+# orchard = { git = "https://github.com/zcash/orchard.git", rev = "..." }
 
 # Add this patch (both relative and absolute paths work):
-orchard = { path = &quot;../relative/path/to/orchard&quot; }
+orchard = { path = "../relative/path/to/orchard" }
 </code></pre>
 <p>Usually you can apply a patch to use a locally checked out dependency without
 needing to build <code>zcashd</code> in online-Rust mode. However, if your local changes
 include a new dependency, you will need to ensure you are in online-Rust mode.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="regtest"><a class="header" href="#regtest">Regtest</a></h1>
-<p><em>Regtest</em> (&quot;regression test&quot;) is one of the three <em>network types</em>
+<p><em>Regtest</em> ("regression test") is one of the three <em>network types</em>
 supported by Zcash, the others being <code>testnet</code> and <code>mainnet</code>.
 Regtest is an entirely local, self-contained mode -- your node or nodes
 do not talk with peers out in the world. It gives you complete
 control of the state of the blockchain and the sequence of events.
 You start with an empty blockchain (just the genesis block, block 0).
-Blocks can be mined instantly, and must be created explicitly. </p>
+Blocks can be mined instantly, and must be created explicitly.</p>
 <p>You can run one or more regtest nodes on the same system.
 The <a href="https://github.com/zcash/zcash/tree/master/qa/rpc-tests">RPC tests</a>
 use <code>regtest</code> mode (usually starting multiple nodes), but you may use it
@@ -1246,25 +1246,25 @@ It may also be useful to start <code>zcashd</code> with <code>-debug</code> to g
 more logging. Now we can send RPCs to the node:</p>
 <pre><code>$ src/zcash-cli -datadir=/tmp/regtest-datadir getblockchaininfo
 {
-  &quot;chain&quot;: &quot;regtest&quot;,
-  &quot;blocks&quot;: 0,
-  &quot;initial_block_download_complete&quot;: false,
-  &quot;headers&quot;: 0,
+  "chain": "regtest",
+  "blocks": 0,
+  "initial_block_download_complete": false,
+  "headers": 0,
   (...)
 }
 # Generate (mine) three blocks:
 $ src/zcash-cli -datadir=/tmp/regtest-datadir generate 3
 [
-  &quot;05040271f43f78e3870a88697eba201aa361ea5802c69eadaf920ff376787242&quot;,
-  &quot;0469f2df43dda69d521c482679b2db3c637b1721222511302584ac75e057c859&quot;,
-  &quot;0ab7a26e7b3b5dfca077728de90da0cfd1c49e1edbc130a52de4062b1aecac75&quot;
+  "05040271f43f78e3870a88697eba201aa361ea5802c69eadaf920ff376787242",
+  "0469f2df43dda69d521c482679b2db3c637b1721222511302584ac75e057c859",
+  "0ab7a26e7b3b5dfca077728de90da0cfd1c49e1edbc130a52de4062b1aecac75"
 ]
 $ src/zcash-cli -datadir=/tmp/regtest-datadir getblockchaininfo
 {
-  &quot;chain&quot;: &quot;regtest&quot;,
-  &quot;blocks&quot;: 3,
-  &quot;initial_block_download_complete&quot;: true,
-  &quot;headers&quot;: 3,
+  "chain": "regtest",
+  "blocks": 3,
+  "initial_block_download_complete": true,
+  "headers": 3,
   (...)
 }
 $ src/zcash-cli -datadir=/tmp/regtest-datadir stop
@@ -1279,7 +1279,7 @@ fixed, known block heights (<a href="https://github.com/zcash/zcash/blob/master/
 In <code>regtest</code> mode, you determine the activation heights. Upgrades may occur at
 any height greater than 0, and multiple upgrades can occur at the same height. The upgrades
 have a strict ordering (as shown in the upgrades source file); for example, Canopy can't
-be activated before Blossom. </p>
+be activated before Blossom.</p>
 <p>You specify the upgrade heights using multiple <code>-nuparams=</code><em>&lt;branch-id&gt;</em> arguments.
 (The branch IDs are available in the
 <a href="https://github.com/zcash/zcash/blob/master/src/consensus/upgrades.cpp">upgrades.cpp file</a>)
@@ -1303,32 +1303,32 @@ by removing the data directory, otherwise you'll encounter strange errors.</p>
 <pre><code>$ src/zcash-cli -datadir=/tmp/regtest-datadir generate 2
 $ src/zcash-cli -datadir=/tmp/regtest-datadir getblockchaininfo
 {
-  &quot;blocks&quot;: 2,
+  "blocks": 2,
   (...)
-    &quot;upgrades&quot;: {
-    &quot;5ba81b19&quot;: {
-      &quot;name&quot;: &quot;Overwinter&quot;,
-      &quot;activationheight&quot;: 1,
-      &quot;status&quot;: &quot;active&quot;,
-      &quot;info&quot;: &quot;See https://z.cash/upgrade/overwinter/ for details.&quot;
+    "upgrades": {
+    "5ba81b19": {
+      "name": "Overwinter",
+      "activationheight": 1,
+      "status": "active",
+      "info": "See https://z.cash/upgrade/overwinter/ for details."
     },
-    &quot;76b809bb&quot;: {
-      &quot;name&quot;: &quot;Sapling&quot;,
-      &quot;activationheight&quot;: 1,
-      &quot;status&quot;: &quot;active&quot;,
-      &quot;info&quot;: &quot;See https://z.cash/upgrade/sapling/ for details.&quot;
+    "76b809bb": {
+      "name": "Sapling",
+      "activationheight": 1,
+      "status": "active",
+      "info": "See https://z.cash/upgrade/sapling/ for details."
     },
-    &quot;2bb40e60&quot;: {
-      &quot;name&quot;: &quot;Blossom&quot;,
-      &quot;activationheight&quot;: 5,
-      &quot;status&quot;: &quot;pending&quot;,
-      &quot;info&quot;: &quot;See https://z.cash/upgrade/blossom/ for details.&quot;
+    "2bb40e60": {
+      "name": "Blossom",
+      "activationheight": 5,
+      "status": "pending",
+      "info": "See https://z.cash/upgrade/blossom/ for details."
     },
-    &quot;f5b9230b&quot;: {
-      &quot;name&quot;: &quot;Heartwood&quot;,
-      &quot;activationheight&quot;: 5,
-      &quot;status&quot;: &quot;pending&quot;,
-      &quot;info&quot;: &quot;See https://z.cash/upgrade/heartwood/ for details.&quot;
+    "f5b9230b": {
+      "name": "Heartwood",
+      "activationheight": 5,
+      "status": "pending",
+      "info": "See https://z.cash/upgrade/heartwood/ for details."
     }
   },
   (...)
@@ -1337,7 +1337,7 @@ $ src/zcash-cli -datadir=/tmp/regtest-datadir getblockchaininfo
 <h2 id="manual-testing-within-an-rpc-python-test-run"><a class="header" href="#manual-testing-within-an-rpc-python-test-run">Manual testing within an RPC (Python) test run</a></h2>
 <p>It is often useful, either when debugging an issue or simply when you want to put
 the node into a certain state, to use the RPC test framework to produce the desired
-state and then be able to manually interrogate and modify that state using <code>zcash-cli</code> 
+state and then be able to manually interrogate and modify that state using <code>zcash-cli</code>
 to execute RPC calls. An easy way to do that is as follows:</p>
 <p>Add the line <code>import time; time.sleep(999999)</code> (the units are seconds) somewhere
 within an RPC test to pause its execution at that point. Start the test, and then:</p>
@@ -1389,8 +1389,8 @@ and platform-specific patches should always use their own best judgment regardin
 quality of work, and the suitability of a platform for the Zcash project. Neither this
 policy nor any decisions made regarding platforms shall create any binding agreement or
 estoppel by any party.</p>
-<p>For a list of all supported platforms and their corresponding tiers (&quot;tier 3&quot;, &quot;tier 2&quot;,
-or &quot;tier 1&quot;), see <a href="dev/../user/platform-support.html">Platform Support</a>.</p>
+<p>For a list of all supported platforms and their corresponding tiers ("tier 3", "tier 2",
+or "tier 1"), see <a href="dev/../user/platform-support.html">Platform Support</a>.</p>
 <p>The availability or tier of a platform in Zcash releases is not a hard stability guarantee
 about the future availability or tier of that platform. Higher-level platform tiers are an
 increasing commitment to the support of a platform, and we will take that commitment and
@@ -1398,10 +1398,10 @@ potential disruptions into account when evaluating the potential demotion or rem
 platform that has been part of a stable release. The promotion or demotion of a platform
 will not generally affect existing stable releases, only current development and future
 releases.</p>
-<p>In this policy, the words &quot;MUST&quot; and &quot;MUST NOT&quot; specify absolute requirements that a
-platform must meet to qualify for a tier. The words &quot;SHOULD&quot; and &quot;SHOULD NOT&quot; specify
+<p>In this policy, the words "MUST" and "MUST NOT" specify absolute requirements that a
+platform must meet to qualify for a tier. The words "SHOULD" and "SHOULD NOT" specify
 requirements that apply in almost all cases, but for which the approving teams may grant
-an exception for good reason. The word &quot;MAY&quot; indicates something entirely optional, and
+an exception for good reason. The word "MAY" indicates something entirely optional, and
 does not indicate guidance or recommendations. This language is based on
 <a href="https://tools.ietf.org/html/rfc2119">IETF RFC 2119</a>.</p>
 <h2 id="tier-3-platform-policy"><a class="header" href="#tier-3-platform-policy">Tier 3 platform policy</a></h2>
@@ -1441,7 +1441,7 @@ team member reporting the outcome of a team discussion.</p>
 <ul>
 <li>A tier 2 platform MUST have value to people other than its proponents. (It MAY still be
 a niche platform, but it MUST NOT be exclusively useful for an inherently closed group.)</li>
-<li>A tier 2 platform MUST have a designated team of developers (the &quot;platform maintainers&quot;)
+<li>A tier 2 platform MUST have a designated team of developers (the "platform maintainers")
 supporting it, without the need for a paid support contract.</li>
 <li>The platform MUST NOT place undue burden on Zcash developers not specifically concerned
 with that platform. Zcash developers are expected to not gratuitously break a tier 2
@@ -1467,9 +1467,9 @@ considers mandatory.</li>
 substantially longer than other platforms, and SHOULD NOT substantially raise the
 maintenance burden of the CI infrastructure.</li>
 <li>Tier 1 platforms MUST NOT have a hard requirement for signed, verified, or otherwise
-&quot;approved&quot; binaries. Developers MUST be able to build, run, and test binaries for the
+"approved" binaries. Developers MUST be able to build, run, and test binaries for the
 platform on systems they control, or provide such binaries for others to run. (Doing so
-MAY require enabling some appropriate &quot;developer mode&quot; on such systems, but MUST NOT
+MAY require enabling some appropriate "developer mode" on such systems, but MUST NOT
 require the payment of any additional fee or other consideration, or agreement to any
 onerous legal agreements.)</li>
 <li>All requirements for tier 2 apply.</li>
@@ -1520,7 +1520,7 @@ addition of shielded pools to the consensus logic and full node state.</p>
 we have introduced.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="chain-state"><a class="header" href="#chain-state">Chain state</a></h1>
 <p>TBD</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="coins-view"><a class="header" href="#coins-view">&quot;Coins&quot; view</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="coins-view"><a class="header" href="#coins-view">"Coins" view</a></h1>
 <p>TBD</p>
 <h2 id="notes"><a class="header" href="#notes">Notes</a></h2>
 <ul>

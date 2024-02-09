@@ -221,7 +221,7 @@ zcash_net_in_bytes_total 3701998
 zcash_net_in_messages 184
 
 # TYPE zcashd_build_info counter
-zcashd_build_info{version=&quot;v4.2.0&quot;} 1
+zcashd_build_info{version="v4.2.0"} 1
 
 # TYPE zcash_chain_verified_block_total counter
 zcash_chain_verified_block_total 162
@@ -241,7 +241,7 @@ charts several of the various metrics exposed by <code>zcashd</code>'s <code>pro
 endpoint. Note that both <code>docker</code> and <code>docker-compose</code> must ordinarily be run
 with superuser permissions (use <code>sudo</code>) when running on Linux.</p>
 <p><code>docker-compose up</code><sup class="footnote-reference"><a href="#1">1</a></sup> will start local instances of <code>prometheus</code> and <code>grafana</code>,
-accessible over HTTP on ports <code>9090</code> and <code>3030</code>, respectively. </p>
+accessible over HTTP on ports <code>9090</code> and <code>3030</code>, respectively.</p>
 <pre><code>cd &lt;zcash_root&gt;/contrib/metrics
 docker-compose up -d
 </code></pre>
@@ -250,8 +250,8 @@ repository for <code>&lt;zcash_root&gt;</code>)</p>
 <p><code>~/.zcash/zcash.conf</code> must be updated to enable <code>prometheus</code> and to allow the
 <code>prometheus</code> server launched via <code>docker-compose</code> to connect to the <code>zcashd</code>
 prometheus endpoint. The following commands can be used to detect the local IP
-address for the <code>prometheus</code> server and add it to the <code>~/.zcash/zcash.conf</code> 
-file. </p>
+address for the <code>prometheus</code> server and add it to the <code>~/.zcash/zcash.conf</code>
+file.</p>
 <p>First, figure out where <code>prometheus</code> is running.</p>
 <pre><code>export PROMETHEUS_DOCKER_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' zcashd-prometheus)
 </code></pre>

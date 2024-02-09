@@ -202,14 +202,14 @@ UTXOs to shield is 50.</p>
 </code></pre>
 <p>Sweep up coinbase UTXOs from multiple transparent addresses to a shielded
 address:</p>
-<pre><code>zcash-cli z_shieldcoinbase &quot;*&quot; zMyPrivateAddress
+<pre><code>zcash-cli z_shieldcoinbase "*" zMyPrivateAddress
 </code></pre>
 <p>Sweep up with a fee of 1.23 ZEC:</p>
 <pre><code>zcash-cli z_shieldcoinbase tMyMiningAddress zMyPrivateAddress 1.23
 </code></pre>
 <p>Sweep up with a fee of 0.1 ZEC and set limit on the maximum number of UTXOs to
 shield at 25:</p>
-<pre><code>zcash-cli z_shieldcoinbase &quot;*&quot; zMyPrivateAddress 0.1 25
+<pre><code>zcash-cli z_shieldcoinbase "*" zMyPrivateAddress 0.1 25
 </code></pre>
 <h3 id="asynchronous-call"><a class="header" href="#asynchronous-call">Asynchronous Call</a></h3>
 <p>The <code>z_shieldcoinbase</code> RPC call is an asynchronous call, so you can queue up
