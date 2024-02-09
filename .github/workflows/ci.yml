@@ -57,6 +57,7 @@ jobs:
 
     outputs:
       build_matrix: ${{ steps.set-matrices.outputs.build_matrix }}
+      build_names: ${{ steps.set-matrices.outputs.build_names }}
       test_matrix: ${{ steps.set-matrices.outputs.test_matrix }}
       test_names: ${{ steps.set-matrices.outputs.test_names }}
     steps:
@@ -65,6 +66,7 @@ jobs:
           CFG: ${{ toJSON(matrix.cfg) }}
         run: |
           jq -r -n 'env.CFG | fromjson | @json "build_matrix=\(.data)"' >> $GITHUB_OUTPUT
+          jq -r -n 'env.CFG | fromjson | [.data[] | .name] | @json "build_names=\(.)"' >> $GITHUB_OUTPUT
           jq -r -n 'env.CFG | fromjson | [.data[] | select(.test_os)] | @json "test_matrix=\(.)"' >> $GITHUB_OUTPUT
           jq -r -n 'env.CFG | fromjson | [.data[] | select(.test_os) | .name] | @json "test_names=\(.)"' >> $GITHUB_OUTPUT
 
@@ -128,7 +130,7 @@ jobs:
           -j"${{ steps.nproc.outputs.count }}"
 
       - name: Upload zcashd artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: zcashd-${{ matrix.name }}
           path: |
@@ -137,25 +139,30 @@ jobs:
 
       - name: Upload zcash-btest artifact
         if: matrix.test_os != ''
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: zcash-btest-${{ matrix.name }}
           path: ${{ format('src/test/test_bitcoin{0}', matrix.file_ext) }}
 
       - name: Upload zcash-gtest artifact
         if: matrix.test_os != ''
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: zcash-gtest-${{ matrix.name }}
           path: ${{ format('src/zcash-gtest{0}', matrix.file_ext) }}
 
   bitrot:
-    name: Bitrot check tier ${{ matrix.tier }} platform ${{ matrix.platform }}
+    name: Bitrot check tier ${{ matrix.tier }} platform ${{ matrix.platform }} flag '${{ matrix.configure_flag }}'
     needs: [matrices, build]
     runs-on: ${{ matrix.build_os }}
     continue-on-error: ${{ matrix.tier == 3 }}
     strategy:
       matrix:
+        name: ${{ fromJson(needs.matrices.outputs.build_names) }}
+        configure_flag:
+          - '--with-libs'
+          - '--disable-wallet'
+          - '--disable-mining'
         include: ${{ fromJson(needs.matrices.outputs.build_matrix) }}
 
     steps:
@@ -201,23 +208,9 @@ jobs:
         shell: bash
         run: echo "count=$(nproc 2> /dev/null || sysctl -n hw.logicalcpu)" >> "$GITHUB_OUTPUT"
 
-      - name: Build zcashd with libraries enabled
+      - name: Build zcashd with the flag being checked
         run: >
-          CONFIGURE_FLAGS="--with-libs"
-          ${{ matrix.host }}
-          ./zcutil/build.sh
-          -j"${{ steps.nproc.outputs.count }}"
-
-      - name: Build zcashd with wallet disabled
-        run: >
-          CONFIGURE_FLAGS="--disable-wallet"
-          ${{ matrix.host }}
-          ./zcutil/build.sh
-          -j"${{ steps.nproc.outputs.count }}"
-
-      - name: Build zcashd with mining disabled
-        run: >
-          CONFIGURE_FLAGS="--disable-mining"
+          CONFIGURE_FLAGS="${{ matrix.configure_flag }}"
           ${{ matrix.host }}
           ./zcutil/build.sh
           -j"${{ steps.nproc.outputs.count }}"
@@ -232,7 +225,7 @@ jobs:
         include: ${{ fromJson(needs.matrices.outputs.test_matrix) }}
     steps:
       - name: Download zcash-btest artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: zcash-btest-${{ matrix.name }}
       - name: Make artifact executable
@@ -242,7 +235,7 @@ jobs:
         run: ${{ format('./test_bitcoin{0}', matrix.file_ext) }} -p
 
   test-gtest:
-    name: GoogleTest tier ${{ matrix.tier }} platform ${{ matrix.platform }} - shard ${{ matrix.gtest_shards }}
+    name: GoogleTest tier ${{ matrix.tier }} platform ${{ matrix.platform }} - shard ${{ matrix.shard_index }}
     needs: [matrices, build]
     runs-on: ${{ matrix.test_os }}
     continue-on-error: ${{ matrix.tier != 1 }}
@@ -253,7 +246,7 @@ jobs:
         include: ${{ fromJson(needs.matrices.outputs.test_matrix) }}
     steps:
       - name: Download zcash-gtest artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: zcash-gtest-${{ matrix.name }}
       - name: Make artifact executable
