@@ -516,9 +516,10 @@ UniValue CRPCTable::execute(const std::string &strMethod, const UniValue &params
                             params.size(),
                             helpMsg));
             } else {
+                auto result = pcmd->actor(params, false);
                 int64_t nElapsedExecutionTime = (GetTimeMicros() - nExecutionStartTime);
-                LogPrint("rpc", "ThreadRPCServer completed execution of method in %.2fms [%.2fs]", nElapsedExecutionTime * 0.001, nElapsedExecutionTime * 0.000001);
-                return pcmd->actor(params, false);
+                LogPrint("rpc", "ThreadRPCServer completed method=%s in %.2fms", SanitizeString(strMethod), nElapsedExecutionTime * 0.001);
+                return result;
             }
         } else {
             throw JSONRPCError(
