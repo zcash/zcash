@@ -352,8 +352,9 @@ CWalletTx GetValidSaplingReceive(const CChainParams& params,
     // To zaddr
     auto fvk = sk.expsk.full_viewing_key();
     auto pa = sk.ToXFVK().DefaultAddress();
+    auto saplingAnchor = SaplingMerkleTree::empty_root();
 
-    auto builder = TransactionBuilder(params, 1, std::nullopt, &keyStore);
+    auto builder = TransactionBuilder(params, 1, std::nullopt, saplingAnchor, &keyStore);
     builder.SetFee(0);
     builder.AddTransparentInput(COutPoint(), scriptPubKey, value);
     builder.AddSaplingOutput(fvk.ovk, pa, value, {});

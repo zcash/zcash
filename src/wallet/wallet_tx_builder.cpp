@@ -937,9 +937,6 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
         orchardAnchor = anchorBlockIndex->hashFinalOrchardRoot;
     }
 
-    auto builder = TransactionBuilder(params, nextBlockHeight, orchardAnchor, &wallet);
-    builder.SetFee(fee);
-
     // Track the total of notes that we've added to the builder. This
     // shouldn't strictly be necessary, given `spendable.LimitToAmount`
     CAmount totalSpend = 0;
@@ -983,6 +980,9 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
                     orchardAnchor.value());
         }
     }
+
+    auto builder = TransactionBuilder(params, nextBlockHeight, orchardAnchor, saplingAnchor, &wallet);
+    builder.SetFee(fee);
 
     // Add Orchard spends
     for (size_t i = 0; i < orchardSpendInfo.size(); i++) {

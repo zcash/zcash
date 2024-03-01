@@ -257,8 +257,6 @@ public:
         READWRITE(dk);
     }
 
-    std::optional<SaplingExtendedFullViewingKey> Derive(uint32_t i) const;
-
     friend inline bool operator==(const SaplingExtendedFullViewingKey& a, const SaplingExtendedFullViewingKey& b) {
         return (
             a.depth == b.depth &&

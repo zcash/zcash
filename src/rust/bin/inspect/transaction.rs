@@ -6,6 +6,7 @@ use std::{
 use bellman::groth16;
 use group::GroupEncoding;
 use orchard::note_encryption::OrchardDomain;
+use sapling::{note_encryption::SaplingDomain, SaplingVerificationContext};
 use secp256k1::{Secp256k1, VerifyOnly};
 use zcash_address::{
     unified::{self, Encoding},
@@ -14,18 +15,16 @@ use zcash_address::{
 use zcash_note_encryption::try_output_recovery_with_ovk;
 #[allow(deprecated)]
 use zcash_primitives::{
-    consensus::BlockHeight,
+    consensus::{sapling_zip212_enforcement, BlockHeight},
     legacy::{keys::pubkey_to_address, Script, TransparentAddress},
     memo::{Memo, MemoBytes},
-    sapling::note_encryption::SaplingDomain,
     transaction::{
-        components::{sapling, transparent, Amount},
+        components::{amount::NonNegativeAmount, transparent},
         sighash::{signature_hash, SignableInput, TransparentAuthorizingContext},
         txid::TxIdDigester,
         Authorization, Transaction, TransactionData, TxId, TxVersion,
     },
 };
-use zcash_proofs::sapling::SaplingVerificationContext;
 
 use crate::{
     context::{Context, ZTxOut},
@@ -106,7 +105,7 @@ impl transparent::Authorization for TransparentAuth {
 }
 
 impl TransparentAuthorizingContext for TransparentAuth {
-    fn input_amounts(&self) -> Vec<Amount> {
+    fn input_amounts(&self) -> Vec<NonNegativeAmount> {
         self.all_prev_outputs
             .iter()
             .map(|prevout| prevout.value)
@@ -143,7 +142,7 @@ pub(crate) struct PrecomputedAuth;
 
 impl Authorization for PrecomputedAuth {
     type TransparentAuth = TransparentAuth;
-    type SaplingAuth = sapling::Authorized;
+    type SaplingAuth = sapling::bundle::Authorized;
     type OrchardAuth = orchard::bundle::Authorized;
 }
 
@@ -231,7 +230,7 @@ pub(crate) fn inspect(tx: Transaction, context: Option<Context>) {
                         txin.prevout.n()
                     );
                     match coin.recipient_address() {
-                        Some(addr @ TransparentAddress::PublicKey(_)) => {
+                        Some(addr @ TransparentAddress::PublicKeyHash(_)) => {
                             // Format is [sig_and_type_len] || sig || [hash_type] || [pubkey_len] || pubkey
                             // where [x] encodes a single byte.
                             let sig_and_type_len = txin.script_sig.0.first().map(|l| *l as usize);
@@ -311,7 +310,7 @@ pub(crate) fn inspect(tx: Transaction, context: Option<Context>) {
                             }
                         }
                         // TODO: Check P2SH structure.
-                        Some(TransparentAddress::Script(_)) => {
+                        Some(TransparentAddress::ScriptHash(_)) => {
                             eprintln!("  🔎 \"transparentcoins\"[{}] is a P2SH coin.", i);
                         }
                         // TODO: Check arbitrary scripts.
@@ -376,7 +375,7 @@ pub(crate) fn inspect(tx: Transaction, context: Option<Context>) {
         assert!(!(bundle.shielded_spends().is_empty() && bundle.shielded_outputs().is_empty()));
 
         // TODO: Separate into checking proofs, signatures, and other structural details.
-        let mut ctx = SaplingVerificationContext::new(true);
+        let mut ctx = SaplingVerificationContext::new();
 
         if !bundle.shielded_spends().is_empty() {
             eprintln!(" - {} Sapling Spend(s)", bundle.shielded_spends().len());
@@ -386,7 +385,7 @@ pub(crate) fn inspect(tx: Transaction, context: Option<Context>) {
                         spend.cv(),
                         *spend.anchor(),
                         &spend.nullifier().0,
-                        spend.rk().clone(),
+                        *spend.rk(),
                         sighash.as_ref(),
                         *spend.spend_auth_sig(),
                         groth16::Proof::read(&spend.zkproof()[..]).unwrap(),
@@ -411,8 +410,11 @@ pub(crate) fn inspect(tx: Transaction, context: Option<Context>) {
                         .and_then(|ctx| ctx.network().zip(ctx.addr_network()))
                     {
                         if let Some((note, addr, memo)) = try_output_recovery_with_ovk(
-                            &SaplingDomain::for_height(params, height.unwrap()),
-                            &zcash_primitives::keys::OutgoingViewingKey([0; 32]),
+                            &SaplingDomain::new(sapling_zip212_enforcement(
+                                &params,
+                                height.unwrap(),
+                            )),
+                            &sapling::keys::OutgoingViewingKey([0; 32]),
                             output,
                             output.cv(),
                             output.out_ciphertext(),
@@ -426,6 +428,7 @@ pub(crate) fn inspect(tx: Transaction, context: Option<Context>) {
                                 eprintln!("     - {}", zaddr);
                                 eprintln!("     - {}", render_value(note.value().inner()));
                             }
+                            let memo = MemoBytes::from_bytes(&memo).expect("correct length");
                             eprintln!("     - {}", render_memo(memo));
                         } else {
                             eprintln!(

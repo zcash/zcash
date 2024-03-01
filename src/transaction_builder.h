@@ -91,7 +91,7 @@ private:
     Builder() : inner(nullptr, orchard_builder_free), hasActions(false) { }
 
 public:
-    Builder(bool spendsEnabled, bool outputsEnabled, uint256 anchor);
+    Builder(bool coinbase, uint256 anchor);
 
     // Builder should never be copied
     Builder(const Builder&) = delete;
@@ -242,6 +242,7 @@ private:
     std::optional<uint256> orchardAnchor;
     std::optional<orchard::Builder> orchardBuilder;
     CAmount valueBalanceOrchard = 0;
+    uint256 saplingAnchor;
     rust::Box<sapling::Builder> saplingBuilder;
     CAmount valueBalanceSapling = 0;
 
@@ -268,6 +269,7 @@ public:
         const CChainParams& params,
         int nHeight,
         std::optional<uint256> orchardAnchor,
+        uint256 saplingAnchor,
         const CKeyStore* keyStore = nullptr,
         const CCoinsViewCache* coinsView = nullptr,
         CCriticalSection* cs_coinsView = nullptr);
@@ -286,6 +288,7 @@ public:
         orchardAnchor(std::move(builder.orchardAnchor)),
         orchardBuilder(std::move(builder.orchardBuilder)),
         valueBalanceOrchard(std::move(builder.valueBalanceOrchard)),
+        saplingAnchor(std::move(builder.saplingAnchor)),
         saplingBuilder(std::move(builder.saplingBuilder)),
         valueBalanceSapling(std::move(builder.valueBalanceSapling)),
         orchardSpendingKeys(std::move(orchardSpendingKeys)),
@@ -308,8 +311,10 @@ public:
             cs_coinsView = std::move(builder.cs_coinsView);
             mtx = std::move(builder.mtx);
             fee = std::move(builder.fee);
+            orchardAnchor = std::move(builder.orchardAnchor);
             orchardBuilder = std::move(builder.orchardBuilder);
             valueBalanceOrchard = std::move(builder.valueBalanceOrchard);
+            saplingAnchor = std::move(builder.saplingAnchor);
             saplingBuilder = std::move(builder.saplingBuilder);
             valueBalanceSapling = std::move(builder.valueBalanceSapling);
             orchardSpendingKeys = std::move(builder.orchardSpendingKeys),

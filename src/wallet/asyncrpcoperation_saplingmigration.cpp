@@ -16,7 +16,8 @@
 
 const int MIGRATION_EXPIRY_DELTA = 450;
 
-AsyncRPCOperation_saplingmigration::AsyncRPCOperation_saplingmigration(int targetHeight) : targetHeight_(targetHeight) {}
+AsyncRPCOperation_saplingmigration::AsyncRPCOperation_saplingmigration(int targetHeight, uint256 saplingAnchor) :
+    targetHeight_(targetHeight), saplingAnchor_(saplingAnchor) {}
 
 AsyncRPCOperation_saplingmigration::~AsyncRPCOperation_saplingmigration() {}
 
@@ -112,7 +113,14 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
     CCoinsViewCache coinsView(pcoinsTip);
     do {
         CAmount amountToSend = chooseAmount(availableFunds);
-        auto builder = TransactionBuilder(Params(), targetHeight_, std::nullopt, pwalletMain, &coinsView, &cs_main);
+        auto builder = TransactionBuilder(
+            Params(),
+            targetHeight_,
+            std::nullopt,
+            saplingAnchor_,
+            pwalletMain,
+            &coinsView,
+            &cs_main);
         builder.SetExpiryHeight(targetHeight_ + MIGRATION_EXPIRY_DELTA);
         LogPrint("zrpcunsafe", "%s: Beginning creating transaction with Sapling output amount=%s\n", getId(), FormatMoney(amountToSend - LEGACY_DEFAULT_FEE));
         std::vector<SproutNoteEntry> fromNotes;

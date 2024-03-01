@@ -306,9 +306,10 @@ public:
 
         // The Orchard bundle builder always pads to two Actions, so we can just
         // use an empty builder to create a dummy Orchard bundle.
+        // TODO: With the new BundleType::DEFAULT this is no longer true. Fix this.
         uint256 orchardAnchor;
         uint256 dataToBeSigned;
-        auto builder = orchard::Builder(true, true, orchardAnchor);
+        auto builder = orchard::Builder(false, orchardAnchor);
         mutableTx.orchardBundle = builder.Build().value().ProveAndSign({}, dataToBeSigned).value();
         orchardNullifier = mutableTx.orchardBundle.GetNullifiers()[0];
 
@@ -340,7 +341,7 @@ template<> void AppendRandomLeaf(OrchardMerkleFrontier &tree) {
     // append a random leaf to OrchardMerkleFrontier.
     uint256 orchardAnchor;
     uint256 dataToBeSigned;
-    auto builder = orchard::Builder(true, true, orchardAnchor);
+    auto builder = orchard::Builder(false, orchardAnchor);
     auto bundle = builder.Build().value().ProveAndSign({}, dataToBeSigned).value();
     tree.AppendBundle(bundle);
 }

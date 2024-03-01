@@ -13,7 +13,6 @@ use zcash_encoding::{Optional, Vector};
 use zcash_primitives::{
     consensus::BlockHeight,
     merkle_tree::{read_position, write_position},
-    sapling::NOTE_COMMITMENT_TREE_DEPTH,
     transaction::{components::Amount, TxId},
 };
 
@@ -150,7 +149,8 @@ pub struct Wallet {
     nullifiers: BTreeMap<Nullifier, OutPoint>,
     /// The incremental Merkle tree used to track note commitments and witnesses for notes
     /// belonging to the wallet.
-    commitment_tree: BridgeTree<MerkleHashOrchard, u32, NOTE_COMMITMENT_TREE_DEPTH>,
+    // TODO: Replace this with an `orchard` crate constant (they happen to be the same).
+    commitment_tree: BridgeTree<MerkleHashOrchard, u32, { sapling::NOTE_COMMITMENT_TREE_DEPTH }>,
     /// The block height at which the last checkpoint was created, if any.
     last_checkpoint: Option<BlockHeight>,
     /// The block height and transaction index of the note most recently added to
@@ -1370,7 +1370,10 @@ pub extern "C" fn orchard_wallet_load_note_commitment_tree(
 #[no_mangle]
 pub extern "C" fn orchard_wallet_init_from_frontier(
     wallet: *mut Wallet,
-    frontier: *const bridgetree::Frontier<MerkleHashOrchard, NOTE_COMMITMENT_TREE_DEPTH>,
+    frontier: *const bridgetree::Frontier<
+        MerkleHashOrchard,
+        { sapling::NOTE_COMMITMENT_TREE_DEPTH },
+    >,
 ) -> bool {
     let wallet = unsafe { wallet.as_mut() }.expect("Wallet pointer may not be null.");
     let frontier = unsafe { frontier.as_ref() }.expect("Wallet pointer may not be null.");

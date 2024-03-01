@@ -19,7 +19,10 @@
 // See https://github.com/rust-lang/rfcs/pull/2585 for more background.
 #![allow(clippy::not_unsafe_ptr_arg_deref)]
 
-use bellman::groth16::{self, Parameters, PreparedVerifyingKey};
+use ::sapling::circuit::{
+    OutputParameters, OutputVerifyingKey, SpendParameters, SpendVerifyingKey,
+};
+use bellman::groth16::PreparedVerifyingKey;
 use bls12_381::Bls12;
 use std::path::PathBuf;
 use subtle::CtOption;
@@ -61,12 +64,12 @@ mod test_harness_ffi;
 #[cfg(test)]
 mod tests;
 
-static mut SAPLING_SPEND_VK: Option<groth16::VerifyingKey<Bls12>> = None;
-static mut SAPLING_OUTPUT_VK: Option<groth16::VerifyingKey<Bls12>> = None;
+static mut SAPLING_SPEND_VK: Option<SpendVerifyingKey> = None;
+static mut SAPLING_OUTPUT_VK: Option<OutputVerifyingKey> = None;
 static mut SPROUT_GROTH16_VK: Option<PreparedVerifyingKey<Bls12>> = None;
 
-static mut SAPLING_SPEND_PARAMS: Option<Parameters<Bls12>> = None;
-static mut SAPLING_OUTPUT_PARAMS: Option<Parameters<Bls12>> = None;
+static mut SAPLING_SPEND_PARAMS: Option<SpendParameters> = None;
+static mut SAPLING_OUTPUT_PARAMS: Option<OutputParameters> = None;
 static mut SPROUT_GROTH16_PARAMS_PATH: Option<PathBuf> = None;
 
 static mut ORCHARD_PK: Option<orchard::circuit::ProvingKey> = None;

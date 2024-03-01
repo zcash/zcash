@@ -6,8 +6,8 @@ use incrementalmerkletree::Hashable;
 use libc::size_t;
 use orchard::keys::SpendingKey;
 use orchard::{
-    builder::{Builder, InProgress, Unauthorized, Unproven},
-    bundle::{Authorized, Flags},
+    builder::{Builder, BundleType, InProgress, Unauthorized, Unproven},
+    bundle::Authorized,
     keys::{FullViewingKey, OutgoingViewingKey},
     tree::{MerkleHashOrchard, MerklePath},
     value::NoteValue,
@@ -18,7 +18,7 @@ use tracing::error;
 use zcash_primitives::{
     consensus::BranchId,
     transaction::{
-        components::{sapling, Amount},
+        components::Amount,
         sighash::{signature_hash, SignableInput},
         txid::TxIdDigester,
         Authorization, Transaction, TransactionData,
@@ -55,18 +55,16 @@ pub extern "C" fn orchard_spend_info_free(spend_info: *mut OrchardSpendInfo) {
 }
 
 #[no_mangle]
-pub extern "C" fn orchard_builder_new(
-    spends_enabled: bool,
-    outputs_enabled: bool,
-    anchor: *const [u8; 32],
-) -> *mut Builder {
+pub extern "C" fn orchard_builder_new(coinbase: bool, anchor: *const [u8; 32]) -> *mut Builder {
+    let bundle_type = if coinbase {
+        BundleType::Coinbase
+    } else {
+        BundleType::DEFAULT
+    };
     let anchor = unsafe { anchor.as_ref() }
         .map(|a| orchard::Anchor::from_bytes(*a).unwrap())
         .unwrap_or_else(|| MerkleHashOrchard::empty_root(32.into()).into());
-    Box::into_raw(Box::new(Builder::new(
-        Flags::from_parts(spends_enabled, outputs_enabled),
-        anchor,
-    )))
+    Box::into_raw(Box::new(Builder::new(bundle_type, anchor)))
 }
 
 #[no_mangle]
@@ -106,7 +104,7 @@ pub extern "C" fn orchard_builder_add_recipient(
     let value = NoteValue::from_raw(value);
     let memo = unsafe { memo.as_ref() }.copied();
 
-    match builder.add_recipient(ovk, *recipient, value, memo) {
+    match builder.add_output(ovk, *recipient, value, memo) {
         Ok(()) => true,
         Err(e) => {
             error!("Failed to add Orchard recipient: {}", e);
@@ -132,8 +130,15 @@ pub extern "C" fn orchard_builder_build(
     }
     let builder = unsafe { Box::from_raw(builder) };
 
-    match builder.build(OsRng) {
-        Ok(bundle) => Box::into_raw(Box::new(bundle)),
+    match builder.build::<Amount>(OsRng) {
+        Ok(Some((bundle, _))) => Box::into_raw(Box::new(bundle)),
+        Ok(None) => {
+            // The C++ side only calls `orchard_builder_build` when it expects the
+            // resulting bundle to be non-empty (either at least one Orchard output for
+            // coinbase transactions, or a potentially-empty bundle that gets padded).
+            error!("Tried to build empty Orchard bundle");
+            ptr::null_mut()
+        }
         Err(e) => {
             error!("Failed to build Orchard bundle: {:?}", e);
             ptr::null_mut()
@@ -232,7 +237,8 @@ pub(crate) fn shielded_signature_digest(
     struct Signable {}
     impl Authorization for Signable {
         type TransparentAuth = TransparentAuth;
-        type SaplingAuth = sapling::builder::Unauthorized;
+        type SaplingAuth =
+            sapling::builder::InProgress<sapling::builder::Proven, sapling::builder::Unsigned>;
         type OrchardAuth = InProgress<Unproven, Unauthorized>;
     }
 

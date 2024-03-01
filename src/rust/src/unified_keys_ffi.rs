@@ -50,9 +50,7 @@ pub extern "C" fn unified_full_viewing_key_parse(
                         Fvk::Sapling(data) => {
                             // The last 32 bytes is the diversifier key, which is opaque.
                             // The remaining 96 bytes should be a valid Sapling FVK.
-                            if zcash_primitives::sapling::keys::FullViewingKey::read(&data[..96])
-                                .is_err()
-                            {
+                            if sapling::keys::FullViewingKey::read(&data[..96]).is_err() {
                                 error!("Unified FVK contains invalid Sapling FVK");
                                 return std::ptr::null_mut();
                             }
