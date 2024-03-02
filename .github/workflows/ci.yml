@@ -365,6 +365,20 @@ jobs:
           GTEST_SHARD_INDEX: ${{ matrix.shard_index }}
         run: ${{ format('./zcash-gtest{0}', matrix.file_ext) }}
 
+  test-rust:
+    name: Rust test tier ${{ matrix.tier }} platform ${{ matrix.platform }}
+    needs: [setup, build]
+    runs-on: ${{ matrix.test_os }}
+    continue-on-error: ${{ matrix.tier != 1 }}
+    strategy:
+      matrix:
+        include: ${{ fromJson(needs.setup.outputs.test_matrix) }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Rust tests
+        run: cargo test
+
   no-dot-so:
     name: not-dot-so tier ${{ matrix.tier }} platform ${{ matrix.platform }}
     needs: [setup, build]
