@@ -31,7 +31,7 @@ public:
     {
         static_assert(hash_select < 8, "BundleCacheHasher only has 8 hashes available.");
         uint32_t u;
-        std::memcpy(&u, &*(key.begin() + 4 * hash_select), 4);
+        std::memcpy(&u, key.data() + 4 * hash_select, 4);
         return u;
     }
 };
