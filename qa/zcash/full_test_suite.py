@@ -34,6 +34,12 @@ def get_arch_dir():
         # Just try the first one; there will only be one in CI
         return arch_dirs[0]
 
+    # Not MacOS, try Windows
+    arch_dirs = glob(os.path.join(depends_dir, 'x86_64-w64-mingw32*'))
+    if arch_dirs:
+        # Just try the first one; there will only be one in CI
+        return arch_dirs[0]
+
     print("!!! cannot find architecture dir under depends/ !!!")
     return None
 
@@ -88,7 +94,22 @@ def check_security_hardening():
     ret = True
 
     # PIE, RELRO, Canary, and NX are tested by make check-security.
-    ret &= subprocess.call(['make', '-C', repofile('src'), 'check-security']) == 0
+    if os.path.exists(repofile('src/Makefile')):
+        ret &= subprocess.call(['make', '-C', repofile('src'), 'check-security']) == 0
+    else:
+        # Equivalent to make check-security (this is just for CI purpose)
+        bin_programs = ['src/zcashd', 'src/zcash-cli', 'src/zcash-tx', 'src/bench/bench_bitcoin']  # Replace with actual values
+        bin_scripts = ['src/zcash-inspect', 'src/zcashd-wallet-tool']   # Replace with actual values
+
+        print(f"Checking binary security of {bin_programs + bin_scripts}...")
+
+        for program in bin_programs:
+            command = [repofile('contrib/devtools/security-check.py'), repofile(program)]
+            ret &= subprocess.call(command) == 0
+
+        for script in bin_scripts:
+            command = [repofile('contrib/devtools/security-check.py'), '--allow-no-canary', repofile(script)]
+            ret &= subprocess.call(command) == 0
 
     # The remaining checks are only for ELF binaries
     # Assume that if zcashd is an ELF binary, they all are
