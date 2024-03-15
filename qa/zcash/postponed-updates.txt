@@ -5,53 +5,71 @@
 #
 
 # Boost 1.84.0 causes gtests to fail on macOS.
-boost 1.84.0 2024-02-01
-native_b2 1.84.0 2024-02-01
+boost 1.84.0 2024-06-15
+native_b2 1.84.0 2024-06-15
 
 # Clang and Rust are currently pinned to LLVM 15
-libcxx 15.0.7 2024-03-15
-libcxx 16.0.0 2024-03-15
-libcxx 16.0.1 2024-03-15
-libcxx 16.0.2 2024-03-15
-libcxx 16.0.2 2024-03-15
-libcxx 16.0.3 2024-03-15
-libcxx 16.0.4 2024-03-15
-libcxx 16.0.5 2024-03-15
-libcxx 16.0.6 2024-03-15
-libcxx 17.0.0 2024-03-15
-libcxx 17.0.1 2024-03-15
-libcxx 17.0.2 2024-03-15
-libcxx 17.0.3 2024-03-15
-libcxx 17.0.4 2024-03-15
-libcxx 17.0.5 2024-03-15
-libcxx 17.0.6 2024-03-15
-native_clang 15.0.7 2024-03-15
-native_clang 16.0.0 2024-03-15
-native_clang 16.0.1 2024-03-15
-native_clang 16.0.2 2024-03-15
-native_clang 16.0.3 2024-03-15
-native_clang 16.0.4 2024-03-15
-native_clang 16.0.5 2024-03-15
-native_clang 16.0.6 2024-03-15
-native_clang 17.0.0 2024-03-15
-native_clang 17.0.1 2024-03-15
-native_clang 17.0.2 2024-03-15
-native_clang 17.0.3 2024-03-15
-native_clang 17.0.4 2024-03-15
-native_clang 17.0.5 2024-03-15
-native_clang 17.0.6 2024-03-15
-native_rust 1.70.0 2024-03-15
-native_rust 1.71.0 2024-03-15
-native_rust 1.71.1 2024-03-15
-native_rust 1.72.0 2024-03-15
-native_rust 1.72.1 2024-03-15
-native_rust 1.73.0 2024-03-15
-native_rust 1.74.0 2024-03-15
-native_rust 1.74.1 2024-03-15
-native_rust 1.75.0 2024-03-15
+libcxx 15.0.7 2024-06-15
+libcxx 16.0.0 2024-06-15
+libcxx 16.0.1 2024-06-15
+libcxx 16.0.2 2024-06-15
+libcxx 16.0.2 2024-06-15
+libcxx 16.0.3 2024-06-15
+libcxx 16.0.4 2024-06-15
+libcxx 16.0.5 2024-06-15
+libcxx 16.0.6 2024-06-15
+libcxx 17.0.0 2024-06-15
+libcxx 17.0.1 2024-06-15
+libcxx 17.0.2 2024-06-15
+libcxx 17.0.3 2024-06-15
+libcxx 17.0.4 2024-06-15
+libcxx 17.0.5 2024-06-15
+libcxx 17.0.6 2024-06-15
+libcxx 18.1.0 2024-06-15
+libcxx 18.1.1 2024-06-15
+native_clang 15.0.7 2024-06-15
+native_clang 16.0.0 2024-06-15
+native_clang 16.0.1 2024-06-15
+native_clang 16.0.2 2024-06-15
+native_clang 16.0.3 2024-06-15
+native_clang 16.0.4 2024-06-15
+native_clang 16.0.5 2024-06-15
+native_clang 16.0.6 2024-06-15
+native_clang 17.0.0 2024-06-15
+native_clang 17.0.1 2024-06-15
+native_clang 17.0.2 2024-06-15
+native_clang 17.0.3 2024-06-15
+native_clang 17.0.4 2024-06-15
+native_clang 17.0.5 2024-06-15
+native_clang 17.0.6 2024-06-15
+native_clang 18.1.0 2024-06-15
+native_clang 18.1.1 2024-06-15
+native_rust 1.70.0 2024-06-15
+native_rust 1.71.0 2024-06-15
+native_rust 1.71.1 2024-06-15
+native_rust 1.72.0 2024-06-15
+native_rust 1.72.1 2024-06-15
+native_rust 1.73.0 2024-06-15
+native_rust 1.74.0 2024-06-15
+native_rust 1.74.1 2024-06-15
+native_rust 1.75.0 2024-06-15
+native_rust 1.76.0 2024-06-15
+
+native_cxxbridge 1.0.114 2024-06-15
+native_cxxbridge 1.0.115 2024-06-15
+native_cxxbridge 1.0.116 2024-06-15
+native_cxxbridge 1.0.117 2024-06-15
+native_cxxbridge 1.0.118 2024-06-15
+native_cxxbridge 1.0.119 2024-06-15
+rustcxx 1.0.114 2024-06-15
+rustcxx 1.0.115 2024-06-15
+rustcxx 1.0.116 2024-06-15
+rustcxx 1.0.117 2024-06-15
+rustcxx 1.0.118 2024-06-15
+rustcxx 1.0.119 2024-06-15
 
 # We follow upstream Bitcoin Core's LevelDB updates
-leveldb 1.23 2024-03-15
+leveldb 1.23 2024-06-15
 
 # We're never updating to this version
 bdb 18.1.40 2025-03-01
