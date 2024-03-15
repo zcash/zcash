@@ -65,8 +65,13 @@ jobs:
       test_names: ${{ steps.set-matrices.outputs.test_names }}
       unix_test_matrix: ${{ steps.set-matrices.outputs.unix_test_matrix }}
       unix_test_names: ${{ steps.set-matrices.outputs.unix_test_names }}
+      rpc_test_matrix: ${{ steps.set-matrices.outputs.rpc_test_matrix }}
+      rpc_test_names: ${{ steps.set-matrices.outputs.rpc_test_names }}
+      rpc_tests: ${{ steps.set-rpc-tests.outputs.rpc_tests }}
 
     steps:
+      - uses: actions/checkout@v4
+
       # Configure the build and test matrices. Notes:
       # - The `*_names` lists of platforms are combined with job-specific lists to build
       #   strategy matrices. The `*_matrix` lists then augment the matrix with parameters
@@ -74,6 +79,7 @@ jobs:
       # - We can only run tests on the subset of platforms that have a compatible runner
       #   (i.e. excluding cross-compiled platforms).
       # - Some tests don't currently work on Windows platforms, so we have a Unix subset.
+      # - We only run RPC tests on Tier 1 platforms, to save costs.
       - id: set-matrices
         env:
           CFG: ${{ toJSON(matrix.cfg) }}
@@ -84,6 +90,29 @@ jobs:
           jq -r -n 'env.CFG | fromjson | [.data[] | select(.test_os) | .name] | @json "test_names=\(.)"' >> $GITHUB_OUTPUT
           jq -r -n 'env.CFG | fromjson | [.data[] | select(.test_os and .test_os != "windows-latest")] | @json "unix_test_matrix=\(.)"' >> $GITHUB_OUTPUT
           jq -r -n 'env.CFG | fromjson | [.data[] | select(.test_os and .test_os != "windows-latest") | .name] | @json "unix_test_names=\(.)"' >> $GITHUB_OUTPUT
+          jq -r -n 'env.CFG | fromjson | [.data[] | select(.test_os and .tier == 1)] | @json "rpc_test_matrix=\(.)"' >> $GITHUB_OUTPUT
+          jq -r -n 'env.CFG | fromjson | [.data[] | select(.test_os and .tier == 1) | .name] | @json "rpc_test_names=\(.)"' >> $GITHUB_OUTPUT
+
+      - id: set-rpc-tests
+        run: |
+          cat <<EOF > ./subclass.py
+          import subprocess
+          import importlib
+          import sys
+          import os
+          sys.path.append('qa/pull-tester')
+          rpc_tests = importlib.import_module('rpc-tests')
+
+          src_dir = os.environ["SRC_DIR"]
+          build_dir = '.'
+          exeext = ''
+
+          test_list = rpc_tests.SERIAL_SCRIPTS + rpc_tests.BASE_SCRIPTS + rpc_tests.ZMQ_SCRIPTS
+          print(test_list)
+          EOF
+          RPC_LIST=$(SRC_DIR=$(pwd) python3 ./subclass.py)
+          RPC_LIST_JSON=$(echo "$RPC_LIST" | sed "s/'/\"/g" | jq -c .)
+          echo "rpc_tests=$RPC_LIST_JSON" >> $GITHUB_OUTPUT
 
       - name: Download Sprout parameters
         run: |
@@ -644,3 +673,121 @@ jobs:
         run: python3 ./qa/zcash/full_test_suite.py sec-hard
         env:
           HOST: ${{ matrix.host }}
+
+  rpc-depends:
+    name: RPC set up tier ${{ matrix.tier }} platform ${{ matrix.platform }}
+    needs: setup
+    runs-on: ${{ matrix.build_os }}
+    continue-on-error: ${{ matrix.tier != 1 }}
+    strategy:
+      matrix:
+        name: ${{ fromJson(needs.setup.outputs.rpc_test_names) }}
+        include: ${{ fromJson(needs.setup.outputs.rpc_test_matrix) }}
+
+    steps:
+      - name: Get Python dependencies for RPC tests
+        run: |
+          python3 -m venv ./venv
+          source ./venv/bin/activate
+          pip install simplejson zmq asyncio
+
+      - uses: actions/cache/save@v3
+        name: cache-venv
+        with:
+          enableCrossOsArchive: true
+          path: venv
+          key: venv-${{ matrix.name }}
+
+  test-rpc:
+    name: RPC tests tier ${{ matrix.tier }} platform ${{ matrix.platform }} test ${{ matrix.rpc_tests }}
+    needs: [setup, build, rpc-depends]
+    runs-on: ${{ matrix.build_os }}
+    continue-on-error: ${{ matrix.tier != 1 }}
+    strategy:
+      matrix:
+        name: ${{ fromJson(needs.setup.outputs.rpc_test_names) }}
+        rpc_tests : ${{ fromJson(needs.setup.outputs.rpc_tests) }}
+        include: ${{ fromJson(needs.setup.outputs.rpc_test_matrix) }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/cache/restore@v3
+        name: cache-venv
+        with:
+          enableCrossOsArchive: true
+          path: venv
+          key: venv-${{ matrix.name }}
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Download ${{ format('src/zcashd{0}', matrix.file_ext) }} artifact
+        uses: ./.github/actions/gcs-download-cloud-storage
+        with:
+          path-prefix: ${{ github.run_id }}/${{ matrix.name }}
+          source: ${{ format('src/zcashd{0}', matrix.file_ext) }}
+          destination: ./src/
+
+      - name: Download ${{ format('src/zcash-cli{0}', matrix.file_ext) }} artifact
+        uses: ./.github/actions/gcs-download-cloud-storage
+        with:
+          path-prefix: ${{ github.run_id }}/${{ matrix.name }}
+          source: ${{ format('src/zcash-cli{0}', matrix.file_ext) }}
+          destination: ./src/
+
+      - name: Make artifact executable
+        if: runner.os != 'Windows'
+        run: |
+          chmod +x ${{ format('./src/zcashd{0}', matrix.file_ext) }}
+          chmod +x ${{ format('./src/zcash-cli{0}', matrix.file_ext) }}
+
+      - name: Get Sprout parameters
+        uses: actions/cache/restore@v3
+        with:
+          enableCrossOsArchive: true
+          path: zcash-params
+          key: zcash-params
+
+      - name: Setup zcash-params
+        shell: bash
+        run: |
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            mv zcash-params "$APPDATA/ZcashParams"
+          elif [ "${{ runner.os }}" == "macOS" ]; then
+            mv zcash-params "$HOME/Library/Application Support/ZcashParams"
+          elif [ "${{ runner.os }}" == "Linux" ]; then
+            mv zcash-params "$HOME/.zcash-params"
+          fi
+
+      - name: RPC test ${{ matrix.rpc_tests }}
+        run: |
+          cat <<EOF > ./subclass.py
+          import subprocess
+          import importlib
+          import sys
+          import os
+          sys.path.append('qa/pull-tester')
+          rpc_tests = importlib.import_module('rpc-tests')
+
+          src_dir = os.environ["SRC_DIR"]
+          build_dir = '.'
+          exeext = ''
+
+          class MyTestHandler(rpc_tests.RPCTestHandler):
+              def start_test(self, args, stdout, stderr):
+                  return subprocess.Popen(
+                      args,
+                      universal_newlines=True,
+                      stdout=stdout,
+                      stderr=stderr)
+
+          test_list = ["${{ matrix.rpc_tests }}"]
+          all_passed = rpc_tests.run_tests(MyTestHandler, test_list, src_dir, build_dir, exeext, jobs=len(test_list))
+          if all_passed == False:
+              sys.exit(1)
+          EOF
+          source ./venv/bin/activate
+          ZCASHD=$(pwd)/${{ format('src/zcashd{0}', matrix.file_ext) }} SRC_DIR=$(pwd) python3 ./subclass.py
