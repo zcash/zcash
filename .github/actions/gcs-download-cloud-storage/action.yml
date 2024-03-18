@@ -51,7 +51,7 @@ runs:
     - name: Move source to target [Unix]
       if: runner.os != 'Windows'
       shell: bash
-      run: mv ${{ runner.temp }}/gcs-download/* ${{ inputs.destination }}
+      run: mv $RUNNER_TEMP/gcs-download/* ${{ inputs.destination }}
 
     # PowerShell's mv aliases to its Move-Item cmdlet which has glob support (unlike mv in
     # Git Bash for whatever reason).
