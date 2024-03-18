@@ -5459,7 +5459,12 @@ bool CWallet::SelectCoins(const CAmount& nTargetValue, set<pair<const CWalletTx*
     return res;
 }
 
-bool CWallet::FundTransaction(CMutableTransaction& tx, CAmount &nFeeRet, int& nChangePosRet, std::string& strFailReason, bool includeWatching)
+tl::expected<void, std::string>
+CWallet::FundTransaction(
+        CMutableTransaction& tx,
+        CAmount &nFeeRet,
+        int& nChangePosRet,
+        bool includeWatching)
 {
     vector<CRecipient> vecSend;
 
@@ -5477,35 +5482,39 @@ bool CWallet::FundTransaction(CMutableTransaction& tx, CAmount &nFeeRet, int& nC
         coinControl.Select(txin.prevout);
 
     CReserveKey reservekey(this);
-    CWalletTx wtx;
 
-    if (!CreateTransaction(vecSend, wtx, reservekey, nFeeRet, nChangePosRet, strFailReason, &coinControl, false))
-        return false;
+    return CreateTransaction(tx.vin, vecSend, reservekey, nFeeRet, nChangePosRet, &coinControl, false)
+        .map([&](CWalletTx wtx) -> void {
+            if (nChangePosRet != -1)
+                tx.vout.insert(tx.vout.begin() + nChangePosRet, wtx.vout[nChangePosRet]);
 
-    if (nChangePosRet != -1)
-        tx.vout.insert(tx.vout.begin() + nChangePosRet, wtx.vout[nChangePosRet]);
-
-    // Add new txins (keeping original txin scriptSig/order)
-    for (const CTxIn& txin : wtx.vin)
-    {
-        bool found = false;
-        for (const CTxIn& origTxIn : tx.vin)
-        {
-            if (txin.prevout.hash == origTxIn.prevout.hash && txin.prevout.n == origTxIn.prevout.n)
+            // Add new txins (keeping original txin scriptSig/order)
+            for (const CTxIn& txin : wtx.vin)
             {
-                found = true;
-                break;
+                bool found = false;
+                for (const CTxIn& origTxIn : tx.vin)
+                {
+                    if (txin.prevout.hash == origTxIn.prevout.hash && txin.prevout.n == origTxIn.prevout.n)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found)
+                    tx.vin.push_back(txin);
             }
-        }
-        if (!found)
-            tx.vin.push_back(txin);
-    }
-
-    return true;
+        });
 }
 
-bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wtxNew, CReserveKey& reservekey, CAmount& nFeeRet,
-                                int& nChangePosRet, std::string& strFailReason, const CCoinControl* coinControl, bool sign)
+tl::expected<CWalletTx, std::string>
+CWallet::CreateTransaction(
+        const std::vector<CTxIn>& vin,
+        const vector<CRecipient>& vecSend,
+        CReserveKey& reservekey,
+        CAmount& nFeeRet,
+        int& nChangePosRet,
+        const CCoinControl* coinControl,
+        bool sign)
 {
     CAmount nValue = 0;
     unsigned int nSubtractFeeFromAmount = 0;
@@ -5513,8 +5522,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
     {
         if (nValue < 0 || recipient.nAmount < 0)
         {
-            strFailReason = _("Transaction amounts must be positive");
-            return false;
+            return tl::make_unexpected(_("Transaction amounts must be positive"));
         }
         nValue += recipient.nAmount;
 
@@ -5523,10 +5531,10 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
     }
     if (vecSend.empty() || nValue < 0)
     {
-        strFailReason = _("Transaction amounts must be positive");
-        return false;
+        return tl::make_unexpected(_("Transaction amounts must be positive"));
     }
 
+    CWalletTx wtxNew;
     wtxNew.fTimeReceivedIsTxTime = true;
     wtxNew.BindWallet(this);
     LOCK(cs_main);
@@ -5537,8 +5545,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
     // Activates after Overwinter network upgrade
     if (Params().GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_OVERWINTER)) {
         if (txNew.nExpiryHeight >= TX_EXPIRY_HEIGHT_THRESHOLD){
-            strFailReason = _("nExpiryHeight must be less than TX_EXPIRY_HEIGHT_THRESHOLD.");
-            return false;
+            return tl::make_unexpected(_("nExpiryHeight must be less than TX_EXPIRY_HEIGHT_THRESHOLD."));
         }
     }
 
@@ -5608,13 +5615,12 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
                         if (recipient.fSubtractFeeFromAmount && nFeeRet > 0)
                         {
                             if (txout.nValue < 0)
-                                strFailReason = _("The transaction amount is too small to pay the fee");
+                                return tl::make_unexpected(_("The transaction amount is too small to pay the fee"));
                             else
-                                strFailReason = _("The transaction amount is too small to send after the fee has been deducted");
+                                return tl::make_unexpected(_("The transaction amount is too small to send after the fee has been deducted"));
                         }
                         else
-                            strFailReason = _("Transaction amount too small");
-                        return false;
+                            return tl::make_unexpected(_("Transaction amount too small"));
                     }
                     txNew.vout.push_back(txout);
                 }
@@ -5627,13 +5633,12 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
                 if (!SelectCoins(nTotalValue, setCoins, nValueIn, fOnlyCoinbaseCoins, fNeedCoinbaseCoins, coinControl))
                 {
                     if (fOnlyCoinbaseCoins && Params().GetConsensus().fCoinbaseMustBeShielded) {
-                        strFailReason = _("Coinbase funds can only be sent to a zaddr");
+                        return tl::make_unexpected(_("Coinbase funds can only be sent to a zaddr"));
                     } else if (fNeedCoinbaseCoins) {
-                        strFailReason = _("Insufficient funds, coinbase funds can only be spent after they have been sent to a zaddr");
+                        return tl::make_unexpected(_("Insufficient funds, coinbase funds can only be spent after they have been sent to a zaddr"));
                     } else {
-                        strFailReason = _("Insufficient funds");
+                        return tl::make_unexpected(_("Insufficient funds"));
                     }
-                    return false;
                 }
 
                 CAmount nChange = nValueIn - nValue;
@@ -5686,8 +5691,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
                                 txNew.vout[i].nValue -= nDust;
                                 if (txNew.vout[i].IsDust())
                                 {
-                                    strFailReason = _("The transaction amount is too small to send after the fee has been deducted");
-                                    return false;
+                                    return tl::make_unexpected(_("The transaction amount is too small to send after the fee has been deducted"));
                                 }
                                 break;
                             }
@@ -5743,8 +5747,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
 
                     if (!signSuccess)
                     {
-                        strFailReason = _("Signing transaction failed");
-                        return false;
+                        return tl::make_unexpected(_("Signing transaction failed"));
                     } else {
                         UpdateTransaction(txNew, nIn, sigdata);
                     }
@@ -5757,8 +5760,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
                 // Limit size
                 if (nBytes >= max_tx_size)
                 {
-                    strFailReason = _("Transaction too large");
-                    return false;
+                    return tl::make_unexpected(_("Transaction too large"));
                 }
 
                 CAmount nFeeNeeded = GetMinimumFee(txNew, nBytes);
@@ -5776,12 +5778,12 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
                 // because we must be at the maximum allowed fee.
                 if (nFeeNeeded < ::minRelayTxFee.GetFeeForRelay(nBytes))
                 {
-                    strFailReason = _("Transaction too large for fee policy");
-                    return false;
+                    return tl::make_unexpected(_("Transaction too large for fee policy"));
                 }
 
-                if (nFeeRet >= nFeeNeeded)
+                if (nFeeRet >= nFeeNeeded) {
                     break; // Done, enough fee included.
+                }
 
                 // Include more fee and try again.
                 nFeeRet = nFeeNeeded;
@@ -5790,7 +5792,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
         }
     }
 
-    return true;
+    return wtxNew;
 }
 
 /**
