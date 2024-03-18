@@ -24,12 +24,17 @@
 #define CLIENT_VERSION_IS_RELEASE true
 
 /**
- * Copyright year (2009-this)
+ * Copyright year (2009-this and 2015-this)
  * Todo: update this when changing our copyright comments in the source
  */
 #define COPYRIGHT_YEAR 2023
 
 #endif //HAVE_CONFIG_H
+
+#define DAEMON_NAME "zcashd"
+#define WALLET_TOOL_NAME "zcashd-wallet-tool"
+#define CLI_NAME "zcash-cli"
+#define TX_UTILITY_NAME "zcash-tx"
 
 /**
  * Converts the parameter X to a string after macro replacement on X has been performed.
@@ -39,7 +44,7 @@
 #define DO_STRINGIZE(X) #X
 
 //! Copyright string used in Windows .rc files
-#define COPYRIGHT_STR "2009-" STRINGIZE(COPYRIGHT_YEAR) " The Bitcoin Core Developers and The Zcash developers"
+#define COPYRIGHT_STR "2009-" STRINGIZE(COPYRIGHT_YEAR) " " COPYRIGHT_HOLDERS_FINAL
 
 /**
  * bitcoind-res.rc includes this file, but it cannot cope with real c++ code.

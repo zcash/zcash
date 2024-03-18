@@ -183,7 +183,7 @@ public:
     /**
      * This method should only be used for serialization of unified full
      * viewing keys that have been generated internally from unified spending
-     * keys by Zcashd.  It is not suitable for use in any case where the
+     * keys by zcashd.  It is not suitable for use in any case where the
      * ZcashdUnifiedFullViewingKey value may have been produced by a
      * potentially-lossy conversion from a UnifiedFullViewingKey value that
      * originated outside of zcashd.
