@@ -6,6 +6,7 @@
 
 #include "script/sign.h"
 #include "util/moneystr.h"
+#include "util/unwrap.h"
 #include "zip317.h"
 
 using namespace libzcash;
@@ -236,38 +237,36 @@ ResolveNetPayment(
     // We initially resolve the payment with `MINIMUM_FEE` so that we can use the payment to
     // calculate the actual fee.
     auto initialFee = fee.value_or(MINIMUM_FEE);
-    return ValidateAmount(spendable, initialFee)
-        .and_then([&](void) {
-            // Needed so that the initial call to `ResolvePayment` (which is just a placeholder used
-            // to help calculate the fee) doesn’t accidentally decrement funds.
-            CAmount tempMaxSapling = maxSaplingAvailable;
-            CAmount tempMaxOrchard = maxOrchardAvailable;
-            return ResolvePayment(
-                    Payment(netpay.first, spendable.Total() - initialFee, netpay.second),
-                    canResolveOrchard,
-                    strategy,
-                    tempMaxSapling,
-                    tempMaxOrchard,
-                    orchardOutputs)
-                .map_error([](const auto& error) -> InputSelectionError { return error; })
-                .and_then([&](const auto& rpayment) {
-                    auto finalFee = fee.value_or(CalcZIP317Fee(wallet, spendable, {rpayment}, std::nullopt, consensusBranchId));
-                    return ValidateAmount(spendable, finalFee)
-                        .and_then([&](void) {
-                            return ResolvePayment(
-                                    Payment(netpay.first, spendable.Total() - finalFee, netpay.second),
-                                    canResolveOrchard,
-                                    strategy,
-                                    maxSaplingAvailable,
-                                    maxOrchardAvailable,
-                                    orchardOutputs)
-                                .map([&](const auto& actualPayment) {
-                                    return std::make_pair(actualPayment, finalFee);
-                                })
-                                .map_error([](const auto& error) -> InputSelectionError { return error; });
-                        });
-                });
-        });
+    try_unwrap(ValidateAmount(spendable, initialFee)
+    ) or_return;
+
+    // Needed so that the initial call to `ResolvePayment` (which is just a placeholder used
+    // to help calculate the fee) doesn’t accidentally decrement funds.
+    CAmount tempMaxSapling = maxSaplingAvailable;
+    CAmount tempMaxOrchard = maxOrchardAvailable;
+    const ResolvedPayment rpayment = try_unwrap(ResolvePayment(
+            Payment(netpay.first, spendable.Total() - initialFee, netpay.second),
+            canResolveOrchard,
+            strategy,
+            tempMaxSapling,
+            tempMaxOrchard,
+            orchardOutputs)
+    ) or_return;
+
+    auto finalFee = fee.value_or(CalcZIP317Fee(wallet, spendable, {rpayment}, std::nullopt, consensusBranchId));
+    try_unwrap(ValidateAmount(spendable, finalFee)
+    ) or_return;
+
+    const ResolvedPayment actualPayment = try_unwrap(ResolvePayment(
+            Payment(netpay.first, spendable.Total() - finalFee, netpay.second),
+            canResolveOrchard,
+            strategy,
+            maxSaplingAvailable,
+            maxOrchardAvailable,
+            orchardOutputs)
+    ) or_return;
+
+    return {std::make_pair(actualPayment, finalFee)};
 }
 
 tl::expected<ChangeAddress, AddressResolutionError>
@@ -314,14 +313,10 @@ WalletTxBuilder::GetChangeAddress(
 
     auto changeAddressForTransparentSelector = [&](const std::set<ReceiverType>& receiverTypes)
         -> tl::expected<ChangeAddress, AddressResolutionError> {
-        auto addr = wallet.GenerateChangeAddressForAccount(
-                sendFromAccount,
-                getAllowedChangePools(receiverTypes));
-        if (addr.has_value()) {
-            return {addr.value()};
-        } else {
-            return tl::make_unexpected(AddressResolutionError::TransparentChangeNotAllowed);
-        }
+        return try_unwrap(wallet.GenerateChangeAddressForAccount(
+                    sendFromAccount,
+                    getAllowedChangePools(receiverTypes))
+               ) or_return_unexpected(AddressResolutionError::TransparentChangeNotAllowed);
     };
 
     auto changeAddressForSaplingAddress = [&](const libzcash::SaplingPaymentAddress& addr)
@@ -332,11 +327,10 @@ WalletTxBuilder::GetChangeAddress(
         if (sendFromAccount == ZCASH_LEGACY_ACCOUNT) {
             return addr;
         } else {
-            auto addr = wallet.GenerateChangeAddressForAccount(
-                    sendFromAccount,
-                    getAllowedChangePools({ReceiverType::Sapling}));
-            assert(addr.has_value());
-            return addr.value();
+            return try_unwrap(wallet.GenerateChangeAddressForAccount(
+                        sendFromAccount,
+                        getAllowedChangePools({ReceiverType::Sapling}))
+                   ) or_assert;
         }
     };
 
@@ -676,11 +670,10 @@ WalletTxBuilder::ResolveInputsAndPayments(
     std::vector<ResolvedPayment> resolvedPayments;
     std::optional<AddressResolutionError> resolutionError;
     for (const auto& payment : payments) {
-        auto res = ResolvePayment(payment, canResolveOrchard, strategy, maxSaplingAvailable, maxOrchardAvailable, orchardOutputs);
-        res.map([&](const ResolvedPayment& rpayment) { resolvedPayments.emplace_back(rpayment); });
-        if (!res.has_value()) {
-            return tl::make_unexpected(res.error());
-        }
+        const ResolvedPayment rpayment = try_unwrap(
+                ResolvePayment(payment, canResolveOrchard, strategy, maxSaplingAvailable, maxOrchardAvailable, orchardOutputs)
+        ) or_return;
+        resolvedPayments.emplace_back(rpayment);
     }
     auto resolved = Payments(resolvedPayments);
 

@@ -26,6 +26,7 @@
 #include "walletdb.h"
 #include "script/interpreter.h"
 #include "util/time.h"
+#include "util/unwrap.h"
 #include "zcash/IncrementalMerkleTree.hpp"
 #include "miner.h"
 #include "wallet/wallet_tx_builder.h"
@@ -143,7 +144,7 @@ tl::expected<uint256, InputSelectionError>
 AsyncRPCOperation_sendmany::main_impl(CWallet& wallet) {
     auto spendable = builder_.FindAllSpendableInputs(wallet, ztxoSelector_, mindepth_);
 
-    auto preparedTx = builder_.PrepareTransaction(
+    const TransactionEffects effects = try_unwrap(builder_.PrepareTransaction(
             wallet,
             ztxoSelector_,
             spendable,
@@ -151,52 +152,50 @@ AsyncRPCOperation_sendmany::main_impl(CWallet& wallet) {
             chainActive,
             strategy_,
             fee_,
-            anchordepth_);
+            anchordepth_)
+    ) or_return;
 
-    return preparedTx
-        .map([&](const TransactionEffects& effects) {
-            effects.LockSpendable(wallet);
-            try {
-                const auto& spendable = effects.GetSpendable();
-                const auto& payments = effects.GetPayments();
-                spendable.LogInputs(getId());
+    effects.LockSpendable(wallet);
+    try {
+        const auto& spendable = effects.GetSpendable();
+        const auto& payments = effects.GetPayments();
+        spendable.LogInputs(getId());
 
-                LogPrint("zrpcunsafe", "%s: spending %s to send %s with fee %s\n", getId(),
-                         FormatMoney(payments.Total()),
-                         FormatMoney(spendable.Total()),
-                         FormatMoney(effects.GetFee()));
-                LogPrint("zrpc", "%s: total transparent input: %s (to choose from)\n", getId(),
-                         FormatMoney(spendable.GetTransparentTotal()));
-                LogPrint("zrpcunsafe", "%s: total shielded input: %s (to choose from)\n", getId(),
-                         FormatMoney(spendable.GetSaplingTotal() + spendable.GetOrchardTotal()));
-                LogPrint("zrpc", "%s: total transparent output: %s\n", getId(),
-                         FormatMoney(payments.GetTransparentTotal()));
-                LogPrint("zrpcunsafe", "%s: total shielded Sapling output: %s\n", getId(),
-                         FormatMoney(payments.GetSaplingTotal()));
-                LogPrint("zrpcunsafe", "%s: total shielded Orchard output: %s\n", getId(),
-                         FormatMoney(payments.GetOrchardTotal()));
-                LogPrint("zrpcunsafe", "%s: requested fee: %s\n", getId(),
-                         fee_.has_value() ? FormatMoney(fee_.value()) : "default");
-                LogPrint("zrpc", "%s: fee: %s\n", getId(), FormatMoney(effects.GetFee()));
+        LogPrint("zrpcunsafe", "%s: spending %s to send %s with fee %s\n", getId(),
+                    FormatMoney(payments.Total()),
+                    FormatMoney(spendable.Total()),
+                    FormatMoney(effects.GetFee()));
+        LogPrint("zrpc", "%s: total transparent input: %s (to choose from)\n", getId(),
+                    FormatMoney(spendable.GetTransparentTotal()));
+        LogPrint("zrpcunsafe", "%s: total shielded input: %s (to choose from)\n", getId(),
+                    FormatMoney(spendable.GetSaplingTotal() + spendable.GetOrchardTotal()));
+        LogPrint("zrpc", "%s: total transparent output: %s\n", getId(),
+                    FormatMoney(payments.GetTransparentTotal()));
+        LogPrint("zrpcunsafe", "%s: total shielded Sapling output: %s\n", getId(),
+                    FormatMoney(payments.GetSaplingTotal()));
+        LogPrint("zrpcunsafe", "%s: total shielded Orchard output: %s\n", getId(),
+                    FormatMoney(payments.GetOrchardTotal()));
+        LogPrint("zrpcunsafe", "%s: requested fee: %s\n", getId(),
+                 fee_.has_value() ? FormatMoney(fee_.value()) : "default");
+        LogPrint("zrpc", "%s: fee: %s\n", getId(), FormatMoney(effects.GetFee()));
 
-                auto buildResult = effects.ApproveAndBuild(
-                        Params(),
-                        wallet,
-                        chainActive,
-                        strategy_);
-                auto tx = buildResult.GetTxOrThrow();
-                LogPrint("zrpc", "%s, conventional fee: %s\n", getId(), FormatMoney(tx.GetConventionalFee()));
+        auto buildResult = effects.ApproveAndBuild(
+                Params(),
+                wallet,
+                chainActive,
+                strategy_);
+        auto tx = buildResult.GetTxOrThrow();
+        LogPrint("zrpc", "%s, conventional fee: %s\n", getId(), FormatMoney(tx.GetConventionalFee()));
 
-                UniValue sendResult = SendTransaction(tx, payments.GetResolvedPayments(), std::nullopt, testmode);
-                set_result(sendResult);
+        UniValue sendResult = SendTransaction(tx, payments.GetResolvedPayments(), std::nullopt, testmode);
+        set_result(sendResult);
 
-                effects.UnlockSpendable(wallet);
-                return tx.GetHash();
-            } catch (...) {
-                effects.UnlockSpendable(wallet);
-                throw;
-            }
-        });
+        effects.UnlockSpendable(wallet);
+        return {tx.GetHash()};
+    } catch (...) {
+        effects.UnlockSpendable(wallet);
+        throw;
+    }
 }
 
 /**

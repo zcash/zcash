@@ -49,6 +49,7 @@ zcash_gtest_SOURCES = \
 	gtest/test_transaction_builder.cpp \
 	gtest/test_transaction_builder.h \
 	gtest/test_txid.cpp \
+	gtest/test_unwrap.cpp \
 	gtest/test_upgrades.cpp \
 	gtest/test_util_string.cpp \
 	gtest/test_validation.cpp \
