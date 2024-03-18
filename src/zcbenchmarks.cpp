@@ -240,7 +240,7 @@ double benchmark_large_tx(size_t nInputs)
         allPrevOutputs.push_back(orig_tx.vout[0]);
     }
 
-    PrecomputedTransactionData txdata(spending_tx, allPrevOutputs);
+    PrecomputedTransactionData txdata(CTransaction(spending_tx), allPrevOutputs);
 
     // Sign for all the inputs
     auto consensusBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId;
