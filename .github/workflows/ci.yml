@@ -10,7 +10,6 @@ jobs:
 
   build:
     name: Build 
-    needs: setup
     runs-on: ubuntu-latest
 
     steps:
