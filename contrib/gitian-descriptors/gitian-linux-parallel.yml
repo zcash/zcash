@@ -3,8 +3,9 @@ name: "zcash-5.8.0"
 enable_cache: true
 distro: "debian"
 suites:
-- "buster"
+- "bookworm"
 - "bullseye"
+- "buster"
 architectures:
 - "amd64"
 packages:
@@ -24,7 +25,8 @@ packages:
 - "m4"
 - "ncurses-dev"
 - "pkg-config"
-- "python"
+- "python3"
+- "python-is-python3"
 - "unzip"
 - "wget"
 - "zlib1g-dev"
