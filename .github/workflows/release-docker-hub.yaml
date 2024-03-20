@@ -1,0 +1,31 @@
+name: Build and Push Docker Image to Docker Hub
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+jobs:
+  set_env:
+    name: Create version tag
+    runs-on: ubuntu-latest
+    outputs:
+      tags: ${{ steps.version_step.outputs.tags }}
+    steps:
+    - id: version_step
+      run:  |
+        echo "tags=latest,${{ github.ref_name }},${{ github.sha }}" >> $GITHUB_OUTPUT
+
+  build_push:
+    uses: zcash/.github/.github/workflows/build-and-push-docker-hub.yaml@main
+    needs: set_env
+    with:
+      image_name: zcashd
+      image_tags: ${{ needs.set_env.outputs.tags }}
+      dockerfile: ./contrib/docker/Dockerfile
+      context: ./contrib/docker/
+    secrets:
+      dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}
+      dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
+      dockerhub_registry: ${{ secrets.DOCKERHUB_REGISTRY }}
