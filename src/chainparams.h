@@ -16,9 +16,12 @@
 
 #include <rust/bridge.h>
 
-struct CDNSSeedData {
+class CDNSSeedData {
+public:
     std::string name, host;
-    CDNSSeedData(const std::string &strName, const std::string &strHost) : name(strName), host(strHost) {}
+    bool supportsServiceBitsFiltering;
+    std::string getHost(uint64_t requiredServiceBits) const;
+    CDNSSeedData(const std::string &strName, const std::string &strHost, bool supportsServiceBitsFilteringIn = false) : name(strName), host(strHost), supportsServiceBitsFiltering(supportsServiceBitsFilteringIn) {}
 };
 
 struct SeedSpec6 {
