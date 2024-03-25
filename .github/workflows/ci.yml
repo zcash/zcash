@@ -266,7 +266,7 @@ jobs:
   bitrot:
     name: Bitrot check tier ${{ matrix.tier }} platform ${{ matrix.platform }} flag '${{ matrix.configure_flag }}'
     needs: [setup, build]
-    runs-on: ${{ matrix.test_os }}
+    runs-on: ${{ matrix.build_os }}
     container:
       image: ${{ matrix.container }}
       env:
@@ -412,8 +412,6 @@ jobs:
       - name: Setup zcash-params
         shell: bash
         run: |
-          pwd
-          ls -la
           if [ "${{ runner.os }}" == "Windows" ]; then
             mv zcash-params "$APPDATA/ZcashParams"
           elif [ "${{ runner.os }}" == "macOS" ]; then
