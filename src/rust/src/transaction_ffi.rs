@@ -6,11 +6,12 @@ use blake2b_simd::Hash;
 use libc::{c_uchar, size_t};
 use tracing::error;
 use zcash_encoding::Vector;
+use zcash_primitives::transaction::components::amount::NonNegativeAmount;
 use zcash_primitives::{
     consensus::BranchId,
     legacy::Script,
     transaction::{
-        components::{sapling, transparent, Amount},
+        components::transparent,
         sighash::{SignableInput, TransparentAuthorizingContext},
         sighash_v5::v5_signature_hash,
         txid::TxIdDigester,
@@ -69,7 +70,7 @@ impl transparent::Authorization for TransparentAuth {
 }
 
 impl TransparentAuthorizingContext for TransparentAuth {
-    fn input_amounts(&self) -> Vec<Amount> {
+    fn input_amounts(&self) -> Vec<NonNegativeAmount> {
         self.all_prev_outputs
             .iter()
             .map(|prevout| prevout.value)
@@ -148,7 +149,7 @@ pub(crate) struct PrecomputedAuth;
 
 impl Authorization for PrecomputedAuth {
     type TransparentAuth = TransparentAuth;
-    type SaplingAuth = sapling::Authorized;
+    type SaplingAuth = sapling::bundle::Authorized;
     type OrchardAuth = orchard::bundle::Authorized;
 }
 

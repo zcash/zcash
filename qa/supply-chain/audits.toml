@@ -2634,6 +2634,12 @@ user-id = 1244 # ebfull
 start = "2022-10-19"
 end = "2024-09-21"
 
+[[trusted.sapling-crypto]]
+criteria = ["safe-to-deploy", "crypto-reviewed", "license-reviewed"]
+user-id = 6289 # str4d
+start = "2024-01-26"
+end = "2025-03-18"
+
 [[trusted.windows-sys]]
 criteria = "safe-to-deploy"
 user-id = 64539 # Kenny Kerr (kennykerr)
@@ -2694,6 +2700,12 @@ user-id = 1244 # ebfull
 start = "2022-10-19"
 end = "2024-09-21"
 
+[[trusted.zcash_address]]
+criteria = "safe-to-deploy"
+user-id = 6289 # str4d
+start = "2021-03-07"
+end = "2025-03-18"
+
 [[trusted.zcash_encoding]]
 criteria = "safe-to-deploy"
 user-id = 1244 # ebfull
@@ -2705,6 +2717,12 @@ criteria = "safe-to-deploy"
 user-id = 1244 # ebfull
 start = "2020-03-04"
 end = "2024-09-21"
+
+[[trusted.zcash_history]]
+criteria = "safe-to-deploy"
+user-id = 6289 # str4d
+start = "2024-03-01"
+end = "2025-03-18"
 
 [[trusted.zcash_note_encryption]]
 criteria = ["safe-to-deploy", "crypto-reviewed"]
@@ -2729,3 +2747,15 @@ criteria = ["safe-to-deploy", "crypto-reviewed", "license-reviewed"]
 user-id = 6289 # str4d
 start = "2021-03-26"
 end = "2024-09-21"
+
+[[trusted.zcash_spec]]
+criteria = ["safe-to-deploy", "crypto-reviewed", "license-reviewed"]
+user-id = 6289 # str4d
+start = "2023-12-07"
+end = "2025-03-18"
+
+[[trusted.zip32]]
+criteria = "safe-to-deploy"
+user-id = 6289 # str4d
+start = "2023-12-06"
+end = "2025-03-18"

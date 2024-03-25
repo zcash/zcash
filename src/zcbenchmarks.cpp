@@ -759,6 +759,7 @@ double benchmark_create_sapling_spend()
     auto maybe_cmu = note.cmu();
     tree.append(maybe_cmu.value());
     auto witness = tree.witness();
+    auto anchor = tree.root().GetRawBytes();
 
     CDataStream ssExtSk(SER_NETWORK, PROTOCOL_VERSION);
     ssExtSk << sk;
@@ -769,10 +770,9 @@ double benchmark_create_sapling_spend()
     std::move(ss.begin(), ss.end(), witnessChars.begin());
 
     auto nHeight = Params().GetConsensus().vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight;
-    auto builder = sapling::new_builder(*Params().RustNetwork(), nHeight);
+    auto builder = sapling::new_builder(*Params().RustNetwork(), nHeight, anchor, false);
     builder->add_spend(
         {reinterpret_cast<uint8_t*>(ssExtSk.data()), ssExtSk.size()},
-        note.d,
         address.GetRawBytes(),
         note.value(),
         note.rcm().GetRawBytes(),
@@ -781,7 +781,7 @@ double benchmark_create_sapling_spend()
     struct timeval tv_start;
     timer_start(tv_start);
 
-    auto result = sapling::build_bundle(std::move(builder), nHeight);
+    auto result = sapling::build_bundle(std::move(builder));
 
     double t = timer_stop(tv_start);
     return t;
@@ -791,9 +791,10 @@ double benchmark_create_sapling_output()
 {
     auto sk = libzcash::SaplingSpendingKey::random();
     auto address = sk.default_address();
+    auto anchor = SaplingMerkleTree::empty_root().GetRawBytes();
 
     auto nHeight = Params().GetConsensus().vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight;
-    auto builder = sapling::new_builder(*Params().RustNetwork(), nHeight);
+    auto builder = sapling::new_builder(*Params().RustNetwork(), nHeight, anchor, false);
     builder->add_recipient(
         uint256().GetRawBytes(),
         address.GetRawBytes(),
@@ -803,7 +804,7 @@ double benchmark_create_sapling_output()
     struct timeval tv_start;
     timer_start(tv_start);
 
-    auto result = sapling::build_bundle(std::move(builder), nHeight);
+    auto result = sapling::build_bundle(std::move(builder));
 
     double t = timer_stop(tv_start);
     return t;

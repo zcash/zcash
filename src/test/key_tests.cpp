@@ -206,7 +206,7 @@ BOOST_AUTO_TEST_CASE(zs_address_test)
 
     KeyIO keyIO(Params());
     for (uint32_t i = 0; i < 1000; i++) {
-        auto sk = m.Derive(i);
+        auto sk = m.Derive(i | HARDENED_KEY_LIMIT);
         {
             std::string sk_string = keyIO.EncodeSpendingKey(sk);
             BOOST_CHECK(sk_string.compare(0, 27, Params().Bech32HRP(CChainParams::SAPLING_EXTENDED_SPEND_KEY)) == 0);

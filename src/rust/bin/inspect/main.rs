@@ -98,8 +98,9 @@ fn inspect_bytes(bytes: Vec<u8>, context: Option<Context>) {
         block::inspect(&block, context);
     } else if let Some(header) = complete(&bytes, |r| BlockHeader::read(r)) {
         block::inspect_header(&header, context);
-    } else if let Some(tx) = complete(&bytes, |r| Transaction::read(r, BranchId::Sprout)) {
+    } else if let Some(tx) = complete(&bytes, |r| Transaction::read(r, BranchId::Nu5)) {
         // TODO: Take the branch ID used above from the context if present.
+        // https://github.com/zcash/zcash/issues/6831
         transaction::inspect(tx, context);
     } else {
         // It's not a known variable-length format. check fixed-length data formats.

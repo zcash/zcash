@@ -48,7 +48,7 @@ TEST(WalletZkeysTest, StoreAndLoadSaplingZkeys) {
 
     // manually add new spending key to wallet
     auto m = libzcash::SaplingExtendedSpendingKey::Master(seed);
-    auto sk = m.Derive(0);
+    auto sk = m.Derive(0 | HARDENED_KEY_LIMIT);
     ASSERT_TRUE(wallet.AddSaplingZKey(sk));
 
     // verify wallet did add it
@@ -88,7 +88,7 @@ TEST(WalletZkeysTest, StoreAndLoadSaplingZkeys) {
     EXPECT_TRUE(wallet.HaveSaplingIncomingViewingKey(dpa));
 
     // Load a third key into the wallet
-    auto sk2 = m.Derive(1);
+    auto sk2 = m.Derive(1 | HARDENED_KEY_LIMIT);
     ASSERT_TRUE(wallet.LoadSaplingZKey(sk2));
 
     // attach metadata to this third key

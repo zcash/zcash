@@ -1481,7 +1481,11 @@ void CWallet::RunSaplingMigration(int blockHeight) {
             lastOperation->cancel();
         }
         pendingSaplingMigrationTxs.clear();
-        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_saplingmigration(blockHeight + 5));
+        auto targetHeight = blockHeight + 5;
+        auto anchorBlockIndex = chainActive[blockHeight - 5];
+        assert(anchorBlockIndex != nullptr);
+        auto saplingAnchor = anchorBlockIndex->hashFinalSaplingRoot;
+        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_saplingmigration(targetHeight, saplingAnchor));
         saplingMigrationOperationId = operation->getId();
         q->addOperation(operation);
     } else if (blockHeight % 500 == 499) {

@@ -9,7 +9,7 @@
 class AsyncRPCOperation_saplingmigration : public AsyncRPCOperation
 {
 public:
-    AsyncRPCOperation_saplingmigration(int targetHeight);
+    AsyncRPCOperation_saplingmigration(int targetHeight, uint256 saplingAnchor);
     virtual ~AsyncRPCOperation_saplingmigration();
 
     // We don't want to be copied or moved around
@@ -28,6 +28,7 @@ public:
 
 private:
     int targetHeight_;
+    uint256 saplingAnchor_;
 
     bool main_impl();
 

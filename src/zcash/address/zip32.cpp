@@ -56,28 +56,6 @@ std::optional<uint32_t> diversifier_index_t::ToTransparentChildIndex() const {
 }
 
 //
-// SaplingExtendedFullViewingKey
-//
-
-std::optional<SaplingExtendedFullViewingKey> SaplingExtendedFullViewingKey::Derive(uint32_t i) const
-{
-    CDataStream ss_p(SER_NETWORK, PROTOCOL_VERSION);
-    ss_p << *this;
-    std::array<unsigned char, ZIP32_XFVK_SIZE> p_bytes;
-    std::copy(ss_p.begin(), ss_p.end(), p_bytes.begin());
-
-    try {
-        auto i_bytes = sapling::zip32::xfvk_derive(p_bytes, i);
-        CDataStream ss_i(i_bytes, SER_NETWORK, PROTOCOL_VERSION);
-        SaplingExtendedFullViewingKey xfvk_i;
-        ss_i >> xfvk_i;
-        return xfvk_i;
-    } catch (rust::Error) {
-        return std::nullopt;
-    }
-}
-
-//
 // SaplingDiversifiableFullViewingKey
 //
 
@@ -173,6 +151,10 @@ SaplingExtendedSpendingKey SaplingExtendedSpendingKey::Master(const HDSeed& seed
 
 SaplingExtendedSpendingKey SaplingExtendedSpendingKey::Derive(uint32_t i) const
 {
+    if (i < HARDENED_KEY_LIMIT) {
+        throw std::runtime_error("non-hardened derivation is unsupported");
+    }
+
     CDataStream ss_p(SER_NETWORK, PROTOCOL_VERSION);
     ss_p << *this;
     std::array<unsigned char, ZIP32_XSK_SIZE> p_bytes;

@@ -124,7 +124,7 @@ TEST(MempoolLimitTests, MempoolCostAndEvictionWeight)
 
     // Default fee
     {
-        auto builder = TransactionBuilder(Params(), 1, std::nullopt);
+        auto builder = TransactionBuilder(Params(), 1, std::nullopt, testNote.tree.root());
         builder.AddSaplingSpend(sk, testNote.note, testNote.tree.witness());
         builder.AddSaplingOutput(fvk.ovk, pa, 25000, {});
 
@@ -135,7 +135,7 @@ TEST(MempoolLimitTests, MempoolCostAndEvictionWeight)
 
     // Lower than standard fee
     {
-        auto builder = TransactionBuilder(Params(), 1, std::nullopt);
+        auto builder = TransactionBuilder(Params(), 1, std::nullopt, testNote.tree.root());
         builder.AddSaplingSpend(sk, testNote.note, testNote.tree.witness());
         builder.AddSaplingOutput(fvk.ovk, pa, 25000, {});
         static_assert(MINIMUM_FEE == 10000);
@@ -148,7 +148,7 @@ TEST(MempoolLimitTests, MempoolCostAndEvictionWeight)
 
     // Larger Tx
     {
-        auto builder = TransactionBuilder(Params(), 1, std::nullopt);
+        auto builder = TransactionBuilder(Params(), 1, std::nullopt, testNote.tree.root());
         builder.AddSaplingSpend(sk, testNote.note, testNote.tree.witness());
         for (int i = 0; i < 10; i++) {
             builder.AddSaplingOutput(fvk.ovk, pa, 1000, {});

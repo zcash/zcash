@@ -9,7 +9,6 @@ use zcash_address::{
     unified::{self, Container, Encoding},
     Network, ToAddress, TryFromAddress, ZcashAddress,
 };
-use zcash_primitives::sapling;
 
 pub type UnifiedAddressObj = NonNull<c_void>;
 pub type AddOrchardReceiverCb =

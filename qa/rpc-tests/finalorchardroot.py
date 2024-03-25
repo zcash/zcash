@@ -237,7 +237,7 @@ class FinalOrchardRootTest(BitcoinTestFramework):
         assert new_treestate["sapling"]["commitments"]["finalRoot"] != treestate["sapling"]["commitments"]["finalRoot"]
         assert new_treestate["sapling"]["commitments"]["finalState"] != treestate["sapling"]["commitments"]["finalState"]
         assert_equal(len(new_treestate["sapling"]["commitments"]["finalRoot"]), 64)
-        assert_equal(len(new_treestate["sapling"]["commitments"]["finalState"]), 70)
+        assert_equal(len(new_treestate["sapling"]["commitments"]["finalState"]), 134)
         treestate = new_treestate
 
         # Mine a block with an Orchard shielded recipient and verify the final Orchard root changes

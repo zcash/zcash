@@ -691,7 +691,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
         BOOST_CHECK_EQUAL(retValue.get_str(), testKey);
 
         // create a random Sapling key locally; split between IVKs and spending keys.
-        auto testSaplingSpendingKey = m.Derive(i);
+        auto testSaplingSpendingKey = m.Derive(i | HARDENED_KEY_LIMIT);
         auto testSaplingPaymentAddress = testSaplingSpendingKey.ToXFVK().DefaultAddress();
         if (i % 2 == 0) {
             std::string testSaplingAddr = keyIO.EncodePaymentAddress(testSaplingPaymentAddress);
@@ -1204,7 +1204,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_parameters)
     // Mutable tx containing contextual information we need to build tx
     UniValue retValue = CallRPC("getblockcount");
     int nHeight = retValue.get_int();
-    TransactionBuilder builder(Params(), nHeight + 1, std::nullopt, pwalletMain);
+    TransactionBuilder builder(Params(), nHeight + 1, std::nullopt, SaplingMerkleTree::empty_root(), pwalletMain);
 }
 
 BOOST_AUTO_TEST_CASE(asyncrpcoperation_sign_send_raw_transaction) {

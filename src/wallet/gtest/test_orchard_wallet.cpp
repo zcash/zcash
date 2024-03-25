@@ -32,7 +32,7 @@ CTransaction FakeOrchardTx(const OrchardSpendingKey& sk, libzcash::diversifier_i
 
     // Create a shielding transaction from transparent to Orchard
     // 0.0005 t-ZEC in, 0.0004 z-ZEC out, 0.0001 fee
-    auto builder = TransactionBuilder(Params(), 1, orchardAnchor, &keystore);
+    auto builder = TransactionBuilder(Params(), 1, orchardAnchor, SaplingMerkleTree::empty_root(), &keystore);
     builder.SetFee(10000);
     builder.AddTransparentInput(COutPoint(uint256S("1234"), 0), scriptPubKey, 50000);
     builder.AddOrchardOutput(std::nullopt, recipient, 40000, std::nullopt);
@@ -129,7 +129,7 @@ TEST(TransactionBuilder, OrchardToOrchard) {
 
     // Create an Orchard-only transaction
     // 0.0004 z-ZEC in, 0.00025 z-ZEC out, default fee, 0.00014 z-ZEC change
-    auto builder = TransactionBuilder(Params(), 2, orchardAnchor);
+    auto builder = TransactionBuilder(Params(), 2, orchardAnchor, SaplingMerkleTree::empty_root());
     EXPECT_TRUE(builder.AddOrchardSpend(sk, std::move(spendInfo[0].second)));
     builder.AddOrchardOutput(std::nullopt, recipient, 25000, std::nullopt);
     auto maybeTx = builder.Build();

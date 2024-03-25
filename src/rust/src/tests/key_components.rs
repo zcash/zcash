@@ -1,7 +1,7 @@
 use group::GroupEncoding;
-use zcash_primitives::{
-    constants::SPENDING_KEY_GENERATOR,
-    sapling::{Diversifier, Nullifier, ProofGenerationKey, Rseed},
+use sapling::{
+    constants::SPENDING_KEY_GENERATOR, keys::SpendValidatingKey, value::NoteValue, Diversifier,
+    Nullifier, ProofGenerationKey, Rseed,
 };
 
 use crate::sapling::spec::{ask_to_ak, check_diversifier, crh_ivk, ivk_to_pkd, nsk_to_nk};
@@ -661,7 +661,10 @@ fn key_components() {
             assert_eq!(&ak, &tv.ak);
         }
 
-        let pgk = ProofGenerationKey { ak, nsk };
+        let pgk = ProofGenerationKey {
+            ak: SpendValidatingKey::temporary_zcash_from_bytes(&ak.to_bytes()).unwrap(),
+            nsk,
+        };
         let fvk = pgk.to_viewing_key();
         assert_eq!(&fvk.nk.0.to_bytes(), &tv.nk);
         {
@@ -686,7 +689,7 @@ fn key_components() {
         }
 
         let note_r = jubjub::Scalar::from_bytes(&tv.note_r).unwrap();
-        let note = addr.create_note(tv.note_v, Rseed::BeforeZip212(note_r));
+        let note = addr.create_note(NoteValue::from_raw(tv.note_v), Rseed::BeforeZip212(note_r));
         assert_eq!(&note.cmu().to_bytes(), &tv.note_cm);
 
         assert_eq!(note.nf(&fvk.nk, tv.note_pos), Nullifier(tv.note_nf));

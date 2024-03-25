@@ -5,9 +5,9 @@ use incrementalmerkletree::{
     Hashable, Level,
 };
 use orchard::tree::MerkleHashOrchard;
-use zcash_primitives::{
-    merkle_tree::{read_frontier_v1, write_commitment_tree, write_frontier_v1, HashSer},
-    sapling::NOTE_COMMITMENT_TREE_DEPTH,
+use sapling::NOTE_COMMITMENT_TREE_DEPTH;
+use zcash_primitives::merkle_tree::{
+    read_frontier_v1, write_commitment_tree, write_frontier_v1, HashSer,
 };
 
 use crate::{bridge::ffi, orchard_bundle, streams::CppStream, wallet::Wallet};

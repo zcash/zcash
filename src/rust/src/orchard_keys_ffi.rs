@@ -1,3 +1,4 @@
+use std::convert::TryInto;
 use std::io::{Read, Write};
 use std::slice;
 use tracing::error;
@@ -160,7 +161,7 @@ pub extern "C" fn orchard_incoming_viewing_key_decrypt_diversifier(
 
     match key.diversifier_index(addr) {
         Some(j) => {
-            j_ret.copy_from_slice(j.to_bytes());
+            j_ret.copy_from_slice(j.as_bytes());
             true
         }
         None => false,
@@ -327,7 +328,8 @@ pub extern "C" fn orchard_spending_key_for_account(
     account_id: u32,
 ) -> *mut SpendingKey {
     let seed = unsafe { slice::from_raw_parts(seed, seed_len) };
-    SpendingKey::from_zip32_seed(seed, bip44_coin_type, account_id)
+    let account = account_id.try_into().expect("account_id should be a u31");
+    SpendingKey::from_zip32_seed(seed, bip44_coin_type, account)
         .map(|key| Box::into_raw(Box::new(key)))
         .unwrap_or(std::ptr::null_mut())
 }

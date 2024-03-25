@@ -1,10 +1,10 @@
+use std::convert::TryFrom;
+
 use group::{ff::Field, Group, GroupEncoding};
 use rand::{thread_rng, Rng};
+use sapling::value::ValueCommitment;
 use zcash_note_encryption::EphemeralKeyBytes;
-use zcash_primitives::{
-    sapling::{self, redjubjub, value::ValueCommitment},
-    transaction::components::{sapling as sapling_tx, Amount},
-};
+use zcash_primitives::transaction::components::Amount;
 
 pub(crate) fn test_only_invalid_sapling_bundle(
     spends: usize,
@@ -27,14 +27,17 @@ pub(crate) fn test_only_invalid_sapling_bundle(
             .unwrap();
             let anchor = jubjub::Base::random(&mut rng);
             let nullifier = sapling::Nullifier(rng.gen());
-            let rk = redjubjub::PublicKey(jubjub::ExtendedPoint::random(&mut rng));
+            let rk = redjubjub::VerificationKey::try_from(
+                jubjub::ExtendedPoint::random(&mut rng).to_bytes(),
+            )
+            .unwrap();
             let zkproof = gen_array(&mut rng);
             let spend_auth_sig = {
                 let tmp = gen_array::<_, 64>(&mut rng);
-                redjubjub::Signature::read(&tmp[..]).unwrap()
+                redjubjub::Signature::from(tmp)
             };
 
-            sapling_tx::SpendDescription::temporary_zcashd_from_parts(
+            sapling::bundle::SpendDescription::from_parts(
                 cv,
                 anchor,
                 nullifier,
@@ -61,7 +64,7 @@ pub(crate) fn test_only_invalid_sapling_bundle(
             let out_ciphertext = gen_array(&mut rng);
             let zkproof = gen_array(&mut rng);
 
-            sapling_tx::OutputDescription::temporary_zcashd_from_parts(
+            sapling::bundle::OutputDescription::from_parts(
                 cv,
                 cmu,
                 ephemeral_key,
@@ -74,16 +77,16 @@ pub(crate) fn test_only_invalid_sapling_bundle(
 
     let binding_sig = {
         let tmp = gen_array::<_, 64>(&mut rng);
-        redjubjub::Signature::read(&tmp[..]).unwrap()
+        redjubjub::Signature::from(tmp)
     };
 
-    let bundle = sapling_tx::Bundle::temporary_zcashd_from_parts(
+    let bundle = sapling::Bundle::from_parts(
         spends,
         outputs,
         Amount::from_i64(value_balance).unwrap(),
-        sapling_tx::Authorized { binding_sig },
+        sapling::bundle::Authorized { binding_sig },
     );
-    Box::new(crate::sapling::Bundle(Some(bundle)))
+    Box::new(crate::sapling::Bundle(bundle))
 }
 
 pub(crate) fn test_only_replace_sapling_nullifier(
@@ -92,18 +95,18 @@ pub(crate) fn test_only_replace_sapling_nullifier(
     nullifier: [u8; 32],
 ) {
     if let Some(bundle) = bundle.0.as_mut() {
-        *bundle = sapling_tx::Bundle::temporary_zcashd_from_parts(
+        *bundle = sapling::Bundle::from_parts(
             bundle
                 .shielded_spends()
                 .iter()
                 .enumerate()
                 .map(|(i, spend)| {
                     if i == spend_index {
-                        sapling_tx::SpendDescription::temporary_zcashd_from_parts(
+                        sapling::bundle::SpendDescription::from_parts(
                             spend.cv().clone(),
                             *spend.anchor(),
                             sapling::Nullifier(nullifier),
-                            spend.rk().clone(),
+                            *spend.rk(),
                             *spend.zkproof(),
                             *spend.spend_auth_sig(),
                         )
@@ -116,6 +119,7 @@ pub(crate) fn test_only_replace_sapling_nullifier(
             *bundle.value_balance(),
             *bundle.authorization(),
         )
+        .expect("Prior bundle was valid");
     }
 }
 
@@ -127,7 +131,7 @@ pub(crate) fn test_only_replace_sapling_output_parts(
     out_ciphertext: [u8; 80],
 ) {
     if let Some(bundle) = bundle.0.as_mut() {
-        *bundle = sapling_tx::Bundle::temporary_zcashd_from_parts(
+        *bundle = sapling::Bundle::from_parts(
             bundle.shielded_spends().to_vec(),
             bundle
                 .shielded_outputs()
@@ -135,7 +139,7 @@ pub(crate) fn test_only_replace_sapling_output_parts(
                 .enumerate()
                 .map(|(i, output)| {
                     if i == output_index {
-                        sapling_tx::OutputDescription::temporary_zcashd_from_parts(
+                        sapling::bundle::OutputDescription::from_parts(
                             output.cv().clone(),
                             sapling::note::ExtractedNoteCommitment::from_bytes(&cmu).unwrap(),
                             output.ephemeral_key().clone(),
@@ -151,5 +155,6 @@ pub(crate) fn test_only_replace_sapling_output_parts(
             *bundle.value_balance(),
             *bundle.authorization(),
         )
+        .expect("Prior bundle was valid");
     }
 }

@@ -1,19 +1,15 @@
 use std::convert::TryInto;
 
+use sapling::{
+    keys::OutgoingViewingKey,
+    note_encryption::{PreparedIncomingViewingKey, SaplingDomain},
+    value::ValueCommitment,
+    SaplingIvk,
+};
 use zcash_note_encryption::{
     try_output_recovery_with_ovk, Domain, EphemeralKeyBytes, ShieldedOutput, ENC_CIPHERTEXT_SIZE,
 };
-use zcash_primitives::{
-    consensus::BlockHeight,
-    keys::OutgoingViewingKey,
-    memo::MemoBytes,
-    sapling::{
-        self,
-        note_encryption::{PreparedIncomingViewingKey, SaplingDomain},
-        value::ValueCommitment,
-        SaplingIvk,
-    },
-};
+use zcash_primitives::consensus::{sapling_zip212_enforcement, BlockHeight};
 
 use crate::{bridge::ffi::SaplingShieldedOutput, params::Network};
 
@@ -35,10 +31,9 @@ pub(crate) fn try_sapling_note_decryption(
         .ok_or("Invalid Sapling ivk passed to wallet::try_sapling_note_decryption()")?;
 
     let (note, recipient, memo) = sapling::note_encryption::try_sapling_note_decryption(
-        network,
-        BlockHeight::from_u32(height),
         &ivk,
         &output,
+        sapling_zip212_enforcement(network, BlockHeight::from_u32(height)),
     )
     .ok_or("Decryption failed")?;
 
@@ -64,7 +59,10 @@ pub(crate) fn try_sapling_output_recovery(
     ovk: [u8; 32],
     output: SaplingShieldedOutput,
 ) -> Result<Box<DecryptedSaplingOutput>, &'static str> {
-    let domain = SaplingDomain::for_height(*network, BlockHeight::from_u32(height));
+    let domain = SaplingDomain::new(sapling_zip212_enforcement(
+        network,
+        BlockHeight::from_u32(height),
+    ));
 
     let cv = Option::from(ValueCommitment::from_bytes_not_small_order(&output.cv))
         .ok_or("Invalid output.cv passed to wallet::try_sapling_note_decryption()")?;
@@ -94,12 +92,12 @@ pub(crate) fn parse_and_prepare_sapling_ivk(
         .into()
 }
 
-impl ShieldedOutput<SaplingDomain<Network>, ENC_CIPHERTEXT_SIZE> for SaplingShieldedOutput {
+impl ShieldedOutput<SaplingDomain, ENC_CIPHERTEXT_SIZE> for SaplingShieldedOutput {
     fn ephemeral_key(&self) -> EphemeralKeyBytes {
         EphemeralKeyBytes(self.ephemeral_key)
     }
 
-    fn cmstar_bytes(&self) -> <SaplingDomain<Network> as Domain>::ExtractedCommitmentBytes {
+    fn cmstar_bytes(&self) -> <SaplingDomain as Domain>::ExtractedCommitmentBytes {
         self.cmu
     }
 
@@ -112,7 +110,7 @@ impl ShieldedOutput<SaplingDomain<Network>, ENC_CIPHERTEXT_SIZE> for SaplingShie
 pub(crate) struct DecryptedSaplingOutput {
     note: sapling::Note,
     recipient: sapling::PaymentAddress,
-    memo: MemoBytes,
+    memo: [u8; 512],
 }
 
 impl DecryptedSaplingOutput {
@@ -140,6 +138,6 @@ impl DecryptedSaplingOutput {
     }
 
     pub(crate) fn memo(&self) -> [u8; 512] {
-        *self.memo.as_array()
+        self.memo
     }
 }

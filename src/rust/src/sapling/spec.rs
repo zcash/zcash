@@ -5,16 +5,14 @@ use group::{cofactor::CofactorGroup, GroupEncoding};
 use incrementalmerkletree::Hashable;
 use rand_core::{OsRng, RngCore};
 
-use zcash_primitives::{
+use sapling::{
     constants::{CRH_IVK_PERSONALIZATION, PROOF_GENERATION_KEY_GENERATOR, SPENDING_KEY_GENERATOR},
-    merkle_tree::HashSer,
-    sapling::{
-        merkle_hash,
-        note::{ExtractedNoteCommitment, NoteCommitment},
-        value::NoteValue,
-        Diversifier, Node, Note, NullifierDerivingKey, PaymentAddress, Rseed,
-    },
+    merkle_hash,
+    note::{ExtractedNoteCommitment, NoteCommitment},
+    value::NoteValue,
+    Diversifier, Node, Note, NullifierDerivingKey, PaymentAddress, Rseed,
 };
+use zcash_primitives::merkle_tree::HashSer;
 
 use crate::de_ct;
 

@@ -48,11 +48,10 @@ uint256 ProduceShieldedSignatureHash(
 namespace orchard {
 
 Builder::Builder(
-    bool spendsEnabled,
-    bool outputsEnabled,
+    bool coinbase,
     uint256 anchor) : inner(nullptr, orchard_builder_free)
 {
-    inner.reset(orchard_builder_new(spendsEnabled, outputsEnabled, anchor.IsNull() ? nullptr : anchor.begin()));
+    inner.reset(orchard_builder_new(coinbase, anchor.IsNull() ? nullptr : anchor.begin()));
 }
 
 bool Builder::AddSpend(orchard::SpendInfo spendInfo)
@@ -209,6 +208,7 @@ TransactionBuilder::TransactionBuilder(
     const CChainParams& params,
     int nHeight,
     std::optional<uint256> orchardAnchor,
+    uint256 saplingAnchor,
     const CKeyStore* keystore,
     const CCoinsViewCache* coinsView,
     CCriticalSection* cs_coinsView) :
@@ -218,7 +218,8 @@ TransactionBuilder::TransactionBuilder(
     coinsView(coinsView),
     cs_coinsView(cs_coinsView),
     orchardAnchor(orchardAnchor),
-    saplingBuilder(sapling::new_builder(*params.RustNetwork(), nHeight))
+    saplingAnchor(saplingAnchor),
+    saplingBuilder(sapling::new_builder(*params.RustNetwork(), nHeight, saplingAnchor.ToRawBytes(), false))
 {
     mtx = CreateNewContextualCMutableTransaction(
             consensusParams, nHeight,
@@ -226,7 +227,7 @@ TransactionBuilder::TransactionBuilder(
 
     // Ignore the Orchard anchor if we can't use it yet.
     if (orchardAnchor.has_value() && mtx.nVersion >= ZIP225_MIN_TX_VERSION) {
-        orchardBuilder = orchard::Builder(true, true, orchardAnchor.value());
+        orchardBuilder = orchard::Builder(false, orchardAnchor.value());
     }
 }
 
@@ -329,7 +330,6 @@ void TransactionBuilder::AddSaplingSpend(
 
     saplingBuilder->add_spend(
         {reinterpret_cast<uint8_t*>(ssExtSk.data()), ssExtSk.size()},
-        note.d,
         recipient.GetRawBytes(),
         note.value(),
         note.rcm().GetRawBytes(),
@@ -525,7 +525,7 @@ TransactionBuilderResult TransactionBuilder::Build()
 
     std::optional<rust::Box<sapling::UnauthorizedBundle>> maybeSaplingBundle;
     try {
-        maybeSaplingBundle = sapling::build_bundle(std::move(saplingBuilder), nHeight);
+        maybeSaplingBundle = sapling::build_bundle(std::move(saplingBuilder));
     } catch (rust::Error e) {
         return TransactionBuilderResult("Failed to build Sapling bundle: " + std::string(e.what()));
     }
