@@ -13,10 +13,39 @@ jobs:
   setup:
     name: Define CI matrix
     runs-on: ubuntu-latest
+    container:
+      image: electriccoinco/debian-helper:bookworm
+      env:
+        HOME: /root
+        PATH: /root/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH
     strategy:
       matrix:
         cfg:
           - data:
+            - name: Debian-bookworm
+              tier: 1
+              platform: Debian Bookworm
+              build_os: ubuntu-20.04-8cores
+              test_os: ubuntu-20.04
+              container: electriccoinco/debian-helper:bookworm
+              host: x86_64-pc-linux-gnu
+
+            - name: Debian-bullseye
+              tier: 1
+              platform: Debian bullseye
+              build_os: ubuntu-20.04-8cores
+              test_os: ubuntu-20.04
+              container: electriccoinco/debian-helper:bullseye
+              host: x86_64-pc-linux-gnu
+
+            - name: Debian-buster
+              tier: 1
+              platform: Debian buster
+              build_os: ubuntu-20.04-8cores
+              test_os: ubuntu-20.04
+              container: electriccoinco/debian-helper:buster
+              host: x86_64-pc-linux-gnu
+
             - name: ubuntu-20.04
               tier: 1
               platform: Ubuntu 20.04
@@ -106,6 +135,11 @@ jobs:
     name: Build tier ${{ matrix.tier }} platform ${{ matrix.platform }}
     needs: setup
     runs-on: ${{ matrix.build_os }}
+    container:
+      image: ${{ matrix.container }}
+      env:
+        HOME: /root
+        PATH: /root/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH
     continue-on-error: ${{ matrix.tier == 3 }}
     strategy:
       matrix:
@@ -249,6 +283,11 @@ jobs:
     name: Bitrot check tier ${{ matrix.tier }} platform ${{ matrix.platform }} flag '${{ matrix.configure_flag }}'
     needs: [setup, build]
     runs-on: ${{ matrix.build_os }}
+    container:
+      image: ${{ matrix.container }}
+      env:
+        HOME: /root
+        PATH: /root/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH
     continue-on-error: ${{ matrix.tier == 3 }}
     strategy:
       matrix:
@@ -314,6 +353,11 @@ jobs:
     name: Boost.Test tier ${{ matrix.tier }} platform ${{ matrix.platform }}
     needs: [setup, build]
     runs-on: ${{ matrix.test_os }}
+    container:
+      image: ${{ matrix.container }}
+      env:
+        HOME: /root
+        PATH: /root/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH
     continue-on-error: ${{ matrix.tier != 1 }}
     strategy:
       matrix:
@@ -344,6 +388,11 @@ jobs:
     name: GoogleTest tier ${{ matrix.tier }} platform ${{ matrix.platform }} - shard ${{ matrix.shard_index }}
     needs: [setup, build]
     runs-on: ${{ matrix.test_os }}
+    container:
+      image: ${{ matrix.container }}
+      env:
+        HOME: /root
+        PATH: /root/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH
     continue-on-error: ${{ matrix.tier != 1 }}
     strategy:
       matrix:
@@ -397,6 +446,11 @@ jobs:
     name: Rust test tier ${{ matrix.tier }} platform ${{ matrix.platform }}
     needs: [setup, build]
     runs-on: ${{ matrix.test_os }}
+    container:
+      image: ${{ matrix.container }}
+      env:
+        HOME: /root
+        PATH: /root/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH
     continue-on-error: ${{ matrix.tier != 1 }}
     strategy:
       matrix:
@@ -412,6 +466,11 @@ jobs:
     name: secp256k1 tier ${{ matrix.tier }} platform ${{ matrix.platform }}
     needs: [setup, build]
     runs-on: ${{ matrix.test_os }}
+    container:
+      image: ${{ matrix.container }}
+      env:
+        HOME: /root
+        PATH: /root/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH
     continue-on-error: ${{ matrix.tier != 1 }}
     strategy:
       matrix:
@@ -450,6 +509,11 @@ jobs:
     name: univalue tier ${{ matrix.tier }} platform ${{ matrix.platform }}
     needs: [setup, build]
     runs-on: ${{ matrix.test_os }}
+    container:
+      image: ${{ matrix.container }}
+      env:
+        HOME: /root
+        PATH: /root/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH
     continue-on-error: ${{ matrix.tier != 1 }}
     strategy:
       matrix:
@@ -492,6 +556,11 @@ jobs:
     name: util-test tier ${{ matrix.tier }} platform ${{ matrix.platform }}
     needs: [setup, build]
     runs-on: ${{ matrix.test_os }}
+    container:
+      image: ${{ matrix.container }}
+      env:
+        HOME: /root
+        PATH: /root/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH
     continue-on-error: ${{ matrix.tier != 1 }}
     strategy:
       matrix:
@@ -533,6 +602,11 @@ jobs:
     name: not-dot-so tier ${{ matrix.tier }} platform ${{ matrix.platform }}
     needs: [setup, build]
     runs-on: ${{ matrix.test_os }}
+    container:
+      image: ${{ matrix.container }}
+      env:
+        HOME: /root
+        PATH: /root/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH
     continue-on-error: ${{ matrix.tier != 1 }}
     strategy:
       matrix:
@@ -563,6 +637,11 @@ jobs:
     name: sec-hard tier ${{ matrix.tier }} platform ${{ matrix.platform }}
     needs: [setup, build]
     runs-on: ${{ matrix.test_os }}
+    container:
+      image: ${{ matrix.container }}
+      env:
+        HOME: /root
+        PATH: /root/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH
     continue-on-error: ${{ matrix.tier != 1 }}
     strategy:
       matrix:
