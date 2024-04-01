@@ -330,65 +330,77 @@ TEST(WalletRPCTests, RPCZsendmanyTaddrToSapling)
     ss >> tx;
     ASSERT_NE(tx.GetSaplingOutputsCount(), 0);
 
-    auto outputs = tx.GetSaplingOutputs();
-    auto enc_ciphertext = outputs[0].enc_ciphertext();
-    auto out_ciphertext = outputs[0].out_ciphertext();
-    auto cv = outputs[0].cv();
-    auto cmu = outputs[0].cmu();
-    auto ephemeral_key = outputs[0].ephemeral_key();
-
-    // We shouldn't be able to decrypt with the empty ovk
-    EXPECT_THROW(wallet::try_sapling_output_recovery(
-        *rustNetwork,
-        nextBlockHeight,
-        uint256().GetRawBytes(),
-        {
-            cv,
-            cmu,
-            ephemeral_key,
-            enc_ciphertext,
-            out_ciphertext,
-        }), rust::Error);
-
-    // We shouldn't be able to decrypt with a random ovk
-    EXPECT_THROW(wallet::try_sapling_output_recovery(
-        *rustNetwork,
-        nextBlockHeight,
-        random_uint256().GetRawBytes(),
-        {
-            cv,
-            cmu,
-            ephemeral_key,
-            enc_ciphertext,
-            out_ciphertext,
-        }), rust::Error);
-
     auto accountKey = pwalletMain->GetLegacyAccountKey().ToAccountPubKey();
     auto ovks = accountKey.GetOVKsForShielding();
-    // We should not be able to decrypt with the internal change OVK for shielding
-    EXPECT_THROW(wallet::try_sapling_output_recovery(
-        *rustNetwork,
-        nextBlockHeight,
-        ovks.first.GetRawBytes(),
-        {
-            cv,
-            cmu,
-            ephemeral_key,
-            enc_ciphertext,
-            out_ciphertext,
-        }), rust::Error);
-    // We should be able to decrypt with the external OVK for shielding
-    EXPECT_NO_THROW(wallet::try_sapling_output_recovery(
-        *rustNetwork,
-        nextBlockHeight,
-        ovks.second.GetRawBytes(),
-        {
-            cv,
-            cmu,
-            ephemeral_key,
-            enc_ciphertext,
-            out_ciphertext,
-        }));
+
+    auto extDecryptSucceeded = 0;
+    auto extDecryptFailed = 0;
+    for (auto& output: tx.GetSaplingOutputs()) {
+        auto enc_ciphertext = output.enc_ciphertext();
+        auto out_ciphertext = output.out_ciphertext();
+        auto cv = output.cv();
+        auto cmu = output.cmu();
+        auto ephemeral_key = output.ephemeral_key();
+
+        // We shouldn't be able to decrypt with the empty ovk
+        EXPECT_THROW(wallet::try_sapling_output_recovery(
+            *rustNetwork,
+            nextBlockHeight,
+            uint256().GetRawBytes(),
+            {
+                cv,
+                cmu,
+                ephemeral_key,
+                enc_ciphertext,
+                out_ciphertext,
+            }), rust::Error);
+
+        // We shouldn't be able to decrypt with a random ovk
+        EXPECT_THROW(wallet::try_sapling_output_recovery(
+            *rustNetwork,
+            nextBlockHeight,
+            random_uint256().GetRawBytes(),
+            {
+                cv,
+                cmu,
+                ephemeral_key,
+                enc_ciphertext,
+                out_ciphertext,
+            }), rust::Error);
+
+        // We should not be able to decrypt with the internal change OVK for shielding
+        EXPECT_THROW(wallet::try_sapling_output_recovery(
+            *rustNetwork,
+            nextBlockHeight,
+            ovks.first.GetRawBytes(),
+            {
+                cv,
+                cmu,
+                ephemeral_key,
+                enc_ciphertext,
+                out_ciphertext,
+            }), rust::Error);
+
+        // We should be able to decrypt one of the outputs with the external OVK for shielding.
+        try {
+            wallet::try_sapling_output_recovery(
+                *rustNetwork,
+                nextBlockHeight,
+                ovks.second.GetRawBytes(),
+                {
+                    cv,
+                    cmu,
+                    ephemeral_key,
+                    enc_ciphertext,
+                    out_ciphertext,
+                });
+            extDecryptSucceeded += 1;
+        } catch (...) {
+            extDecryptFailed += 1;
+        }
+    }
+    EXPECT_EQ(extDecryptSucceeded, 1);
+    EXPECT_EQ(extDecryptFailed, 1);
 
     // Tear down
     chainActive.SetTip(NULL);

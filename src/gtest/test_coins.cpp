@@ -448,11 +448,14 @@ public:
         mutableTxV5.saplingBundle = sapling::test_only_invalid_bundle(1, 0, 0);
         saplingNullifier = uint256::FromRawBytes(mutableTxV5.saplingBundle.GetDetails().spends()[0].nullifier());
 
-        // The Orchard bundle builder always pads to two Actions, so we can just
-        // use an empty builder to create a dummy Orchard bundle.
+        RawHDSeed seed(32, 0);
+        auto to = libzcash::OrchardSpendingKey::ForAccount(seed, 133, 0)
+            .ToFullViewingKey()
+            .GetChangeAddress();
         uint256 orchardAnchor;
         uint256 dataToBeSigned;
-        auto builder = orchard::Builder(true, true, orchardAnchor);
+        auto builder = orchard::Builder(false, orchardAnchor);
+        builder.AddOutput(std::nullopt, to, 0, std::nullopt);
         mutableTxV5.orchardBundle = builder.Build().value().ProveAndSign({}, dataToBeSigned).value();
         orchardNullifier = mutableTxV5.orchardBundle.GetNullifiers().at(0);
 

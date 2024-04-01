@@ -9,7 +9,7 @@ use serde::{
 use zcash_primitives::{
     consensus::Network,
     legacy::Script,
-    transaction::components::{transparent, Amount, TxOut},
+    transaction::components::{amount::NonNegativeAmount, transparent, TxOut},
     zip32::AccountId,
 };
 
@@ -67,7 +67,9 @@ impl<'de> Visitor<'de> for JsonAccountIdVisitor {
     {
         u32::try_from(v)
             .map_err(|_| E::custom(format!("u32 out of range: {}", v)))
-            .map(AccountId::from)
+            .and_then(|a| {
+                AccountId::try_from(a).map_err(|e| E::custom(format!("AccountId invalid: {}", e)))
+            })
             .map(JsonAccountId)
     }
 
@@ -77,7 +79,9 @@ impl<'de> Visitor<'de> for JsonAccountIdVisitor {
     {
         u32::try_from(v)
             .map_err(|_| E::custom(format!("u32 out of range: {}", v)))
-            .map(AccountId::from)
+            .and_then(|a| {
+                AccountId::try_from(a).map_err(|e| E::custom(format!("AccountId invalid: {}", e)))
+            })
             .map(JsonAccountId)
     }
 
@@ -87,7 +91,9 @@ impl<'de> Visitor<'de> for JsonAccountIdVisitor {
     {
         u32::try_from(v)
             .map_err(|_| E::custom(format!("u32 out of range: {}", v)))
-            .map(AccountId::from)
+            .and_then(|a| {
+                AccountId::try_from(a).map_err(|e| E::custom(format!("AccountId invalid: {}", e)))
+            })
             .map(JsonAccountId)
     }
 
@@ -97,7 +103,9 @@ impl<'de> Visitor<'de> for JsonAccountIdVisitor {
     {
         u32::try_from(v)
             .map_err(|_| E::custom(format!("u32 out of range: {}", v)))
-            .map(AccountId::from)
+            .and_then(|a| {
+                AccountId::try_from(a).map_err(|e| E::custom(format!("AccountId invalid: {}", e)))
+            })
             .map(JsonAccountId)
     }
 }
@@ -162,7 +170,7 @@ impl fmt::Display for ZUint256 {
 }
 
 #[derive(Clone, Debug)]
-struct ZOutputValue(Amount);
+struct ZOutputValue(NonNegativeAmount);
 
 struct ZOutputValueVisitor;
 
@@ -177,9 +185,11 @@ impl<'de> Visitor<'de> for ZOutputValueVisitor {
     where
         E: serde::de::Error,
     {
-        Amount::from_u64(v).map(ZOutputValue).map_err(|()| {
-            serde::de::Error::invalid_type(Unexpected::Unsigned(v), &"a valid zatoshi amount")
-        })
+        NonNegativeAmount::from_u64(v)
+            .map(ZOutputValue)
+            .map_err(|()| {
+                serde::de::Error::invalid_type(Unexpected::Unsigned(v), &"a valid zatoshi amount")
+            })
     }
 }
 

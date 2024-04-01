@@ -20,7 +20,7 @@ TEST(Keys, EncodeAndDecodeSapling)
     auto m = GetTestMasterSaplingSpendingKey();
 
     for (uint32_t i = 0; i < 1000; i++) {
-        auto sk = m.Derive(i);
+        auto sk = m.Derive(i | HARDENED_KEY_LIMIT);
         {
             std::string sk_string = keyIO.EncodeSpendingKey(sk);
             EXPECT_EQ(

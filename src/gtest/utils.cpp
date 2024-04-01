@@ -79,9 +79,15 @@ template<> void AppendRandomLeaf(OrchardMerkleFrontier &tree) {
     // fortunately the tests only require that the tree root change.
     // TODO: Remove the need to create proofs by having a testing-only way to
     // append a random leaf to OrchardMerkleFrontier.
+    RawHDSeed seed(32, 0);
+    auto to = libzcash::OrchardSpendingKey::ForAccount(seed, 133, 0)
+        .ToFullViewingKey()
+        .GetChangeAddress();
     uint256 orchardAnchor;
     uint256 dataToBeSigned;
-    auto builder = orchard::Builder(true, true, orchardAnchor);
+    // TODO: Create bundle.
+    auto builder = orchard::Builder(false, orchardAnchor);
+    builder.AddOutput(std::nullopt, to, 0, std::nullopt);
     auto bundle = builder.Build().value().ProveAndSign({}, dataToBeSigned).value();
     tree.AppendBundle(bundle);
 }

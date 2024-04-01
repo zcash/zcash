@@ -36,7 +36,7 @@ pub(crate) fn inspect_mnemonic(
             let orchard_fvk = match orchard::keys::SpendingKey::from_zip32_seed(
                 &seed,
                 network.coin_type(),
-                account.into(),
+                account,
             ) {
                 Ok(sk) => Some(orchard::keys::FullViewingKey::from(&sk)),
                 Err(e) => {
@@ -49,13 +49,13 @@ pub(crate) fn inspect_mnemonic(
             };
 
             eprintln!("   - Sapling:");
-            let sapling_master = zip32::ExtendedSpendingKey::master(&seed);
-            let sapling_extsk = zip32::ExtendedSpendingKey::from_path(
+            let sapling_master = sapling::zip32::ExtendedSpendingKey::master(&seed);
+            let sapling_extsk = sapling::zip32::ExtendedSpendingKey::from_path(
                 &sapling_master,
                 &[
-                    zip32::ChildIndex::Hardened(32),
-                    zip32::ChildIndex::Hardened(network.coin_type()),
-                    zip32::ChildIndex::Hardened(account.into()),
+                    zip32::ChildIndex::hardened(32),
+                    zip32::ChildIndex::hardened(network.coin_type()),
+                    account.into(),
                 ],
             );
             #[allow(deprecated)]
@@ -106,8 +106,8 @@ pub(crate) fn inspect_mnemonic(
                         Ok(addr) => eprintln!(
                             "     - Default address: {}",
                             match addr {
-                                TransparentAddress::PublicKey(data) => ZcashAddress::from_transparent_p2pkh(addr_net, data),
-                                TransparentAddress::Script(_) => unreachable!(),
+                                TransparentAddress::PublicKeyHash(data) => ZcashAddress::from_transparent_p2pkh(addr_net, data),
+                                TransparentAddress::ScriptHash(_) => unreachable!(),
                             }.encode(),
                         ),
                         Err(e) => eprintln!(

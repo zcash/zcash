@@ -325,6 +325,8 @@ TEST(ChecktransactionTests, BadTxnsTxouttotalToolargeOutputs) {
     CheckTransactionWithoutProofVerification(tx, state);
 }
 
+// TODO: The new Sapling bundle API prevents us from constructing this case.
+/*
 TEST(ChecktransactionTests, ValueBalanceNonZero) {
     CMutableTransaction mtx = GetValidTransaction(NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId);
     mtx.saplingBundle = sapling::test_only_invalid_bundle(0, 0, 10);
@@ -333,8 +335,9 @@ TEST(ChecktransactionTests, ValueBalanceNonZero) {
 
     MockCValidationState state;
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-valuebalance-nonzero", false, "")).Times(1);
-    CheckTransactionWithoutProofVerification(tx, state);
+    EXPECT_FALSE(CheckTransactionWithoutProofVerification(tx, state));
 }
+*/
 
 TEST(ChecktransactionTests, ValueBalanceOverflowsTotal) {
     CMutableTransaction mtx = GetValidTransaction(NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId);
@@ -1152,7 +1155,8 @@ TEST(ChecktransactionTests, HeartwoodAcceptsSaplingShieldedCoinbase) {
     RegtestActivateHeartwood(false, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
     auto chainparams = Params();
 
-    auto builder = sapling::new_builder(*chainparams.RustNetwork(), 10);
+    auto saplingAnchor = SaplingMerkleTree::empty_root().GetRawBytes();
+    auto builder = sapling::new_builder(*chainparams.RustNetwork(), 10, saplingAnchor, true);
     builder->add_recipient(
         uint256().GetRawBytes(),
         libzcash::SaplingSpendingKey::random().default_address().GetRawBytes(),
@@ -1167,7 +1171,7 @@ TEST(ChecktransactionTests, HeartwoodAcceptsSaplingShieldedCoinbase) {
     mtx.vin.resize(1);
     mtx.vin[0].prevout.SetNull();
     mtx.vJoinSplit.resize(0);
-    mtx.saplingBundle = sapling::apply_bundle_signatures(sapling::build_bundle(std::move(builder), 10), {});
+    mtx.saplingBundle = sapling::apply_bundle_signatures(sapling::build_bundle(std::move(builder)), {});
     auto outputs = mtx.saplingBundle.GetDetails().outputs();
     auto& odesc = outputs[0];
 
@@ -1256,10 +1260,12 @@ TEST(ChecktransactionTests, HeartwoodEnforcesSaplingRulesOnShieldedCoinbase) {
     mtx.vin[0].prevout.SetNull();
     mtx.vin[0].scriptSig << 123;
     mtx.vJoinSplit.resize(0);
-    mtx.saplingBundle = sapling::test_only_invalid_bundle(0, 0, -1000);
+    mtx.saplingBundle = sapling::test_only_invalid_bundle(0, 1, -1000);
 
     // Coinbase transaction should fail non-contextual checks with no shielded
     // outputs and non-zero valueBalanceSapling.
+    // TODO: The new Sapling bundle API prevents us from constructing this case.
+    /*
     {
         CTransaction tx(mtx);
         EXPECT_TRUE(tx.IsCoinBase());
@@ -1268,15 +1274,17 @@ TEST(ChecktransactionTests, HeartwoodEnforcesSaplingRulesOnShieldedCoinbase) {
         EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-valuebalance-nonzero", false, "")).Times(1);
         EXPECT_FALSE(CheckTransactionWithoutProofVerification(tx, state));
     }
+    */
 
     // Add a Sapling output.
-    auto builder = sapling::new_builder(*chainparams.RustNetwork(), 10);
+    auto saplingAnchor = SaplingMerkleTree::empty_root().GetRawBytes();
+    auto builder = sapling::new_builder(*chainparams.RustNetwork(), 10, saplingAnchor, true);
     builder->add_recipient(
         uint256().GetRawBytes(),
         libzcash::SaplingSpendingKey::random().default_address().GetRawBytes(),
         1000,
         libzcash::Memo::ToBytes(std::nullopt));
-    mtx.saplingBundle = sapling::apply_bundle_signatures(sapling::build_bundle(std::move(builder), 10), {});
+    mtx.saplingBundle = sapling::apply_bundle_signatures(sapling::build_bundle(std::move(builder)), {});
 
     CTransaction tx(mtx);
     EXPECT_TRUE(tx.IsCoinBase());
@@ -1376,9 +1384,15 @@ TEST(ChecktransactionTests, InvalidOrchardShieldedCoinbase) {
     mtx.nConsensusBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_NU5].nBranchId;
 
     // Make it an invalid shielded coinbase, by creating an all-dummy Orchard bundle.
+    RawHDSeed seed(32, 0);
+    auto to = libzcash::OrchardSpendingKey::ForAccount(seed, 133, 0)
+        .ToFullViewingKey()
+        .GetChangeAddress();
     mtx.vin.resize(1);
     mtx.vin[0].prevout.SetNull();
-    mtx.orchardBundle = orchard::Builder(false, true, uint256())
+    auto builder = orchard::Builder(true, uint256());
+    builder.AddOutput(std::nullopt, to, 0, std::nullopt);
+    mtx.orchardBundle = builder
         .Build().value()
         .ProveAndSign({}, uint256()).value();
 
@@ -1405,7 +1419,7 @@ TEST(ChecktransactionTests, NU5AcceptsOrchardShieldedCoinbase) {
     auto chainparams = Params();
 
     uint256 orchardAnchor;
-    auto builder = orchard::Builder(false, true, orchardAnchor);
+    auto builder = orchard::Builder(true, orchardAnchor);
 
     // Shielded coinbase outputs must be recoverable with an all-zeroes ovk.
     RawHDSeed rawSeed(32, 0);
@@ -1527,7 +1541,7 @@ TEST(ChecktransactionTests, NU5EnforcesOrchardRulesOnShieldedCoinbase) {
     auto chainparams = Params();
 
     uint256 orchardAnchor;
-    auto builder = orchard::Builder(false, true, orchardAnchor);
+    auto builder = orchard::Builder(true, orchardAnchor);
 
     // Shielded coinbase outputs must be recoverable with an all-zeroes ovk.
     RawHDSeed rawSeed(32, 0);

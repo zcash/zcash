@@ -17,7 +17,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         id: toolchain
       - run: rustup override set ${{steps.toolchain.outputs.name}}
-      - run: cargo install cargo-vet --version ~0.8
+      - run: cargo install cargo-vet --version ~0.9
       - run: cargo vet --locked
 
   cargo-deny:

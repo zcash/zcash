@@ -173,7 +173,7 @@ public:
 
     void ComputeBindingSig(rust::Box<sapling::Builder> saplingBuilder, std::optional<orchard::UnauthorizedBundle> orchardBundle) const {
         auto consensusBranchId = CurrentEpochBranchId(nHeight, chainparams.GetConsensus());
-        auto saplingBundle = sapling::build_bundle(std::move(saplingBuilder), nHeight);
+        auto saplingBundle = sapling::build_bundle(std::move(saplingBuilder));
 
         // Empty output script.
         uint256 dataToBeSigned;
@@ -213,13 +213,14 @@ public:
 
     // Create Orchard output
     void operator()(const libzcash::OrchardRawAddress &to) const {
-        auto saplingBuilder = sapling::new_builder(*chainparams.RustNetwork(), nHeight);
+        std::array<uint8_t, 32> saplingAnchor;
+        auto saplingBuilder = sapling::new_builder(*chainparams.RustNetwork(), nHeight, saplingAnchor, true);
 
         // `enableSpends` must be set to `false` for coinbase transactions. This
         // means the Orchard anchor is unconstrained, so we set it to the empty
         // tree root via a null (all zeroes) uint256.
         uint256 orchardAnchor;
-        auto builder = orchard::Builder(false, true, orchardAnchor);
+        auto builder = orchard::Builder(true, orchardAnchor);
 
         // Shielded coinbase outputs must be recoverable with an all-zeroes ovk.
         uint256 ovk;
@@ -249,7 +250,8 @@ public:
 
     // Create Sapling output
     void operator()(const libzcash::SaplingPaymentAddress &pa) const {
-        auto saplingBuilder = sapling::new_builder(*chainparams.RustNetwork(), nHeight);
+        std::array<uint8_t, 32> saplingAnchor;
+        auto saplingBuilder = sapling::new_builder(*chainparams.RustNetwork(), nHeight, saplingAnchor, true);
 
         auto miner_reward = SetFoundersRewardAndGetMinerValue(*saplingBuilder);
 
@@ -265,7 +267,8 @@ public:
     // Create transparent output
     void operator()(const boost::shared_ptr<CReserveScript> &coinbaseScript) const {
         // Add the FR output and fetch the miner's output value.
-        auto saplingBuilder = sapling::new_builder(*chainparams.RustNetwork(), nHeight);
+        std::array<uint8_t, 32> saplingAnchor;
+        auto saplingBuilder = sapling::new_builder(*chainparams.RustNetwork(), nHeight, saplingAnchor, true);
 
         // Miner output will be vout[0]; Founders' Reward & funding stream outputs
         // will follow.

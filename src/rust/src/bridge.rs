@@ -185,11 +185,15 @@ pub(crate) mod ffi {
         type SaplingBuilder;
 
         #[cxx_name = "new_builder"]
-        fn new_sapling_builder(network: &Network, height: u32) -> Box<SaplingBuilder>;
+        fn new_sapling_builder(
+            network: &Network,
+            height: u32,
+            anchor: [u8; 32],
+            coinbase: bool,
+        ) -> Result<Box<SaplingBuilder>>;
         fn add_spend(
             self: &mut SaplingBuilder,
             extsk: &[u8],
-            diversifier: [u8; 11],
             recipient: [u8; 43],
             value: u64,
             rcm: [u8; 32],
@@ -205,7 +209,6 @@ pub(crate) mod ffi {
         #[cxx_name = "build_bundle"]
         fn build_sapling_bundle(
             builder: Box<SaplingBuilder>,
-            target_height: u32,
         ) -> Result<Box<SaplingUnauthorizedBundle>>;
 
         #[cxx_name = "UnauthorizedBundle"]

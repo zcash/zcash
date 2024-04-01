@@ -3,7 +3,7 @@
 
 #include <zcash/address/zip32.h>
 
-// From https://github.com/zcash-hackworks/zcash-test-vectors/blob/master/sapling_zip32.py
+// From https://github.com/zcash/zcash-test-vectors/blob/master/zcash_test_vectors/sapling/zip32.py
 // Sapling consistently uses little-endian encoding, but uint256S takes its input in
 // big-endian byte order, so the test vectors below are byte-reversed.
 TEST(ZIP32, TestVectors) {
@@ -35,102 +35,95 @@ TEST(ZIP32, TestVectors) {
         m.ToXFVK().DefaultAddress().d,
         testing::ElementsAreArray({ 0xd8, 0x62, 0x1b, 0x98, 0x1c, 0xf3, 0x00, 0xe9, 0xd4, 0xcc, 0x89 }));
 
-    auto m_1 = m.Derive(1);
-    EXPECT_EQ(m_1.depth, 1);
-    EXPECT_EQ(m_1.parentFVKTag, 0x3a71c214);
-    EXPECT_EQ(m_1.childIndex, 1);
+    auto m_1h = m.Derive(1 | HARDENED_KEY_LIMIT);
+    EXPECT_EQ(m_1h.depth, 1);
+    EXPECT_EQ(m_1h.parentFVKTag, 0x3a71c214);
+    EXPECT_EQ(m_1h.childIndex, 1 | HARDENED_KEY_LIMIT);
     EXPECT_EQ(
-        m_1.chaincode,
-        uint256S("e6bcda05678a43fad229334ef0b795a590e7c50590baf0d9b9031a690c114701"));
+        m_1h.chaincode,
+        uint256S("dbaeca68fd2ef8b45ec23ee91bd694aa2759e010c668bb3e066b20a845aacc6f"));
     EXPECT_EQ(
-        m_1.expsk.ask,
-        uint256S("0c357a2655b4b8d761794095df5cb402d3ba4a428cf6a88e7c2816a597c12b28"));
+        m_1h.expsk.ask,
+        uint256S("04bd31e1a6218db693ff0802f029043ec20f3b0b8b148cdc04be7afb2ee9f7d5"));
     EXPECT_EQ(
-        m_1.expsk.nsk,
-        uint256S("01ba6bff1018fd4eac04da7e3f2c6be9c229e662c5c4d1d6fc1ecafd8829a3e7"));
+        m_1h.expsk.nsk,
+        uint256S("0a75e557f6fcbf672e0134d4ec2d51a3f358659b4b5c46f303e6cb22687c2a37"));
     EXPECT_EQ(
-        m_1.expsk.ovk,
-        uint256S("7474a4c518551bd82f14a7f7365a8ffa403c50cfeffedf026ada8688fc81135f"));
+        m_1h.expsk.ovk,
+        uint256S("691c33ec470a1697ca37ceb237bb7f1691d2a833543514cf1f8c343319763025"));
     EXPECT_EQ(
-        m_1.dk,
-        uint256S("dcb4c170d878510e96c4a74192d7eecde9c9912b00b99a12ec91d7a232e84de0"));
+        m_1h.dk,
+        uint256S("26d53444cbe2e9929f619d810a0d05ae0deece0a72c3a7e3df9a5fd60f4088f2"));
     EXPECT_THAT(
-        m_1.ToXFVK().DefaultAddress().d,
-        testing::ElementsAreArray({ 0x8b, 0x41, 0x38, 0x32, 0x0d, 0xfa, 0xfd, 0x7b, 0x39, 0x97, 0x81 }));
+        m_1h.ToXFVK().DefaultAddress().d,
+        testing::ElementsAreArray({ 0xbc, 0xc3, 0x23, 0xe8, 0xda, 0x39, 0xb4, 0x96, 0xc0, 0x50, 0x51 }));
 
-    auto m_1_2h = m_1.Derive(2 | HARDENED_KEY_LIMIT);
-    EXPECT_EQ(m_1_2h.depth, 2);
-    EXPECT_EQ(m_1_2h.parentFVKTag, 0x079e99db);
-    EXPECT_EQ(m_1_2h.childIndex, 2 | HARDENED_KEY_LIMIT);
+    auto m_1h_2h = m_1h.Derive(2 | HARDENED_KEY_LIMIT);
+    EXPECT_EQ(m_1h_2h.depth, 2);
+    EXPECT_EQ(m_1h_2h.parentFVKTag, 0xcb238476);
+    EXPECT_EQ(m_1h_2h.childIndex, 2 | HARDENED_KEY_LIMIT);
     EXPECT_EQ(
-        m_1_2h.chaincode,
-        uint256S("35d4a883737742ca41a4baa92323bdb3c93dcb3b462a26b039971bedf415ce97"));
+        m_1h_2h.chaincode,
+        uint256S("daf7be6f80503ab34f14f236da9de2cf540ae3c100f520607980d0756c087944"));
     EXPECT_EQ(
-        m_1_2h.expsk.ask,
-        uint256S("0dc6e4fe846bda925c82e632980434e17b51dac81fc4821fa71334ee3c11e88b"));
+        m_1h_2h.expsk.ask,
+        uint256S("06512f33a6f9ae4b42fd71f9cfa08d3727522dd3089cad596fc3139eb65df37f"));
     EXPECT_EQ(
-        m_1_2h.expsk.nsk,
-        uint256S("0c99a63a275c1c66734761cfb9c62fe9bd1b953f579123d3d0e769c59d057837"));
+        m_1h_2h.expsk.nsk,
+        uint256S("00debf5999f564a3e05a0d418cf40714399a32c1bdc98ba2eb4439a0e46e9c77"));
     EXPECT_EQ(
-        m_1_2h.expsk.ovk,
-        uint256S("bc1328fc5eb693e18875c5149d06953b11d39447ebd6e38c023c22962e1881cf"));
+        m_1h_2h.expsk.ovk,
+        uint256S("ac85619305763dc29b67b75e305e5323bda7d6a530736a88417f90bf0171fcd9"));
     EXPECT_EQ(
-        m_1_2h.dk,
-        uint256S("377bb062dce7e0dcd8a0054d0ca4b4d1481b3710bfa1df12ca46ff9e9fa1eda3"));
+        m_1h_2h.dk,
+        uint256S("d148325ff6faa682558de97a9fec61dd8dc10a96d0cd214bc531e0869a9e69e4"));
     EXPECT_THAT(
-        m_1_2h.ToXFVK().DefaultAddress().d,
-        testing::ElementsAreArray({ 0xe8, 0xd0, 0x37, 0x93, 0xcd, 0xd2, 0xba, 0xcc, 0x9c, 0x70, 0x41 }));
+        m_1h_2h.ToXFVK().DefaultAddress().d,
+        testing::ElementsAreArray({ 0x98, 0x82, 0x40, 0xce, 0xa4, 0xdb, 0xc3, 0x0a, 0x73, 0x75, 0x50 }));
 
-    auto m_1_2hv = m_1_2h.ToXFVK();
+    auto m_1_2hv = m_1h_2h.ToXFVK();
     EXPECT_EQ(m_1_2hv.depth, 2);
-    EXPECT_EQ(m_1_2hv.parentFVKTag, 0x079e99db);
+    EXPECT_EQ(m_1_2hv.parentFVKTag, 0xcb238476);
     EXPECT_EQ(m_1_2hv.childIndex, 2 | HARDENED_KEY_LIMIT);
     EXPECT_EQ(
         m_1_2hv.chaincode,
-        uint256S("35d4a883737742ca41a4baa92323bdb3c93dcb3b462a26b039971bedf415ce97"));
+        uint256S("daf7be6f80503ab34f14f236da9de2cf540ae3c100f520607980d0756c087944"));
     EXPECT_EQ(
         m_1_2hv.fvk.ak,
-        uint256S("4138cffdf7200e52d4e9f4384481b4a4c4d070493a5e401e4ffa850f5a92c5a6"));
+        uint256S("4eab7275725c76ee4247ae8d941d4b53682e39da641785e097377144953f859a"));
     EXPECT_EQ(
         m_1_2hv.fvk.nk,
-        uint256S("11eee22577304f660cc036bc84b3fc88d1ec50ae8a4d657beb6b211659304e30"));
+        uint256S("be4f5d4f36018511d23a1b9a9c87af8c6dbd20212da84121c1ce884f8aa266f1"));
     EXPECT_EQ(
         m_1_2hv.fvk.ovk,
-        uint256S("bc1328fc5eb693e18875c5149d06953b11d39447ebd6e38c023c22962e1881cf"));
+        uint256S("ac85619305763dc29b67b75e305e5323bda7d6a530736a88417f90bf0171fcd9"));
     EXPECT_EQ(
         m_1_2hv.dk,
-        uint256S("377bb062dce7e0dcd8a0054d0ca4b4d1481b3710bfa1df12ca46ff9e9fa1eda3"));
-    EXPECT_EQ(m_1_2hv.DefaultAddress(), m_1_2h.ToXFVK().DefaultAddress());
+        uint256S("d148325ff6faa682558de97a9fec61dd8dc10a96d0cd214bc531e0869a9e69e4"));
+    EXPECT_EQ(m_1_2hv.DefaultAddress(), m_1h_2h.ToXFVK().DefaultAddress());
 
-    // Hardened derivation from an xfvk fails
-    EXPECT_FALSE(m_1_2hv.Derive(3 | HARDENED_KEY_LIMIT));
-
-    // Non-hardened derivation succeeds
-    auto maybe_m_1_2hv_3 = m_1_2hv.Derive(3);
-    EXPECT_TRUE(maybe_m_1_2hv_3);
-
-    auto m_1_2hv_3 = maybe_m_1_2hv_3.value();
-    EXPECT_EQ(m_1_2hv_3.depth, 3);
-    EXPECT_EQ(m_1_2hv_3.parentFVKTag, 0x7583c148);
-    EXPECT_EQ(m_1_2hv_3.childIndex, 3);
+    auto m_1h_2h_3h = m_1h_2h.Derive(3 | HARDENED_KEY_LIMIT);
+    EXPECT_EQ(m_1h_2h_3h.depth, 3);
+    EXPECT_EQ(m_1h_2h_3h.parentFVKTag, 0x2b2ddc0b);
+    EXPECT_EQ(m_1h_2h_3h.childIndex, 3 | HARDENED_KEY_LIMIT);
     EXPECT_EQ(
-        m_1_2hv_3.chaincode,
-        uint256S("e8e7d6a74a5a1c05be41baec7998d91f7b3603a4c0af495b0d43ba81cf7b938d"));
+        m_1h_2h_3h.chaincode,
+        uint256S("4bc7bd5b38fcbdb259be013bef298c8de263e4c32ccb2bcdd2ce90762d01dc33"));
     EXPECT_EQ(
-        m_1_2hv_3.fvk.ak,
-        uint256S("a3a697bdda9d648d32a97553de4754b2fac866d726d3f2c436259c507bc585b1"));
+        m_1h_2h_3h.expsk.ask,
+        uint256S("07afec4df829ace083d68145103c50692f331c4690cf52f13759e3214dd29345"));
     EXPECT_EQ(
-        m_1_2hv_3.fvk.nk,
-        uint256S("4f66c0814b769963f3bf1bc001270b50edabb27de042fc8a5607d2029e0488db"));
+        m_1h_2h_3h.expsk.nsk,
+        uint256S("0bbba7ff6efab6fbabb5b727ed3d55e40efa0de858f8c0e357503f12c27ec81a"));
     EXPECT_EQ(
-        m_1_2hv_3.fvk.ovk,
-        uint256S("f61a699934dc78441324ef628b4b4721611571e8ee3bd591eb3d4b1cfae0b969"));
+        m_1h_2h_3h.expsk.ovk,
+        uint256S("e39e4b1b9c5c1b31988beffb515522a95de718afa880e36c9d2ebef20cea361e"));
     EXPECT_EQ(
-        m_1_2hv_3.dk,
-        uint256S("6ee53b1261f2c9c0f7359ab236f87b52a0f1b0ce43305cdad92ebb63c350cbbe"));
+        m_1h_2h_3h.dk,
+        uint256S("6abb7b109c7270edaa3a36dc140d3f70bf8cd271b69d606f5aadf3a4596cfc57"));
     EXPECT_THAT(
-        m_1_2hv_3.DefaultAddress().d,
-        testing::ElementsAreArray({ 0x03, 0x0f, 0xfb, 0x26, 0x3a, 0x93, 0x9e, 0x23, 0x0e, 0x96, 0xdd }));
+        m_1h_2h_3h.ToXFVK().DefaultAddress().d,
+        testing::ElementsAreArray({ 0x5a, 0x75, 0xbe, 0x14, 0x00, 0x53, 0x0b, 0x4b, 0x7a, 0xdd, 0x52 }));
 }
 
 TEST(ZIP32, ParseHDKeypathAccount) {

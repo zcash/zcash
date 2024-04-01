@@ -2,8 +2,8 @@ use std::ffi::OsString;
 use std::path::PathBuf;
 use std::sync::Once;
 
-use bellman::groth16::Parameters;
 use bls12_381::Bls12;
+use sapling::circuit::{OutputParameters, SpendParameters};
 use tracing::info;
 
 use crate::{
@@ -51,17 +51,18 @@ fn zksnark_params(sprout_path: String, load_proving_keys: bool) {
         // Load params
         let (sapling_spend_params, sapling_output_params) = {
             let (spend_buf, output_buf) = wagyu_zcash_parameters::load_sapling_parameters();
-            let spend_params = Parameters::<Bls12>::read(&spend_buf[..], false)
-                .expect("couldn't deserialize Sapling spend parameters");
-            let output_params = Parameters::<Bls12>::read(&output_buf[..], false)
-                .expect("couldn't deserialize Sapling spend parameters");
-            (spend_params, output_params)
+            (
+                SpendParameters::read(&spend_buf[..], false)
+                    .expect("Failed to read Sapling Spend parameters"),
+                OutputParameters::read(&output_buf[..], false)
+                    .expect("Failed to read Sapling Output parameters"),
+            )
         };
 
         // We need to clone these because we aren't necessarily storing the proving
         // parameters in memory.
-        let sapling_spend_vk = sapling_spend_params.vk.clone();
-        let sapling_output_vk = sapling_output_params.vk.clone();
+        let sapling_spend_vk = sapling_spend_params.verifying_key();
+        let sapling_output_vk = sapling_output_params.verifying_key();
 
         // Generate Orchard parameters.
         info!(target: "main", "Loading Orchard parameters");
