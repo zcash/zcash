@@ -13,11 +13,6 @@ jobs:
   setup:
     name: Define CI matrix
     runs-on: ubuntu-latest
-    container:
-      image: electriccoinco/debian-helper:bookworm
-      env:
-        HOME: /root
-        PATH: /root/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH
     strategy:
       matrix:
         cfg:
@@ -121,15 +116,15 @@ jobs:
       - name: Download Sprout parameters
         run: |
           mkdir zcash-params
-          cd zcash-params
-          wget -c https://download.z.cash/downloads/sprout-groth16.params
+          wget -c https://download.z.cash/downloads/sprout-groth16.params -O zcash-params/sprout-groth16.params      
 
       - name: Cache Sprout parameters
-        uses: actions/cache/save@v3
+        uses: actions/cache@v3
         with:
-          enableCrossOsArchive: true
           path: zcash-params
           key: zcash-params
+          restore-keys: |
+            zcash-params
 
   build:
     name: Build tier ${{ matrix.tier }} platform ${{ matrix.platform }}
@@ -418,12 +413,20 @@ jobs:
         if: runner.os != 'Windows'
         run: chmod +x ${{ format('./zcash-gtest{0}', matrix.file_ext) }}
 
-      - name: Get Sprout parameters
-        uses: actions/cache/restore@v3
+      - name: Cache Sprout parameters
+        uses: actions/cache@v3
         with:
-          enableCrossOsArchive: true
           path: zcash-params
           key: zcash-params
+          restore-keys: |
+            zcash-params
+
+      - name: Download Sprout parameters
+        # In case the cache of Sprout parameters step fails
+        shell: bash
+        run: |
+          mkdir zcash-params || echo ""
+          curl -L -C - https://download.z.cash/downloads/sprout-groth16.params -o zcash-params/sprout-groth16.params          
 
       - name: Setup zcash-params
         shell: bash
