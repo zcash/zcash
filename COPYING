@@ -30,18 +30,9 @@ dependencies. For further details see 'contrib/debian/copyright'.
 
 
 Although almost all of the Zcash code is licensed under "permissive" open source
-licenses, there are two dependencies that use "copyleft" open source licenses:
-- Users and distributors should note that when built using the default build
-  options, zcashd depends on Oracle Berkeley DB 6.2.x, which is licensed under
-  the GNU Affero General Public License.
-- Downstream code forks should note that zcashd depends on the 'orchard' crate,
-  which is licensed under the Bootstrap Open Source License.
-  A license exception is provided allowing some derived works that are linked or
-  combined with the 'orchard' crate to be copied or distributed under the original
-  licenses (in this case documented in 'contrib/debian/copyright'), provided that
-  the included portions of the 'orchard' code remain subject to BOSL.
-  See https://github.com/zcash/orchard/blob/main/COPYING for details of which
-  projects can make use of this exception.
+licenses, users and distributors should note that when built using the default
+build options, Zcash depends on Oracle Berkeley DB 6.2.x, which is licensed under
+the GNU Affero General Public License.
 
 
 Contributors should understand licensing implications before modifying the

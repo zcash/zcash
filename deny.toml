@@ -1,5 +1,6 @@
 # Configuration file for cargo-deny
 
+[graph]
 targets = [
     { triple = "aarch64-unknown-linux-gnu" },
     { triple = "x86_64-apple-darwin" },
@@ -9,12 +10,11 @@ targets = [
 ]
 
 [licenses]
-unlicensed = "deny"
+version = 2
 allow = [
     "Apache-2.0",
     "MIT",
 ]
-copyleft = "deny"
 # Each entry in this list should have a corresponding `contrib/debian/copyright`
 # entry for `Files: depends/*/vendored-sources/CRATE_NAME/*` (or the relevant
 # subset of files). The reverse might not be true however: `cargo-deny` only
@@ -25,7 +25,6 @@ copyleft = "deny"
 exceptions = [
     { name = "arrayref", allow = ["BSD-2-Clause"] },
     { name = "curve25519-dalek", allow = ["BSD-3-Clause"] },
-    { name = "orchard", allow = ["LicenseRef-BOSL-1.0-or-later-with-Zcash-exception"] },
     { name = "ring", allow = ["LicenseRef-ring"] },
     { name = "secp256k1", allow = ["CC0-1.0"] },
     { name = "secp256k1-sys", allow = ["CC0-1.0"] },
@@ -33,13 +32,6 @@ exceptions = [
     { name = "terminfo", allow = ["WTFPL"] },
     { name = "unicode-ident", allow = ["Unicode-DFS-2016"] },
     { name = "untrusted", allow = ["ISC"] },
-]
-
-[[licenses.clarify]]
-name = "orchard"
-expression = "LicenseRef-BOSL-1.0-or-later-with-Zcash-exception"
-license-files = [
-    { path = "LICENSE-BOSL", hash = 0xf2d16f6e },
 ]
 
 [[licenses.clarify]]
