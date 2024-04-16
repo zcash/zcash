@@ -279,10 +279,6 @@ criteria = "safe-to-deploy"
 version = "2.5.0"
 criteria = "safe-to-deploy"
 
-[[exemptions.itoa]]
-version = "1.0.2"
-criteria = "safe-to-deploy"
-
 [[exemptions.js-sys]]
 version = "0.3.60"
 criteria = "safe-to-deploy"
@@ -443,10 +439,6 @@ criteria = "safe-to-deploy"
 version = "0.3.0"
 criteria = "safe-to-deploy"
 
-[[exemptions.redox_syscall]]
-version = "0.4.1"
-criteria = "safe-to-deploy"
-
 [[exemptions.redox_users]]
 version = "0.4.3"
 criteria = "safe-to-deploy"
@@ -501,14 +493,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.secrecy]]
 version = "0.8.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.serde]]
-version = "1.0.136"
-criteria = "safe-to-deploy"
-
-[[exemptions.serde_derive]]
-version = "1.0.136"
 criteria = "safe-to-deploy"
 
 [[exemptions.serde_json]]
@@ -608,7 +592,7 @@ version = "0.11.0+wasi-snapshot-preview1"
 criteria = "safe-to-deploy"
 
 [[exemptions.wasm-bindgen]]
-version = "0.2.89"
+version = "0.2.92"
 criteria = "safe-to-deploy"
 
 [[exemptions.wasm-bindgen-backend]]
@@ -616,10 +600,6 @@ version = "0.2.89"
 criteria = "safe-to-deploy"
 
 [[exemptions.wasm-bindgen-macro]]
-version = "0.2.87"
-criteria = "safe-to-deploy"
-
-[[exemptions.wasm-bindgen-macro-support]]
 version = "0.2.87"
 criteria = "safe-to-deploy"
 
@@ -641,6 +621,10 @@ criteria = "safe-to-deploy"
 
 [[exemptions.winapi-x86_64-pc-windows-gnu]]
 version = "0.4.0"
+criteria = "safe-to-deploy"
+
+[[exemptions.windows_i686_gnullvm]]
+version = "0.52.5"
 criteria = "safe-to-deploy"
 
 [[exemptions.wyz]]
