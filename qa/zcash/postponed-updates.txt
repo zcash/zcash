@@ -31,6 +31,7 @@ libcxx 18.1.0 2024-06-15
 libcxx 18.1.1 2024-06-15
 libcxx 18.1.2 2024-06-15
 libcxx 18.1.3 2024-06-15
+libcxx 18.1.4 2024-06-15
 native_clang 15.0.7 2024-06-15
 native_clang 16.0.0 2024-06-15
 native_clang 16.0.1 2024-06-15
@@ -50,6 +51,7 @@ native_clang 18.1.0 2024-06-15
 native_clang 18.1.1 2024-06-15
 native_clang 18.1.2 2024-06-15
 native_clang 18.1.3 2024-06-15
+native_clang 18.1.4 2024-06-15
 native_rust 1.70.0 2024-06-15
 native_rust 1.71.0 2024-06-15
 native_rust 1.71.1 2024-06-15
