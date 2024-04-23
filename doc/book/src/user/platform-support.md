@@ -17,6 +17,7 @@ be removed from tier 1. These dates are subject to change.
 | ----------------------- | ------------ | -------------- |
 | `x86_64-pc-linux-gnu`   | Debian 10    | June 2024      |
 |                         | Debian 11    | June 2026      |
+|                         | Debian 12    | June 2028      |
 |                         | Ubuntu 20.04 | April 2025     |
 
 ## Tier 2
