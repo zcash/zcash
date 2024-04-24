@@ -58,15 +58,9 @@ jobs:
             - name: macos-11
               tier: 3
               platform: macOS Big Sur 11
-              build_os: macos-11
+              build_os: ubuntu-22.04-8cores
               test_os: macos-11
-              brew_deps: >
-                autoconf
-                automake
-                coreutils
-                libtool
-                pkgconfig
-              host: x86_64-apple-darwin
+              host: x86_64-apple-darwin16
 
             - name: mingw32
               tier: 3
