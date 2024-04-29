@@ -44,7 +44,8 @@ jobs:
             - name: ubuntu-20.04
               tier: 1
               platform: Ubuntu 20.04
-              build_os: ubuntu-20.04-8cores
+              # Available native_clang binaries only run on Ubuntu 22.04
+              build_os: ubuntu-22.04-8cores
               test_os: ubuntu-20.04
               host: x86_64-pc-linux-gnu
 

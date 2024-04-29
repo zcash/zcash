@@ -5,11 +5,14 @@ package=native_clang
 # - Manually fix the versions for packages that don't exist (the LLVM project
 #   doesn't uniformly cut binaries across releases).
 # The Clang compiler should use the same LLVM version as the Rust compiler.
-$(package)_default_major_version=15
-$(package)_default_version=15.0.6
+$(package)_default_major_version=17
+$(package)_default_version=17.0.6
+# 2024-04-29: No Intel macOS packages are available for Clang 16 or 17.
 $(package)_version_darwin=15.0.4
 # 2023-02-16: No FreeBSD packages are available for Clang 15.
 # 2023-04-07: Still the case.
+# 2024-04-29: No FreeBSD packages are available for Clang 17.
+#             Clang 16 has FreeBSD 13 packages, but none for FreeBSD 12.
 $(package)_major_version_freebsd=14
 $(package)_version_freebsd=14.0.6
 
@@ -21,9 +24,9 @@ $(package)_version=$(if $($(package)_version_$(host_arch)_$(host_os)),$($(packag
 $(package)_major_version=$(if $($(package)_major_version_$(host_arch)_$(host_os)),$($(package)_major_version_$(host_arch)_$(host_os)),$(if $($(package)_major_version_$(host_os)),$($(package)_major_version_$(host_os)),$($(package)_default_major_version)))
 
 $(package)_download_path_linux=https://github.com/llvm/llvm-project/releases/download/llvmorg-$($(package)_version)
-$(package)_download_file_linux=clang+llvm-$($(package)_version)-x86_64-linux-gnu-ubuntu-18.04.tar.xz
-$(package)_file_name_linux=clang-llvm-$($(package)_version)-x86_64-linux-gnu-ubuntu-18.04.tar.xz
-$(package)_sha256_hash_linux=38bc7f5563642e73e69ac5626724e206d6d539fbef653541b34cae0ba9c3f036
+$(package)_download_file_linux=clang+llvm-$($(package)_version)-x86_64-linux-gnu-ubuntu-22.04.tar.xz
+$(package)_file_name_linux=clang-llvm-$($(package)_version)-x86_64-linux-gnu-ubuntu-22.04.tar.xz
+$(package)_sha256_hash_linux=884ee67d647d77e58740c1e645649e29ae9e8a6fe87c1376be0f3a30f3cc9ab3
 $(package)_download_path_darwin=https://github.com/llvm/llvm-project/releases/download/llvmorg-$($(package)_version)
 $(package)_download_file_darwin=clang+llvm-$($(package)_version)-x86_64-apple-darwin.tar.xz
 $(package)_file_name_darwin=clang-llvm-$($(package)_version)-x86_64-apple-darwin.tar.xz
@@ -35,7 +38,7 @@ $(package)_sha256_hash_freebsd=b0a7b86dacb12afb8dd2ca99ea1b894d9cce84aab7711cb19
 $(package)_download_path_aarch64_linux=https://github.com/llvm/llvm-project/releases/download/llvmorg-$($(package)_version)
 $(package)_download_file_aarch64_linux=clang+llvm-$($(package)_version)-aarch64-linux-gnu.tar.xz
 $(package)_file_name_aarch64_linux=clang-llvm-$($(package)_version)-aarch64-linux-gnu.tar.xz
-$(package)_sha256_hash_aarch64_linux=8ca4d68cf103da8331ca3f35fe23d940c1b78fb7f0d4763c1c059e352f5d1bec
+$(package)_sha256_hash_aarch64_linux=6dd62762285326f223f40b8e4f2864b5c372de3f7de0731cb7cd55ca5287b75a
 
 ifneq (,$(wildcard /etc/arch-release))
 $(package)_dependencies=native_libtinfo

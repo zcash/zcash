@@ -7,7 +7,7 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 CLANG_PACKAGE="$SCRIPT_DIR/../../depends/packages/native_clang.mk"
 LIBCXX_PACKAGE="$SCRIPT_DIR/../../depends/packages/libcxx.mk"
 
-CLANG_VERSION=$( grep -v _major_version $CLANG_PACKAGE | grep -oP "_version=\K.*" )
+CLANG_VERSION=$( grep -v _major_version $CLANG_PACKAGE | grep -oP "_default_version=\K.*" )
 LIBCXX_MSYS2_VERSION=$( grep -oP "_msys2_version=\K.*" $LIBCXX_PACKAGE )
 
 update_clang_hash() {
@@ -39,7 +39,7 @@ update_libcxx_msys2_hash() {
 # update_clang_hash CLANG_COMPILED_TARGET MAKEFILE_PACKAGE_IDENTIFIER
 update_clang_hash aarch64-linux-gnu aarch64_linux
 update_clang_hash x86_64-apple-darwin darwin
-update_clang_hash x86_64-linux-gnu-ubuntu-18.04 linux
+update_clang_hash x86_64-linux-gnu-ubuntu-22.04 linux
 update_clang_hash amd64-unknown-freebsd12 freebsd
 
 # For Windows cross-compilation
