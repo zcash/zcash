@@ -12,10 +12,12 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       tags: ${{ steps.version_step.outputs.tags }}
+      zcash_version: ${{ steps.version_step.outputs.zcash_version }}
     steps:
     - id: version_step
       run:  |
         echo "tags=latest,${{ github.ref_name }},${{ github.sha }}" >> $GITHUB_OUTPUT
+        echo "zcash_version=$(echo ${{ github.ref_name }} | sed 's/v//g')" >> $GITHUB_OUTPUT
 
   build_push:
     uses: zcash/.github/.github/workflows/build-and-push-docker-hub.yaml@main
@@ -25,6 +27,8 @@ jobs:
       image_tags: ${{ needs.set_env.outputs.tags }}
       dockerfile: ./contrib/docker/Dockerfile
       context: ./contrib/docker/
+      build-args: |
+        ZCASH_VERSION=${{ needs.set_env.outputs.zcash_version }}
     secrets:
       dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}
       dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
