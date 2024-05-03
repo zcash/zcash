@@ -83,6 +83,7 @@ Makefile
 # Rust
 .cargo/.configured-for-*
 .cargo/config
+.cargo/config.toml
 src/rust/gen/
 target/
 

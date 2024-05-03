@@ -127,10 +127,11 @@ cargo_verbose_ = $(cargo_verbose_@AM_DEFAULT_V@)
 cargo_verbose_1 = --verbose
 
 if ENABLE_ONLINE_RUST
-# Ensure that .cargo/config does not exist
+# Ensure that .cargo/config.toml (or the older .cargo/config) does not exist.
 CARGO_CONFIGURED = $(top_srcdir)/.cargo/.configured-for-online
 $(CARGO_CONFIGURED):
-	$(AM_V_at)rm -f $(top_srcdir)/.cargo/.configured-for-offline $(top_srcdir)/.cargo/config
+	$(AM_V_at)rm -f $(top_srcdir)/.cargo/.configured-for-offline $(top_srcdir)/.cargo/config.toml
+	$(AM_V_at)rm -f $(top_srcdir)/.cargo/config
 	$(AM_V_at)touch $@
 
 else
@@ -138,10 +139,11 @@ else
 RUST_BUILD_OPTS += --locked --offline
 
 CARGO_CONFIGURED = $(top_srcdir)/.cargo/.configured-for-offline
-$(CARGO_CONFIGURED): $(top_srcdir)/.cargo/config.offline
+$(CARGO_CONFIGURED): $(top_srcdir)/.cargo/config.toml.offline
 	$(AM_V_at)rm -f $(top_srcdir)/.cargo/.configured-for-online
-	$(AM_V_at)cp $< $(top_srcdir)/.cargo/config
-	$(AM_V_at)echo "directory = \"$(RUST_VENDORED_SOURCES)\"" >>$(top_srcdir)/.cargo/config
+	$(AM_V_at)rm -f $(top_srcdir)/.cargo/config
+	$(AM_V_at)cp $< $(top_srcdir)/.cargo/config.toml
+	$(AM_V_at)echo "directory = \"$(RUST_VENDORED_SOURCES)\"" >>$(top_srcdir)/.cargo/config.toml
 	$(AM_V_at)touch $@
 endif
 if ENABLE_SHANI
@@ -773,7 +775,7 @@ DISTCLEANFILES = obj/build.h
 EXTRA_DIST = $(CTAES_DIST) rust
 
 clean-local:
-	rm -f $(top_srcdir)/.cargo/config $(top_srcdir)/.cargo/.configured-for-*
+	rm -f $(top_srcdir)/.cargo/config.toml $(top_srcdir)/.cargo/config $(top_srcdir)/.cargo/.configured-for-*
 	-$(MAKE) -C secp256k1 clean
 	-$(MAKE) -C univalue clean
 	rm -f leveldb/*/*.gcno leveldb/helpers/memenv/*.gcno
