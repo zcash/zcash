@@ -491,7 +491,7 @@ fn redjubjub_signatures() {
 
         assert_eq!(vk.verify(&tv.m, &sig), Ok(()));
         assert_eq!(rvk.verify(&tv.m, &rsig), Ok(()));
-        assert!(matches!(vk.verify(&tv.m, &rsig), Err(_)));
-        assert!(matches!(rvk.verify(&tv.m, &sig), Err(_)));
+        assert!(vk.verify(&tv.m, &rsig).is_err());
+        assert!(rvk.verify(&tv.m, &sig).is_err());
     }
 }

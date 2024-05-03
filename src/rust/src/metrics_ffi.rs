@@ -137,7 +137,7 @@ pub extern "C" fn metrics_callsite(
 
     let labels: Vec<_> = labels
         .into_iter()
-        .zip(values.into_iter())
+        .zip(values)
         .map(|(name, value)| Label::new(name, value))
         .collect();
 
@@ -178,7 +178,7 @@ pub extern "C" fn metrics_key(
 
         let labels: Vec<_> = labels
             .into_iter()
-            .zip(values.into_iter())
+            .zip(values)
             .map(|(name, value)| Label::new(name, value))
             .collect();
 

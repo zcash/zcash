@@ -44,7 +44,7 @@ pub fn extract_height_from_coinbase(tx: &Transaction) -> Option<BlockHeight> {
     const OP_16: u8 = 0x60;
 
     tx.transparent_bundle()
-        .and_then(|bundle| bundle.vin.get(0))
+        .and_then(|bundle| bundle.vin.first())
         .and_then(|input| match input.script_sig.0.first().copied() {
             // {0, -1} will never occur as the first byte of a coinbase scriptSig.
             Some(OP_0 | OP_1NEGATE) => None,

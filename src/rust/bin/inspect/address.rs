@@ -3,6 +3,7 @@ use zcash_address::{
     ConversionError, Network, ToAddress, ZcashAddress,
 };
 
+#[allow(dead_code)]
 enum AddressKind {
     Sprout([u8; 64]),
     Sapling([u8; 43]),
