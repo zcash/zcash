@@ -1,0 +1,133 @@
+From 8f453f41f8834e0fe47610f2a3e03e696ddb3450 Mon Sep 17 00:00:00 2001
+From: Frank Denis <github@pureftpd.org>
+Date: Fri, 20 Oct 2023 13:47:57 +0200
+Subject: [PATCH] aarch64: set compiler attributes *after* including
+ <arm_neon.h>
+
+Fixes #1321
+---
+ configure.ac                                         | 11 ++++++-----
+ .../crypto_aead/aegis128l/aegis128l_armcrypto.c      | 12 ++++++------
+ .../crypto_aead/aegis256/aegis256_armcrypto.c        | 12 ++++++------
+ .../aes256gcm/armcrypto/aead_aes256gcm_armcrypto.c   | 12 ++++++------
+ 4 files changed, 24 insertions(+), 23 deletions(-)
+
+diff --git a/configure.ac b/configure.ac
+index 287e109cd7..e792f67139 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -397,11 +397,6 @@ AS_IF([test "x$EMSCRIPTEN" = "x"], [
+     have_armcrypto=no
+     AC_MSG_CHECKING(for ARM crypto instructions set)
+     AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+-      #ifdef __clang__
+-      #  pragma clang attribute push(__attribute__((target("neon,crypto,aes"))), apply_to = function)
+-      #elif defined(__GNUC__)
+-      #  pragma GCC target("+simd+crypto")
+-      #endif
+       #ifndef __ARM_FEATURE_CRYPTO
+       #  define __ARM_FEATURE_CRYPTO 1
+       #endif
+@@ -410,6 +405,12 @@ AS_IF([test "x$EMSCRIPTEN" = "x"], [
+       #endif
+ 
+       #include <arm_neon.h>
++
++      #ifdef __clang__
++      #  pragma clang attribute push(__attribute__((target("neon,crypto,aes"))), apply_to = function)
++      #elif defined(__GNUC__)
++      #  pragma GCC target("+simd+crypto")
++      #endif
+     ]], [[
+       int64x2_t x = { 0, 0 };
+       vaeseq_u8(vmovq_n_u8(0), vmovq_n_u8(0));
+diff --git a/src/libsodium/crypto_aead/aegis128l/aegis128l_armcrypto.c b/src/libsodium/crypto_aead/aegis128l/aegis128l_armcrypto.c
+index 825de8a1c8..a01f60cbe6 100644
+--- a/src/libsodium/crypto_aead/aegis128l/aegis128l_armcrypto.c
++++ b/src/libsodium/crypto_aead/aegis128l/aegis128l_armcrypto.c
+@@ -17,12 +17,6 @@
+ 
+ #include "aegis128l_armcrypto.h"
+ 
+-#ifdef __clang__
+-#pragma clang attribute push(__attribute__((target("neon,crypto,aes"))), apply_to = function)
+-#elif defined(__GNUC__)
+-#pragma GCC target("+simd+crypto")
+-#endif
+-
+ #ifndef __ARM_FEATURE_CRYPTO
+ #define __ARM_FEATURE_CRYPTO 1
+ #endif
+@@ -32,6 +26,12 @@
+ 
+ #include <arm_neon.h>
+ 
++#ifdef __clang__
++#pragma clang attribute push(__attribute__((target("neon,crypto,aes"))), apply_to = function)
++#elif defined(__GNUC__)
++#pragma GCC target("+simd+crypto")
++#endif
++
+ #define AES_BLOCK_LENGTH 16
+ 
+ typedef uint8x16_t aes_block_t;
+diff --git a/src/libsodium/crypto_aead/aegis256/aegis256_armcrypto.c b/src/libsodium/crypto_aead/aegis256/aegis256_armcrypto.c
+index e1ebd577a2..058e2072b9 100644
+--- a/src/libsodium/crypto_aead/aegis256/aegis256_armcrypto.c
++++ b/src/libsodium/crypto_aead/aegis256/aegis256_armcrypto.c
+@@ -17,12 +17,6 @@
+ 
+ #include "aegis256_armcrypto.h"
+ 
+-#ifdef __clang__
+-#pragma clang attribute push(__attribute__((target("neon,crypto,aes"))), apply_to = function)
+-#elif defined(__GNUC__)
+-#pragma GCC target("+simd+crypto")
+-#endif
+-
+ #ifndef __ARM_FEATURE_CRYPTO
+ #define __ARM_FEATURE_CRYPTO 1
+ #endif
+@@ -32,6 +26,12 @@
+ 
+ #include <arm_neon.h>
+ 
++#ifdef __clang__
++#pragma clang attribute push(__attribute__((target("neon,crypto,aes"))), apply_to = function)
++#elif defined(__GNUC__)
++#pragma GCC target("+simd+crypto")
++#endif
++
+ #define AES_BLOCK_LENGTH 16
+ 
+ typedef uint8x16_t aes_block_t;
+diff --git a/src/libsodium/crypto_aead/aes256gcm/armcrypto/aead_aes256gcm_armcrypto.c b/src/libsodium/crypto_aead/aes256gcm/armcrypto/aead_aes256gcm_armcrypto.c
+index ed2af303c3..8f9bba6d74 100644
+--- a/src/libsodium/crypto_aead/aes256gcm/armcrypto/aead_aes256gcm_armcrypto.c
++++ b/src/libsodium/crypto_aead/aes256gcm/armcrypto/aead_aes256gcm_armcrypto.c
+@@ -19,12 +19,6 @@
+ #define __vectorcall
+ #endif
+ 
+-#ifdef __clang__
+-#pragma clang attribute push(__attribute__((target("neon,crypto,aes"))), apply_to = function)
+-#elif defined(__GNUC__)
+-#pragma GCC target("+simd+crypto")
+-#endif
+-
+ #ifndef __ARM_FEATURE_CRYPTO
+ #define __ARM_FEATURE_CRYPTO 1
+ #endif
+@@ -34,6 +28,12 @@
+ 
+ #include <arm_neon.h>
+ 
++#ifdef __clang__
++#pragma clang attribute push(__attribute__((target("neon,crypto,aes"))), apply_to = function)
++#elif defined(__GNUC__)
++#pragma GCC target("+simd+crypto")
++#endif
++
+ #define ABYTES    crypto_aead_aes256gcm_ABYTES
+ #define NPUBBYTES crypto_aead_aes256gcm_NPUBBYTES
+ #define KEYBYTES  crypto_aead_aes256gcm_KEYBYTES
