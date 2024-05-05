@@ -354,6 +354,7 @@ DESIRED_WARNING_CXXFLAGS="\
 #    same as fields
 # • `-Wno-string-conversion`: currently abused to `assert` on strings
 # • `-Wno-tautological-type-limit-compare`: I think isn’t portable because of numeric type sizing
+# • `-Wno-unsafe-buffer-usage`: Added in Clang 16, needs consideration
 DISABLED_WARNING_CXXFLAGS="\
   -Wno-c++20-compat -Wno-cast-align -Wno-cast-qual -Wno-comma -Wno-conditional-uninitialized \
   -Wno-covered-switch-default -Wno-ctad-maybe-unsupported \
@@ -370,11 +371,13 @@ DISABLED_WARNING_CXXFLAGS="\
   -Wno-redundant-parens -Wno-reorder-ctor -Wno-reserved-id-macro -Wno-reserved-identifier \
   -Wno-return-type -Wno-shadow -Wno-shadow-field -Wno-shadow-field-in-constructor \
   -Wno-shift-sign-overflow -Wno-shorten-64-to-32 -Wno-sign-compare -Wno-sign-conversion \
-  -Wno-string-conversion -Wno-suggest-destructor-override -Wno-suggest-override -Wno-switch-enum \
+  -Wno-string-conversion -Wno-suggest-destructor-override -Wno-suggest-override \
+  -Wno-switch-default -Wno-switch-enum \
   -Wno-tautological-type-limit-compare -Wno-tautological-unsigned-enum-zero-compare \
   -Wno-tautological-unsigned-zero-compare -Wno-thread-safety-attributes \
   -Wno-thread-safety-negative -Wno-undef -Wno-undefined-func-template -Wno-uninitialized \
   -Wno-unreachable-code -Wno-unreachable-code-break -Wno-unreachable-code-return \
+  -Wno-unsafe-buffer-usage \
   -Wno-unused-but-set-variable -Wno-unused-exception-parameter -Wno-unused-function \
   -Wno-unused-macros -Wno-unused-member-function -Wno-unused-parameter -Wno-unused-private-field \
   -Wno-unused-template -Wno-unused-variable -Wno-used-but-marked-unused -Wno-weak-vtables \
@@ -401,7 +404,7 @@ REENABLED_WARNING_CXXFLAGS="\
   -Wmicrosoft-comment-paste -Wmicrosoft-cpp-macro -Wmicrosoft-end-of-file -Wmicrosoft-enum-value \
   -Wmicrosoft-fixed-enum -Wmicrosoft-flexible-array -Wmicrosoft-redeclare-static \
   -Wnested-anon-types -Wnullability-extension -Wobjc-signed-char-bool-implicit-int-conversion \
-  -Woverlength-strings -Wpre-c++2b-compat -Wretained-language-linkage \
+  -Woverlength-strings -Wpre-c++20-compat -Wretained-language-linkage \
   -Wshadow-field-in-constructor-modified -Wshadow-ivar -Wsometimes-uninitialized \
   -Wstatic-self-init -Wundefined-internal-type -Wunneeded-member-function \
   -Wunreachable-code-fallthrough -Wunreachable-code-generic-assoc -Wunreachable-code-loop-increment"

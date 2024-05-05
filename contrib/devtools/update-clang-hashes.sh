@@ -7,7 +7,7 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 CLANG_PACKAGE="$SCRIPT_DIR/../../depends/packages/native_clang.mk"
 LIBCXX_PACKAGE="$SCRIPT_DIR/../../depends/packages/libcxx.mk"
 
-CLANG_VERSION=$( grep -v _major_version $CLANG_PACKAGE | grep -oP "_version=\K.*" )
+CLANG_VERSION=$( grep -v _major_version $CLANG_PACKAGE | grep -oP "_default_version=\K.*" )
 LIBCXX_MSYS2_VERSION=$( grep -oP "_msys2_version=\K.*" $LIBCXX_PACKAGE )
 
 update_clang_hash() {

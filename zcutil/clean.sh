@@ -9,6 +9,7 @@ rm -f doc/man/Makefile
 rm -f doc/man/Makefile.in
 
 rm -f .cargo/config
+rm -f .cargo/config.toml
 rm -f .cargo/.configured-for-online
 rm -f .cargo/.configured-for-offline
 

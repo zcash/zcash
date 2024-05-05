@@ -159,7 +159,7 @@ impl Block {
     }
 
     fn extract_height(&self) -> Option<BlockHeight> {
-        self.txs.get(0).and_then(extract_height_from_coinbase)
+        self.txs.first().and_then(extract_height_from_coinbase)
     }
 
     /// Builds the Merkle tree for this block and returns its root.

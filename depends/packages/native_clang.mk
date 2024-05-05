@@ -5,11 +5,15 @@ package=native_clang
 # - Manually fix the versions for packages that don't exist (the LLVM project
 #   doesn't uniformly cut binaries across releases).
 # The Clang compiler should use the same LLVM version as the Rust compiler.
-$(package)_default_major_version=15
-$(package)_default_version=15.0.6
+$(package)_default_major_version=18
+$(package)_default_version=18.1.4
+# 2024-05-03: No Intel macOS packages are available for Clang 16, 17, or 18.
+$(package)_major_version_darwin=15
 $(package)_version_darwin=15.0.4
 # 2023-02-16: No FreeBSD packages are available for Clang 15.
 # 2023-04-07: Still the case.
+# 2024-05-03: No FreeBSD packages are available for Clang 17 or 18.
+#             Clang 16 has FreeBSD 13 packages, but none for FreeBSD 12.
 $(package)_major_version_freebsd=14
 $(package)_version_freebsd=14.0.6
 
@@ -23,7 +27,7 @@ $(package)_major_version=$(if $($(package)_major_version_$(host_arch)_$(host_os)
 $(package)_download_path_linux=https://github.com/llvm/llvm-project/releases/download/llvmorg-$($(package)_version)
 $(package)_download_file_linux=clang+llvm-$($(package)_version)-x86_64-linux-gnu-ubuntu-18.04.tar.xz
 $(package)_file_name_linux=clang-llvm-$($(package)_version)-x86_64-linux-gnu-ubuntu-18.04.tar.xz
-$(package)_sha256_hash_linux=38bc7f5563642e73e69ac5626724e206d6d539fbef653541b34cae0ba9c3f036
+$(package)_sha256_hash_linux=1607375b4aa2aec490b6db51846a04b265675a87e925bcf5825966401ff9b0b1
 $(package)_download_path_darwin=https://github.com/llvm/llvm-project/releases/download/llvmorg-$($(package)_version)
 $(package)_download_file_darwin=clang+llvm-$($(package)_version)-x86_64-apple-darwin.tar.xz
 $(package)_file_name_darwin=clang-llvm-$($(package)_version)-x86_64-apple-darwin.tar.xz
@@ -35,10 +39,10 @@ $(package)_sha256_hash_freebsd=b0a7b86dacb12afb8dd2ca99ea1b894d9cce84aab7711cb19
 $(package)_download_path_aarch64_linux=https://github.com/llvm/llvm-project/releases/download/llvmorg-$($(package)_version)
 $(package)_download_file_aarch64_linux=clang+llvm-$($(package)_version)-aarch64-linux-gnu.tar.xz
 $(package)_file_name_aarch64_linux=clang-llvm-$($(package)_version)-aarch64-linux-gnu.tar.xz
-$(package)_sha256_hash_aarch64_linux=8ca4d68cf103da8331ca3f35fe23d940c1b78fb7f0d4763c1c059e352f5d1bec
+$(package)_sha256_hash_aarch64_linux=8c2f4d1606d24dc197a590acce39453abe7a302b9b92e762108f9b5a9701b1df
 
-ifneq (,$(wildcard /etc/arch-release))
-$(package)_dependencies=native_libtinfo
+ifeq ($(build_os),linux)
+$(package)_dependencies=native_libtinfo5
 endif
 
 # Ensure we have clang native to the builder, not the target host

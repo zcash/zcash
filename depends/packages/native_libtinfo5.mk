@@ -1,17 +1,19 @@
-package=native_tinfo
-$(package)_version=5.6.0
-$(package)_download_path_linux=http://ftp.debian.org/debian/pool/main/n/ncurses/
-$(package)_download_file_linux=libtinfo5_6.0+20161126-1+deb9u2_amd64.deb
-$(package)_file_name_linux=libtinfo5_6.0+20161126-1+deb9u2_amd64.deb
-$(package)_sha256_hash_linux=1d249a3193568b5ef785ad8993b9ba6d6fdca0eb359204c2355532b82d25e9f5
+package=native_libtinfo5
+$(package)_version=6.2
+
+# We only enable this if build_os is linux.
+$(package)_download_path=http://ftp.debian.org/debian/pool/main/n/ncurses/
+$(package)_download_file=libtinfo5_$($(package)_version)+20201114-2+deb11u2_amd64.deb
+$(package)_file_name=libtinfo5-$($(package)_version).deb
+$(package)_sha256_hash=69e131ce3f790a892ca1b0ae3bfad8659daa2051495397eee1b627d9783a6797
 
 define $(package)_extract_cmds
 	mkdir -p $($(package)_extract_dir) && \
 	echo "$($(package)_sha256_hash)  $($(package)_source)" > $($(package)_extract_dir)/.$($(package)_file_name).hash && \
 	$(build_SHA256SUM) -c $($(package)_extract_dir)/.$($(package)_file_name).hash && \
 	mkdir -p libtinfo5 && \
-	ar x --output libtinfo5 $($(package)_source_dir)/$($(package)_file_name) && \
 	cd libtinfo5 && \
+	ar x $($(package)_source_dir)/$($(package)_file_name) && \
 	tar xf data.tar.xz
 endef
 

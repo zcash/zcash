@@ -537,7 +537,7 @@ impl Wallet {
         );
         self.potential_spends
             .entry(*nf)
-            .or_insert_with(BTreeSet::new)
+            .or_default()
             .insert(inpoint);
     }
 

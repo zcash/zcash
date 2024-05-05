@@ -3477,6 +3477,8 @@ WalletDecryptedNotes CWallet::TryDecryptShieldedOutputs(const CTransaction& tx)
     auto sproutNoteData = FindMySproutNotes(tx);
 
     // Sapling is trial decrypted in Rust.
+    mapSaplingNoteData_t saplingNoteData;
+    SaplingIncomingViewingKeyMap saplingViewingKeysToAdd;
 
     // Orchard
     // TODO: Trial decryption of Orchard notes alongside Sprout and Sapling will
@@ -3485,6 +3487,7 @@ WalletDecryptedNotes CWallet::TryDecryptShieldedOutputs(const CTransaction& tx)
 
     return WalletDecryptedNotes {
         .sproutNoteData = sproutNoteData,
+        .saplingNoteDataAndAddressesToAdd = std::make_pair(saplingNoteData, saplingViewingKeysToAdd),
     };
 }
 
