@@ -30,7 +30,7 @@ jobs:
               host: x86_64-pc-linux-gnu
 
             - name: Debian-buster
-              tier: 1
+              tier: 2
               platform: Debian buster
               build_os: ubuntu-20.04-8cores
               test_os: ubuntu-20.04
