@@ -109,18 +109,20 @@ jobs:
           jq -r -n 'env.CFG | fromjson | [.data[] | select(.test_os and .test_os != "windows-latest")] | @json "unix_test_matrix=\(.)"' >> $GITHUB_OUTPUT
           jq -r -n 'env.CFG | fromjson | [.data[] | select(.test_os and .test_os != "windows-latest") | .name] | @json "unix_test_names=\(.)"' >> $GITHUB_OUTPUT
 
-      - name: Download Sprout parameters
-        run: |
-          mkdir zcash-params
-          wget -c https://download.z.cash/downloads/sprout-groth16.params -O zcash-params/sprout-groth16.params      
-
       - name: Cache Sprout parameters
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: zcash-params
           key: zcash-params
           restore-keys: |
             zcash-params
+
+      - name: Download Sprout parameters
+        # In case the Sprout parameters are not currently cached
+        shell: bash
+        run: |
+          mkdir zcash-params || echo ""
+          curl -L -C - https://download.z.cash/downloads/sprout-groth16.params -o zcash-params/sprout-groth16.params
 
   build:
     name: Build tier ${{ matrix.tier }} platform ${{ matrix.platform }}
@@ -154,7 +156,7 @@ jobs:
           sudo update-alternatives --set x86_64-w64-mingw32-g++ $(update-alternatives --query x86_64-w64-mingw32-g++ | grep Alternative | grep posix | cut -d' ' -f2)
 
       - name: Cache built dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: depends/built
           key: ${{ matrix.name }}-built-${{ hashFiles('depends/Makefile', 'depends/funcs.mk') }}-${{ hashFiles('depends/packages/*.mk', 'depends/patches/**/*') }}
@@ -167,7 +169,7 @@ jobs:
         run: echo "timestamp=$(date +'%Y-%m-%d-%H;%M;%S')" >> "$GITHUB_OUTPUT"
 
       - name: Cache ccache files
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ runner.os == 'macOS' && '~/Library/Caches/ccache' || '~/.cache/ccache' }}
           key: ${{ matrix.name }}-ccache-${{ steps.ccache_cache_timestamp.outputs.timestamp }}
@@ -263,7 +265,7 @@ jobs:
           sudo update-alternatives --set x86_64-w64-mingw32-g++ $(update-alternatives --query x86_64-w64-mingw32-g++ | grep Alternative | grep posix | cut -d' ' -f2)
 
       - name: Cache built dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: depends/built
           key: ${{ matrix.name }}-built-${{ hashFiles('depends/Makefile', 'depends/funcs.mk') }}-${{ hashFiles('depends/packages/*.mk', 'depends/patches/**/*') }}
@@ -276,7 +278,7 @@ jobs:
         run: echo "timestamp=$(date +'%Y-%m-%d-%H;%M;%S')" >> "$GITHUB_OUTPUT"
 
       - name: Cache ccache files
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ runner.os == 'macOS' && '~/Library/Caches/ccache' || '~/.cache/ccache' }}
           key: ${{ matrix.name }}-ccache-${{ steps.ccache_cache_timestamp.outputs.timestamp }}
@@ -354,7 +356,7 @@ jobs:
         run: chmod +x ${{ format('./src/zcash-gtest{0}', matrix.file_ext) }}
 
       - name: Cache Sprout parameters
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: zcash-params
           key: zcash-params
@@ -366,7 +368,7 @@ jobs:
         shell: bash
         run: |
           mkdir zcash-params || echo ""
-          curl -L -C - https://download.z.cash/downloads/sprout-groth16.params -o zcash-params/sprout-groth16.params          
+          curl -L -C - https://download.z.cash/downloads/sprout-groth16.params -o zcash-params/sprout-groth16.params
 
       - name: Setup zcash-params
         shell: bash
