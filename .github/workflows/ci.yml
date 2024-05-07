@@ -122,8 +122,10 @@ jobs:
         run: |
           cat <<EOF > ./subclass.py
           import importlib
-          import sys
+          import json
           import os
+          import sys
+
           sys.path.append('qa/pull-tester')
           rpc_tests = importlib.import_module('rpc-tests')
 
@@ -152,11 +154,10 @@ jobs:
                   'rpc_tests': [test],
               })
 
-          print(test_list)
+          print(json.dumps(test_list))
           EOF
           RPC_MATRIX_JSON=$(echo '${{ steps.set-matrices.outputs.rpc_test_matrix }}')
-          RPC_SHARDS=$(SRC_DIR=$(pwd) python3 ./subclass.py)
-          RPC_SHARDS_JSON=$(echo "$RPC_SHARDS" | sed "s/'/\"/g" | jq -c .)
+          RPC_SHARDS_JSON=$(SRC_DIR=$(pwd) python3 ./subclass.py)
           echo "$RPC_SHARDS_JSON" | jq -r '[.[] | .shard] | @json "rpc_test_shards=\(.)"' >> $GITHUB_OUTPUT
           echo -e "$RPC_MATRIX_JSON\n$RPC_SHARDS_JSON" | jq -r -s 'add | @json "rpc_test_shards_matrix=\(.)"' >> $GITHUB_OUTPUT
 
@@ -726,10 +727,11 @@ jobs:
       - name: RPC test ${{ matrix.shard }}
         run: |
           cat <<EOF > ./subclass.py
-          import subprocess
           import importlib
-          import sys
           import os
+          import subprocess
+          import sys
+
           sys.path.append('qa/pull-tester')
           rpc_tests = importlib.import_module('rpc-tests')
 
