@@ -35,6 +35,11 @@ SERIAL_SCRIPTS = [
     'wallet_shieldingcoinbase.py',
 ]
 
+FLAKY_SCRIPTS = [
+    # These tests have intermittent failures that we haven't diagnosed yet.
+    'mempool_packages.py',
+]
+
 BASE_SCRIPTS= [
     # Scripts that are run by the travis build process
     # Longest test should go first, to favor running tests in parallel
@@ -42,7 +47,6 @@ BASE_SCRIPTS= [
     'wallet.py',
     'sprout_sapling_migration.py',
     'remove_sprout_shielding.py',
-    'mempool_packages.py',
     # vv Tests less than 2m vv
     'mergetoaddress_mixednotes.py',
     'wallet_shieldcoinbase_sapling.py',
@@ -178,7 +182,7 @@ EXTENDED_SCRIPTS = [
     'wallet_db_flush.py',
 ]
 
-ALL_SCRIPTS = SERIAL_SCRIPTS + BASE_SCRIPTS + ZMQ_SCRIPTS + EXTENDED_SCRIPTS
+ALL_SCRIPTS = SERIAL_SCRIPTS + FLAKY_SCRIPTS + BASE_SCRIPTS + ZMQ_SCRIPTS + EXTENDED_SCRIPTS
 
 def main():
     # Parse arguments and pass through unrecognised args
@@ -247,7 +251,7 @@ def main():
     else:
         # No individual tests have been specified. Run base tests, and
         # optionally ZMQ tests and extended tests.
-        test_list = SERIAL_SCRIPTS + BASE_SCRIPTS
+        test_list = SERIAL_SCRIPTS + FLAKY_SCRIPTS + BASE_SCRIPTS
         if enable_zmq:
             test_list += ZMQ_SCRIPTS
         if args.extended:

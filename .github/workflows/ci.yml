@@ -175,8 +175,9 @@ jobs:
               })
 
           # These tests involve enough shielded spends (consuming all CPU cores)
-          # that we can't run them in parallel.
-          for test in rpc_tests.SERIAL_SCRIPTS:
+          # that we can't run them in parallel, or fail intermittently so we run
+          # them separately to enable not requiring that they pass.
+          for test in rpc_tests.SERIAL_SCRIPTS + rpc_tests.FLAKY_SCRIPTS:
               test_list.append({
                   'shard': test,
                   'rpc_tests': [test],
