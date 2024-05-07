@@ -2,8 +2,36 @@ name: CI
 
 on:
   pull_request:
+    # Any update here needs to be done for `push`, see below.
+    paths-ignore:
+      # Workflows that have no effect on this workflow.
+      - '.github/dependabot.yml'
+      - '.github/workflows/audits.yml'
+      - '.github/workflows/book.yml'
+      - '.github/workflows/lints.yml'
+      - '.github/workflows/release-docker-hub.yml'
+      # Documentation.
+      - 'contrib/debian/copyright'
+      - 'doc/**'
+      - '**.md'
+      - 'COPYING'
+      - 'INSTALL'
   push:
     branches: master
+    # Any update here needs to be done for `pull_request`, see above.
+    paths-ignore:
+      # Workflows that have no effect on this workflow.
+      - '.github/dependabot.yml'
+      - '.github/workflows/audits.yml'
+      - '.github/workflows/book.yml'
+      - '.github/workflows/lints.yml'
+      - '.github/workflows/release-docker-hub.yml'
+      # Documentation.
+      - 'contrib/debian/copyright'
+      - 'doc/**'
+      - '**.md'
+      - 'COPYING'
+      - 'INSTALL'
 
 jobs:
   setup:
