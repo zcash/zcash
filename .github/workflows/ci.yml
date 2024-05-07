@@ -2,8 +2,36 @@ name: CI
 
 on:
   pull_request:
+    # Any update here needs to be done for `push`, see below.
+    paths-ignore:
+      # Workflows that have no effect on this workflow.
+      - '.github/dependabot.yml'
+      - '.github/workflows/audits.yml'
+      - '.github/workflows/book.yml'
+      - '.github/workflows/lints.yml'
+      - '.github/workflows/release-docker-hub.yml'
+      # Documentation.
+      - 'contrib/debian/copyright'
+      - 'doc/**'
+      - '**.md'
+      - 'COPYING'
+      - 'INSTALL'
   push:
     branches: master
+    # Any update here needs to be done for `pull_request`, see above.
+    paths-ignore:
+      # Workflows that have no effect on this workflow.
+      - '.github/dependabot.yml'
+      - '.github/workflows/audits.yml'
+      - '.github/workflows/book.yml'
+      - '.github/workflows/lints.yml'
+      - '.github/workflows/release-docker-hub.yml'
+      # Documentation.
+      - 'contrib/debian/copyright'
+      - 'doc/**'
+      - '**.md'
+      - 'COPYING'
+      - 'INSTALL'
 
 jobs:
   setup:
@@ -30,7 +58,7 @@ jobs:
               host: x86_64-pc-linux-gnu
 
             - name: Debian-buster
-              tier: 1
+              tier: 2
               platform: Debian buster
               build_os: ubuntu-20.04-8cores
               test_os: ubuntu-20.04
@@ -89,8 +117,14 @@ jobs:
       test_names: ${{ steps.set-matrices.outputs.test_names }}
       unix_test_matrix: ${{ steps.set-matrices.outputs.unix_test_matrix }}
       unix_test_names: ${{ steps.set-matrices.outputs.unix_test_names }}
+      rpc_test_matrix: ${{ steps.set-matrices.outputs.rpc_test_matrix }}
+      rpc_test_names: ${{ steps.set-matrices.outputs.rpc_test_names }}
+      rpc_test_shards: ${{ steps.set-rpc-tests.outputs.rpc_test_shards }}
+      rpc_test_shards_matrix: ${{ steps.set-rpc-tests.outputs.rpc_test_shards_matrix }}
 
     steps:
+      - uses: actions/checkout@v4
+
       # Configure the build and test matrices. Notes:
       # - The `*_names` lists of platforms are combined with job-specific lists to build
       #   strategy matrices. The `*_matrix` lists then augment the matrix with parameters
@@ -98,6 +132,7 @@ jobs:
       # - We can only run tests on the subset of platforms that have a compatible runner
       #   (i.e. excluding cross-compiled platforms).
       # - Some tests don't currently work on Windows platforms, so we have a Unix subset.
+      # - We only run RPC tests on Tier 1 platforms, to save costs.
       - id: set-matrices
         env:
           CFG: ${{ toJSON(matrix.cfg) }}
@@ -108,19 +143,67 @@ jobs:
           jq -r -n 'env.CFG | fromjson | [.data[] | select(.test_os) | .name] | @json "test_names=\(.)"' >> $GITHUB_OUTPUT
           jq -r -n 'env.CFG | fromjson | [.data[] | select(.test_os and .test_os != "windows-latest")] | @json "unix_test_matrix=\(.)"' >> $GITHUB_OUTPUT
           jq -r -n 'env.CFG | fromjson | [.data[] | select(.test_os and .test_os != "windows-latest") | .name] | @json "unix_test_names=\(.)"' >> $GITHUB_OUTPUT
+          jq -r -n 'env.CFG | fromjson | [.data[] | select(.test_os and .tier == 1)] | @json "rpc_test_matrix=\(.)"' >> $GITHUB_OUTPUT
+          jq -r -n 'env.CFG | fromjson | [.data[] | select(.test_os and .tier == 1) | .name] | @json "rpc_test_names=\(.)"' >> $GITHUB_OUTPUT
 
-      - name: Download Sprout parameters
+      - id: set-rpc-tests
         run: |
-          mkdir zcash-params
-          wget -c https://download.z.cash/downloads/sprout-groth16.params -O zcash-params/sprout-groth16.params      
+          cat <<EOF > ./subclass.py
+          import importlib
+          import json
+          import os
+          import sys
+
+          sys.path.append('qa/pull-tester')
+          rpc_tests = importlib.import_module('rpc-tests')
+
+          src_dir = os.environ["SRC_DIR"]
+          SHARDS = 10
+
+          # These tests are ordered longest-test-first, to favor running tests in
+          # parallel with the regular test runner. For chunking purposes, assign
+          # tests to shards in round-robin order.
+          test_shards = {}
+          for i, test in enumerate(rpc_tests.BASE_SCRIPTS + rpc_tests.ZMQ_SCRIPTS):
+              test_shards.setdefault(i % SHARDS, []).append(test)
+
+          test_list = []
+          for i, tests in test_shards.items():
+              test_list.append({
+                  'shard': 'shard-%d' % i,
+                  'rpc_tests': tests,
+              })
+
+          # These tests involve enough shielded spends (consuming all CPU cores)
+          # that we can't run them in parallel, or fail intermittently so we run
+          # them separately to enable not requiring that they pass.
+          for test in rpc_tests.SERIAL_SCRIPTS + rpc_tests.FLAKY_SCRIPTS:
+              test_list.append({
+                  'shard': test,
+                  'rpc_tests': [test],
+              })
+
+          print(json.dumps(test_list))
+          EOF
+          RPC_MATRIX_JSON=$(echo '${{ steps.set-matrices.outputs.rpc_test_matrix }}')
+          RPC_SHARDS_JSON=$(SRC_DIR=$(pwd) python3 ./subclass.py)
+          echo "$RPC_SHARDS_JSON" | jq -r '[.[] | .shard] | @json "rpc_test_shards=\(.)"' >> $GITHUB_OUTPUT
+          echo -e "$RPC_MATRIX_JSON\n$RPC_SHARDS_JSON" | jq -r -s 'add | @json "rpc_test_shards_matrix=\(.)"' >> $GITHUB_OUTPUT
 
       - name: Cache Sprout parameters
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: zcash-params
           key: zcash-params
           restore-keys: |
             zcash-params
+
+      - name: Download Sprout parameters
+        # In case the Sprout parameters are not currently cached
+        shell: bash
+        run: |
+          mkdir zcash-params || echo ""
+          curl -L -C - https://download.z.cash/downloads/sprout-groth16.params -o zcash-params/sprout-groth16.params
 
   build:
     name: Build tier ${{ matrix.tier }} platform ${{ matrix.platform }}
@@ -154,7 +237,7 @@ jobs:
           sudo update-alternatives --set x86_64-w64-mingw32-g++ $(update-alternatives --query x86_64-w64-mingw32-g++ | grep Alternative | grep posix | cut -d' ' -f2)
 
       - name: Cache built dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: depends/built
           key: ${{ matrix.name }}-built-${{ hashFiles('depends/Makefile', 'depends/funcs.mk') }}-${{ hashFiles('depends/packages/*.mk', 'depends/patches/**/*') }}
@@ -167,7 +250,7 @@ jobs:
         run: echo "timestamp=$(date +'%Y-%m-%d-%H;%M;%S')" >> "$GITHUB_OUTPUT"
 
       - name: Cache ccache files
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ runner.os == 'macOS' && '~/Library/Caches/ccache' || '~/.cache/ccache' }}
           key: ${{ matrix.name }}-ccache-${{ steps.ccache_cache_timestamp.outputs.timestamp }}
@@ -263,7 +346,7 @@ jobs:
           sudo update-alternatives --set x86_64-w64-mingw32-g++ $(update-alternatives --query x86_64-w64-mingw32-g++ | grep Alternative | grep posix | cut -d' ' -f2)
 
       - name: Cache built dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: depends/built
           key: ${{ matrix.name }}-built-${{ hashFiles('depends/Makefile', 'depends/funcs.mk') }}-${{ hashFiles('depends/packages/*.mk', 'depends/patches/**/*') }}
@@ -276,7 +359,7 @@ jobs:
         run: echo "timestamp=$(date +'%Y-%m-%d-%H;%M;%S')" >> "$GITHUB_OUTPUT"
 
       - name: Cache ccache files
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ runner.os == 'macOS' && '~/Library/Caches/ccache' || '~/.cache/ccache' }}
           key: ${{ matrix.name }}-ccache-${{ steps.ccache_cache_timestamp.outputs.timestamp }}
@@ -354,7 +437,7 @@ jobs:
         run: chmod +x ${{ format('./src/zcash-gtest{0}', matrix.file_ext) }}
 
       - name: Cache Sprout parameters
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: zcash-params
           key: zcash-params
@@ -366,7 +449,7 @@ jobs:
         shell: bash
         run: |
           mkdir zcash-params || echo ""
-          curl -L -C - https://download.z.cash/downloads/sprout-groth16.params -o zcash-params/sprout-groth16.params          
+          curl -L -C - https://download.z.cash/downloads/sprout-groth16.params -o zcash-params/sprout-groth16.params
 
       - name: Setup zcash-params
         shell: bash
@@ -575,3 +658,128 @@ jobs:
         run: python3 ./qa/zcash/full_test_suite.py sec-hard
         env:
           HOST: ${{ matrix.host }}
+
+  rpc-depends:
+    name: RPC set up tier ${{ matrix.tier }} platform ${{ matrix.platform }}
+    needs: setup
+    runs-on: ${{ matrix.test_os }}
+    container:
+      image: ${{ matrix.container }}
+      env:
+        HOME: /root
+        PATH: /root/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH
+    continue-on-error: ${{ matrix.tier != 1 }}
+    strategy:
+      matrix:
+        name: ${{ fromJson(needs.setup.outputs.rpc_test_names) }}
+        include: ${{ fromJson(needs.setup.outputs.rpc_test_matrix) }}
+
+    steps:
+      - name: Get Python dependencies for RPC tests
+        run: |
+          python3 -m venv ./venv
+          . ./venv/bin/activate
+          pip install simplejson zmq asyncio
+
+      - uses: actions/cache/save@v4
+        name: cache-venv
+        with:
+          enableCrossOsArchive: true
+          path: venv
+          key: venv-${{ matrix.name }}
+
+  test-rpc:
+    name: RPC tests tier ${{ matrix.tier }} platform ${{ matrix.platform }} ${{ matrix.shard }}
+    needs: [setup, build, rpc-depends]
+    runs-on: ${{ matrix.test_os }}
+    container:
+      image: ${{ matrix.container }}
+      env:
+        HOME: /root
+        PATH: /root/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH
+    continue-on-error: ${{ matrix.tier != 1 }}
+    strategy:
+      fail-fast: false
+      matrix:
+        name: ${{ fromJson(needs.setup.outputs.rpc_test_names) }}
+        shard : ${{ fromJson(needs.setup.outputs.rpc_test_shards) }}
+        include: ${{ fromJson(needs.setup.outputs.rpc_test_shards_matrix) }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/cache/restore@v4
+        name: cache-venv
+        with:
+          enableCrossOsArchive: true
+          path: venv
+          key: venv-${{ matrix.name }}
+
+      - name: Download src artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: zcashd-${{ matrix.name }}
+          path: ./src
+
+      - name: Make artifact executable
+        if: runner.os != 'Windows'
+        run: |
+          chmod +x ${{ format('./src/zcashd{0}', matrix.file_ext) }}
+          chmod +x ${{ format('./src/zcash-cli{0}', matrix.file_ext) }}
+
+      - name: Get Sprout parameters
+        uses: actions/cache@v4
+        with:
+          path: zcash-params
+          key: zcash-params
+          restore-keys: |
+            zcash-params
+
+      - name: Download Sprout parameters
+        # In case the cache of Sprout parameters step fails
+        shell: bash
+        run: |
+          mkdir zcash-params || echo ""
+          curl -L -C - https://download.z.cash/downloads/sprout-groth16.params -o zcash-params/sprout-groth16.params
+
+      - name: Setup zcash-params
+        shell: bash
+        run: |
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            mv zcash-params "$APPDATA/ZcashParams"
+          elif [ "${{ runner.os }}" == "macOS" ]; then
+            mv zcash-params "$HOME/Library/Application Support/ZcashParams"
+          elif [ "${{ runner.os }}" == "Linux" ]; then
+            mv zcash-params "$HOME/.zcash-params"
+          fi
+
+      - name: RPC test ${{ matrix.shard }}
+        run: |
+          cat <<EOF > ./subclass.py
+          import importlib
+          import os
+          import subprocess
+          import sys
+
+          sys.path.append('qa/pull-tester')
+          rpc_tests = importlib.import_module('rpc-tests')
+
+          src_dir = os.environ["SRC_DIR"]
+          build_dir = '.'
+          exeext = '${{ matrix.file_ext }}'
+
+          class MyTestHandler(rpc_tests.RPCTestHandler):
+              def start_test(self, args, stdout, stderr):
+                  return subprocess.Popen(
+                      args,
+                      universal_newlines=True,
+                      stdout=stdout,
+                      stderr=stderr)
+
+          test_list = ${{ toJSON(matrix.rpc_tests) }}
+          all_passed = rpc_tests.run_tests(MyTestHandler, test_list, src_dir, build_dir, exeext, jobs=len(test_list))
+          if all_passed == False:
+              sys.exit(1)
+          EOF
+          . ./venv/bin/activate
+          ZCASHD=$(pwd)/${{ format('src/zcashd{0}', matrix.file_ext) }} SRC_DIR=$(pwd) python3 ./subclass.py
