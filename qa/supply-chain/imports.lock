@@ -617,10 +617,35 @@ delta = "2.4.2 -> 2.5.0"
 aggregated-from = "https://chromium.googlesource.com/chromium/src/+/main/third_party/rust/chromium_crates_io/supply-chain/audits.toml?format=TEXT"
 
 [[audits.google.audits.cxxbridge-flags]]
-who = "George Burgess IV <gbiv@google.com>"
+who = "Lukasz Anforowicz <lukasza@chromium.org>"
 criteria = "safe-to-deploy"
-delta = "1.0.106 -> 1.0.107"
-aggregated-from = "https://chromium.googlesource.com/chromiumos/third_party/rust_crates/+/refs/heads/main/cargo-vet/audits.toml?format=TEXT"
+version = "1.0.117"
+notes = """
+I grepped for \"crypt\", \"cipher\", \"fs\", \"net\", \"unsafe\" - there were no hits.
+The crate is very straightforward - it just defines a `pub const STD: &str`.
+The crate was added to Chromium in https://crrev.com/c/5029701.
+"""
+aggregated-from = "https://chromium.googlesource.com/chromium/src/+/main/third_party/rust/chromium_crates_io/supply-chain/audits.toml?format=TEXT"
+
+[[audits.google.audits.cxxbridge-flags]]
+who = "danakj <danakj@chromium.org>"
+criteria = "safe-to-deploy"
+delta = "1.0.117 -> 1.0.119"
+notes = "Reviewed in https://crrev.com/c/5362739"
+aggregated-from = "https://chromium.googlesource.com/chromium/src/+/main/third_party/rust/chromium_crates_io/supply-chain/audits.toml?format=TEXT"
+
+[[audits.google.audits.cxxbridge-flags]]
+who = "Dustin J. Mitchell <djmitche@chromium.org>"
+criteria = "safe-to-deploy"
+delta = "1.0.119 -> 1.0.120"
+notes = "Reviewed in https://chromium-review.googlesource.com/c/chromium/src/+/5392544"
+aggregated-from = "https://chromium.googlesource.com/chromium/src/+/main/third_party/rust/chromium_crates_io/supply-chain/audits.toml?format=TEXT"
+
+[[audits.google.audits.cxxbridge-flags]]
+who = "Adrian Taylor <adetaylor@chromium.org>"
+criteria = "safe-to-deploy"
+delta = "1.0.120 -> 1.0.121"
+aggregated-from = "https://chromium.googlesource.com/chromium/src/+/main/third_party/rust/chromium_crates_io/supply-chain/audits.toml?format=TEXT"
 
 [[audits.google.audits.fastrand]]
 who = "George Burgess IV <gbiv@google.com>"

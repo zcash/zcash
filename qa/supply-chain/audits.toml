@@ -624,6 +624,12 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.111 -> 1.0.113"
 
+[[audits.cxx]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.113 -> 1.0.122"
+notes = "Build script changes only affect lints."
+
 [[audits.cxxbridge-flags]]
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
@@ -684,6 +690,11 @@ delta = "1.0.107 -> 1.0.111"
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.111 -> 1.0.113"
+
+[[audits.cxxbridge-flags]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.121 -> 1.0.122"
 
 [[audits.cxxbridge-macro]]
 who = "Daira Hopwood <daira@jacaranda.org>"
@@ -762,6 +773,12 @@ block).
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.111 -> 1.0.113"
+
+[[audits.cxxbridge-macro]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.113 -> 1.0.122"
+notes = "Only changes to lints."
 
 [[audits.der]]
 who = "Daira-Emma Hopwood <daira@jacaranda.org>"
