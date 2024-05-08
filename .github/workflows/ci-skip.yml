@@ -19,6 +19,10 @@ on:
       - 'COPYING'
       - 'INSTALL'
 
+permissions:
+  contents: read
+  statuses: write
+
 jobs:
   required-pass:
     name: Bypass required-pass steps
