@@ -28,7 +28,10 @@ use crate::{
     builder_ffi::OrchardSpendInfo,
     incremental_merkle_tree::{read_tree, write_tree},
     streams_ffi::{CppStreamReader, CppStreamWriter, ReadCb, StreamObj, WriteCb},
-    wallet_scanner::OrchardPreparedIncomingViewingKeys,
+    wallet_scanner::{
+        DecryptedNote as BatchDecryptedNote, OrchardDecryptedOutputs,
+        OrchardPreparedIncomingViewingKeys,
+    },
     zcashd_orchard::OrderedAddress,
 };
 
@@ -385,27 +388,60 @@ impl Wallet {
     /// incoming viewing keys to the wallet, and return a a data structure that describes
     /// the actions that are involved with this wallet, either spending notes belonging
     /// to this wallet or creating new notes owned by this wallet.
-    #[tracing::instrument(level = "trace", skip(self))]
+    #[tracing::instrument(level = "trace", skip(self, decrypted_outputs))]
     pub fn add_notes_from_bundle(
         &mut self,
         txid: &TxId,
         bundle: &Bundle<Authorized, Amount>,
+        decrypted_outputs: Option<&OrchardDecryptedOutputs>,
     ) -> BundleWalletInvolvement {
         let mut involvement = BundleWalletInvolvement::new();
         // If we recognize any of our notes as being consumed as inputs to actions
         // in this bundle, record them as potential spends.
         involvement.spend_action_metadata = self.add_potential_spends(txid, bundle);
 
-        let keys = self
-            .key_store
-            .viewing_keys
-            .keys()
-            .cloned()
-            .collect::<Vec<_>>();
+        if let Some(decrypted) = decrypted_outputs {
+            for ((output_txid, action_idx), decrypted_note) in &decrypted.inner {
+                assert_eq!(txid, output_txid);
 
-        for (action_idx, ivk, note, recipient, memo) in bundle.decrypt_outputs_with_keys(&keys) {
-            assert!(self.add_decrypted_note(txid, action_idx, ivk.clone(), note, recipient, memo));
-            involvement.receive_action_metadata.insert(action_idx, ivk);
+                let BatchDecryptedNote {
+                    ivk_tag,
+                    recipient,
+                    note,
+                    memo,
+                } = decrypted_note;
+                let ivk = IncomingViewingKey::from_bytes(ivk_tag).unwrap();
+
+                assert!(self.add_decrypted_note(
+                    txid,
+                    *action_idx,
+                    ivk.clone(),
+                    *note,
+                    *recipient,
+                    *memo
+                ));
+                involvement.receive_action_metadata.insert(*action_idx, ivk);
+            }
+        } else {
+            let keys = self
+                .key_store
+                .viewing_keys
+                .keys()
+                .cloned()
+                .collect::<Vec<_>>();
+
+            for (action_idx, ivk, note, recipient, memo) in bundle.decrypt_outputs_with_keys(&keys)
+            {
+                assert!(self.add_decrypted_note(
+                    txid,
+                    action_idx,
+                    ivk.clone(),
+                    note,
+                    recipient,
+                    memo
+                ));
+                involvement.receive_action_metadata.insert(action_idx, ivk);
+            }
         }
 
         involvement
@@ -863,14 +899,16 @@ pub extern "C" fn orchard_wallet_add_notes_from_bundle(
     wallet: *mut Wallet,
     txid: *const [c_uchar; 32],
     bundle: *const Bundle<Authorized, Amount>,
+    decrypted_outputs: *const OrchardDecryptedOutputs,
     cb_receiver: Option<FFICallbackReceiver>,
     action_ivk_push_cb: Option<ActionIvkPushCb>,
     spend_idx_push_cb: Option<SpendIndexPushCb>,
 ) -> bool {
     let wallet = unsafe { wallet.as_mut() }.expect("Wallet pointer may not be null");
     let txid = TxId::from_bytes(*unsafe { txid.as_ref() }.expect("txid may not be null."));
+    let decrypted_outputs = unsafe { decrypted_outputs.as_ref() };
     if let Some(bundle) = unsafe { bundle.as_ref() } {
-        let added = wallet.add_notes_from_bundle(&txid, bundle);
+        let added = wallet.add_notes_from_bundle(&txid, bundle, decrypted_outputs);
         let involved =
             !(added.receive_action_metadata.is_empty() && added.spend_action_metadata.is_empty());
         for (action_idx, ivk) in added.receive_action_metadata.into_iter() {

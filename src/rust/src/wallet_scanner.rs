@@ -52,15 +52,15 @@ impl OutputDomain for OrchardDomain {
 }
 
 /// A decrypted note.
-struct DecryptedNote<A, D: Domain> {
+pub(crate) struct DecryptedNote<A, D: Domain> {
     /// The tag corresponding to the incoming viewing key used to decrypt the note.
-    ivk_tag: A,
+    pub(crate) ivk_tag: A,
     /// The recipient of the note.
-    recipient: D::Recipient,
+    pub(crate) recipient: D::Recipient,
     /// The note!
-    note: D::Note,
+    pub(crate) note: D::Note,
     /// The memo sent with the note.
-    memo: D::Memo,
+    pub(crate) memo: D::Memo,
 }
 
 impl<A, D: Domain> fmt::Debug for DecryptedNote<A, D>
@@ -798,7 +798,7 @@ pub(crate) struct BatchResult {
 }
 
 pub(crate) struct OrchardDecryptedOutputs {
-    inner: HashMap<(TxId, usize), DecryptedNote<[u8; 64], OrchardDomain>>,
+    pub(crate) inner: HashMap<(TxId, usize), DecryptedNote<[u8; 64], OrchardDomain>>,
 }
 
 impl BatchResult {

@@ -53,14 +53,14 @@ TEST(OrchardWalletTests, TxInvolvesMyNotes) {
     // Create a transaction sending to the default address for that
     // spending key and add it to the wallet.
     auto tx = FakeOrchardTx(sk, libzcash::diversifier_index_t(0));
-    wallet.AddNotesIfInvolvingMe(tx);
+    wallet.AddNotesIfInvolvingMe(tx, nullptr);
 
     // Check that we detect the transaction as ours
     EXPECT_TRUE(wallet.TxInvolvesMyNotes(tx.GetHash()));
 
     // Create a transaction sending to a different diversified address
     auto tx1 = FakeOrchardTx(sk, libzcash::diversifier_index_t(0xffffffffffffffff));
-    wallet.AddNotesIfInvolvingMe(tx1);
+    wallet.AddNotesIfInvolvingMe(tx1, nullptr);
 
     // Check that we also detect this transaction as ours
     EXPECT_TRUE(wallet.TxInvolvesMyNotes(tx1.GetHash()));
@@ -69,7 +69,7 @@ TEST(OrchardWalletTests, TxInvolvesMyNotes) {
     // the key to the wallet; it should not be detected as ours.
     auto skNotOurs = RandomOrchardSpendingKey();
     auto tx2 = FakeOrchardTx(skNotOurs, libzcash::diversifier_index_t(0));
-    wallet.AddNotesIfInvolvingMe(tx2);
+    wallet.AddNotesIfInvolvingMe(tx2, nullptr);
     EXPECT_FALSE(wallet.TxInvolvesMyNotes(tx2.GetHash()));
 
     RegtestDeactivateNU5();
@@ -94,7 +94,7 @@ TEST(TransactionBuilder, OrchardToOrchard) {
     // spending key and add it to the wallet.
     libzcash::diversifier_index_t j(0);
     auto txRecv = FakeOrchardTx(sk, j);
-    wallet.AddNotesIfInvolvingMe(txRecv);
+    wallet.AddNotesIfInvolvingMe(txRecv, nullptr);
 
     // Generate a recipient.
     auto recipient = RandomOrchardSpendingKey()

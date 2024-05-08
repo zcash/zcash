@@ -281,12 +281,16 @@ public:
      * metadata describing the wallet's involvement with this action,
      * or std::nullopt if the transaction does not involve the wallet.
      */
-    std::optional<OrchardWalletTxMeta> AddNotesIfInvolvingMe(const CTransaction& tx) {
+    std::optional<OrchardWalletTxMeta> AddNotesIfInvolvingMe(
+        const CTransaction& tx,
+        const wallet::OrchardDecryptedOutputs* decryptedOutputs
+    ) {
         OrchardWalletTxMeta txMeta;
         if (orchard_wallet_add_notes_from_bundle(
                 inner.get(),
                 tx.GetHash().begin(),
                 tx.GetOrchardBundle().inner->as_ptr(),
+                decryptedOutputs,
                 &txMeta,
                 PushOrchardActionIVK,
                 PushSpendActionIdx

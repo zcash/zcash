@@ -135,6 +135,7 @@ bool orchard_wallet_add_notes_from_bundle(
         OrchardWalletPtr* wallet,
         const unsigned char txid[32],
         const OrchardBundlePtr* bundle,
+        const wallet::OrchardDecryptedOutputs* decryptedOutputs,
         void* callbackReceiver,
         push_action_ivk_callback_t push_cb,
         push_spend_action_idx_callback_t spend_cb
