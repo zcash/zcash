@@ -19,7 +19,7 @@ jobs:
       - run: rustup override set ${{steps.toolchain.outputs.name}}
 
       - name: Setup mdBook
-        uses: peaceiris/actions-mdbook@v1
+        uses: peaceiris/actions-mdbook@v2
         with:
           mdbook-version: 'latest'
 
