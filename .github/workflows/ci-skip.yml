@@ -1,0 +1,88 @@
+name: CI skip
+
+on:
+  pull_request:
+    # Any update here needs to be done for the `no-ci-required` step (see below),
+    # and mirrored into `ci.yml`.
+    paths:
+      # Workflows that have no effect on this workflow.
+      - '.github/dependabot.yml'
+      - '.github/workflows/audits.yml'
+      - '.github/workflows/book.yml'
+      - '.github/workflows/ci.yml'
+      - '.github/workflows/lints.yml'
+      - '.github/workflows/release-docker-hub.yml'
+      # Documentation.
+      - 'contrib/debian/copyright'
+      - 'doc/**'
+      - '**.md'
+      - 'COPYING'
+      - 'INSTALL'
+
+jobs:
+  required-pass:
+    name: Bypass required-pass steps
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      # Ensure that the base branch exists.
+      - run: git checkout ${{ github.base_ref }}
+      # Go back to the head ref (not necessary but for consistency).
+      - run: git checkout ${{ github.head_ref }}
+
+      - name: Check whether the changes are only to the set of filtered paths
+        id: no-ci-required
+        run: |
+          cat <<EOF > ./subclass.py
+          import os
+          import re
+          import shlex
+          import sys
+
+          paths = [
+              r'^\.github/dependabot\.yml$',
+              r'^\.github/workflows/audits\.yml$',
+              r'^\.github/workflows/book\.yml$',
+              r'^\.github/workflows/ci\.yml$',
+              r'^\.github/workflows/lints\.yml$',
+              r'^\.github/workflows/release-docker-hub\.yml$',
+              r'^contrib/debian/copyright$',
+              r'^doc/.*',
+              r'.*\.md$',
+              r'^COPYING$',
+              r'^INSTALL$',
+          ]
+          paths_regex = '(?:%s)' % '|'.join(paths)
+
+          changed_files = shlex.split(os.environ["CHANGED_FILES"])
+          if len(changed_files) == 0:
+              sys.exit(1)
+
+          verified = True
+          for f in changed_files:
+              if not re.match(paths_regex, f):
+                  verified = False
+
+          print('result=verified' if verified else 'result=skipped')
+          EOF
+          CHANGED_FILES=$(git diff --name-only ${{ github.base_ref }}...${{ github.event.pull_request.head.sha }} --) python3 ./subclass.py >> $GITHUB_OUTPUT
+
+      - name: Submit required-passed status
+        if: ${{ !cancelled() && steps.no-ci-required.outputs.result == 'verified' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.request("POST /repos/{owner}/{repo}/statuses/{sha}", {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.payload.pull_request.head.sha,
+              state: "success",
+              target_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              description: "Finished",
+              context: "CI / Required status checks"
+            })
