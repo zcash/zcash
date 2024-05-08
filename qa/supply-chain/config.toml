@@ -635,14 +635,6 @@ criteria = "safe-to-deploy"
 version = "2.5.0"
 criteria = "safe-to-deploy"
 
-[[exemptions.zerocopy]]
-version = "0.7.31"
-criteria = "safe-to-deploy"
-
-[[exemptions.zerocopy-derive]]
-version = "0.7.31"
-criteria = "safe-to-deploy"
-
 [[exemptions.zeroize]]
 version = "1.7.0"
 criteria = "safe-to-deploy"
