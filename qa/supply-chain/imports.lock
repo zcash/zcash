@@ -53,8 +53,8 @@ user-login = "nuttycom"
 user-name = "Kris Nuttycombe"
 
 [[publisher.orchard]]
-version = "0.7.1"
-when = "2024-02-29"
+version = "0.8.0"
+when = "2024-03-25"
 user-id = 6289
 user-login = "str4d"
 
@@ -223,14 +223,14 @@ user-login = "nuttycom"
 user-name = "Kris Nuttycombe"
 
 [[publisher.zcash_primitives]]
-version = "0.14.0"
-when = "2024-03-01"
+version = "0.15.0"
+when = "2024-03-25"
 user-id = 6289
 user-login = "str4d"
 
 [[publisher.zcash_proofs]]
-version = "0.14.0"
-when = "2024-03-01"
+version = "0.15.0"
+when = "2024-03-25"
 user-id = 6289
 user-login = "str4d"
 

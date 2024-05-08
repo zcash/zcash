@@ -9,7 +9,9 @@ use sapling::{
 use zcash_note_encryption::{
     try_output_recovery_with_ovk, Domain, EphemeralKeyBytes, ShieldedOutput, ENC_CIPHERTEXT_SIZE,
 };
-use zcash_primitives::consensus::{sapling_zip212_enforcement, BlockHeight};
+use zcash_primitives::{
+    consensus::BlockHeight, transaction::components::sapling as sapling_serialization,
+};
 
 use crate::{bridge::ffi::SaplingShieldedOutput, params::Network};
 
@@ -33,7 +35,7 @@ pub(crate) fn try_sapling_note_decryption(
     let (note, recipient, memo) = sapling::note_encryption::try_sapling_note_decryption(
         &ivk,
         &output,
-        sapling_zip212_enforcement(network, BlockHeight::from_u32(height)),
+        sapling_serialization::zip212_enforcement(network, BlockHeight::from_u32(height)),
     )
     .ok_or("Decryption failed")?;
 
@@ -59,7 +61,7 @@ pub(crate) fn try_sapling_output_recovery(
     ovk: [u8; 32],
     output: SaplingShieldedOutput,
 ) -> Result<Box<DecryptedSaplingOutput>, &'static str> {
-    let domain = SaplingDomain::new(sapling_zip212_enforcement(
+    let domain = SaplingDomain::new(sapling_serialization::zip212_enforcement(
         network,
         BlockHeight::from_u32(height),
     ));

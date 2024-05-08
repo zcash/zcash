@@ -8,13 +8,13 @@ use zcash_address::{
     ToAddress, ZcashAddress,
 };
 use zcash_primitives::{
-    consensus::Parameters,
     legacy::{
         keys::{AccountPrivKey, IncomingViewingKey},
         TransparentAddress,
     },
     zip32, zip339,
 };
+use zcash_protocol::consensus::NetworkConstants;
 
 use crate::Context;
 
