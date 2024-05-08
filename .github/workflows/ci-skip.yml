@@ -5,11 +5,11 @@ on:
     # Any update here needs to be done for the `no-ci-required` step (see below),
     # and mirrored into `ci.yml`.
     paths:
-      # Workflows that have no effect on this workflow.
+      # Workflows that have no effect on the CI workflow.
       - '.github/dependabot.yml'
       - '.github/workflows/audits.yml'
       - '.github/workflows/book.yml'
-      - '.github/workflows/ci.yml'
+      - '.github/workflows/ci-skip.yml'
       - '.github/workflows/lints.yml'
       - '.github/workflows/release-docker-hub.yml'
       # Documentation.
@@ -18,6 +18,10 @@ on:
       - '**.md'
       - 'COPYING'
       - 'INSTALL'
+
+permissions:
+  contents: read
+  statuses: write
 
 jobs:
   required-pass:
@@ -48,7 +52,7 @@ jobs:
               r'^\.github/dependabot\.yml$',
               r'^\.github/workflows/audits\.yml$',
               r'^\.github/workflows/book\.yml$',
-              r'^\.github/workflows/ci\.yml$',
+              r'^\.github/workflows/ci-skip\.yml$',
               r'^\.github/workflows/lints\.yml$',
               r'^\.github/workflows/release-docker-hub\.yml$',
               r'^contrib/debian/copyright$',

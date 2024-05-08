@@ -37,6 +37,10 @@ on:
       - 'COPYING'
       - 'INSTALL'
 
+permissions:
+  contents: read
+  statuses: write
+
 jobs:
   setup:
     name: Define CI matrix
