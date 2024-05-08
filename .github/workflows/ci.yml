@@ -2,12 +2,14 @@ name: CI
 
 on:
   pull_request:
-    # Any update here needs to be done for `push`, see below.
+    # Any update here needs to be done for `push` (see below), and mirrored into
+    # `no-ci.yml`.
     paths-ignore:
       # Workflows that have no effect on this workflow.
       - '.github/dependabot.yml'
       - '.github/workflows/audits.yml'
       - '.github/workflows/book.yml'
+      - '.github/workflows/ci-skip.yml'
       - '.github/workflows/lints.yml'
       - '.github/workflows/release-docker-hub.yml'
       # Documentation.
@@ -18,12 +20,14 @@ on:
       - 'INSTALL'
   push:
     branches: master
-    # Any update here needs to be done for `pull_request`, see above.
+    # Any update here needs to be done for `pull_request` (see above), and
+    # mirrored into `no-ci.yml`.
     paths-ignore:
       # Workflows that have no effect on this workflow.
       - '.github/dependabot.yml'
       - '.github/workflows/audits.yml'
       - '.github/workflows/book.yml'
+      - '.github/workflows/ci-skip.yml'
       - '.github/workflows/lints.yml'
       - '.github/workflows/release-docker-hub.yml'
       # Documentation.
