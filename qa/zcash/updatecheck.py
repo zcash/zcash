@@ -371,8 +371,8 @@ def main():
         "packages",
         # This package doesn't have conventional version numbers
         "native_cctools",
-        # This package is pinned specifically for Arch.
-        "native_libtinfo",
+        # This package is pinned specifically for Linux.
+        "native_libtinfo5",
     ]
 
     print_row("NAME", "STATUS", "CURRENT VERSION", "NEWER VERSIONS")

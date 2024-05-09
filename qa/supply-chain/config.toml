@@ -155,10 +155,6 @@ criteria = "safe-to-deploy"
 version = "1.0.95"
 criteria = "safe-to-deploy"
 
-[[exemptions.cxxbridge-flags]]
-version = "1.0.95"
-criteria = "safe-to-deploy"
-
 [[exemptions.cxxbridge-macro]]
 version = "1.0.95"
 criteria = "safe-to-deploy"
@@ -633,14 +629,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.xdg]]
 version = "2.5.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.zerocopy]]
-version = "0.7.31"
-criteria = "safe-to-deploy"
-
-[[exemptions.zerocopy-derive]]
-version = "0.7.31"
 criteria = "safe-to-deploy"
 
 [[exemptions.zeroize]]

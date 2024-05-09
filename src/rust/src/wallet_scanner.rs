@@ -15,7 +15,10 @@ use zcash_note_encryption::{batch, BatchDomain, Domain, ShieldedOutput, ENC_CIPH
 use zcash_primitives::{
     block::BlockHash,
     consensus,
-    transaction::{components::OutputDescription, Transaction, TxId},
+    transaction::{
+        components::{sapling as sapling_serialization, OutputDescription},
+        Transaction, TxId,
+    },
 };
 
 use crate::{bridge::ffi, note_encryption::parse_and_prepare_sapling_ivk, params::Network};
@@ -619,7 +622,7 @@ impl BatchScanner {
             runner.add_outputs(
                 block_tag,
                 txid,
-                || SaplingDomain::new(consensus::sapling_zip212_enforcement(&params, height)),
+                || SaplingDomain::new(sapling_serialization::zip212_enforcement(&params, height)),
                 bundle.shielded_outputs(),
             );
         }

@@ -187,8 +187,15 @@ impl<'de> Visitor<'de> for ZOutputValueVisitor {
     {
         NonNegativeAmount::from_u64(v)
             .map(ZOutputValue)
-            .map_err(|()| {
-                serde::de::Error::invalid_type(Unexpected::Unsigned(v), &"a valid zatoshi amount")
+            .map_err(|e| match e {
+                zcash_protocol::value::BalanceError::Overflow => serde::de::Error::invalid_type(
+                    Unexpected::Unsigned(v),
+                    &"a valid zatoshi amount",
+                ),
+                zcash_protocol::value::BalanceError::Underflow => serde::de::Error::invalid_type(
+                    Unexpected::Unsigned(v),
+                    &"a non-negative zatoshi amount",
+                ),
             })
     }
 }

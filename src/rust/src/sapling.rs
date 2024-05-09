@@ -23,7 +23,6 @@ use sapling::{
     SaplingVerificationContext,
 };
 use zcash_primitives::{
-    consensus::sapling_zip212_enforcement,
     memo::MemoBytes,
     merkle_tree::merkle_path_from_slice,
     transaction::{
@@ -387,7 +386,7 @@ pub(crate) fn new_sapling_builder(
 
     Ok(Box::new(SaplingBuilder {
         builder: sapling::builder::Builder::new(
-            sapling_zip212_enforcement(network, target_height.into()),
+            sapling_serialization::zip212_enforcement(network, target_height.into()),
             bundle_type,
             anchor,
         ),
@@ -615,7 +614,7 @@ impl Verifier {
     ) -> bool {
         let value_balance = match Amount::from_i64(value_balance) {
             Ok(vb) => vb,
-            Err(()) => return false,
+            Err(_) => return false,
         };
 
         // Deserialize the signature

@@ -15,11 +15,11 @@ use zcash_address::{
 use zcash_note_encryption::try_output_recovery_with_ovk;
 #[allow(deprecated)]
 use zcash_primitives::{
-    consensus::{sapling_zip212_enforcement, BlockHeight},
+    consensus::BlockHeight,
     legacy::{keys::pubkey_to_address, Script, TransparentAddress},
     memo::{Memo, MemoBytes},
     transaction::{
-        components::{amount::NonNegativeAmount, transparent},
+        components::{amount::NonNegativeAmount, sapling as sapling_serialization, transparent},
         sighash::{signature_hash, SignableInput, TransparentAuthorizingContext},
         txid::TxIdDigester,
         Authorization, Transaction, TransactionData, TxId, TxVersion,
@@ -410,7 +410,7 @@ pub(crate) fn inspect(tx: Transaction, context: Option<Context>) {
                         .and_then(|ctx| ctx.network().zip(ctx.addr_network()))
                     {
                         if let Some((note, addr, memo)) = try_output_recovery_with_ovk(
-                            &SaplingDomain::new(sapling_zip212_enforcement(
+                            &SaplingDomain::new(sapling_serialization::zip212_enforcement(
                                 &params,
                                 height.unwrap(),
                             )),

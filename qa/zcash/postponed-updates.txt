@@ -14,23 +14,6 @@ native_b2 1.85.0 2024-06-15
 libcxx 18.1.5 2024-06-15
 native_clang 18.1.5 2024-06-15
 
-native_cxxbridge 1.0.114 2024-06-15
-native_cxxbridge 1.0.115 2024-06-15
-native_cxxbridge 1.0.116 2024-06-15
-native_cxxbridge 1.0.117 2024-06-15
-native_cxxbridge 1.0.118 2024-06-15
-native_cxxbridge 1.0.119 2024-06-15
-native_cxxbridge 1.0.120 2024-06-15
-native_cxxbridge 1.0.121 2024-06-15
-rustcxx 1.0.114 2024-06-15
-rustcxx 1.0.115 2024-06-15
-rustcxx 1.0.116 2024-06-15
-rustcxx 1.0.117 2024-06-15
-rustcxx 1.0.118 2024-06-15
-rustcxx 1.0.119 2024-06-15
-rustcxx 1.0.120 2024-06-15
-rustcxx 1.0.121 2024-06-15
-
 # We follow upstream Bitcoin Core's LevelDB updates
 leveldb 1.23 2024-06-15
 
