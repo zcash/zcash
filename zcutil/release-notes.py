@@ -4,7 +4,6 @@
 import re, os, os.path
 import subprocess
 import argparse
-from itertools import islice
 from operator import itemgetter
 
 TEMP_RELEASE_NOTES_HEADER = [
@@ -25,21 +24,32 @@ RELEASE_NOTES_CHANGELOG_HEADING = [
 author_aliases = {
     'Ariel': 'Ariel Gabizon',
     'arielgabizon': 'Ariel Gabizon',
+    'bambam': 'Benjamin Winston',
     'bitcartel': 'Simon Liu',
     'Charlie OKeefe': 'Charlie O\'Keefe',
+    'Daira Emma Hopwood': 'Daira-Emma Hopwood',
+    'Daira Hopwood': 'Daira-Emma Hopwood',
     'Duke Leto': 'Jonathan \"Duke\" Leto',
+    'ebfull': 'Sean Bowe',
+    'ewillbefull@gmail.com': 'Sean Bowe',
     'Eirik0': 'Eirik Ogilvie-Wigley',
     'EthanHeilman': 'Ethan Heilman',
     'MarcoFalke': 'Marco Falke',
     'mdr0id': 'Marshall Gaucher',
+    'Nathan Wilcox': 'Nate Wilcox',
+    'NicolasDorier': 'Nicolas Dorier',
+    'Nicolas DORIER': 'Nicolas Dorier',
+    'Patick Strateman': 'Patrick Strateman',
     'paveljanik': 'Pavel Janík',
     'Sasha': 'sasha',
     'Simon': 'Simon Liu',
     'str4d': 'Jack Grigg',
-    'zebambam': 'Benjamin Winston',
     'therealyingtong': 'Ying Tong Lai',
+    'ying tong': 'Ying Tong Lai',
+    'Yasser': 'Yasser Isa',
     'zancas': 'Zancas Wilcox',
-    'bambam': 'Benjamin Winston'
+    'Za Wilcox': 'Zancas Wilcox',
+    'zebambam': 'Benjamin Winston',
 }
 
 def apply_author_aliases(name):
@@ -49,13 +59,13 @@ def apply_author_aliases(name):
         return name
 
 def parse_authors(line):
-    commit_search = re.search('\((\d+)\)', line)
+    commit_search = re.search(' \((\d+)\):', line)
     if commit_search:
-        commits = commit_search.group(1)
+        commits = int(commit_search.group(1))
+        name = re.sub(' \(\d+\)|:|\n|\r\n$', '', line)
+        return name, commits
     else:
-        commits = 0
-    name = re.sub(' \(\d+\)|:|\n|\r\n$', '', line)
-    return name, commits
+        return None, 0
 
 def alias_authors_in_release_notes(line):
     for key in author_aliases:
@@ -69,14 +79,11 @@ def authors_in_release_notes(filename):
     note = os.path.join(doc_dir, 'release-notes', filename)
     with open(note, mode='r', encoding="utf-8", errors="replace") as f:
         authors = {}
-        line = f.readline()
-        first_name, commits = parse_authors(line)
-        authors[apply_author_aliases(first_name)] = commits
         for line in f:
-            if line in ['\n', '\r\n']:
-                for author in islice(f, 1):
-                    name, commits = parse_authors(author)
-                    authors[apply_author_aliases(name)] = commits
+            name, commits = parse_authors(line)
+            if commits > 0:
+                name = apply_author_aliases(name)
+                authors[name] = authors.get(name, 0) + commits
         return authors
 
 ## Sums commits made by contributors in each Zcash release note in ./doc/release-notes and writes to authors.md
@@ -94,10 +101,8 @@ def document_authors():
             authors = authors_in_release_notes(notes)
             for author in authors:
                 commits = int(authors[author])
-                if author in total_contrib:
-                    total_contrib[author] += commits
-                else:
-                    total_contrib[author] = commits
+                total_contrib[author] = total_contrib.get(author, 0) + commits
+
         sorted_contrib = sorted(total_contrib.items(), key=itemgetter(1, 0), reverse=True)
         for n, c in sorted_contrib:
             if c != 0:
