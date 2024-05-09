@@ -1,7 +1,15 @@
 name: CI skip
 
 on:
-  pull_request:
+  # We use `pull_request_target` to have access to the necessary secrets to
+  # create the commit status in PRs created from forks. We avoid command
+  # injection by:
+  # - never using the PR's branch name.
+  # - passing the PR's repository name through an intermediate environment
+  #   variable.
+  # - never running commands with the fork's code checked out (we only require
+  #   its commits to be present in the repository).
+  pull_request_target:
     # Any update here needs to be done for the `no-ci-required` step (see below),
     # and mirrored into `ci.yml`.
     paths:
@@ -29,15 +37,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out the base branch
+        uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          # We fetch the entire repository to ensure we have the common ancestor
+          # of the base branch and the PR branch.
           fetch-depth: 0
 
-      # Ensure that the base branch exists.
-      - run: git checkout ${{ github.base_ref }}
-      # Go back to the head ref (not necessary but for consistency).
-      - run: git checkout ${{ github.head_ref }}
+      - name: Fetch the commits for the PR branch
+        run: git fetch $HEAD_REPO $HEAD_SHA
+        env:
+          HEAD_REPO: ${{ github.event.pull_request.head.repo }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
 
       - name: Check whether the changes are only to the set of filtered paths
         id: no-ci-required
@@ -74,7 +85,11 @@ jobs:
 
           print('result=verified' if verified else 'result=skipped')
           EOF
-          CHANGED_FILES=$(git diff --name-only ${{ github.base_ref }}...${{ github.event.pull_request.head.sha }} --) python3 ./subclass.py >> $GITHUB_OUTPUT
+          CHANGED_FILES=$(git diff --name-only ${{ github.sha }}...$HEAD_SHA --)
+          echo $CHANGED_FILES
+          CHANGED_FILES=$CHANGED_FILES python3 ./subclass.py >> $GITHUB_OUTPUT
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
 
       - name: Submit required-passed status
         if: ${{ !cancelled() && steps.no-ci-required.outputs.result == 'verified' }}
