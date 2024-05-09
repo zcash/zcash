@@ -106,7 +106,7 @@ def document_authors():
         sorted_contrib = sorted(total_contrib.items(), key=itemgetter(1, 0), reverse=True)
         for n, c in sorted_contrib:
             if c != 0:
-                f.write("{0} ({1})\n".format(n, c))
+                f.write("* {0} ({1})\n".format(n, c))
 
 ## Writes release note to ./doc/release-notes based on git shortlog when current version number is specified
 def generate_release_note(version, prev, clear):
