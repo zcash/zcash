@@ -327,6 +327,7 @@ fi
 #    enables warnings about compatibility with newer versions of C++ (we need the explicit enabling,
 #    even with `-Weverything`, because the earlier disabling of older versions removes some warnings
 #    that we do want)
+# - `-Wno-gnu-statement-expression-from-macro-expansion`: we deliberately use this extension in a macro.
 DESIRED_WARNING_CXXFLAGS="\
   --system-header-prefix=boost --system-header-prefix=crypto/ctaes --system-header-prefix=db_cxx \
   --system-header-prefix=event2 --system-header-prefix=gmock --system-header-prefix=gtest \
@@ -335,7 +336,8 @@ DESIRED_WARNING_CXXFLAGS="\
   -Weverything \
   -Wno-aix-compat -Wno-c++-compat \
   -Wno-c++98-compat-pedantic -Wno-c++11-compat-pedantic -Wno-c++14-compat-pedantic \
-  -Wc++17-compat-pedantic -Wc++20-compat-pedantic"
+  -Wc++17-compat-pedantic -Wc++20-compat-pedantic \
+  -Wno-gnu-statement-expression-from-macro-expansion"
 
 # This list should be incrementally pruned. Each flag should either be enabled or moved to
 # `DESIRED_WARNING_CXXFLAGS` with an explanation as to why it remains disabled.
@@ -396,9 +398,8 @@ REENABLED_WARNING_CXXFLAGS="\
   -Wgnu-compound-literal-initializer -Wgnu-conditional-omitted-operand -Wgnu-empty-initializer \
   -Wgnu-empty-struct -Wgnu-flexible-array-initializer -Wgnu-flexible-array-union-member \
   -Wgnu-imaginary-constant -Wgnu-include-next -Wgnu-label-as-value -Wgnu-line-marker \
-  -Wgnu-null-pointer-arithmetic -Wgnu-pointer-arith -Wgnu-redeclared-enum \
-  -Wgnu-statement-expression -Wgnu-union-cast -Wgnu-zero-line-directive \
-  -Wignored-reference-qualifiers -Wimplicit-const-int-float-conversion \
+  -Wgnu-null-pointer-arithmetic -Wgnu-pointer-arith -Wgnu-redeclared-enum -Wgnu-union-cast \
+  -Wgnu-zero-line-directive -Wignored-reference-qualifiers -Wimplicit-const-int-float-conversion \
   -Wimplicit-fallthrough-per-function -Wimport-preprocessor-directive-pedantic -Winvalid-utf8 \
   -Wkeyword-macro -Wlanguage-extension-token -Wlong-long -Wmicrosoft-charize \
   -Wmicrosoft-comment-paste -Wmicrosoft-cpp-macro -Wmicrosoft-end-of-file -Wmicrosoft-enum-value \

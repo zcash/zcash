@@ -328,6 +328,7 @@ BITCOIN_CORE_H = \
   util/string.h \
   util/test.h \
   util/time.h \
+  util/unwrap.h \
   validationinterface.h \
   wallet/asyncrpcoperation_common.h \
   wallet/asyncrpcoperation_mergetoaddress.h \
