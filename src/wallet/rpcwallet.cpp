@@ -215,11 +215,11 @@ UniValue getnewaddress(const UniValue& params, bool fHelp)
     return keyIO.EncodeDestination(keyID);
 }
 
-UniValue converttex(const UniValue& params, bool fHelp)
+UniValue z_converttex(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() < 1 || params.size() > 1)
         throw runtime_error(
-            "converttex ( \"transparentaddress\" )\n"
+            "z_converttex ( \"transparentaddress\" )\n"
             "\nConverts a transparent Zcash address to a TEX address.\n"
 
             "\nArguments:\n"
@@ -229,7 +229,7 @@ UniValue converttex(const UniValue& params, bool fHelp)
             "\"texaddress\"    (string) The converted ZIP 320 (TEX) address\n"
 
             "\nExamples:\n"
-            + HelpExampleCli("converttex", "\"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\"")
+            + HelpExampleCli("z_converttex", "\"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\"")
         );
 
     KeyIO keyIO(Params());
@@ -5994,7 +5994,7 @@ static const CRPCCommand commands[] =
     { "wallet",             "dumpprivkey",              &dumpprivkey,              true  },
     { "hidden",             "dumpwallet",               &dumpwallet,               true  },
     { "wallet",             "encryptwallet",            &encryptwallet,            true  },
-    { "wallet",             "converttex",               &converttex,               true  },
+    { "wallet",             "z_converttex",             &z_converttex,             true  },
     { "wallet",             "getbalance",               &getbalance,               false },
     { "wallet",             "getnewaddress",            &getnewaddress,            true  },
     { "wallet",             "getrawchangeaddress",      &getrawchangeaddress,      true  },

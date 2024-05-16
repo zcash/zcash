@@ -12,7 +12,7 @@ from test_framework.util import (
 
 class ConvertTEXTest(BitcoinTestFramework):
     '''
-    Test that the `converttex` RPC method correctly converts transparent
+    Test that the `z_converttex` RPC method correctly converts transparent
     addresses to ZIP 320 TEX addresses.
     '''
 
@@ -48,7 +48,7 @@ class ConvertTEXTest(BitcoinTestFramework):
         ];
 
         for tv in test_vectors:
-            tex = node.converttex(tv[0])
+            tex = node.z_converttex(tv[0])
             assert_equal(tex, tv[1])
 
 if __name__ == '__main__':

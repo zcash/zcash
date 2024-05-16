@@ -377,10 +377,10 @@ std::string KeyIO::EncodeTexAddress(const CKeyID& p2pkhAddr) const
     // ConvertBits requires unsigned char, but CDataStream uses char
     std::vector<unsigned char> seraddr(ss.begin(), ss.end());
     std::vector<unsigned char> data;
-    // See calculation comment below
+    // See calculation comment above
     data.reserve((seraddr.size() * 8 + 4) / 5);
     ConvertBits<8, 5, true>([&](unsigned char c) { data.push_back(c); }, seraddr.begin(), seraddr.end());
-    return bech32::Encode(bech32::Encoding::BECH32M, keyConstants.Bech32HRP(KeyConstants::TEX_ADDRESS), data);
+    return bech32::Encode(bech32::Encoding::BECH32M, keyConstants.Bech32mHRP(KeyConstants::TEX_ADDRESS), data);
 }
 
 template<typename T1, typename T2>
