@@ -94,6 +94,9 @@ public:
     const std::string& Bech32HRP(Bech32Type type) const {
         return keyConstants.Bech32HRP(type);
     }
+    const std::string& Bech32mHRP(Bech32mType type) const {
+        return keyConstants.Bech32mHRP(type);
+    }
     const std::vector<SeedSpec6>& FixedSeeds() const { return vFixedSeeds; }
     const CCheckpointData& Checkpoints() const { return checkpointData; }
     /** Return the founder's reward address and script for a given block height */

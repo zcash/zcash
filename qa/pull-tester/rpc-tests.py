@@ -153,6 +153,7 @@ BASE_SCRIPTS= [
     'threeofthreerestore.py',
     'show_help.py',
     'errors.py',
+    'converttex.py',
 ]
 
 ZMQ_SCRIPTS = [

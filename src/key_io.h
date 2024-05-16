@@ -39,12 +39,14 @@ public:
     std::string EncodePaymentAddress(const libzcash::PaymentAddress& zaddr) const;
     std::optional<libzcash::PaymentAddress> DecodePaymentAddress(const std::string& str) const;
     bool IsValidPaymentAddressString(const std::string& str) const;
+    std::string EncodeTexAddress(const CKeyID& p2pkhAddr) const;
 
     std::string EncodeViewingKey(const libzcash::ViewingKey& vk) const;
     std::optional<libzcash::ViewingKey> DecodeViewingKey(const std::string& str) const;
 
     std::string EncodeSpendingKey(const libzcash::SpendingKey& zkey) const;
     std::optional<libzcash::SpendingKey> DecodeSpendingKey(const std::string& str) const;
+
 };
 
 #endif // BITCOIN_KEY_IO_H

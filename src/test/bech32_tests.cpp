@@ -52,17 +52,18 @@ BOOST_AUTO_TEST_CASE(bip173_testvectors_valid)
         {"?1ezyfcl", "?", ""},
     };
     for (const auto& [str, hrp, data] : CASES) {
-        auto ret = bech32::Decode(str);
-        BOOST_CHECK(!ret.first.empty());
-        BOOST_CHECK_EQUAL(ret.first, hrp);
+        const auto dec = bech32::Decode(str);
+        BOOST_CHECK(!dec.hrp.empty());
+        BOOST_CHECK_EQUAL(dec.hrp, hrp);
 
         std::vector<unsigned char> decoded;
-        decoded.reserve((ret.second.size() * 5) / 8);
-        auto success = ConvertBits<5, 8, false>([&](unsigned char c) { decoded.push_back(c); }, ret.second.begin(), ret.second.end());
+        decoded.reserve((dec.data.size() * 5) / 8);
+        auto success = ConvertBits<5, 8, false>([&](unsigned char c) { decoded.push_back(c); }, dec.data.begin(), dec.data.end());
         BOOST_CHECK(success);
         BOOST_CHECK_EQUAL(HexStr(decoded.begin(), decoded.end()), data);
 
-        std::string recode = bech32::Encode(ret.first, ret.second);
+        BOOST_CHECK(dec.encoding == bech32::Encoding::BECH32);
+        std::string recode = bech32::Encode(bech32::Encoding::BECH32, dec.hrp, dec.data);
         BOOST_CHECK(!recode.empty());
         BOOST_CHECK(CaseInsensitiveEqual(str, recode));
     }
@@ -82,10 +83,12 @@ BOOST_AUTO_TEST_CASE(bip173_testvectors_invalid)
         "A1G7SGD8",
         "10a06t8",
         "1qzzfhee",
+        "a12UEL5L",
+        "A12uEL5L",
     };
     for (const std::string& str : CASES) {
-        auto ret = bech32::Decode(str);
-        BOOST_CHECK(ret.first.empty());
+        const auto dec = bech32::Decode(str);
+        BOOST_CHECK(dec.encoding != bech32::Encoding::BECH32);
     }
 }
 
@@ -93,13 +96,13 @@ BOOST_AUTO_TEST_CASE(bech32_deterministic_valid)
 {
     for (size_t i = 0; i < 255; i++) {
         std::vector<unsigned char> input(32, i);
-        auto encoded = bech32::Encode("a", input);
+        auto encoded = bech32::Encode(bech32::Encoding::BECH32, "a", input);
         if (i < 32) {
             // Valid input
             BOOST_CHECK(!encoded.empty());
             auto ret = bech32::Decode(encoded);
-            BOOST_CHECK(ret.first == "a");
-            BOOST_CHECK(ret.second == input);
+            BOOST_CHECK(ret.hrp == "a");
+            BOOST_CHECK(ret.data == input);
         } else {
             // Invalid input
             BOOST_CHECK(encoded.empty());
@@ -108,13 +111,13 @@ BOOST_AUTO_TEST_CASE(bech32_deterministic_valid)
 
     for (size_t i = 0; i < 255; i++) {
         std::vector<unsigned char> input(43, i);
-        auto encoded = bech32::Encode("a", input);
+        auto encoded = bech32::Encode(bech32::Encoding::BECH32, "a", input);
         if (i < 32) {
             // Valid input
             BOOST_CHECK(!encoded.empty());
             auto ret = bech32::Decode(encoded);
-            BOOST_CHECK(ret.first == "a");
-            BOOST_CHECK(ret.second == input);
+            BOOST_CHECK(ret.hrp == "a");
+            BOOST_CHECK(ret.data == input);
         } else {
             // Invalid input
             BOOST_CHECK(encoded.empty());

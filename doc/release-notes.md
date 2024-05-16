@@ -4,3 +4,6 @@ release-notes at release time)
 Notable changes
 ===============
 
+- Added a `z_converttex` RPC method to support conversion of transparent
+  p2pkh addresses to the ZIP 320 (TEX) format.
+

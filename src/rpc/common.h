@@ -130,6 +130,7 @@ static const CRPCConvertTable rpcCvtTable =
     { "z_exportkey",                 {{s}, {}} },
     { "z_exportviewingkey",          {{s}, {}} },
     // rpcwallet
+    { "z_converttex",                {{s}, {}} },
     { "getnewaddress",               {{}, {s}} },
     { "getrawchangeaddress",         {{}, {}} },
     { "sendtoaddress",               {{s, o}, {s, s, o}} },
