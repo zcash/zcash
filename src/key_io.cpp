@@ -370,6 +370,19 @@ std::string KeyIO::EncodePaymentAddress(const libzcash::PaymentAddress& zaddr) c
     return std::visit(PaymentAddressEncoder(keyConstants), zaddr);
 }
 
+std::string KeyIO::EncodeTexAddress(const CKeyID& p2pkhAddr) const
+{
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << p2pkhAddr;
+    // ConvertBits requires unsigned char, but CDataStream uses char
+    std::vector<unsigned char> seraddr(ss.begin(), ss.end());
+    std::vector<unsigned char> data;
+    // See calculation comment below
+    data.reserve((seraddr.size() * 8 + 4) / 5);
+    ConvertBits<8, 5, true>([&](unsigned char c) { data.push_back(c); }, seraddr.begin(), seraddr.end());
+    return bech32::Encode(bech32::Encoding::BECH32M, keyConstants.Bech32HRP(KeyConstants::TEX_ADDRESS), data);
+}
+
 template<typename T1, typename T2>
 std::optional<T1> DecodeSprout(
         const KeyConstants& keyConstants,

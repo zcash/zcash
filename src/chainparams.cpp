@@ -167,6 +167,7 @@ public:
         keyConstants.bech32HRPs[SAPLING_EXTENDED_SPEND_KEY]   = "secret-extended-key-main";
         keyConstants.bech32HRPs[SAPLING_EXTENDED_FVK]         = "zxviews";
 
+        keyConstants.bech32HRPs[TEX_ADDRESS]         = "tex";
         {
             std::vector<std::string> ecc_addresses = {
                 "t3LmX1cxWPPPqL4TZHx42HU3U5ghbFjRiif",
@@ -462,6 +463,8 @@ public:
         keyConstants.bech32HRPs[SAPLING_EXTENDED_SPEND_KEY]   = "secret-extended-key-test";
         keyConstants.bech32HRPs[SAPLING_EXTENDED_FVK]         = "zxviewtestsapling";
 
+        keyConstants.bech32HRPs[TEX_ADDRESS]         = "textest";
+
         // Testnet funding streams
         {
             std::vector<std::string> ecc_addresses = {
@@ -704,6 +707,8 @@ public:
         keyConstants.bech32HRPs[SAPLING_INCOMING_VIEWING_KEY] = "zivkregtestsapling";
         keyConstants.bech32HRPs[SAPLING_EXTENDED_SPEND_KEY]   = "secret-extended-key-regtest";
         keyConstants.bech32HRPs[SAPLING_EXTENDED_FVK]         = "zxviewregtestsapling";
+
+        keyConstants.bech32HRPs[TEX_ADDRESS]         = "texregtest";
 
         // The best chain should have at least this much work.
         consensus.nMinimumChainWork = uint256S("0x00");

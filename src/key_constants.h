@@ -32,6 +32,8 @@ public:
         SAPLING_EXTENDED_SPEND_KEY,
         SAPLING_EXTENDED_FVK,
 
+        TEX_ADDRESS,
+
         MAX_BECH32_TYPES
     };
 

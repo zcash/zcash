@@ -215,6 +215,36 @@ UniValue getnewaddress(const UniValue& params, bool fHelp)
     return keyIO.EncodeDestination(keyID);
 }
 
+UniValue converttex(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() < 1 || params.size() > 1)
+        throw runtime_error(
+            "converttex ( \"transparentaddress\" )\n"
+            "\nConverts a transparent Zcash address to a TEX address.\n"
+
+            "\nArguments:\n"
+            "1. \"transparentaddress\" (string, required) \n"
+
+            "\nResult:\n"
+            "\"texaddress\"    (string) The converted ZIP 320 (TEX) address\n"
+
+            "\nExamples:\n"
+            + HelpExampleCli("converttex", "\"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\"")
+        );
+
+    KeyIO keyIO(Params());
+    auto decoded = keyIO.DecodePaymentAddress(params[0].get_str());
+    if (!decoded.has_value()) {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid address");
+    }
+    if (!std::holds_alternative<CKeyID>(decoded.value())) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Address is not a transparent p2pkh address");
+    }
+    auto p2pkhKey = std::get<CKeyID>(decoded.value());
+
+    return keyIO.EncodeTexAddress(p2pkhKey);
+}
+
 UniValue getrawchangeaddress(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
@@ -5964,6 +5994,7 @@ static const CRPCCommand commands[] =
     { "wallet",             "dumpprivkey",              &dumpprivkey,              true  },
     { "hidden",             "dumpwallet",               &dumpwallet,               true  },
     { "wallet",             "encryptwallet",            &encryptwallet,            true  },
+    { "wallet",             "converttex",               &converttex,               true  },
     { "wallet",             "getbalance",               &getbalance,               false },
     { "wallet",             "getnewaddress",            &getnewaddress,            true  },
     { "wallet",             "getrawchangeaddress",      &getrawchangeaddress,      true  },
