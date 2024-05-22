@@ -12,7 +12,9 @@ native_b2 1.85.0 2024-06-15
 
 # Clang and Rust are currently pinned to LLVM 18
 libcxx 18.1.5 2024-06-15
+libcxx 18.1.6 2024-06-15
 native_clang 18.1.5 2024-06-15
+native_clang 18.1.6 2024-06-15
 
 # We follow upstream Bitcoin Core's LevelDB updates
 leveldb 1.23 2024-06-15
