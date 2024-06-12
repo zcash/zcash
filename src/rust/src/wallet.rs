@@ -374,7 +374,7 @@ impl Wallet {
     }
 
     /// Add note data for those notes that are decryptable with one of this wallet's
-    /// incoming viewing keys to the wallet, and return a a data structure that describes
+    /// incoming viewing keys to the wallet, and return a data structure that describes
     /// the actions that are involved with this wallet, either spending notes belonging
     /// to this wallet or creating new notes owned by this wallet.
     #[tracing::instrument(level = "trace", skip(self))]
