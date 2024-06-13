@@ -52,7 +52,7 @@ static void ECDSA(benchmark::State& state)
     std::vector<CTxOut> allPrevOutputs;
     // for benchmarking we simply use dummy inputs
     allPrevOutputs.resize(mtx.vin.size());
-    const PrecomputedTransactionData txdata(mtx, allPrevOutputs);
+    const PrecomputedTransactionData txdata(CTransaction(mtx), allPrevOutputs);
 
     // sign all inputs
     for(uint32_t i = 0; i < mtx.vin.size(); i++) {
