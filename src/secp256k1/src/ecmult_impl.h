@@ -97,7 +97,7 @@ static void secp256k1_ecmult_odd_multiples_table(int n, secp256k1_ge *pre_a, sec
     secp256k1_gej_set_ge(&ai, &pre_a[0]);
     ai.z = a->z;
 
-    /* pre_a[0] is the point (a.x*C^2, a.y*C^3, a.z*C) which is equvalent to a.
+    /* pre_a[0] is the point (a.x*C^2, a.y*C^3, a.z*C) which is equivalent to a.
      * Set zr[0] to C, which is the ratio between the omitted z(pre_a[0]) value and a.z.
      */
     zr[0] = d.z;
