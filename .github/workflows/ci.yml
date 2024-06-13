@@ -64,14 +64,6 @@ jobs:
               container: electriccoinco/debian-helper:bullseye
               host: x86_64-pc-linux-gnu
 
-            - name: Debian-buster
-              tier: 2
-              platform: Debian buster
-              build_os: ubuntu-20.04-8cores
-              test_os: ubuntu-20.04
-              container: electriccoinco/debian-helper:buster
-              host: x86_64-pc-linux-gnu
-
             - name: ubuntu-20.04
               tier: 1
               platform: Ubuntu 20.04
