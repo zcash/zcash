@@ -295,7 +295,7 @@ UniValue getrawchangeaddress(const UniValue& params, bool fHelp)
     return keyIO.EncodeDestination(keyID);
 }
 
-static void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew)
+static CWalletTx SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtractFeeFromAmount, mapValue_t txMeta)
 {
     CAmount curBalance = pwalletMain->GetBalance(std::nullopt);
 
@@ -312,28 +312,38 @@ static void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtr
     // Create and send the transaction
     CReserveKey reservekey(pwalletMain);
     CAmount nFeeRequired;
-    std::string strError;
     vector<CRecipient> vecSend;
     int nChangePosRet = -1;
     CRecipient recipient = {scriptPubKey, nValue, fSubtractFeeFromAmount};
     vecSend.push_back(recipient);
-    if (!pwalletMain->CreateTransaction(vecSend, wtxNew, reservekey, nFeeRequired, nChangePosRet, strError)) {
-        if (!fSubtractFeeFromAmount && nValue + nFeeRequired > curBalance) {
-            strError = strprintf("Error: Insufficient funds to pay the fee. This transaction needs to spend %s "
-                                 "plus a fee of at least %s, but only %s is available",
-                                 DisplayMoney(nValue),
-                                 DisplayMoney(nFeeRequired),
-                                 DisplayMoney(curBalance));
-            throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, strError);
-        } else {
-            throw JSONRPCError(RPC_WALLET_ERROR, strError);
-        }
+
+    CWalletTx wtxNew = pwalletMain->CreateTransaction({}, vecSend, reservekey, nFeeRequired, nChangePosRet)
+            .map_error([&](std::string strError) {
+                if (!fSubtractFeeFromAmount && nValue + nFeeRequired > curBalance) {
+                    strError = strprintf("Error: Insufficient funds to pay the fee. This transaction needs to spend %s "
+                                         "plus a fee of at least %s, but only %s is available",
+                                         DisplayMoney(nValue),
+                                         DisplayMoney(nFeeRequired),
+                                         DisplayMoney(curBalance));
+                    throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, strError);
+                } else {
+                    throw JSONRPCError(RPC_WALLET_ERROR, strError);
+                }
+            })
+            .value();
+
+    // apply the provided metadata values to the newly created wallet tx
+    for (const auto& [key, value] : txMeta) {
+        wtxNew.mapValue[key] = value;
     }
+
     CValidationState state;
     if (!pwalletMain->CommitTransaction(wtxNew, reservekey, state)) {
-        strError = strprintf("Error: The transaction was rejected! Reason given: %s", state.GetRejectReason());
+        auto strError = strprintf("Error: The transaction was rejected! Reason given: %s", state.GetRejectReason());
         throw JSONRPCError(RPC_WALLET_ERROR, strError);
     }
+
+    return wtxNew;
 }
 
 // We accept any `PrivacyPolicy` constructor name, but there is also a special
@@ -457,11 +467,11 @@ UniValue sendtoaddress(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_TYPE_ERROR, "Invalid amount for send");
 
     // Wallet comments
-    CWalletTx wtx;
+    mapValue_t txMeta;
     if (params.size() > 2 && !params[2].isNull() && !params[2].get_str().empty())
-        wtx.mapValue["comment"] = params[2].get_str();
+        txMeta["comment"] = params[2].get_str();
     if (params.size() > 3 && !params[3].isNull() && !params[3].get_str().empty())
-        wtx.mapValue["to"]      = params[3].get_str();
+        txMeta["to"]      = params[3].get_str();
 
     bool fSubtractFeeFromAmount = false;
     if (params.size() > 4)
@@ -469,8 +479,7 @@ UniValue sendtoaddress(const UniValue& params, bool fHelp)
 
     EnsureWalletIsUnlocked();
 
-    SendMoney(dest, nAmount, fSubtractFeeFromAmount, wtx);
-
+    auto wtx = SendMoney(dest, nAmount, fSubtractFeeFromAmount, txMeta);
     return wtx.GetHash().GetHex();
 }
 
@@ -1297,10 +1306,6 @@ UniValue sendmany(const UniValue& params, bool fHelp)
     UniValue sendTo = params[1].get_obj();
     int nMinDepth = parseMinconf(1, params, 2, std::nullopt);
 
-    CWalletTx wtx;
-    if (params.size() > 3 && !params[3].isNull() && !params[3].get_str().empty())
-        wtx.mapValue["comment"] = params[3].get_str();
-
     UniValue subtractFeeFromAmount(UniValue::VARR);
     if (params.size() > 4)
         subtractFeeFromAmount = params[4].get_array();
@@ -1350,13 +1355,18 @@ UniValue sendmany(const UniValue& params, bool fHelp)
     CReserveKey keyChange(pwalletMain);
     CAmount nFeeRequired = 0;
     int nChangePosRet = -1;
-    string strFailReason;
-    bool fCreated = pwalletMain->CreateTransaction(vecSend, wtx, keyChange, nFeeRequired, nChangePosRet, strFailReason);
-    if (!fCreated)
-        throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, strFailReason);
+    CWalletTx wtx = pwalletMain->CreateTransaction({}, vecSend, keyChange, nFeeRequired, nChangePosRet)
+            .map_error([&](std::string err) {
+                throw JSONRPCError(RPC_WALLET_ERROR, err);
+            })
+            .value();
+
+    if (params.size() > 3 && !params[3].isNull() && !params[3].get_str().empty())
+        wtx.mapValue["comment"] = params[3].get_str();
+
     CValidationState state;
     if (!pwalletMain->CommitTransaction(wtx, keyChange, state)) {
-        strFailReason = strprintf("Transaction commit failed:: %s", state.GetRejectReason());
+        auto strFailReason = strprintf("Transaction commit failed:: %s", state.GetRejectReason());
         throw JSONRPCError(RPC_WALLET_ERROR, strFailReason);
     }
 
@@ -2992,8 +3002,10 @@ UniValue fundrawtransaction(const UniValue& params, bool fHelp)
     CAmount nFee;
     string strFailReason;
     int nChangePos = -1;
-    if(!pwalletMain->FundTransaction(tx, nFee, nChangePos, strFailReason, includeWatching))
-        throw JSONRPCError(RPC_INTERNAL_ERROR, strFailReason);
+    pwalletMain->FundTransaction(tx, nFee, nChangePos, includeWatching)
+        .map_error([&](std::string err) {
+            throw JSONRPCError(RPC_INTERNAL_ERROR, err);
+        });
 
     UniValue result(UniValue::VOBJ);
     result.pushKV("hex", EncodeHexTx(tx));
