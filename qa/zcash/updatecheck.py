@@ -63,8 +63,8 @@ def get_dependency_list():
                 { "release-2.0.22-stable": (2, 0, 22), "release-2.1.9-beta": None }),
             DependsVersionGetter("libevent")),
         Dependency("libsodium",
-            GithubTagReleaseLister("jedisct1", "libsodium", "^(\d+)\.(\d+)\.(\d+)$",
-                { "1.0.17": (1, 0, 17) }),
+            GithubTagReleaseLister("jedisct1", "libsodium", "^(\d+)\.(\d+)\.(\d+)-RELEASE$",
+                { "1.0.18-RELEASE": (1, 0, 18) }),
             DependsVersionGetter("libsodium")),
         # b2 matches the Boost version
         Dependency("native_b2",
