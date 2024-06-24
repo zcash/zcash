@@ -32,7 +32,7 @@ be removed from tier 2. These dates are subject to change.
 
 | target                  | OS           | End of Support |
 | ----------------------- | ------------ | -------------- |
-| `x86_64-pc-linux-gnu`   | Debian 10    | June 2024      |
+| N/A |
 
 ## Tier 3
 
