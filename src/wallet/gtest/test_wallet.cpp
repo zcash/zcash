@@ -854,7 +854,7 @@ TEST(WalletTests, GetConflictedOrchardNotes) {
     EXPECT_EQ(0, chainActive.Height());
 
     // Simulate SyncTransaction which calls AddToWalletIfInvolvingMe
-    auto orchardTxMeta = wallet.GetOrchardWallet().AddNotesIfInvolvingMe(wtx);
+    auto orchardTxMeta = wallet.GetOrchardWallet().AddNotesIfInvolvingMe(wtx, nullptr);
     ASSERT_TRUE(orchardTxMeta.has_value());
     EXPECT_FALSE(orchardTxMeta.value().empty());
     wtx.SetOrchardTxMeta(orchardTxMeta.value());
@@ -911,7 +911,7 @@ TEST(WalletTests, GetConflictedOrchardNotes) {
     EXPECT_EQ(0, wallet.GetConflicts(hash3).size());
 
     // No conflicts for one spend
-    auto orchardTxMeta2 = wallet.GetOrchardWallet().AddNotesIfInvolvingMe(wtx2);
+    auto orchardTxMeta2 = wallet.GetOrchardWallet().AddNotesIfInvolvingMe(wtx2, nullptr);
     ASSERT_TRUE(orchardTxMeta2.has_value());
     EXPECT_FALSE(orchardTxMeta2.value().empty());
     wtx2.SetOrchardTxMeta(orchardTxMeta2.value());
@@ -920,7 +920,7 @@ TEST(WalletTests, GetConflictedOrchardNotes) {
     EXPECT_EQ(0, wallet.GetConflicts(hash3).size());
 
     // Conflicts for two spends
-    auto orchardTxMeta3 = wallet.GetOrchardWallet().AddNotesIfInvolvingMe(wtx3);
+    auto orchardTxMeta3 = wallet.GetOrchardWallet().AddNotesIfInvolvingMe(wtx3, nullptr);
     ASSERT_TRUE(orchardTxMeta3.has_value());
     EXPECT_FALSE(orchardTxMeta3.value().empty());
     wtx3.SetOrchardTxMeta(orchardTxMeta3.value());
