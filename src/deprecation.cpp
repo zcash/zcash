@@ -47,9 +47,8 @@ void EnforceNodeDeprecation(const CChainParams& params, int nHeight, bool forceL
         //     occurs, but that's an irregular event that won't cause spam.
         // - The node is starting
         if (blocksToDeprecation == 0 || forceLogging) {
-            auto msg = strprintf(_("This version has been deprecated as of block height %d."),
-                                 DEPRECATION_HEIGHT) + " " +
-                       _("You should upgrade to the latest version of Zcash.");
+            auto msg = strprintf(_("This version has been deprecated as of block height %d. You should upgrade to the latest version of %s."),
+                                 DEPRECATION_HEIGHT, DAEMON_NAME);
             LogPrintf("*** %s\n", msg);
             CAlert::Notify(msg, fThread);
             uiInterface.ThreadSafeMessageBox(msg, "", CClientUIInterface::MSG_ERROR);
@@ -57,9 +56,8 @@ void EnforceNodeDeprecation(const CChainParams& params, int nHeight, bool forceL
         StartShutdown();
     } else if (blocksToDeprecation == DEPRECATION_WARN_LIMIT ||
                (blocksToDeprecation < DEPRECATION_WARN_LIMIT && forceLogging)) {
-        std::string msg = strprintf(_("This version will be deprecated at block height %d, and will automatically shut down."),
-                            DEPRECATION_HEIGHT) + " " +
-                  _("You should upgrade to the latest version of Zcash.");
+        std::string msg = strprintf(_("This version will be deprecated at block height %d, and will automatically shut down. You should upgrade to the latest version of %s."),
+                                    DEPRECATION_HEIGHT, DAEMON_NAME);
         LogPrintf("*** %s\n", msg);
         CAlert::Notify(msg, fThread);
         uiInterface.ThreadSafeMessageBox(msg, "", CClientUIInterface::MSG_WARNING);
