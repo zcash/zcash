@@ -6781,6 +6781,29 @@ void static ProcessGetData(CNode* pfrom, const Consensus::Params& consensusParam
     }
 }
 
+bool static ValidateMessageVectorizedPayload(CNode* pfrom, const std::string& strCommand, CDataStream& vRecv, uint32_t nMaxItems, uint32_t nMinItems, uint32_t nItemSize) {
+    try {
+        const auto nNumItems = ReadCompactSize(vRecv);
+        if (nNumItems > nMaxItems || nNumItems < nMinItems) {
+            LOCK(cs_main);
+            Misbehaving(pfrom->GetId(), 20);
+            return error("malformed message '%s' max items %u : got %u instead", strCommand, nMaxItems, nNumItems);
+        }
+        if (nItemSize > 0) {
+            if (const auto nExpectedBytes = (nNumItems * nItemSize); nExpectedBytes != static_cast<uint64_t>(vRecv.in_avail())) {
+                LOCK(cs_main);
+                Misbehaving(pfrom->GetId(), 20);
+                return error("malformed message '%s' payload. expected %u bytes, got %u instead", strCommand, nExpectedBytes, static_cast<uint64_t>(vRecv.in_avail()));
+            }
+        }
+        return vRecv.Rewind(GetSizeOfCompactSize(nNumItems));
+    } catch (const std::ios_base::failure& exception) {
+        LOCK(cs_main);
+        Misbehaving(pfrom->GetId(), 20);
+        return error("malformed message '%s' payload. %s", strCommand, exception.what());
+    }
+}
+
 bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string strCommand, CDataStream& vRecv, int64_t nTimeReceived)
 {
     LogPrint("net", "received: %s (%u bytes) peer=%d\n", SanitizeString(strCommand), vRecv.size(), pfrom->id);
@@ -7028,18 +7051,16 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
 
     else if (strCommand == "addr")
     {
-        vector<CAddress> vAddr;
-        vRecv >> vAddr;
-
         // Don't want addr from older versions unless seeding
         if (pfrom->nVersion < CADDR_TIME_VERSION && addrman.size() > 1000)
             return true;
-        if (vAddr.size() > 1000)
-        {
-            LOCK(cs_main);
-            Misbehaving(pfrom->GetId(), 20);
-            return error("message addr size() = %u", vAddr.size());
-        }
+
+        const uint32_t nItemSize = 30U; // static_cast<uint32_t>(sizeof(CAddress)) returns 40 (?!)
+        if (!ValidateMessageVectorizedPayload(pfrom, strCommand, vRecv, /*nMaxItems=*/MAX_ADDR_SZ, /*nMinItems=*/1, nItemSize))
+            return false;
+
+        vector<CAddress> vAddr;
+        vRecv >> vAddr;
 
         // Store the new addresses
         vector<CAddress> vAddrOk;
@@ -7126,14 +7147,11 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
 
     else if (strCommand == "inv")
     {
+        if (!ValidateMessageVectorizedPayload(pfrom, strCommand, vRecv, /*nMaxItems=*/MAX_INV_SZ, /*nMinItems=*/1, /*nItemSize=*/0))
+            return false;
+
         vector<CInv> vInv;
         vRecv >> vInv;
-        if (vInv.size() > MAX_INV_SZ)
-        {
-            LOCK(cs_main);
-            Misbehaving(pfrom->GetId(), 20);
-            return error("message inv size() = %u", vInv.size());
-        }
 
         bool fBlocksOnly = GetBoolArg("-blocksonly", DEFAULT_BLOCKSONLY);
 
@@ -7200,14 +7218,11 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
 
     else if (strCommand == "getdata")
     {
+        if (!ValidateMessageVectorizedPayload(pfrom, strCommand, vRecv, /*nMaxItems=*/MAX_INV_SZ, /*nMinItems=*/1, /*nItemSize=*/0))
+            return false;
+
         vector<CInv> vInv;
         vRecv >> vInv;
-        if (vInv.size() > MAX_INV_SZ)
-        {
-            LOCK(cs_main);
-            Misbehaving(pfrom->GetId(), 20);
-            return error("message getdata size() = %u", vInv.size());
-        }
 
         if (fDebug || (vInv.size() != 1))
             LogPrint("net", "received getdata (%u invsz) peer=%d\n", vInv.size(), pfrom->id);
@@ -7266,15 +7281,16 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
 
     else if (strCommand == "getheaders")
     {
+        if (IsInitialBlockDownload(chainparams.GetConsensus()) && !pfrom->fWhitelisted) {
+            LogPrint("net", "Ignoring getheaders from peer=%d because node is in initial block download\n", pfrom->id);
+            return true;
+        }
+
         CBlockLocator locator;
         uint256 hashStop;
         vRecv >> locator >> hashStop;
 
         LOCK(cs_main);
-        if (IsInitialBlockDownload(chainparams.GetConsensus()) && !pfrom->fWhitelisted) {
-            LogPrint("net", "Ignoring getheaders from peer=%d because node is in initial block download\n", pfrom->id);
-            return true;
-        }
         CBlockIndex* pindex = NULL;
         if (locator.IsNull())
         {
@@ -7464,28 +7480,29 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
 
     else if (strCommand == "headers" && !fImporting && !fReindex) // Ignore headers received while importing
     {
-        std::vector<CBlockHeader> headers;
-
+        
         // Bypass the normal CBlock deserialization, as we don't want to risk deserializing 2000 full blocks.
-        unsigned int nCount = ReadCompactSize(vRecv);
-        if (nCount > MAX_HEADERS_RESULTS) {
-            LOCK(cs_main);
-            Misbehaving(pfrom->GetId(), 20);
-            return error("headers message size = %u", nCount);
-        }
-        headers.resize(nCount);
-        for (unsigned int n = 0; n < nCount; n++) {
-            vRecv >> headers[n];
-            ReadCompactSize(vRecv); // ignore tx count; assume it is 0.
-        }
-
-        {
-        LOCK(cs_main);
+        const unsigned int nCount = ReadCompactSize(vRecv);
 
         if (nCount == 0) {
             // Nothing interesting. Stop asking this peer for more headers.
             return true;
         }
+
+        if (nCount > MAX_HEADERS_RESULTS) {
+            LOCK(cs_main);
+            Misbehaving(pfrom->GetId(), 20);
+            return error("headers message size = %u", nCount);
+        }
+
+        std::vector<CBlockHeader> headers(nCount);
+        for (unsigned int n = 0; n < nCount; n++) {
+            vRecv >> headers[n];
+            std::ignore = ReadCompactSize(vRecv); // ignore tx count; assume it is 0.
+        }
+
+        {
+        LOCK(cs_main);
 
         // If we already know the last header in the message, then it contains
         // no new information for us.  In this case, we do not request
