@@ -10,9 +10,6 @@ ARG ZCASH_VERSION=
 # which should be the latest stable release. To install a specific
 # version, pass `--build-arg 'ZCASH_VERSION=<version>'` to `docker build`.
 
-ARG ZCASHD_USER=zcashd
-ARG ZCASHD_UID=2001
-
 RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys $ZCASH_SIGNING_KEY_ID \
   && echo "deb [arch=amd64] https://apt.z.cash/ bullseye main" > /etc/apt/sources.list.d/zcash.list \
   && apt-get update
@@ -23,15 +20,9 @@ RUN if [ -z "$ZCASH_VERSION" ]; \
     fi; \
     zcashd --version
 
-RUN useradd --home-dir /srv/$ZCASHD_USER \
-            --shell /bin/bash \
-            --create-home \
-            --uid $ZCASHD_UID\
-            $ZCASHD_USER
-USER $ZCASHD_USER
-WORKDIR /srv/$ZCASHD_USER
-RUN mkdir -p /srv/$ZCASHD_USER/.zcash/ \
-    && touch /srv/$ZCASHD_USER/.zcash/zcash.conf
+WORKDIR /srv/zcashd
+RUN mkdir -p /srv/zcashd/.zcash/ \
+    && touch /srv/zcashd/.zcash/zcash.conf
 
 ADD entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
