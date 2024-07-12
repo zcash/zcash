@@ -21,7 +21,7 @@ CWalletTx FakeWalletTx()
     CMutableTransaction mtx;
     mtx.vout.resize(1);
     mtx.vout[0].nValue = 1;
-    return CWalletTx(nullptr, mtx);
+    return CWalletTx(nullptr, CTransaction(mtx));
 }
 
 SpendableInputs FakeSpendableInputs(

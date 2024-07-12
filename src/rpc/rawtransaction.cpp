@@ -792,7 +792,7 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
         rawTx.vout.push_back(out);
     }
 
-    return EncodeHexTx(rawTx);
+    return EncodeHexTx(CTransaction(rawTx));
 }
 
 UniValue decoderawtransaction(const UniValue& params, bool fHelp)
@@ -1173,7 +1173,7 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
     // We do not need to know the inputs for pre-v5 transactions.
     // We can't sign v5+ transactions without knowing all inputs.
     if (mergedTx.nVersion >= ZIP225_TX_VERSION) {
-        if (!view.HaveInputs(mergedTx)) {
+        if (!view.HaveInputs(CTransaction(mergedTx))) {
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Cannot sign v5 transactions without knowing all inputs");
         }
         for (const auto& input : mergedTx.vin) {
@@ -1219,7 +1219,7 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
     bool fComplete = vErrors.empty();
 
     UniValue result(UniValue::VOBJ);
-    result.pushKV("hex", EncodeHexTx(mergedTx));
+    result.pushKV("hex", EncodeHexTx(CTransaction(mergedTx)));
     result.pushKV("complete", fComplete);
     if (!vErrors.empty()) {
         result.pushKV("errors", vErrors);
