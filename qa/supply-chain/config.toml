@@ -638,6 +638,10 @@ criteria = "safe-to-deploy"
 version = "0.4.0"
 criteria = "safe-to-deploy"
 
+[[exemptions.winsafe]]
+version = "0.0.19"
+criteria = "safe-to-deploy"
+
 [[exemptions.wyz]]
 version = "0.5.0"
 criteria = "safe-to-deploy"

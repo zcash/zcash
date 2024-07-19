@@ -374,6 +374,12 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "2.0.0 -> 2.0.1"
 
+[[audits.clearscreen]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "2.0.1 -> 3.0.0"
+notes = "Changes to stdin FD handling look fine (moving to newer safer APIs)."
+
 [[audits.constant_time_eq]]
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = ["safe-to-deploy", "crypto-reviewed"]
@@ -2894,6 +2900,15 @@ delta = "4.4.0 -> 4.4.2"
 notes = """
 Crate now has `#![forbid(unsafe_code)]`, replacing its last `unsafe` block with a
 dependency on the `rustix` crate.
+"""
+
+[[audits.which]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "4.4.2 -> 6.0.1"
+notes = """
+Mostly refactoring to newer APIs. New `winsafe` dependency is only used to check
+for extensionless Windows executables.
 """
 
 [[audits.winnow]]
