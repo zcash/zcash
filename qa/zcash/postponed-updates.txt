@@ -11,10 +11,6 @@ native_b2 1.84.0 2024-06-15
 native_b2 1.85.0 2024-06-15
 
 # Clang and Rust are currently pinned to LLVM 18
-libcxx 18.1.5 2024-06-15
-libcxx 18.1.6 2024-06-15
-native_clang 18.1.5 2024-06-15
-native_clang 18.1.6 2024-06-15
 
 # fmt 11.0.0 changed where its version string is, CCache needs a patch.
 native_fmt 11.0.0 2024-09-01

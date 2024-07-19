@@ -6,7 +6,7 @@ package=native_clang
 #   doesn't uniformly cut binaries across releases).
 # The Clang compiler should use the same LLVM version as the Rust compiler.
 $(package)_default_major_version=18
-$(package)_default_version=18.1.4
+$(package)_default_version=18.1.8
 # 2024-05-03: No Intel macOS packages are available for Clang 16, 17, or 18.
 $(package)_major_version_darwin=15
 $(package)_version_darwin=15.0.4
@@ -27,7 +27,7 @@ $(package)_major_version=$(if $($(package)_major_version_$(host_arch)_$(host_os)
 $(package)_download_path_linux=https://github.com/llvm/llvm-project/releases/download/llvmorg-$($(package)_version)
 $(package)_download_file_linux=clang+llvm-$($(package)_version)-x86_64-linux-gnu-ubuntu-18.04.tar.xz
 $(package)_file_name_linux=clang-llvm-$($(package)_version)-x86_64-linux-gnu-ubuntu-18.04.tar.xz
-$(package)_sha256_hash_linux=1607375b4aa2aec490b6db51846a04b265675a87e925bcf5825966401ff9b0b1
+$(package)_sha256_hash_linux=54ec30358afcc9fb8aa74307db3046f5187f9fb89fb37064cdde906e062ebf36
 $(package)_download_path_darwin=https://github.com/llvm/llvm-project/releases/download/llvmorg-$($(package)_version)
 $(package)_download_file_darwin=clang+llvm-$($(package)_version)-x86_64-apple-darwin.tar.xz
 $(package)_file_name_darwin=clang-llvm-$($(package)_version)-x86_64-apple-darwin.tar.xz
@@ -39,7 +39,7 @@ $(package)_sha256_hash_freebsd=b0a7b86dacb12afb8dd2ca99ea1b894d9cce84aab7711cb19
 $(package)_download_path_aarch64_linux=https://github.com/llvm/llvm-project/releases/download/llvmorg-$($(package)_version)
 $(package)_download_file_aarch64_linux=clang+llvm-$($(package)_version)-aarch64-linux-gnu.tar.xz
 $(package)_file_name_aarch64_linux=clang-llvm-$($(package)_version)-aarch64-linux-gnu.tar.xz
-$(package)_sha256_hash_aarch64_linux=8c2f4d1606d24dc197a590acce39453abe7a302b9b92e762108f9b5a9701b1df
+$(package)_sha256_hash_aarch64_linux=dcaa1bebbfbb86953fdfbdc7f938800229f75ad26c5c9375ef242edad737d999
 
 ifeq ($(build_os),linux)
 $(package)_dependencies=native_libtinfo5
