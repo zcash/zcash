@@ -19,6 +19,9 @@ url = "https://raw.githubusercontent.com/divviup/libprio-rs/main/supply-chain/au
 [imports.mozilla]
 url = "https://raw.githubusercontent.com/mozilla/supply-chain/main/audits.toml"
 
+[imports.zcash]
+url = "https://raw.githubusercontent.com/zcash/rust-ecosystem/main/supply-chain/audits.toml"
+
 [[exemptions.addr2line]]
 version = "0.17.0"
 criteria = "safe-to-deploy"
@@ -43,12 +46,16 @@ criteria = "safe-to-deploy"
 version = "0.2.14"
 criteria = "safe-to-deploy"
 
+[[exemptions.anyhow]]
+version = "1.0.86"
+criteria = "safe-to-deploy"
+
 [[exemptions.arrayvec]]
 version = "0.7.4"
 criteria = "safe-to-deploy"
 
 [[exemptions.backtrace]]
-version = "0.3.67"
+version = "0.3.73"
 criteria = "safe-to-deploy"
 
 [[exemptions.base64ct]]
@@ -96,11 +103,15 @@ version = "1.4.3"
 criteria = "safe-to-deploy"
 
 [[exemptions.bytes]]
-version = "1.2.1"
+version = "1.6.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.cbc]]
 version = "0.1.2"
+criteria = "safe-to-deploy"
+
+[[exemptions.cc]]
+version = "1.1.6"
 criteria = "safe-to-deploy"
 
 [[exemptions.chacha20]]
@@ -216,7 +227,7 @@ version = "0.2.6"
 criteria = "safe-to-deploy"
 
 [[exemptions.gimli]]
-version = "0.28.1"
+version = "0.29.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.group]]
@@ -232,7 +243,7 @@ version = "0.8.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.hashbrown]]
-version = "0.14.3"
+version = "0.14.2"
 criteria = "safe-to-deploy"
 
 [[exemptions.hdwallet]]
@@ -244,7 +255,7 @@ version = "0.3.3"
 criteria = "safe-to-deploy"
 
 [[exemptions.home]]
-version = "0.5.5"
+version = "0.5.9"
 criteria = "safe-to-deploy"
 
 [[exemptions.http]]
@@ -256,11 +267,11 @@ version = "0.4.5"
 criteria = "safe-to-deploy"
 
 [[exemptions.httparse]]
-version = "1.8.0"
+version = "1.9.4"
 criteria = "safe-to-deploy"
 
 [[exemptions.hyper]]
-version = "0.14.25"
+version = "0.14.30"
 criteria = "safe-to-deploy"
 
 [[exemptions.indexmap]]
@@ -280,7 +291,7 @@ version = "0.9.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.libc]]
-version = "0.2.151"
+version = "0.2.155"
 criteria = "safe-to-deploy"
 
 [[exemptions.libm]]
@@ -292,7 +303,11 @@ version = "0.0.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.linux-raw-sys]]
-version = "0.4.12"
+version = "0.4.14"
+criteria = "safe-to-deploy"
+
+[[exemptions.log]]
+version = "0.4.22"
 criteria = "safe-to-deploy"
 
 [[exemptions.memchr]]
@@ -323,6 +338,10 @@ criteria = "safe-to-deploy"
 version = "0.2.1"
 criteria = "safe-to-deploy"
 
+[[exemptions.miniz_oxide]]
+version = "0.7.4"
+criteria = "safe-to-deploy"
+
 [[exemptions.mio]]
 version = "0.8.10"
 criteria = "safe-to-deploy"
@@ -335,12 +354,16 @@ criteria = "safe-to-deploy"
 version = "0.7.0"
 criteria = "safe-to-deploy"
 
+[[exemptions.num-bigint]]
+version = "0.4.6"
+criteria = "safe-to-deploy"
+
 [[exemptions.num_cpus]]
 version = "1.13.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.object]]
-version = "0.30.1"
+version = "0.36.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.once_cell]]
@@ -400,7 +423,7 @@ version = "0.12.2"
 criteria = "safe-to-deploy"
 
 [[exemptions.proptest]]
-version = "1.2.0"
+version = "1.5.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.quanta]]
@@ -460,7 +483,7 @@ version = "0.1.3"
 criteria = "safe-to-deploy"
 
 [[exemptions.rustix]]
-version = "0.38.28"
+version = "0.38.34"
 criteria = "safe-to-deploy"
 
 [[exemptions.rusty-fork]]
@@ -507,6 +530,10 @@ criteria = "safe-to-deploy"
 version = "0.5.2"
 criteria = "safe-to-deploy"
 
+[[exemptions.spin]]
+version = "0.9.8"
+criteria = "safe-to-deploy"
+
 [[exemptions.spki]]
 version = "0.7.3"
 criteria = "safe-to-deploy"
@@ -517,6 +544,10 @@ criteria = "safe-to-deploy"
 
 [[exemptions.syn]]
 version = "1.0.102"
+criteria = "safe-to-deploy"
+
+[[exemptions.syn]]
+version = "2.0.71"
 criteria = "safe-to-deploy"
 
 [[exemptions.tempfile]]
@@ -532,7 +563,7 @@ version = "0.3.30"
 criteria = "safe-to-deploy"
 
 [[exemptions.tokio]]
-version = "1.35.0"
+version = "1.38.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.tower-service]]
@@ -607,10 +638,6 @@ criteria = "safe-to-deploy"
 version = "0.4.0"
 criteria = "safe-to-deploy"
 
-[[exemptions.windows_i686_gnullvm]]
-version = "0.52.5"
-criteria = "safe-to-deploy"
-
 [[exemptions.wyz]]
 version = "0.5.0"
 criteria = "safe-to-deploy"
@@ -619,8 +646,16 @@ criteria = "safe-to-deploy"
 version = "2.5.0"
 criteria = "safe-to-deploy"
 
+[[exemptions.zerocopy]]
+version = "0.7.35"
+criteria = "safe-to-deploy"
+
+[[exemptions.zerocopy-derive]]
+version = "0.7.35"
+criteria = "safe-to-deploy"
+
 [[exemptions.zeroize]]
-version = "1.7.0"
+version = "1.8.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.zeroize_derive]]
