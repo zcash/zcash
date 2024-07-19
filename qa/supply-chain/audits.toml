@@ -630,6 +630,16 @@ criteria = "safe-to-deploy"
 delta = "1.0.113 -> 1.0.122"
 notes = "Build script changes only affect lints."
 
+[[audits.cxx]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.122 -> 1.0.124"
+notes = """
+- Change to `build.rs` is to use `error_in_core` rustc feature.
+- Change to `cxx.cc` uses the same technique for `char` as is already in use for
+  `isize` to check if it is an alias for `[u]int8_t`.
+"""
+
 [[audits.cxxbridge-flags]]
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
@@ -778,6 +788,12 @@ delta = "1.0.111 -> 1.0.113"
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.113 -> 1.0.122"
+notes = "Only changes to lints."
+
+[[audits.cxxbridge-macro]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.122 -> 1.0.124"
 notes = "Only changes to lints."
 
 [[audits.der]]

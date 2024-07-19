@@ -5,19 +5,19 @@
 #
 
 # Boost 1.84.0 causes gtests to fail on macOS.
-boost 1.84.0 2024-06-15
-boost 1.85.0 2024-06-15
-native_b2 1.84.0 2024-06-15
-native_b2 1.85.0 2024-06-15
+boost 1.84.0 2024-09-15
+boost 1.85.0 2024-09-15
+native_b2 1.84.0 2024-09-15
+native_b2 1.85.0 2024-09-15
 
 # Clang and Rust are currently pinned to LLVM 18
-libcxx 18.1.5 2024-06-15
-libcxx 18.1.6 2024-06-15
-native_clang 18.1.5 2024-06-15
-native_clang 18.1.6 2024-06-15
+
+# fmt 11.0.0 changed where its version string is, CCache needs a patch.
+native_fmt 11.0.0 2024-09-01
+native_fmt 11.0.1 2024-09-01
 
 # We follow upstream Bitcoin Core's LevelDB updates
-leveldb 1.23 2024-06-15
+leveldb 1.23 2024-09-15
 
 # We're never updating to this version
 bdb 18.1.40 2025-03-01

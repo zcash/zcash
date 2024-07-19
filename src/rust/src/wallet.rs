@@ -167,12 +167,14 @@ pub struct Wallet {
     potential_spends: BTreeMap<Nullifier, BTreeSet<InPoint>>,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum WalletError {
     OutOfOrder(LastObserved, BlockHeight, usize),
     NoteCommitmentTreeFull,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum RewindError {
     /// The note commitment tree does not contain enough checkpoints to
@@ -182,6 +184,7 @@ pub enum RewindError {
     InsufficientCheckpoints(usize),
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum BundleLoadError {
     /// The action at the specified index failed to decrypt with
@@ -196,6 +199,7 @@ pub enum BundleLoadError {
     InvalidActionIndex(usize),
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum SpendRetrievalError {
     DecryptedNoteNotFound(OutPoint),

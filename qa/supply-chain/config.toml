@@ -163,10 +163,6 @@ criteria = "safe-to-deploy"
 version = "0.7.8"
 criteria = "safe-to-deploy"
 
-[[exemptions.deranged]]
-version = "0.3.10"
-criteria = "safe-to-deploy"
-
 [[exemptions.digest]]
 version = "0.9.0"
 criteria = "safe-to-deploy"
@@ -395,10 +391,6 @@ criteria = "safe-to-deploy"
 version = "1.6.0"
 criteria = "safe-to-deploy"
 
-[[exemptions.powerfmt]]
-version = "0.2.0"
-criteria = "safe-to-deploy"
-
 [[exemptions.ppv-lite86]]
 version = "0.2.16"
 criteria = "safe-to-deploy"
@@ -537,10 +529,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.time]]
 version = "0.3.30"
-criteria = "safe-to-deploy"
-
-[[exemptions.time-macros]]
-version = "0.2.7"
 criteria = "safe-to-deploy"
 
 [[exemptions.tokio]]
