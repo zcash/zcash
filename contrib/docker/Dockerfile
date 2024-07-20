@@ -26,12 +26,15 @@ RUN if [ -z "$ZCASH_VERSION" ]; \
 RUN useradd --home-dir /srv/$ZCASHD_USER \
             --shell /bin/bash \
             --create-home \
-            --uid $ZCASHD_UID\
-            $ZCASHD_USER
-USER $ZCASHD_USER
-WORKDIR /srv/$ZCASHD_USER
-RUN mkdir -p /srv/$ZCASHD_USER/.zcash/ \
-    && touch /srv/$ZCASHD_USER/.zcash/zcash.conf
+            --uid "$ZCASHD_UID" \
+            "$ZCASHD_USER"
+
+RUN mkdir -p "/srv/$ZCASHD_USER/.zcash/" \
+    && touch "/srv/$ZCASHD_USER/.zcash/zcash.conf" \
+    && chown -R zcashd "/srv/$ZCASHD_USER"
+
+WORKDIR "/srv/$ZCASHD_USER"
+ENV HOME="/srv/$ZCASHD_USER"
 
 ADD entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
