@@ -923,13 +923,24 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
             "{\n"
             "  \"miner\" : x.xxx,              (numeric) The mining reward amount in " + CURRENCY_UNIT + ".\n"
             "  \"founders\" : x.xxx,           (numeric) The founders' reward amount in " + CURRENCY_UNIT + ".\n"
-            "  \"fundingstreams\" : [          (array) An array of funding stream descriptions (present only when Canopy has activated).\n"
+            "  \"fundingstreamstotal\" : x.xxx,(numeric) The total value of direct funding streams in " + CURRENCY_UNIT + ".\n"
+            "  \"lockboxtotal\" : x.xxx,       (numeric) The total value sent to development funding lockboxes in " + CURRENCY_UNIT + ".\n"
+            "  \"totalblocksubsidy\" : x.xxx,  (numeric) The total value of the block subsidy in " + CURRENCY_UNIT + ".\n"
+            "  \"fundingstreams\" : [          (array) An array of funding stream descriptions (present only when funding streams are active).\n"
             "    {\n"
             "      \"recipient\" : \"...\",        (string) A description of the funding stream recipient.\n"
             "      \"specification\" : \"url\",    (string) A URL for the specification of this funding stream.\n"
             "      \"value\" : x.xxx             (numeric) The funding stream amount in " + CURRENCY_UNIT + ".\n"
             "      \"valueZat\" : xxxx           (numeric) The funding stream amount in " + MINOR_CURRENCY_UNIT + ".\n"
             "      \"address\" :                 (string) The transparent or Sapling address of the funding stream recipient.\n"
+            "    }, ...\n"
+            "  ],\n"
+            "  \"lockboxstreams\" : [          (array) An array of development fund lockbox stream descriptions (present only when lockbox streams are active).\n"
+            "    {\n"
+            "      \"recipient\" : \"...\",        (string) A description of the lockbox.\n"
+            "      \"specification\" : \"url\",    (string) A URL for the specification of this lockbox.\n"
+            "      \"value\" : x.xxx             (numeric) The amount locked in " + CURRENCY_UNIT + ".\n"
+            "      \"valueZat\" : xxxx           (numeric) The amount locked in " + MINOR_CURRENCY_UNIT + ".\n"
             "    }, ...\n"
             "  ]\n"
             "}\n"
@@ -945,19 +956,20 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
 
     const Consensus::Params& consensus = Params().GetConsensus();
     CAmount nBlockSubsidy = GetBlockSubsidy(nHeight, consensus);
-    CAmount nMinerReward = nBlockSubsidy;
     CAmount nFoundersReward = 0;
+    CAmount nFundingStreamsTotal = 0;
+    CAmount nLockboxTotal = 0;
     bool canopyActive = consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY);
 
     UniValue result(UniValue::VOBJ);
     if (canopyActive) {
         KeyIO keyIO(Params());
         UniValue fundingstreams(UniValue::VARR);
+        UniValue lockboxstreams(UniValue::VARR);
         auto fsinfos = Consensus::GetActiveFundingStreams(nHeight, consensus);
         for (int idx = 0; idx < fsinfos.size(); idx++) {
             const auto& fsinfo = fsinfos[idx];
             CAmount nStreamAmount = fsinfo.Value(nBlockSubsidy);
-            nMinerReward -= nStreamAmount;
 
             UniValue fsobj(UniValue::VOBJ);
             fsobj.pushKV("recipient", fsinfo.recipient);
@@ -966,35 +978,48 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
             fsobj.pushKV("valueZat", nStreamAmount);
 
             auto fs = consensus.vFundingStreams[idx];
-            auto address = fs.value().Recipient(consensus, nHeight);
+            auto recipient = fs.value().Recipient(consensus, nHeight);
 
-            CScript* outpoint = std::get_if<CScript>(&address);
-            std::string addressStr;
-
-            if (outpoint != nullptr) {
-                // For transparent funding stream addresses
-                UniValue pubkey(UniValue::VOBJ);
-                ScriptPubKeyToUniv(*outpoint, pubkey, true);
-                addressStr = find_value(pubkey, "addresses").get_array()[0].get_str();
-
-            } else {
-                libzcash::SaplingPaymentAddress* zaddr = std::get_if<libzcash::SaplingPaymentAddress>(&address);
-                if (zaddr != nullptr) {
+            examine(recipient, match {
+                [&](const CScript& scriptPubKey) {
+                    // For transparent funding stream addresses
+                    UniValue pubkey(UniValue::VOBJ);
+                    ScriptPubKeyToUniv(scriptPubKey, pubkey, true);
+                    auto addressStr = find_value(pubkey, "addresses").get_array()[0].get_str();
+                    fsobj.pushKV("address", addressStr);
+                    fundingstreams.push_back(fsobj);
+                    nFundingStreamsTotal += nStreamAmount;
+                },
+                [&](const libzcash::SaplingPaymentAddress& pa) {
                     // For shielded funding stream addresses
-                    addressStr = keyIO.EncodePaymentAddress(*zaddr);
+                    auto addressStr = keyIO.EncodePaymentAddress(pa);
+                    fsobj.pushKV("address", addressStr);
+                    fundingstreams.push_back(fsobj);
+                    nFundingStreamsTotal += nStreamAmount;
+                },
+                [&](const Consensus::Lockbox& lockbox) {
+                    // No address is provided for lockbox streams
+                    lockboxstreams.push_back(fsobj);
+                    nLockboxTotal += nStreamAmount;
                 }
-            }
+            });
 
-            fsobj.pushKV("address", addressStr);
-            fundingstreams.push_back(fsobj);
         }
-        result.pushKV("fundingstreams", fundingstreams);
+        if (fundingstreams.size() > 0) {
+            result.pushKV("fundingstreams", fundingstreams);
+        }
+        if (lockboxstreams.size() > 0) {
+            result.pushKV("lockboxstreams", lockboxstreams);
+        }
     } else if (nHeight > 0 && nHeight <= consensus.GetLastFoundersRewardBlockHeight(nHeight)) {
         nFoundersReward = nBlockSubsidy/5;
-        nMinerReward -= nFoundersReward;
     }
+    CAmount nMinerReward = nBlockSubsidy - nFoundersReward - nFundingStreamsTotal - nLockboxTotal;
     result.pushKV("miner", ValueFromAmount(nMinerReward));
     result.pushKV("founders", ValueFromAmount(nFoundersReward));
+    result.pushKV("fundingstreamstotal", ValueFromAmount(nFundingStreamsTotal));
+    result.pushKV("lockboxtotal", ValueFromAmount(nLockboxTotal));
+    result.pushKV("totalblocksubsidy", ValueFromAmount(nBlockSubsidy));
     return result;
 }
 
