@@ -34,6 +34,18 @@ namespace Consensus {
             .specification = "https://zips.z.cash/zip-0214",
             .valueNumerator = 8,
             .valueDenominator = 100,
+        },
+        {
+            .recipient = "Zcash Community Grants NU6",
+            .specification = "https://zips.z.cash/zip-0214",
+            .valueNumerator = 8,
+            .valueDenominator = 100,
+        },
+        {
+            .recipient = "Lockbox NU6",
+            .specification = "https://zips.z.cash/draft-nuttycom-funding-allocation",
+            .valueNumerator = 12,
+            .valueDenominator = 100,
         }
     };
     static constexpr bool validateFundingStreamInfo(uint32_t idx) {
