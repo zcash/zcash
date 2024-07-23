@@ -966,7 +966,7 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
         KeyIO keyIO(Params());
         UniValue fundingstreams(UniValue::VARR);
         UniValue lockboxstreams(UniValue::VARR);
-        auto fsinfos = Consensus::GetActiveFundingStreams(nHeight, consensus);
+        auto fsinfos = consensus.GetActiveFundingStreams(nHeight);
         for (int idx = 0; idx < fsinfos.size(); idx++) {
             const auto& fsinfo = fsinfos[idx];
             CAmount nStreamAmount = fsinfo.Value(nBlockSubsidy);

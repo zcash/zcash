@@ -262,7 +262,7 @@ TEST(FundingStreamsRewardTest, Zip207Distribution) {
     std::map<std::string, CAmount> ms;
     for (int nHeight = minHeight; nHeight <= maxHeight; nHeight++) {
         auto blockSubsidy = consensus.GetBlockSubsidy(nHeight);
-        auto elems = GetActiveFundingStreamElements(nHeight, blockSubsidy, consensus);
+        auto elems = consensus.GetActiveFundingStreamElements(nHeight, blockSubsidy);
 
         CAmount totalFunding = 0;
         for (Consensus::FundingStreamElement elem : elems) {

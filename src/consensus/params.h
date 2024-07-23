@@ -8,7 +8,8 @@
 #define BITCOIN_CONSENSUS_PARAMS_H
 
 #include <script/script.h>
-#include "amount.h"
+#include <amount.h>
+#include <consensus/funding.h>
 #include "uint256.h"
 #include "key_constants.h"
 #include <zcash/address/sapling.hpp>
@@ -111,6 +112,7 @@ public:
 };
 
 typedef std::variant<libzcash::SaplingPaymentAddress, CScript, Lockbox> FundingStreamRecipient;
+typedef std::pair<FundingStreamRecipient, CAmount> FundingStreamElement;
 
 /**
  * Index into Params.vFundingStreams.
@@ -124,6 +126,8 @@ enum FundingStreamIndex : uint32_t {
     MAX_FUNDING_STREAMS,
 };
 const auto FIRST_FUNDING_STREAM = FS_ZIP214_BP;
+
+extern const struct FSInfo FundingStreamInfo[];
 
 enum FundingStreamError {
     CANOPY_NOT_ACTIVE,
@@ -336,6 +340,23 @@ struct Params {
      * Returns the total block subsidy as of the given block height
      */
     CAmount GetBlockSubsidy(int nHeight) const;
+
+    /**
+     * Returns the vector of active funding streams as of the given height.
+     */
+    std::vector<FSInfo> GetActiveFundingStreams(int nHeight) const;
+
+    /**
+     * Returns the active funding stream elements at the given height, with
+     * values determined based upon the specified block subsidy amount. This
+     * should always be set to the value returned by `GetBlockSubsidy` for the
+     * given height; it is passed explicitly rather than derived internally
+     * as many call sites will have already called `GetBlockSubsidy` directly
+     * for other purposes.
+     */
+    std::set<FundingStreamElement> GetActiveFundingStreamElements(
+        int nHeight,
+        CAmount blockSubsidy) const;
 
     /**
      * A set of features that have been explicitly force-enabled

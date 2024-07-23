@@ -119,10 +119,9 @@ public:
 
         if (nHeight > 0) {
             if (chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY)) {
-                auto fundingStreamElements = Consensus::GetActiveFundingStreamElements(
+                auto fundingStreamElements = chainparams.GetConsensus().GetActiveFundingStreamElements(
                     nHeight,
-                    block_subsidy,
-                    chainparams.GetConsensus());
+                    block_subsidy);
 
                 for (Consensus::FundingStreamElement fselem : fundingStreamElements) {
                     miner_reward -= fselem.second;
