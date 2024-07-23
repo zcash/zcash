@@ -52,7 +52,7 @@ std::set<FundingStreamElement> GetActiveFundingStreamElements(
     CAmount blockSubsidy,
     const Consensus::Params& params)
 {
-    std::set<std::pair<FundingStreamAddress, CAmount>> requiredElements;
+    std::set<std::pair<FundingStreamRecipient, CAmount>> requiredElements;
 
     // Funding streams are disabled if Canopy is not active.
     if (params.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY)) {
@@ -63,7 +63,7 @@ std::set<FundingStreamElement> GetActiveFundingStreamElements(
             // Funding period is [startHeight, endHeight)
             if (fs && nHeight >= fs.value().GetStartHeight() && nHeight < fs.value().GetEndHeight()) {
                 requiredElements.insert(std::make_pair(
-                    fs.value().RecipientAddress(params, nHeight),
+                    fs.value().Recipient(params, nHeight),
                     FundingStreamInfo[idx].Value(blockSubsidy)));
             }
         }

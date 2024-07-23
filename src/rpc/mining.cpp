@@ -24,6 +24,7 @@
 #include "pow.h"
 #include "rpc/server.h"
 #include "txmempool.h"
+#include "util/match.h"
 #include "util/system.h"
 #include "validationinterface.h"
 #ifdef ENABLE_WALLET
@@ -965,7 +966,7 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
             fsobj.pushKV("valueZat", nStreamAmount);
 
             auto fs = consensus.vFundingStreams[idx];
-            auto address = fs.value().RecipientAddress(consensus, nHeight);
+            auto address = fs.value().Recipient(consensus, nHeight);
 
             CScript* outpoint = std::get_if<CScript>(&address);
             std::string addressStr;

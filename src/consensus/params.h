@@ -87,7 +87,29 @@ struct NetworkUpgrade {
     std::optional<uint256> hashActivationBlock;
 };
 
-typedef std::variant<libzcash::SaplingPaymentAddress, CScript> FundingStreamAddress;
+/**
+ * Type for the development funding lockbox(es). At present there is only one; this is
+ * not implemented as a singleton because it needs to be copyable so long as the
+ * `FundingStream` type is so.
+ */
+class Lockbox
+{
+public:
+    Lockbox() {}
+
+    // At present there is only a single lockbox.
+    friend bool operator==(const Lockbox& lhs, const Lockbox& rhs)
+    {
+        return true;
+    }
+
+    friend bool operator<(const Lockbox& lhs, const Lockbox& rhs)
+    {
+        return false;
+    }
+};
+
+typedef std::variant<libzcash::SaplingPaymentAddress, CScript, Lockbox> FundingStreamRecipient;
 
 /**
  * Index into Params.vFundingStreams.
@@ -106,6 +128,7 @@ enum FundingStreamError {
     CANOPY_NOT_ACTIVE,
     ILLEGAL_RANGE,
     INSUFFICIENT_ADDRESSES,
+    NU6_NOT_ACTIVE,
 };
 
 class FundingStream
@@ -113,19 +136,19 @@ class FundingStream
 private:
     int startHeight;
     int endHeight;
-    std::vector<FundingStreamAddress> addresses;
+    std::vector<FundingStreamRecipient> recipients;
 
-    FundingStream(int startHeight, int endHeight, const std::vector<FundingStreamAddress>& addresses):
-        startHeight(startHeight), endHeight(endHeight), addresses(addresses) { }
+    FundingStream(int startHeight, int endHeight, const std::vector<FundingStreamRecipient>& recipients):
+        startHeight(startHeight), endHeight(endHeight), recipients(recipients) { }
 public:
     FundingStream(const FundingStream& fs):
-        startHeight(fs.startHeight), endHeight(fs.endHeight), addresses(fs.addresses) { }
+        startHeight(fs.startHeight), endHeight(fs.endHeight), recipients(fs.recipients) { }
 
     static std::variant<FundingStream, FundingStreamError> ValidateFundingStream(
         const Consensus::Params& params,
         const int startHeight,
         const int endHeight,
-        const std::vector<FundingStreamAddress>& addresses
+        const std::vector<FundingStreamRecipient>& recipients
     );
 
     static FundingStream ParseFundingStream(
@@ -137,11 +160,11 @@ public:
 
     int GetStartHeight() const { return startHeight; };
     int GetEndHeight() const { return endHeight; };
-    const std::vector<FundingStreamAddress>& GetAddresses() const {
-        return addresses;
+    const std::vector<FundingStreamRecipient>& GetRecipients() const {
+        return recipients;
     };
 
-    FundingStreamAddress RecipientAddress(const Params& params, int nHeight) const;
+    FundingStreamRecipient Recipient(const Params& params, int nHeight) const;
 };
 
 enum ConsensusFeature : uint32_t {
@@ -301,6 +324,12 @@ struct Params {
         int startHeight,
         int endHeight,
         const std::vector<std::string>& addresses);
+
+    void AddZIP207LockboxStream(
+        const KeyConstants& keyConstants,
+        FundingStreamIndex idx,
+        int startHeight,
+        int endHeight);
 
     /**
      * A set of features that have been explicitly force-enabled

@@ -29,7 +29,7 @@ struct FSInfo {
 
 extern const struct FSInfo FundingStreamInfo[];
 
-typedef std::pair<FundingStreamAddress, CAmount> FundingStreamElement;
+typedef std::pair<FundingStreamRecipient, CAmount> FundingStreamElement;
 
 std::set<FundingStreamElement> GetActiveFundingStreamElements(
     int nHeight,

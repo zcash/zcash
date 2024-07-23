@@ -119,6 +119,8 @@ namespace Consensus {
     }
 
     int Params::FundingPeriodIndex(int fundingStreamStartHeight, int nHeight) const {
+        assert(fundingStreamStartHeight <= nHeight);
+
         int firstHalvingHeight = HalvingHeight(fundingStreamStartHeight, 1);
 
         // If the start height of the funding period is not aligned to a multiple of the
@@ -134,7 +136,7 @@ namespace Consensus {
         const Consensus::Params& params,
         const int startHeight,
         const int endHeight,
-        const std::vector<FundingStreamAddress>& addresses
+        const std::vector<FundingStreamRecipient>& recipients
     ) {
         if (!params.NetworkUpgradeActive(startHeight, Consensus::UPGRADE_CANOPY)) {
             return FundingStreamError::CANOPY_NOT_ACTIVE;
@@ -144,11 +146,21 @@ namespace Consensus {
             return FundingStreamError::ILLEGAL_RANGE;
         }
 
-        if (params.FundingPeriodIndex(startHeight, endHeight - 1) >= addresses.size()) {
+        const auto expectedRecipients = params.FundingPeriodIndex(startHeight, endHeight - 1) + 1;
+        if (expectedRecipients > recipients.size()) {
             return FundingStreamError::INSUFFICIENT_ADDRESSES;
         }
 
-        return FundingStream(startHeight, endHeight, addresses);
+        // Lockbox output periods may not start before NU6
+        if (!params.NetworkUpgradeActive(startHeight, Consensus::UPGRADE_NU6)) {
+            for (auto recipient : recipients) {
+                if (std::holds_alternative<Consensus::Lockbox>(recipient)) {
+                    return FundingStreamError::NU6_NOT_ACTIVE;
+                }
+            }
+        }
+
+        return FundingStream(startHeight, endHeight, recipients);
     };
 
     class GetFundingStreamOrThrow {
@@ -165,6 +177,8 @@ namespace Consensus {
                     throw std::runtime_error("Illegal start/end height combination for funding stream.");
                 case FundingStreamError::INSUFFICIENT_ADDRESSES:
                     throw std::runtime_error("Insufficient payment addresses to fully exhaust funding stream.");
+                case FundingStreamError::NU6_NOT_ACTIVE:
+                    throw std::runtime_error("NU6 network upgrade not active at lockbox period start height.");
                 default:
                     throw std::runtime_error("Unrecognized error validating funding stream.");
             };
@@ -181,7 +195,7 @@ namespace Consensus {
         KeyIO keyIO(keyConstants);
 
         // Parse the address strings into concrete types.
-        std::vector<FundingStreamAddress> addresses;
+        std::vector<FundingStreamRecipient> addresses;
         for (const auto& strAddr : strAddresses) {
             auto addr = keyIO.DecodePaymentAddress(strAddr);
             if (!addr.has_value()) {
@@ -218,12 +232,29 @@ namespace Consensus {
         vFundingStreams[idx] = FundingStream::ParseFundingStream(*this, keyConstants, startHeight, endHeight, strAddresses);
     };
 
-    FundingStreamAddress FundingStream::RecipientAddress(const Consensus::Params& params, int nHeight) const
+    void Params::AddZIP207LockboxStream(
+        const KeyConstants& keyConstants,
+        FundingStreamIndex idx,
+        int startHeight,
+        int endHeight)
+    {
+        auto intervalCount = FundingPeriodIndex(startHeight, endHeight - 1) + 1;
+        std::vector<FundingStreamRecipient> recipients(intervalCount, Lockbox());
+        auto validationResult = FundingStream::ValidateFundingStream(
+                *this,
+                startHeight,
+                endHeight,
+                recipients);
+        vFundingStreams[idx] = std::visit(GetFundingStreamOrThrow(), validationResult);
+    };
+
+
+    FundingStreamRecipient FundingStream::Recipient(const Consensus::Params& params, int nHeight) const
     {
         auto addressIndex = params.FundingPeriodIndex(startHeight, nHeight);
 
-        assert(addressIndex >= 0 && addressIndex < addresses.size());
-        return addresses[addressIndex];
+        assert(addressIndex >= 0 && addressIndex < recipients.size());
+        return recipients[addressIndex];
     };
 
     int64_t Params::PoWTargetSpacing(int nHeight) const {

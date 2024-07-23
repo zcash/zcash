@@ -850,7 +850,7 @@ bool ContextualCheckTransaction(
     auto dosLevelPotentiallyRelaxing = isMined ? DOS_LEVEL_BLOCK : (
         isInitBlockDownload(chainparams.GetConsensus()) ? 0 : DOS_LEVEL_MEMPOOL);
 
-    auto consensus = chainparams.GetConsensus();
+    auto& consensus = chainparams.GetConsensus();
     auto consensusBranchId = CurrentEpochBranchId(nHeight, consensus);
 
     bool overwinterActive = consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_OVERWINTER);
@@ -859,13 +859,15 @@ bool ContextualCheckTransaction(
     bool heartwoodActive = consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_HEARTWOOD);
     bool canopyActive = consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY);
     bool nu5Active = consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU5);
+    bool nu6Active = consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU6);
     bool futureActive = consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_ZFUTURE);
 
     assert(!saplingActive || overwinterActive); // Sapling cannot be active unless Overwinter is
     assert(!heartwoodActive || saplingActive);  // Heartwood cannot be active unless Sapling is
     assert(!canopyActive || heartwoodActive);   // Canopy cannot be active unless Heartwood is
     assert(!nu5Active || canopyActive);         // NU5 cannot be active unless Canopy is
-    assert(!futureActive || nu5Active);         // ZFUTURE must include consensus rules for all supported network upgrades.
+    assert(!nu6Active || nu5Active);            // NU6 cannot be active unless NU5 is
+    assert(!futureActive || nu6Active);         // ZFUTURE must include consensus rules for all supported network upgrades.
 
     auto& orchard_bundle = tx.GetOrchardBundle();
 
@@ -1068,6 +1070,15 @@ bool ContextualCheckTransaction(
                 for (auto it = fundingStreamElements.begin(); it != fundingStreamElements.end(); ++it) {
                     const CScript* taddr = std::get_if<CScript>(&(it->first));
                     if (taddr && output.scriptPubKey == *taddr && output.nValue == it->second) {
+                        fundingStreamElements.erase(it);
+                        break;
+                    }
+                }
+            }
+
+            if (nu6Active) {
+                for (auto it = fundingStreamElements.begin(); it != fundingStreamElements.end(); ++it) {
+                    if (std::holds_alternative<Consensus::Lockbox>(it->first)) {
                         fundingStreamElements.erase(it);
                         break;
                     }
