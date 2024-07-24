@@ -3183,7 +3183,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     auto consensusBranchId = CurrentEpochBranchId(pindex->nHeight, consensusParams);
     auto prevConsensusBranchId = CurrentEpochBranchId(pindex->nHeight - 1, consensusParams);
 
-    CAmount chainSupplyDelta = 0;
+    // Initialize the chain supply delta to the value added to the lockbox for the block,
+    // as previously computed in `ReceivedBlockTransactions`
+    CAmount chainSupplyDelta = pindex->nLockboxValue;
     CAmount transparentValueDelta = 0;
     size_t total_sapling_tx = 0;
     size_t total_orchard_tx = 0;
@@ -3559,13 +3561,15 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             pindex->nChainTransparentValue.has_value() &&
             pindex->nChainSproutValue.has_value() &&
             pindex->nChainSaplingValue.has_value() &&
-            pindex->nChainOrchardValue.has_value())
+            pindex->nChainOrchardValue.has_value() &&
+            pindex->nChainLockboxValue.has_value())
     {
         auto expectedChainSupply =
             pindex->nChainTransparentValue.value() +
             pindex->nChainSproutValue.value() +
             pindex->nChainSaplingValue.value() +
-            pindex->nChainOrchardValue.value();
+            pindex->nChainOrchardValue.value() +
+            pindex->nChainLockboxValue.value();
         if (expectedChainSupply != pindex->nChainTotalSupply.value()) {
             // This may be added as a rule to ZIP 209 and return a failure in a future soft-fork.
             error("ConnectBlock(): chain total supply (%d) does not match sum of pool balances (%d) at height %d",
@@ -4597,6 +4601,15 @@ bool ReceivedBlockTransactions(
     CAmount sproutValue = 0;
     CAmount saplingValue = 0;
     CAmount orchardValue = 0;
+
+    // Each lockbox funding stream produces a positive change to the lockbox value.
+    CAmount lockboxValue = 0;
+    for (auto elem : chainparams.GetConsensus().GetActiveFundingStreamElements(pindexNew->nHeight)) {
+        if (std::holds_alternative<Consensus::Lockbox>(elem.first)) {
+            lockboxValue += elem.second;
+        }
+    }
+
     for (auto tx : block.vtx) {
         // For the genesis block only, compute the chain supply delta and the transparent
         // output total.
@@ -4641,6 +4654,8 @@ bool ReceivedBlockTransactions(
     pindexNew->nChainSaplingValue = std::nullopt;
     pindexNew->nOrchardValue = orchardValue;
     pindexNew->nChainOrchardValue = std::nullopt;
+    pindexNew->nLockboxValue = lockboxValue;
+    pindexNew->nChainLockboxValue = std::nullopt;
 
     pindexNew->nFile = pos.nFile;
     pindexNew->nDataPos = pos.nPos;
@@ -4686,12 +4701,20 @@ bool ReceivedBlockTransactions(
                 } else {
                     pindex->nChainOrchardValue = std::nullopt;
                 }
+
+                // Calculate the block's effect on the Lockbox balance
+                if (pindex->pprev->nChainLockboxValue) {
+                    pindex->nChainLockboxValue = *pindex->pprev->nChainLockboxValue + pindex->nLockboxValue;
+                } else {
+                    pindex->nChainLockboxValue = std::nullopt;
+                }
             } else {
                 pindex->nChainTotalSupply = pindex->nChainSupplyDelta;
                 pindex->nChainTransparentValue = pindex->nTransparentValue;
                 pindex->nChainSproutValue = pindex->nSproutValue;
                 pindex->nChainSaplingValue = pindex->nSaplingValue;
                 pindex->nChainOrchardValue = pindex->nOrchardValue;
+                pindex->nChainLockboxValue = pindex->nLockboxValue;
             }
 
             // Fall back to hardcoded Sprout value pool balance
@@ -5482,6 +5505,12 @@ bool static LoadBlockIndexDB(const CChainParams& chainparams)
                     } else {
                         pindex->nChainOrchardValue = std::nullopt;
                     }
+
+                    if (pindex->pprev->nChainLockboxValue) {
+                        pindex->nChainLockboxValue = *pindex->pprev->nChainLockboxValue + pindex->nLockboxValue;
+                    } else {
+                        pindex->nChainLockboxValue = std::nullopt;
+                    }
                 } else {
                     pindex->nChainTx = 0;
                     pindex->nChainTotalSupply = std::nullopt;
@@ -5489,6 +5518,7 @@ bool static LoadBlockIndexDB(const CChainParams& chainparams)
                     pindex->nChainSproutValue = std::nullopt;
                     pindex->nChainSaplingValue = std::nullopt;
                     pindex->nChainOrchardValue = std::nullopt;
+                    pindex->nChainLockboxValue = std::nullopt;
                     mapBlocksUnlinked.insert(std::make_pair(pindex->pprev, pindex));
                 }
             } else {
@@ -5498,6 +5528,7 @@ bool static LoadBlockIndexDB(const CChainParams& chainparams)
                 pindex->nChainSproutValue = pindex->nSproutValue;
                 pindex->nChainSaplingValue = pindex->nSaplingValue;
                 pindex->nChainOrchardValue = pindex->nOrchardValue;
+                pindex->nChainLockboxValue = pindex->nLockboxValue;
             }
 
             // Fall back to hardcoded Sprout value pool balance

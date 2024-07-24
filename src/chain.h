@@ -24,6 +24,7 @@ static const int SAPLING_VALUE_VERSION = 1010100;
 static const int CHAIN_HISTORY_ROOT_VERSION = 2010200;
 static const int NU5_DATA_VERSION = 4050000;
 static const int TRANSPARENT_VALUE_VERSION = 5040026;
+static const int NU6_DATA_VERSION = 5100025;
 
 /**
  * Maximum amount of time that a block timestamp is allowed to be ahead of the
@@ -307,6 +308,17 @@ public:
     //! Will be std::nullopt if and only if nChainTx is zero.
     std::optional<CAmount> nChainOrchardValue;
 
+    //! Change in value held by the development fund lockbox over this block.
+    //!
+    //! Not a std::optional because this is added before NU6 activation, so we can
+    //! rely on the invariant that every block before this was added had nLockboxValue = 0.
+    CAmount nLockboxValue;
+
+    //! (memory only) Total value held by the development fund lockbox up to
+    //! and including this block. Will be std::nullopt if and only if nChainTx
+    //! is zero.
+    std::optional<CAmount> nChainLockboxValue;
+
     //! Root of the Sapling commitment tree as of the end of this block.
     //!
     //! - For blocks prior to (not including) the Heartwood activation block, this is
@@ -377,6 +389,9 @@ public:
         nChainTotalSupply = std::nullopt;
         nTransparentValue = std::nullopt;
         nChainTransparentValue = std::nullopt;
+        nLockboxValue = 0;
+        nChainLockboxValue = std::nullopt;
+
         nSproutValue = std::nullopt;
         nChainSproutValue = std::nullopt;
         nSaplingValue = 0;
@@ -611,6 +626,13 @@ public:
             READWRITE(hashAuthDataRoot);
             READWRITE(hashFinalOrchardRoot);
             READWRITE(nOrchardValue);
+        }
+
+        // Only read/write NU6 data if the client version used to create this
+        // index was storing them. For block indices written before the client
+        // was NU6-aware, these are always null / zero.
+        if ((s.GetType() & SER_DISK) && (nVersion >= NU6_DATA_VERSION)) {
+            READWRITE(nLockboxValue);
         }
 
         // If you have just added new serialized fields above, remember to add
