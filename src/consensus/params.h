@@ -347,6 +347,11 @@ struct Params {
     std::vector<FSInfo> GetActiveFundingStreams(int nHeight) const;
 
     /**
+     * Returns the vector of active funding stream elements as of the given height.
+     */
+    std::set<FundingStreamElement> GetActiveFundingStreamElements(int nHeight) const;
+
+    /**
      * Returns the active funding stream elements at the given height, with
      * values determined based upon the specified block subsidy amount. This
      * should always be set to the value returned by `GetBlockSubsidy` for the

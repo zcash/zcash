@@ -974,9 +974,7 @@ bool ContextualCheckTransaction(
     // ZIP 207 consensus funding streams active at the current block height. To avoid
     // double-decrypting, we detect any shielded funding streams during the Heartwood
     // consensus check. If Canopy is not yet active, fundingStreamElements will be empty.
-    std::set<Consensus::FundingStreamElement> fundingStreamElements = consensus.GetActiveFundingStreamElements(
-        nHeight,
-        consensus.GetBlockSubsidy(nHeight));
+    auto fundingStreamElements = consensus.GetActiveFundingStreamElements(nHeight);
 
     // Rules that apply to Heartwood and later:
     if (heartwoodActive) {

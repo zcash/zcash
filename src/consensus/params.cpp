@@ -338,6 +338,11 @@ namespace Consensus {
         return activeStreams;
     };
 
+    std::set<FundingStreamElement> Params::GetActiveFundingStreamElements(int nHeight) const
+    {
+        return GetActiveFundingStreamElements(nHeight, GetBlockSubsidy(nHeight));
+    }
+
     std::set<FundingStreamElement> Params::GetActiveFundingStreamElements(
         int nHeight,
         CAmount blockSubsidy) const
