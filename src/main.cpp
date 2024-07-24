@@ -2995,6 +2995,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 {
     AssertLockHeld(cs_main);
 
+    auto consensusParams = chainparams.GetConsensus();
+
     bool fCheckAuthDataRoot = true;
     bool fExpensiveChecks = true;
 
@@ -3050,7 +3052,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
     // Special case for the genesis block, skipping connection of its transactions
     // (its coinbase is unspendable)
-    if (block.GetHash() == chainparams.GetConsensus().hashGenesisBlock) {
+    if (block.GetHash() == consensusParams.hashGenesisBlock) {
         if (!fJustCheck) {
             view.SetBestBlock(pindex->GetBlockHash());
             // Before the genesis block, there was an empty tree
@@ -3155,7 +3157,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     assert(view.GetSaplingAnchorAt(view.GetBestAnchor(SAPLING), sapling_tree));
 
     OrchardMerkleFrontier orchard_tree;
-    if (pindex->pprev && chainparams.GetConsensus().NetworkUpgradeActive(pindex->pprev->nHeight, Consensus::UPGRADE_NU5)) {
+    if (pindex->pprev && consensusParams.NetworkUpgradeActive(pindex->pprev->nHeight, Consensus::UPGRADE_NU5)) {
         // Verify that the view's current state corresponds to the previous block.
         assert(pindex->pprev->hashFinalOrchardRoot == view.GetBestAnchor(ORCHARD));
         // We only call ConnectBlock() on top of the active chain's tip.
@@ -3180,8 +3182,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     bool fUpdateOrchardSubtrees = fExperimentalLightWalletd && (view.CurrentSubtreeIndex(ORCHARD) == orchard_tree.current_subtree_index());
 
     // Grab the consensus branch ID for this block and its parent
-    auto consensusBranchId = CurrentEpochBranchId(pindex->nHeight, chainparams.GetConsensus());
-    auto prevConsensusBranchId = CurrentEpochBranchId(pindex->nHeight - 1, chainparams.GetConsensus());
+    auto consensusBranchId = CurrentEpochBranchId(pindex->nHeight, consensusParams);
+    auto prevConsensusBranchId = CurrentEpochBranchId(pindex->nHeight - 1, consensusParams);
 
     CAmount chainSupplyDelta = 0;
     CAmount transparentValueDelta = 0;
@@ -3284,7 +3286,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             chainSupplyDelta -= txFee;
 
             std::vector<CScriptCheck> vChecks;
-            if (!ContextualCheckInputs(tx, state, view, fExpensiveChecks, flags, fCacheResults, txdata.back(), chainparams.GetConsensus(), consensusBranchId, nScriptCheckThreads ? &vChecks : NULL))
+            if (!ContextualCheckInputs(tx, state, view, fExpensiveChecks, flags, fCacheResults, txdata.back(), consensusParams, consensusBranchId, nScriptCheckThreads ? &vChecks : NULL))
                 return error("ConnectBlock(): CheckInputs on %s failed with %s",
                     tx.GetHash().ToString(), FormatStateMessage(state));
             control.Add(vChecks);
@@ -3298,9 +3300,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             view,
             saplingAuth,
             orchardAuth,
-            chainparams.GetConsensus(),
+            consensusParams,
             consensusBranchId,
-            chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5),
+            consensusParams.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5),
             true))
         {
             return error(
@@ -3406,10 +3408,10 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     // We only derive them if they will be used for this block.
     std::optional<uint256> hashAuthDataRoot;
     std::optional<uint256> hashChainHistoryRoot;
-    if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
+    if (consensusParams.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
         hashAuthDataRoot = block.BuildAuthDataMerkleTree();
     }
-    if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
+    if (consensusParams.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
         hashChainHistoryRoot = view.GetHistoryRoot(prevConsensusBranchId);
     }
 
@@ -3446,7 +3448,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         //   set the correct value of hashFinalSaplingRoot; in particular,
         //   blocks that are never passed to ConnectBlock() (and thus never on
         //   the main chain) will stay with hashFinalSaplingRoot set to null.
-        if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
+        if (consensusParams.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
             pindex->hashFinalSaplingRoot = sapling_tree.root();
         }
 
@@ -3459,7 +3461,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         //   hashChainHistoryRoot; in particular, blocks that are never passed
         //   to ConnectBlock() (and thus never on the main chain) will stay with
         //   these set to null.
-        if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
+        if (consensusParams.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
             pindex->hashAuthDataRoot = hashAuthDataRoot.value();
             pindex->hashFinalOrchardRoot = orchard_tree.root(),
             pindex->hashChainHistoryRoot = hashChainHistoryRoot.value();
@@ -3467,7 +3469,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     }
     blockundo.old_sprout_tree_root = old_sprout_tree_root;
 
-    if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
+    if (consensusParams.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
         if (fCheckAuthDataRoot) {
             // If NU5 is active, block.hashBlockCommitments must be the top digest
             // of the ZIP 244 block commitments linked list.
@@ -3481,7 +3483,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                     REJECT_INVALID, "bad-block-commitments-hash");
             }
         }
-    } else if (IsActivationHeight(pindex->nHeight, chainparams.GetConsensus(), Consensus::UPGRADE_HEARTWOOD)) {
+    } else if (IsActivationHeight(pindex->nHeight, consensusParams, Consensus::UPGRADE_HEARTWOOD)) {
         // In the block that activates ZIP 221, block.hashBlockCommitments MUST
         // be set to all zero bytes.
         if (!block.hashBlockCommitments.IsNull()) {
@@ -3489,7 +3491,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                 error("ConnectBlock(): block's hashBlockCommitments is incorrect (should be null)"),
                 REJECT_INVALID, "bad-heartwood-root-in-block");
         }
-    } else if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
+    } else if (consensusParams.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
         // If Heartwood is active, block.hashBlockCommitments must be the same as
         // the root of the history tree for the previous block. We only store
         // one tree per epoch, so we have two possible cases:
@@ -3503,7 +3505,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                 error("ConnectBlock(): block's hashBlockCommitments is incorrect (should be history tree root)"),
                 REJECT_INVALID, "bad-heartwood-root-in-block");
         }
-    } else if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_SAPLING)) {
+    } else if (consensusParams.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_SAPLING)) {
         // If Sapling is active, block.hashBlockCommitments must be the
         // same as the root of the Sapling tree
         if (block.hashBlockCommitments != sapling_tree.root()) {
@@ -3514,9 +3516,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     }
 
     // History read/write is started with Heartwood update.
-    if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
+    if (consensusParams.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
         HistoryNode historyNode;
-        if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
+        if (consensusParams.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
             historyNode = libzcash::NewV2Leaf(
                 block.GetHash(),
                 block.nTime,
@@ -3546,7 +3548,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     int64_t nTime1 = GetTimeMicros(); nTimeConnect += nTime1 - nTimeStart;
     LogPrint("bench", "      - Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs]\n", (unsigned)block.vtx.size(), 0.001 * (nTime1 - nTimeStart), 0.001 * (nTime1 - nTimeStart) / block.vtx.size(), nInputs <= 1 ? 0 : 0.001 * (nTime1 - nTimeStart) / (nInputs-1), nTimeConnect * 0.000001);
 
-    CAmount blockReward = nFees + chainparams.GetConsensus().GetBlockSubsidy(pindex->nHeight);
+    CAmount blockReward = nFees + consensusParams.GetBlockSubsidy(pindex->nHeight);
     if (block.vtx[0].GetValueOut() > blockReward)
         return state.DoS(100,
                          error("ConnectBlock(): coinbase pays too much (actual=%d vs limit=%d)",
@@ -3614,9 +3616,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         // Move this if BLOCK_VALID_CONSENSUS is ever altered.
         static_assert(BLOCK_VALID_CONSENSUS == BLOCK_VALID_SCRIPTS,
             "nCachedBranchId must be set after all consensus rules have been validated.");
-        if (IsActivationHeightForAnyUpgrade(pindex->nHeight, chainparams.GetConsensus())) {
+        if (IsActivationHeightForAnyUpgrade(pindex->nHeight, consensusParams)) {
             pindex->nStatus |= BLOCK_ACTIVATES_UPGRADE;
-            pindex->nCachedBranchId = CurrentEpochBranchId(pindex->nHeight, chainparams.GetConsensus());
+            pindex->nCachedBranchId = CurrentEpochBranchId(pindex->nHeight, consensusParams);
         } else if (pindex->pprev) {
             pindex->nCachedBranchId = pindex->pprev->nCachedBranchId;
         }
