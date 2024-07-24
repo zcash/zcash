@@ -758,7 +758,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
             auto nextHeight = pindexPrev->nHeight+1;
             bool canopyActive = consensus.NetworkUpgradeActive(nextHeight, Consensus::UPGRADE_CANOPY);
             if (!canopyActive && nextHeight > 0 && nextHeight <= consensus.GetLastFoundersRewardBlockHeight(nextHeight)) {
-                CAmount nBlockSubsidy = GetBlockSubsidy(nextHeight, consensus);
+                CAmount nBlockSubsidy = consensus.GetBlockSubsidy(nextHeight);
                 entry.pushKV("foundersreward", nBlockSubsidy / 5);
             }
             entry.pushKV("required", true);
@@ -955,7 +955,7 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
 
     const Consensus::Params& consensus = Params().GetConsensus();
-    CAmount nBlockSubsidy = GetBlockSubsidy(nHeight, consensus);
+    CAmount nBlockSubsidy = consensus.GetBlockSubsidy(nHeight);
     CAmount nFoundersReward = 0;
     CAmount nFundingStreamsTotal = 0;
     CAmount nLockboxTotal = 0;

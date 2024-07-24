@@ -8,6 +8,7 @@
 #define BITCOIN_CONSENSUS_PARAMS_H
 
 #include <script/script.h>
+#include "amount.h"
 #include "uint256.h"
 #include "key_constants.h"
 #include <zcash/address/sapling.hpp>
@@ -330,6 +331,11 @@ struct Params {
         FundingStreamIndex idx,
         int startHeight,
         int endHeight);
+
+    /**
+     * Returns the total block subsidy as of the given block height
+     */
+    CAmount GetBlockSubsidy(int nHeight) const;
 
     /**
      * A set of features that have been explicitly force-enabled

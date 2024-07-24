@@ -114,7 +114,7 @@ public:
     }
 
     CAmount SetFoundersRewardAndGetMinerValue(sapling::Builder& saplingBuilder) const {
-        auto block_subsidy = GetBlockSubsidy(nHeight, chainparams.GetConsensus());
+        auto block_subsidy = chainparams.GetConsensus().GetBlockSubsidy(nHeight);
         auto miner_reward = block_subsidy; // founders' reward or funding stream amounts will be subtracted below
 
         if (nHeight > 0) {
