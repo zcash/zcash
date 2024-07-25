@@ -99,7 +99,7 @@ def check_security_hardening():
     else:
         # Equivalent to make check-security (this is just for CI purpose)
         bin_programs = ['src/zcashd', 'src/zcash-cli', 'src/zcash-tx', 'src/bench/bench_bitcoin']  # Replace with actual values
-        bin_scripts = ['src/zcash-inspect', 'src/zcashd-wallet-tool']   # Replace with actual values
+        bin_scripts = ['src/zcashd-wallet-tool']   # Replace with actual values
 
         print(f"Checking binary security of {bin_programs + bin_scripts}...")
 
