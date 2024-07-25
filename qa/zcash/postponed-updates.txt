@@ -12,10 +12,6 @@ native_b2 1.85.0 2024-09-15
 
 # Clang and Rust are currently pinned to LLVM 18
 
-# fmt 11.0.0 changed where its version string is, CCache needs a patch.
-native_fmt 11.0.0 2024-09-01
-native_fmt 11.0.1 2024-09-01
-
 # We follow upstream Bitcoin Core's LevelDB updates
 leveldb 1.23 2024-09-15
 
