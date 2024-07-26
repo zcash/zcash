@@ -1259,6 +1259,7 @@ pub extern "C" fn orchard_wallet_gc_note_commitment_tree(wallet: *mut Wallet) {
 
 const NOTE_STATE_V1: u8 = 1;
 
+#[allow(clippy::needless_borrows_for_generic_args)]
 #[no_mangle]
 pub extern "C" fn orchard_wallet_write_note_commitment_tree(
     wallet: *const Wallet,
@@ -1307,6 +1308,7 @@ pub extern "C" fn orchard_wallet_write_note_commitment_tree(
     }
 }
 
+#[allow(clippy::needless_borrows_for_generic_args)]
 #[no_mangle]
 pub extern "C" fn orchard_wallet_load_note_commitment_tree(
     wallet: *mut Wallet,
