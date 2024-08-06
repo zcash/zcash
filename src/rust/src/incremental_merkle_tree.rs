@@ -28,6 +28,7 @@ pub fn read_auth_fragment_v1<H: HashSer, R: Read>(
     Ok((position, alts_observed, values))
 }
 
+#[allow(clippy::needless_borrows_for_generic_args)]
 pub fn read_bridge_v1<H: HashSer + Ord + Clone, R: Read>(
     mut reader: R,
 ) -> io::Result<MerkleBridge<H>> {
@@ -93,6 +94,7 @@ pub fn read_bridge_v1<H: HashSer + Ord + Clone, R: Read>(
     ))
 }
 
+#[allow(clippy::needless_borrows_for_generic_args)]
 pub fn read_bridge_v2<H: HashSer + Ord + Clone, R: Read>(
     mut reader: R,
 ) -> io::Result<MerkleBridge<H>> {
@@ -138,6 +140,7 @@ pub fn read_bridge<H: HashSer + Ord + Clone, R: Read>(
     }
 }
 
+#[allow(clippy::needless_borrows_for_generic_args)]
 pub fn write_bridge_v2<H: HashSer + Ord, W: Write>(
     mut writer: W,
     bridge: &MerkleBridge<H>,
@@ -181,6 +184,7 @@ pub fn write_bridge<H: HashSer + Ord, W: Write>(
 /// ordinary circumstances, the checkpoint ID will be the block height at which the checkpoint was
 /// created, but since we don't have any source for this information, we require the caller to
 /// provide it; any unique identifier will do so long as the identifiers are ordered correctly.
+#[allow(clippy::needless_borrows_for_generic_args)]
 pub fn read_checkpoint_v2<R: Read>(
     mut reader: R,
     checkpoint_id: u32,
@@ -248,6 +252,7 @@ pub fn write_checkpoint_v3<W: Write>(
 /// such data the returned identifiers will *not* correspond to block heights. As such, checkpoint
 /// ids should always be treated as opaque, totally ordered identifiers without additional
 /// semantics.
+#[allow(clippy::needless_borrows_for_generic_args)]
 #[allow(clippy::redundant_closure)]
 pub fn read_tree<H: Hashable + HashSer + Ord + Clone, const DEPTH: u8, R: Read>(
     mut reader: R,
@@ -306,6 +311,7 @@ pub fn read_tree<H: Hashable + HashSer + Ord + Clone, const DEPTH: u8, R: Read>(
     })
 }
 
+#[allow(clippy::needless_borrows_for_generic_args)]
 pub fn write_tree<H: Hashable + HashSer + Ord, const DEPTH: u8, W: Write>(
     mut writer: W,
     tree: &BridgeTree<H, u32, DEPTH>,

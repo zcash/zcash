@@ -490,10 +490,6 @@ criteria = "safe-to-deploy"
 version = "0.3.0"
 criteria = "safe-to-deploy"
 
-[[exemptions.ryu]]
-version = "1.0.11"
-criteria = "safe-to-deploy"
-
 [[exemptions.secp256k1]]
 version = "0.26.0"
 criteria = "safe-to-deploy"
@@ -504,10 +500,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.secrecy]]
 version = "0.8.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.serde_json]]
-version = "1.0.81"
 criteria = "safe-to-deploy"
 
 [[exemptions.sha2]]

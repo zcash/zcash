@@ -36,9 +36,6 @@ LIBSECP256K1=secp256k1/libsecp256k1.la
 LIBUNIVALUE=univalue/libunivalue.la
 LIBZCASH=libzcash.a
 
-INSPECT_TOOL_BIN=zcash-inspect$(EXEEXT)
-INSPECT_TOOL_BUILD=$(top_builddir)/target/$(RUST_TARGET)/release/zcash-inspect$(EXEEXT)
-
 WALLET_TOOL_BIN=zcashd-wallet-tool$(EXEEXT)
 WALLET_TOOL_BUILD=$(top_builddir)/target/$(RUST_TARGET)/release/zcashd-wallet-tool$(EXEEXT)
 
@@ -158,9 +155,6 @@ cargo-build-lib: cargo-build
 
 cargo-build-bins: cargo-build
 
-$(INSPECT_TOOL_BIN): cargo-build-bins
-	$(AM_V_at)cp $(INSPECT_TOOL_BUILD) $@
-
 $(WALLET_TOOL_BIN): cargo-build-bins
 	$(AM_V_at)cp $(WALLET_TOOL_BUILD) $@
 
@@ -210,7 +204,7 @@ endif
 
 if BUILD_BITCOIN_UTILS
   bin_PROGRAMS += zcash-cli zcash-tx
-  bin_SCRIPTS += $(INSPECT_TOOL_BIN) $(WALLET_TOOL_BIN)
+  bin_SCRIPTS += $(WALLET_TOOL_BIN)
 endif
 
 LIBZCASH_H = \

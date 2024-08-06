@@ -277,7 +277,6 @@ jobs:
               ${{ format('./src/zcashd{0}', matrix.file_ext) }}
               ${{ format('./src/zcash-cli{0}', matrix.file_ext) }}
               ${{ format('./src/zcashd-wallet-tool{0}', matrix.file_ext) }}
-              ${{ format('./src/zcash-inspect{0}', matrix.file_ext) }}
               ${{ format('./src/zcash-tx{0}', matrix.file_ext) }}
               ${{ format('./src/test/test_bitcoin{0}', matrix.file_ext) }}
               ${{ format('./src/zcash-gtest{0}', matrix.file_ext) }}
