@@ -502,7 +502,7 @@ Node relay options:
 
   -txunpaidactionlimit=<n>
        Transactions with more than this number of unpaid actions will not be
-       accepted to the mempool or relayed (default: 50)
+       accepted to the mempool or relayed (default: 0)
 
 Block creation options:
 
@@ -511,7 +511,7 @@ Block creation options:
 
   -blockunpaidactionlimit=<n>
        Set the limit on unpaid actions that will be accepted in a block for
-       transactions paying less than the ZIP 317 fee (default: 50)
+       transactions paying less than the ZIP 317 fee (default: 0)
 
 |  -blockversion=<n>
 |       Override block version to test forking scenarios (default: 4)

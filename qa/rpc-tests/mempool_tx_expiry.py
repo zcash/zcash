@@ -94,10 +94,9 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
 
         # Create transactions
         blockheight = self.nodes[0].getblockchaininfo()['blocks']
-        zsendamount = Decimal('1.0') - conventional_fee(2)
-        recipients = []
-        recipients.append({"address": z_bob, "amount": zsendamount})
-        myopid = self.nodes[0].z_sendmany(z_alice, recipients, 1)
+        fee = conventional_fee(2)
+        recipients = [{"address": z_bob, "amount": Decimal('1.0') - fee}]
+        myopid = self.nodes[0].z_sendmany(z_alice, recipients, 1, fee)
         persist_shielded = wait_and_assert_operationid_status(self.nodes[0], myopid)
         persist_transparent = self.nodes[0].sendtoaddress(bob, 0.01)
         # Verify transparent transaction is version 4 intended for Sapling branch

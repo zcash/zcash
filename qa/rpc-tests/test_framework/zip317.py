@@ -26,7 +26,7 @@ WEIGHT_RATIO_CAP = 4
 
 # Default limit on the number of unpaid actions in a block. See
 # https://zips.z.cash/zip-0317#recommended-algorithm-for-block-template-construction
-DEFAULT_BLOCK_UNPAID_ACTION_LIMIT = 50
+DEFAULT_BLOCK_UNPAID_ACTION_LIMIT = 0
 
 # The zcashd RPC sentinel value to indicate the conventional_fee when a positional argument is
 # required.

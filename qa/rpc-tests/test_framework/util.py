@@ -31,7 +31,9 @@ from .authproxy import AuthServiceProxy, JSONRPCException
 
 ZCASHD_BINARY = os.path.join('src', 'zcashd')
 
+# TODO remove
 LEGACY_DEFAULT_FEE = Decimal('0.00001')
+MARGINAL_FEE_ZEC = Decimal('0.00005')
 
 COVERAGE_DIR = None
 PRE_BLOSSOM_BLOCK_TARGET_SPACING = 150
