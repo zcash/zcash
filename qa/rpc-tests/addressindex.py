@@ -32,6 +32,8 @@ from test_framework.script import (
     OP_DROP,
 )
 
+from test_framework.zip317 import MARGINAL_FEE
+
 from test_framework.mininode import (
     COIN,
     CTransaction,
@@ -374,7 +376,7 @@ class AddressIndexTest(BitcoinTestFramework):
         tx.vout = [
             CTxOut(1 * COIN, scriptPubKey),
             CTxOut(2 * COIN, scriptPubKey),
-            CTxOut(7 * COIN, scriptUnknown),
+            CTxOut(7 * COIN - 3 * MARGINAL_FEE, scriptUnknown),
         ]
         tx = self.nodes[0].signrawtransaction(hexlify(tx.serialize()).decode('utf-8'))
         txid = self.nodes[0].sendrawtransaction(tx['hex'], True)

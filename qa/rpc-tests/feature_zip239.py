@@ -14,6 +14,7 @@ from test_framework.mininode import (
     msg_mempool,
     msg_reject,
     uint256_from_str,
+    COIN,
 )
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
@@ -21,7 +22,6 @@ from test_framework.util import (
     HEARTWOOD_BRANCH_ID,
     CANOPY_BRANCH_ID,
     NU5_BRANCH_ID,
-    LEGACY_DEFAULT_FEE,
     assert_equal,
     assert_false,
     assert_true,
@@ -32,6 +32,8 @@ from test_framework.util import (
     start_nodes,
     wait_and_assert_operationid_status,
 )
+from test_framework.zip317 import MARGINAL_FEE
+
 from tx_expiry_helper import TestNode
 
 import os.path
@@ -201,7 +203,7 @@ class Zip239Test(BitcoinTestFramework):
         opid = self.nodes[0].z_sendmany(sproutzaddr, [{
             'address': node1_taddr,
             'amount': 1,
-        }], 1, LEGACY_DEFAULT_FEE, 'AllowRevealedRecipients')
+        }], 1, 3 * MARGINAL_FEE/COIN, 'AllowRevealedRecipients')
         v4_txid = uint256_from_str(hex_str_to_bytes(
             wait_and_assert_operationid_status(self.nodes[0], opid)
         )[::-1])
