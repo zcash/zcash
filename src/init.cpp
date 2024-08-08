@@ -1358,7 +1358,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             boost::split(vStreamAddrs, vStreamParams[3], boost::is_any_of(","));
 
             auto fs = Consensus::FundingStream::ParseFundingStream(
-                    chainparams.GetConsensus(), chainparams, nStartHeight, nEndHeight, vStreamAddrs);
+                    chainparams.GetConsensus(), chainparams,
+                    nStartHeight, nEndHeight, vStreamAddrs, true);
 
             UpdateFundingStreamParameters((Consensus::FundingStreamIndex) nFundingStreamId, fs);
         }

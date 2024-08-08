@@ -224,13 +224,19 @@ namespace Consensus {
         const KeyConstants& keyConstants,
         const int startHeight,
         const int endHeight,
-        const std::vector<std::string>& strAddresses)
+        const std::vector<std::string>& strAddresses,
+        const bool allowDeferredPool)
     {
         KeyIO keyIO(keyConstants);
 
         // Parse the address strings into concrete types.
-        std::vector<FundingStreamRecipient> addresses;
+        std::vector<FundingStreamRecipient> recipients;
         for (const auto& strAddr : strAddresses) {
+            if (allowDeferredPool && strAddr == "DEFERRED_POOL") {
+                recipients.push_back(Lockbox());
+                continue;
+            }
+
             auto addr = keyIO.DecodePaymentAddress(strAddr);
             if (!addr.has_value()) {
                 throw std::runtime_error("Funding stream address was not a valid " PACKAGE_NAME " address.");
@@ -238,13 +244,13 @@ namespace Consensus {
 
             examine(addr.value(), match {
                 [&](const CKeyID& keyId) {
-                    addresses.push_back(GetScriptForDestination(keyId));
+                    recipients.push_back(GetScriptForDestination(keyId));
                 },
                 [&](const CScriptID& scriptId) {
-                    addresses.push_back(GetScriptForDestination(scriptId));
+                    recipients.push_back(GetScriptForDestination(scriptId));
                 },
                 [&](const libzcash::SaplingPaymentAddress& zaddr) {
-                    addresses.push_back(zaddr);
+                    recipients.push_back(zaddr);
                 },
                 [&](const auto& zaddr) {
                     throw std::runtime_error("Funding stream address was not a valid transparent P2SH or Sapling address.");
@@ -252,7 +258,7 @@ namespace Consensus {
             });
         }
 
-        auto validationResult = FundingStream::ValidateFundingStream(params, startHeight, endHeight, addresses);
+        auto validationResult = FundingStream::ValidateFundingStream(params, startHeight, endHeight, recipients);
         return std::visit(GetFundingStreamOrThrow(), validationResult);
     };
 
@@ -263,7 +269,10 @@ namespace Consensus {
         int endHeight,
         const std::vector<std::string>& strAddresses)
     {
-        vFundingStreams[idx] = FundingStream::ParseFundingStream(*this, keyConstants, startHeight, endHeight, strAddresses);
+        vFundingStreams[idx] = FundingStream::ParseFundingStream(
+                *this, keyConstants,
+                startHeight, endHeight, strAddresses,
+                false);
     };
 
     void Params::AddZIP207LockboxStream(

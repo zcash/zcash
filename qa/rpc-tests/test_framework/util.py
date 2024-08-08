@@ -494,7 +494,7 @@ def start_node(i, dirname, extra_args=None, rpchost=None, timewait=None, binary=
     url = rpc_url(i, rpchost)
     wait_for_bitcoind_start(bitcoind_processes[i], url, i)
     if os.getenv("PYTHON_DEBUG", ""):
-        print("start_node: RPC successfully started")
+        print("start_node: RPC successfully started for node {} with pid {}".format(i, bitcoind_processes[i].pid))
     proxy = get_rpc_proxy(url, i, timeout=timewait)
 
     if COVERAGE_DIR:

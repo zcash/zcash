@@ -161,7 +161,8 @@ public:
         const KeyConstants& keyConstants,
         const int startHeight,
         const int endHeight,
-        const std::vector<std::string>& strAddresses);
+        const std::vector<std::string>& strAddresses,
+        const bool allowDeferredPool);
 
     int GetStartHeight() const { return startHeight; };
     int GetEndHeight() const { return endHeight; };

@@ -253,7 +253,8 @@ TEST(FundingStreamsRewardTest, Zip207Distribution) {
                 {
                     "t2UNzUUx8mWBCRYPRezvA363EYXyEpHokyi",
                     shieldedAddr,
-                }
+                },
+                false
             )
         );
     }
@@ -291,7 +292,8 @@ TEST(FundingStreamsRewardTest, ParseFundingStream) {
             {
                 "t2UNzUUx8mWBCRYPRezvA363EYXyEpHokyi",
                 shieldedAddr,
-            }
+            },
+            false
         ),
         std::runtime_error
     );
