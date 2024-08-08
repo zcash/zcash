@@ -1,0 +1,61 @@
+name: 'gcs-download-cloud-storage'
+description: 'Download files from a GCS bucket'
+inputs:
+  path-prefix:
+    description: 'The bucket path inside which the source path is located'
+    required: true
+  source:
+    description: 'The path to the files to download'
+    required: true
+  destination:
+    description: 'The directory into which the files will be downloaded'
+    required: true
+  remove-first-if-exists:
+    description: 'Deletes the given path first (if it exists) before downloading files'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Cloud SDK
+      if: runner.os != 'Linux'
+      uses: 'google-github-actions/setup-gcloud@v2'
+      with:
+        version: '>= 390.0.0' # To use gsutil with google-github-actions/auth
+
+    # Use $RUNNER_TEMP instead of ${{ runner.temp }} to prevent the Bash used by Windows
+    # runners from treating backslashes in Windows paths as escape characters.
+    # https://github.com/orgs/community/discussions/25910
+    - name: Create temporary directory
+      shell: bash
+      run: |
+        rm -rf $RUNNER_TEMP/gcs-download
+        mkdir $RUNNER_TEMP/gcs-download
+
+    - name: Download source
+      shell: bash
+      run: >
+        gcloud storage
+        cp -r
+        gs://gh-zcash/${{ inputs.path-prefix }}/${{ inputs.source }}
+        $RUNNER_TEMP/gcs-download
+
+    - name: Remove the specified path if it exists
+      if: inputs.remove-first-if-exists != ''
+      shell: bash
+      run: rm -rf ${{ inputs.remove-first-if-exists }}
+
+    - name: Ensure the target directory exists
+      shell: bash
+      run: mkdir -p ${{ inputs.destination }}
+
+    - name: Move source to target [Unix]
+      if: runner.os != 'Windows'
+      shell: bash
+      run: mv $RUNNER_TEMP/gcs-download/* ${{ inputs.destination }}
+
+    # PowerShell's mv aliases to its Move-Item cmdlet which has glob support (unlike mv in
+    # Git Bash for whatever reason).
+    - name: Move source to target [Windows]
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: mv ${{ runner.temp }}/gcs-download/* ${{ inputs.destination }}

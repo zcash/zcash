@@ -269,13 +269,18 @@ jobs:
           ./zcutil/build.sh
           -j"${{ steps.nproc.outputs.count }}"
 
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
       - name: depends-sources
         shell: bash
         run: |
           tar -czvf depends-sources.tar.gz depends/sources
 
-      - name: Upload depends/source artifacts
-        uses: actions/upload-artifact@v3
+      - name: Upload depends-sources artifact
+        uses: google-github-actions/upload-cloud-storage@v2
         with:
-          name: ${{ matrix.host }}-depends
           path: depends-sources.tar.gz
+          destination: gh-zcash/${{ github.run_id }}/${{ matrix.name }}
