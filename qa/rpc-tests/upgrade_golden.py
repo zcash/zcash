@@ -6,11 +6,11 @@
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
-    initialize_chain_clean, start_nodes, start_node, 
+    initialize_chain_clean, start_nodes, start_node,
     bitcoind_processes)
 from test_framework.util import (
     nuparams,
-    OVERWINTER_BRANCH_ID, SAPLING_BRANCH_ID, BLOSSOM_BRANCH_ID, HEARTWOOD_BRANCH_ID, CANOPY_BRANCH_ID, NU5_BRANCH_ID)
+    OVERWINTER_BRANCH_ID, SAPLING_BRANCH_ID, BLOSSOM_BRANCH_ID, HEARTWOOD_BRANCH_ID, CANOPY_BRANCH_ID, NU5_BRANCH_ID, NU6_BRANCH_ID)
 
 import shutil
 import logging
@@ -23,6 +23,7 @@ HAS_BLOSSOM   = HAS_SAPLING + [nuparams(BLOSSOM_BRANCH_ID, 30)]
 HAS_HEARTWOOD = HAS_BLOSSOM + [nuparams(HEARTWOOD_BRANCH_ID, 40)]
 HAS_CANOPY    = HAS_HEARTWOOD + [nuparams(CANOPY_BRANCH_ID, 50)]
 HAS_NU5       = HAS_CANOPY + [nuparams(NU5_BRANCH_ID, 60)]
+HAS_NU6       = HAS_NU5 + [nuparams(NU6_BRANCH_ID, 70)]
 
 class Upgrade():
     def __init__(self, h, p, a):
@@ -36,6 +37,7 @@ class UpgradeGoldenTest(BitcoinTestFramework):
                         , Upgrade(45, os.path.dirname(os.path.realpath(__file__))+"/golden/heartwood.tar.gz", HAS_HEARTWOOD)
                         , Upgrade(55, os.path.dirname(os.path.realpath(__file__))+"/golden/canopy.tar.gz", HAS_CANOPY)
                         , Upgrade(65, os.path.dirname(os.path.realpath(__file__))+"/golden/nu5.tar.gz", HAS_NU5)
+                        , Upgrade(75, os.path.dirname(os.path.realpath(__file__))+"/golden/nu6.tar.gz", HAS_NU6)
                         ]
 
         logging.info("Initializing test directory "+self.options.tmpdir)
@@ -52,7 +54,7 @@ class UpgradeGoldenTest(BitcoinTestFramework):
         self.nodes = start_nodes(len(self.upgrades) + 1, self.options.tmpdir, extra_args=upgrade_args)
 
     def capture_blocks(self, to_height, tgz_path):
-        # Generate past the upgrade activation height. 
+        # Generate past the upgrade activation height.
         self.nodes[0].generate(to_height)
         self.nodes[0].stop()
         bitcoind_processes[0].wait()

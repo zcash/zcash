@@ -6,8 +6,6 @@
 #define ZCASH_CONSENSUS_FUNDING_H
 
 #include <amount.h>
-#include <consensus/params.h>
-
 
 namespace Consensus
 {
@@ -22,23 +20,10 @@ struct FSInfo {
      * Returns the inherent value of this funding stream.
      *
      * For the active funding streams at a given height, use
-     * GetActiveFundingStreams() or GetActiveFundingStreamElements().
+     * Params::GetActiveFundingStreams() or Params::GetActiveFundingStreamElements().
      */
     CAmount Value(CAmount blockSubsidy) const;
 };
-
-extern const struct FSInfo FundingStreamInfo[];
-
-typedef std::pair<FundingStreamAddress, CAmount> FundingStreamElement;
-
-std::set<FundingStreamElement> GetActiveFundingStreamElements(
-    int nHeight,
-    CAmount blockSubsidy,
-    const Consensus::Params& params);
-
-std::vector<FSInfo> GetActiveFundingStreams(
-    int nHeight,
-    const Consensus::Params& params);
 
 } // namespace Consensus
 

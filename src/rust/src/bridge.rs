@@ -70,6 +70,7 @@ pub(crate) mod ffi {
     extern "Rust" {
         type Network;
 
+        #[allow(clippy::too_many_arguments)]
         fn network(
             network: &str,
             overwinter: i32,
@@ -78,6 +79,7 @@ pub(crate) mod ffi {
             heartwood: i32,
             canopy: i32,
             nu5: i32,
+            nu6: i32,
         ) -> Result<Box<Network>>;
     }
 

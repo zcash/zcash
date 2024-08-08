@@ -32,6 +32,7 @@ impl DynamicUsage for Network {
 /// Constructs a `Network` from the given network string.
 ///
 /// The heights are only for constructing a regtest network, and are ignored otherwise.
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn network(
     network: &str,
     overwinter: i32,
@@ -40,6 +41,7 @@ pub(crate) fn network(
     heartwood: i32,
     canopy: i32,
     nu5: i32,
+    nu6: i32,
 ) -> Result<Box<Network>, &'static str> {
     let i32_to_optional_height = |n: i32| {
         if n.is_negative() {
@@ -59,6 +61,7 @@ pub(crate) fn network(
             heartwood: i32_to_optional_height(heartwood),
             canopy: i32_to_optional_height(canopy),
             nu5: i32_to_optional_height(nu5),
+            nu6: i32_to_optional_height(nu6),
         }),
         _ => return Err("Unsupported network kind"),
     };

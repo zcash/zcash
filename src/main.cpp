@@ -850,7 +850,7 @@ bool ContextualCheckTransaction(
     auto dosLevelPotentiallyRelaxing = isMined ? DOS_LEVEL_BLOCK : (
         isInitBlockDownload(chainparams.GetConsensus()) ? 0 : DOS_LEVEL_MEMPOOL);
 
-    auto consensus = chainparams.GetConsensus();
+    auto& consensus = chainparams.GetConsensus();
     auto consensusBranchId = CurrentEpochBranchId(nHeight, consensus);
 
     bool overwinterActive = consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_OVERWINTER);
@@ -859,13 +859,15 @@ bool ContextualCheckTransaction(
     bool heartwoodActive = consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_HEARTWOOD);
     bool canopyActive = consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY);
     bool nu5Active = consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU5);
+    bool nu6Active = consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU6);
     bool futureActive = consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_ZFUTURE);
 
     assert(!saplingActive || overwinterActive); // Sapling cannot be active unless Overwinter is
     assert(!heartwoodActive || saplingActive);  // Heartwood cannot be active unless Sapling is
     assert(!canopyActive || heartwoodActive);   // Canopy cannot be active unless Heartwood is
     assert(!nu5Active || canopyActive);         // NU5 cannot be active unless Canopy is
-    assert(!futureActive || nu5Active);         // ZFUTURE must include consensus rules for all supported network upgrades.
+    assert(!nu6Active || nu5Active);            // NU6 cannot be active unless NU5 is
+    assert(!futureActive || nu6Active);         // ZFUTURE must include consensus rules for all supported network upgrades.
 
     auto& orchard_bundle = tx.GetOrchardBundle();
 
@@ -972,10 +974,7 @@ bool ContextualCheckTransaction(
     // ZIP 207 consensus funding streams active at the current block height. To avoid
     // double-decrypting, we detect any shielded funding streams during the Heartwood
     // consensus check. If Canopy is not yet active, fundingStreamElements will be empty.
-    std::set<Consensus::FundingStreamElement> fundingStreamElements = Consensus::GetActiveFundingStreamElements(
-        nHeight,
-        GetBlockSubsidy(nHeight, consensus),
-        consensus);
+    auto fundingStreamElements = consensus.GetActiveFundingStreamElements(nHeight);
 
     // Rules that apply to Heartwood and later:
     if (heartwoodActive) {
@@ -1068,6 +1067,15 @@ bool ContextualCheckTransaction(
                 for (auto it = fundingStreamElements.begin(); it != fundingStreamElements.end(); ++it) {
                     const CScript* taddr = std::get_if<CScript>(&(it->first));
                     if (taddr && output.scriptPubKey == *taddr && output.nValue == it->second) {
+                        fundingStreamElements.erase(it);
+                        break;
+                    }
+                }
+            }
+
+            if (nu6Active) {
+                for (auto it = fundingStreamElements.begin(); it != fundingStreamElements.end(); ++it) {
+                    if (std::holds_alternative<Consensus::Lockbox>(it->first)) {
                         fundingStreamElements.erase(it);
                         break;
                     }
@@ -2187,45 +2195,6 @@ bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex, const Consensus
     return true;
 }
 
-CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
-{
-    CAmount nSubsidy = 12.5 * COIN;
-
-    // Mining slow start
-    // The subsidy is ramped up linearly, skipping the middle payout of
-    // MAX_SUBSIDY/2 to keep the monetary curve consistent with no slow start.
-    if (nHeight < consensusParams.SubsidySlowStartShift()) {
-        nSubsidy /= consensusParams.nSubsidySlowStartInterval;
-        nSubsidy *= nHeight;
-        return nSubsidy;
-    } else if (nHeight < consensusParams.nSubsidySlowStartInterval) {
-        nSubsidy /= consensusParams.nSubsidySlowStartInterval;
-        nSubsidy *= (nHeight+1);
-        return nSubsidy;
-    }
-
-    assert(nHeight >= consensusParams.SubsidySlowStartShift());
-
-    int halvings = consensusParams.Halving(nHeight);
-
-    // Force block reward to zero when right shift is undefined.
-    if (halvings >= 64)
-        return 0;
-
-    // zip208
-    // BlockSubsidy(height) :=
-    // SlowStartRate · height, if height < SlowStartInterval / 2
-    // SlowStartRate · (height + 1), if SlowStartInterval / 2 ≤ height and height < SlowStartInterval
-    // floor(MaxBlockSubsidy / 2^Halving(height)), if SlowStartInterval ≤ height and not IsBlossomActivated(height)
-    // floor(MaxBlockSubsidy / (BlossomPoWTargetSpacingRatio · 2^Halving(height))), otherwise
-    if (consensusParams.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_BLOSSOM)) {
-        return (nSubsidy / Consensus::BLOSSOM_POW_TARGET_SPACING_RATIO) >> halvings;
-    } else {
-        // Subsidy is cut in half every 840,000 blocks which will occur approximately every 4 years.
-        return nSubsidy >> halvings;
-    }
-}
-
 static std::atomic<bool> IBDLatchToFalse{false};
 // testing-only, allow initial block down state to be set or reset
 bool TestSetIBD(bool ibd) {
@@ -3024,6 +2993,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 {
     AssertLockHeld(cs_main);
 
+    auto consensusParams = chainparams.GetConsensus();
+
     bool fCheckAuthDataRoot = true;
     bool fExpensiveChecks = true;
 
@@ -3079,7 +3050,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
     // Special case for the genesis block, skipping connection of its transactions
     // (its coinbase is unspendable)
-    if (block.GetHash() == chainparams.GetConsensus().hashGenesisBlock) {
+    if (block.GetHash() == consensusParams.hashGenesisBlock) {
         if (!fJustCheck) {
             view.SetBestBlock(pindex->GetBlockHash());
             // Before the genesis block, there was an empty tree
@@ -3184,7 +3155,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     assert(view.GetSaplingAnchorAt(view.GetBestAnchor(SAPLING), sapling_tree));
 
     OrchardMerkleFrontier orchard_tree;
-    if (pindex->pprev && chainparams.GetConsensus().NetworkUpgradeActive(pindex->pprev->nHeight, Consensus::UPGRADE_NU5)) {
+    if (pindex->pprev && consensusParams.NetworkUpgradeActive(pindex->pprev->nHeight, Consensus::UPGRADE_NU5)) {
         // Verify that the view's current state corresponds to the previous block.
         assert(pindex->pprev->hashFinalOrchardRoot == view.GetBestAnchor(ORCHARD));
         // We only call ConnectBlock() on top of the active chain's tip.
@@ -3209,10 +3180,12 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     bool fUpdateOrchardSubtrees = fExperimentalLightWalletd && (view.CurrentSubtreeIndex(ORCHARD) == orchard_tree.current_subtree_index());
 
     // Grab the consensus branch ID for this block and its parent
-    auto consensusBranchId = CurrentEpochBranchId(pindex->nHeight, chainparams.GetConsensus());
-    auto prevConsensusBranchId = CurrentEpochBranchId(pindex->nHeight - 1, chainparams.GetConsensus());
+    auto consensusBranchId = CurrentEpochBranchId(pindex->nHeight, consensusParams);
+    auto prevConsensusBranchId = CurrentEpochBranchId(pindex->nHeight - 1, consensusParams);
 
-    CAmount chainSupplyDelta = 0;
+    // Initialize the chain supply delta to the value added to the lockbox for the block,
+    // as previously computed in `ReceivedBlockTransactions`
+    CAmount chainSupplyDelta = pindex->nLockboxValue;
     CAmount transparentValueDelta = 0;
     size_t total_sapling_tx = 0;
     size_t total_orchard_tx = 0;
@@ -3313,7 +3286,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             chainSupplyDelta -= txFee;
 
             std::vector<CScriptCheck> vChecks;
-            if (!ContextualCheckInputs(tx, state, view, fExpensiveChecks, flags, fCacheResults, txdata.back(), chainparams.GetConsensus(), consensusBranchId, nScriptCheckThreads ? &vChecks : NULL))
+            if (!ContextualCheckInputs(tx, state, view, fExpensiveChecks, flags, fCacheResults, txdata.back(), consensusParams, consensusBranchId, nScriptCheckThreads ? &vChecks : NULL))
                 return error("ConnectBlock(): CheckInputs on %s failed with %s",
                     tx.GetHash().ToString(), FormatStateMessage(state));
             control.Add(vChecks);
@@ -3327,9 +3300,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             view,
             saplingAuth,
             orchardAuth,
-            chainparams.GetConsensus(),
+            consensusParams,
             consensusBranchId,
-            chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5),
+            consensusParams.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5),
             true))
         {
             return error(
@@ -3435,10 +3408,10 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     // We only derive them if they will be used for this block.
     std::optional<uint256> hashAuthDataRoot;
     std::optional<uint256> hashChainHistoryRoot;
-    if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
+    if (consensusParams.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
         hashAuthDataRoot = block.BuildAuthDataMerkleTree();
     }
-    if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
+    if (consensusParams.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
         hashChainHistoryRoot = view.GetHistoryRoot(prevConsensusBranchId);
     }
 
@@ -3475,7 +3448,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         //   set the correct value of hashFinalSaplingRoot; in particular,
         //   blocks that are never passed to ConnectBlock() (and thus never on
         //   the main chain) will stay with hashFinalSaplingRoot set to null.
-        if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
+        if (consensusParams.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
             pindex->hashFinalSaplingRoot = sapling_tree.root();
         }
 
@@ -3488,7 +3461,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         //   hashChainHistoryRoot; in particular, blocks that are never passed
         //   to ConnectBlock() (and thus never on the main chain) will stay with
         //   these set to null.
-        if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
+        if (consensusParams.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
             pindex->hashAuthDataRoot = hashAuthDataRoot.value();
             pindex->hashFinalOrchardRoot = orchard_tree.root(),
             pindex->hashChainHistoryRoot = hashChainHistoryRoot.value();
@@ -3496,7 +3469,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     }
     blockundo.old_sprout_tree_root = old_sprout_tree_root;
 
-    if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
+    if (consensusParams.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
         if (fCheckAuthDataRoot) {
             // If NU5 is active, block.hashBlockCommitments must be the top digest
             // of the ZIP 244 block commitments linked list.
@@ -3510,7 +3483,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                     REJECT_INVALID, "bad-block-commitments-hash");
             }
         }
-    } else if (IsActivationHeight(pindex->nHeight, chainparams.GetConsensus(), Consensus::UPGRADE_HEARTWOOD)) {
+    } else if (IsActivationHeight(pindex->nHeight, consensusParams, Consensus::UPGRADE_HEARTWOOD)) {
         // In the block that activates ZIP 221, block.hashBlockCommitments MUST
         // be set to all zero bytes.
         if (!block.hashBlockCommitments.IsNull()) {
@@ -3518,7 +3491,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                 error("ConnectBlock(): block's hashBlockCommitments is incorrect (should be null)"),
                 REJECT_INVALID, "bad-heartwood-root-in-block");
         }
-    } else if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
+    } else if (consensusParams.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
         // If Heartwood is active, block.hashBlockCommitments must be the same as
         // the root of the history tree for the previous block. We only store
         // one tree per epoch, so we have two possible cases:
@@ -3532,7 +3505,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                 error("ConnectBlock(): block's hashBlockCommitments is incorrect (should be history tree root)"),
                 REJECT_INVALID, "bad-heartwood-root-in-block");
         }
-    } else if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_SAPLING)) {
+    } else if (consensusParams.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_SAPLING)) {
         // If Sapling is active, block.hashBlockCommitments must be the
         // same as the root of the Sapling tree
         if (block.hashBlockCommitments != sapling_tree.root()) {
@@ -3543,9 +3516,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     }
 
     // History read/write is started with Heartwood update.
-    if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
+    if (consensusParams.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
         HistoryNode historyNode;
-        if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
+        if (consensusParams.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
             historyNode = libzcash::NewV2Leaf(
                 block.GetHash(),
                 block.nTime,
@@ -3575,7 +3548,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     int64_t nTime1 = GetTimeMicros(); nTimeConnect += nTime1 - nTimeStart;
     LogPrint("bench", "      - Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs]\n", (unsigned)block.vtx.size(), 0.001 * (nTime1 - nTimeStart), 0.001 * (nTime1 - nTimeStart) / block.vtx.size(), nInputs <= 1 ? 0 : 0.001 * (nTime1 - nTimeStart) / (nInputs-1), nTimeConnect * 0.000001);
 
-    CAmount blockReward = nFees + GetBlockSubsidy(pindex->nHeight, chainparams.GetConsensus());
+    CAmount blockReward = nFees + consensusParams.GetBlockSubsidy(pindex->nHeight);
     if (block.vtx[0].GetValueOut() > blockReward)
         return state.DoS(100,
                          error("ConnectBlock(): coinbase pays too much (actual=%d vs limit=%d)",
@@ -3588,13 +3561,15 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             pindex->nChainTransparentValue.has_value() &&
             pindex->nChainSproutValue.has_value() &&
             pindex->nChainSaplingValue.has_value() &&
-            pindex->nChainOrchardValue.has_value())
+            pindex->nChainOrchardValue.has_value() &&
+            pindex->nChainLockboxValue.has_value())
     {
         auto expectedChainSupply =
             pindex->nChainTransparentValue.value() +
             pindex->nChainSproutValue.value() +
             pindex->nChainSaplingValue.value() +
-            pindex->nChainOrchardValue.value();
+            pindex->nChainOrchardValue.value() +
+            pindex->nChainLockboxValue.value();
         if (expectedChainSupply != pindex->nChainTotalSupply.value()) {
             // This may be added as a rule to ZIP 209 and return a failure in a future soft-fork.
             error("ConnectBlock(): chain total supply (%d) does not match sum of pool balances (%d) at height %d",
@@ -3643,9 +3618,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         // Move this if BLOCK_VALID_CONSENSUS is ever altered.
         static_assert(BLOCK_VALID_CONSENSUS == BLOCK_VALID_SCRIPTS,
             "nCachedBranchId must be set after all consensus rules have been validated.");
-        if (IsActivationHeightForAnyUpgrade(pindex->nHeight, chainparams.GetConsensus())) {
+        if (IsActivationHeightForAnyUpgrade(pindex->nHeight, consensusParams)) {
             pindex->nStatus |= BLOCK_ACTIVATES_UPGRADE;
-            pindex->nCachedBranchId = CurrentEpochBranchId(pindex->nHeight, chainparams.GetConsensus());
+            pindex->nCachedBranchId = CurrentEpochBranchId(pindex->nHeight, consensusParams);
         } else if (pindex->pprev) {
             pindex->nCachedBranchId = pindex->pprev->nCachedBranchId;
         }
@@ -4626,6 +4601,15 @@ bool ReceivedBlockTransactions(
     CAmount sproutValue = 0;
     CAmount saplingValue = 0;
     CAmount orchardValue = 0;
+
+    // Each lockbox funding stream produces a positive change to the lockbox value.
+    CAmount lockboxValue = 0;
+    for (auto elem : chainparams.GetConsensus().GetActiveFundingStreamElements(pindexNew->nHeight)) {
+        if (std::holds_alternative<Consensus::Lockbox>(elem.first)) {
+            lockboxValue += elem.second;
+        }
+    }
+
     for (auto tx : block.vtx) {
         // For the genesis block only, compute the chain supply delta and the transparent
         // output total.
@@ -4670,6 +4654,8 @@ bool ReceivedBlockTransactions(
     pindexNew->nChainSaplingValue = std::nullopt;
     pindexNew->nOrchardValue = orchardValue;
     pindexNew->nChainOrchardValue = std::nullopt;
+    pindexNew->nLockboxValue = lockboxValue;
+    pindexNew->nChainLockboxValue = std::nullopt;
 
     pindexNew->nFile = pos.nFile;
     pindexNew->nDataPos = pos.nPos;
@@ -4715,12 +4701,20 @@ bool ReceivedBlockTransactions(
                 } else {
                     pindex->nChainOrchardValue = std::nullopt;
                 }
+
+                // Calculate the block's effect on the Lockbox balance
+                if (pindex->pprev->nChainLockboxValue) {
+                    pindex->nChainLockboxValue = *pindex->pprev->nChainLockboxValue + pindex->nLockboxValue;
+                } else {
+                    pindex->nChainLockboxValue = std::nullopt;
+                }
             } else {
                 pindex->nChainTotalSupply = pindex->nChainSupplyDelta;
                 pindex->nChainTransparentValue = pindex->nTransparentValue;
                 pindex->nChainSproutValue = pindex->nSproutValue;
                 pindex->nChainSaplingValue = pindex->nSaplingValue;
                 pindex->nChainOrchardValue = pindex->nOrchardValue;
+                pindex->nChainLockboxValue = pindex->nLockboxValue;
             }
 
             // Fall back to hardcoded Sprout value pool balance
@@ -5070,7 +5064,7 @@ bool ContextualCheckBlock(
 
         for (const CTxOut& output : block.vtx[0].vout) {
             if (output.scriptPubKey == chainparams.GetFoundersRewardScriptAtHeight(nHeight)) {
-                if (output.nValue == (GetBlockSubsidy(nHeight, consensusParams) / 5)) {
+                if (output.nValue == (consensusParams.GetBlockSubsidy(nHeight) / 5)) {
                     found = true;
                     break;
                 }
@@ -5511,6 +5505,12 @@ bool static LoadBlockIndexDB(const CChainParams& chainparams)
                     } else {
                         pindex->nChainOrchardValue = std::nullopt;
                     }
+
+                    if (pindex->pprev->nChainLockboxValue) {
+                        pindex->nChainLockboxValue = *pindex->pprev->nChainLockboxValue + pindex->nLockboxValue;
+                    } else {
+                        pindex->nChainLockboxValue = std::nullopt;
+                    }
                 } else {
                     pindex->nChainTx = 0;
                     pindex->nChainTotalSupply = std::nullopt;
@@ -5518,6 +5518,7 @@ bool static LoadBlockIndexDB(const CChainParams& chainparams)
                     pindex->nChainSproutValue = std::nullopt;
                     pindex->nChainSaplingValue = std::nullopt;
                     pindex->nChainOrchardValue = std::nullopt;
+                    pindex->nChainLockboxValue = std::nullopt;
                     mapBlocksUnlinked.insert(std::make_pair(pindex->pprev, pindex));
                 }
             } else {
@@ -5527,6 +5528,7 @@ bool static LoadBlockIndexDB(const CChainParams& chainparams)
                 pindex->nChainSproutValue = pindex->nSproutValue;
                 pindex->nChainSaplingValue = pindex->nSaplingValue;
                 pindex->nChainOrchardValue = pindex->nOrchardValue;
+                pindex->nChainLockboxValue = pindex->nLockboxValue;
             }
 
             // Fall back to hardcoded Sprout value pool balance

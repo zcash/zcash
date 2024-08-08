@@ -6,8 +6,6 @@ use std::{
 };
 use zeroize::Zeroize;
 
-use zcash_primitives::zip339;
-
 // It's safer to use a wrapper type here than an enum. We can't stop a C caller from passing
 // an unrecognized value as a `language` parameter; if it were an enum on the Rust side,
 // then that would immediately be UB, whereas this way we can return null or false.
@@ -15,22 +13,22 @@ use zcash_primitives::zip339;
 #[derive(Copy, Clone)]
 pub struct Language(pub u32);
 
-impl TryFrom<Language> for zip339::Language {
+impl TryFrom<Language> for bip0039::Language {
     type Error = ();
 
     fn try_from(language: Language) -> Result<Self, ()> {
         // These must match `src/rust/include/zip339.h`.
         match language {
-            Language(0) => Ok(zip339::Language::English),
-            Language(1) => Ok(zip339::Language::SimplifiedChinese),
-            Language(2) => Ok(zip339::Language::TraditionalChinese),
-            Language(3) => Ok(zip339::Language::Czech),
-            Language(4) => Ok(zip339::Language::French),
-            Language(5) => Ok(zip339::Language::Italian),
-            Language(6) => Ok(zip339::Language::Japanese),
-            Language(7) => Ok(zip339::Language::Korean),
-            Language(8) => Ok(zip339::Language::Portuguese),
-            Language(9) => Ok(zip339::Language::Spanish),
+            Language(0) => Ok(bip0039::Language::English),
+            Language(1) => Ok(bip0039::Language::SimplifiedChinese),
+            Language(2) => Ok(bip0039::Language::TraditionalChinese),
+            Language(3) => Ok(bip0039::Language::Czech),
+            Language(4) => Ok(bip0039::Language::French),
+            Language(5) => Ok(bip0039::Language::Italian),
+            Language(6) => Ok(bip0039::Language::Japanese),
+            Language(7) => Ok(bip0039::Language::Korean),
+            Language(8) => Ok(bip0039::Language::Portuguese),
+            Language(9) => Ok(bip0039::Language::Spanish),
             Language(_) => Err(()),
         }
     }
@@ -49,7 +47,7 @@ pub extern "C" fn zip339_entropy_to_phrase(
 
     if let Ok(language) = language.try_into() {
         let entropy = unsafe { slice::from_raw_parts(entropy, entropy_len) }.to_vec();
-        if let Ok(mnemonic) = zip339::Mnemonic::from_entropy_in(language, entropy) {
+        if let Ok(mnemonic) = bip0039::Mnemonic::from_entropy_in(language, entropy) {
             if let Ok(phrase) = CString::new(mnemonic.phrase()) {
                 return phrase.into_raw() as *const c_char;
             }
@@ -78,7 +76,7 @@ pub extern "C" fn zip339_validate_phrase(language: Language, phrase: *const c_ch
 
     if let Ok(language) = language.try_into() {
         if let Ok(phrase) = unsafe { CStr::from_ptr(phrase) }.to_str() {
-            return zip339::Mnemonic::validate_in(language, phrase).is_ok();
+            return bip0039::Mnemonic::validate_in(language, phrase).is_ok();
         }
     }
     false
@@ -97,7 +95,7 @@ pub extern "C" fn zip339_phrase_to_seed(
 
     if let Ok(language) = language.try_into() {
         if let Ok(phrase) = unsafe { CStr::from_ptr(phrase) }.to_str() {
-            if let Ok(mnemonic) = zip339::Mnemonic::from_phrase_in(language, phrase) {
+            if let Ok(mnemonic) = bip0039::Mnemonic::from_phrase_in(language, phrase) {
                 // Use the empty passphrase.
                 let seed = mnemonic.to_seed("");
                 unsafe {

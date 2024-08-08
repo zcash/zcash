@@ -27,7 +27,7 @@ static void TestBlockSubsidyHalvings(const Consensus::Params& consensusParams)
     bool blossomActive = false;
     int blossomActivationHeight = consensusParams.vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight;
     int nHeight = consensusParams.nSubsidySlowStartInterval;
-    BOOST_CHECK_EQUAL(GetBlockSubsidy(nHeight, consensusParams), INITIAL_SUBSIDY);
+    BOOST_CHECK_EQUAL(consensusParams.GetBlockSubsidy(nHeight), INITIAL_SUBSIDY);
     CAmount nPreviousSubsidy = INITIAL_SUBSIDY;
     for (int nHalvings = 1; nHalvings < GetTotalHalvings(consensusParams); nHalvings++) {
         if (blossomActive) {
@@ -44,13 +44,13 @@ static void TestBlockSubsidyHalvings(const Consensus::Params& consensusParams)
                 blossomActive = true;
             }
         }
-        BOOST_CHECK_EQUAL(GetBlockSubsidy(nHeight - 1, consensusParams), nPreviousSubsidy);
-        CAmount nSubsidy = GetBlockSubsidy(nHeight, consensusParams);
+        BOOST_CHECK_EQUAL(consensusParams.GetBlockSubsidy(nHeight - 1), nPreviousSubsidy);
+        CAmount nSubsidy = consensusParams.GetBlockSubsidy(nHeight);
         BOOST_CHECK(nSubsidy <= INITIAL_SUBSIDY);
         BOOST_CHECK_EQUAL(nSubsidy, nPreviousSubsidy / 2);
         nPreviousSubsidy = nSubsidy;
     }
-    BOOST_CHECK_EQUAL(GetBlockSubsidy(nHeight, consensusParams), 0);
+    BOOST_CHECK_EQUAL(consensusParams.GetBlockSubsidy(nHeight), 0);
 }
 
 static void TestBlockSubsidyHalvings(int nSubsidySlowStartInterval, int nPreBlossomSubsidyHalvingInterval, int blossomActivationHeight)
@@ -80,7 +80,7 @@ BOOST_AUTO_TEST_CASE(subsidy_limit_test)
     int nHeight = 0;
     // Mining slow start
     for (; nHeight < consensusParams.nSubsidySlowStartInterval; nHeight++) {
-        CAmount nSubsidy = GetBlockSubsidy(nHeight, consensusParams);
+        CAmount nSubsidy = consensusParams.GetBlockSubsidy(nHeight);
         BOOST_CHECK(nSubsidy <= INITIAL_SUBSIDY);
         nSum += nSubsidy;
         BOOST_CHECK(MoneyRange(nSum));
@@ -90,7 +90,7 @@ BOOST_AUTO_TEST_CASE(subsidy_limit_test)
     // Regular mining
     CAmount nSubsidy;
     do {
-        nSubsidy = GetBlockSubsidy(nHeight, consensusParams);
+        nSubsidy = consensusParams.GetBlockSubsidy(nHeight);
         BOOST_CHECK(nSubsidy <= INITIAL_SUBSIDY);
         nSum += nSubsidy;
         BOOST_ASSERT(MoneyRange(nSum));

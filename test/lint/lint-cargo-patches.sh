@@ -10,7 +10,7 @@ export LC_ALL=C
 
 REPOBASE="$(dirname $0)/../.."
 CARGO_TOML="$REPOBASE/Cargo.toml"
-CONFIG_FILE="$REPOBASE/.cargo/config.offline"
+CONFIG_FILE="$REPOBASE/.cargo/config.toml.offline"
 
 CARGO_TOML_PATCH_PREFIX="[patch.crates-io]"
 (( CARGO_TOML_PATCH_START=$(grep -Fn "$CARGO_TOML_PATCH_PREFIX" $CARGO_TOML | cut -d: -f1)+1 ))
@@ -47,7 +47,7 @@ do
     fi
 
     if [ -z "$CONFIG_START" ] || [ -z "$HAVE_GIT" ] || [ -z "$HAVE_REV" ] || [ -z "$HAVE_REPLACE" ]; then
-        echo "Missing replacement in .cargo/config.offline:"
+        echo "Missing replacement in .cargo/config.toml.offline:"
         echo "  [source.\"$PATCH_GIT\"]"
         echo "  git = \"$PATCH_GIT\""
         echo "  rev = \"$PATCH_REV\""

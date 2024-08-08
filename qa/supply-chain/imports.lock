@@ -1,30 +1,12 @@
 
 # cargo-vet imports lock
 
-[[publisher.bridgetree]]
-version = "0.4.0"
-when = "2023-09-08"
-user-id = 6289
-user-login = "str4d"
-
 [[publisher.bumpalo]]
-version = "3.15.4"
-when = "2024-03-07"
+version = "3.16.0"
+when = "2024-04-08"
 user-id = 696
 user-login = "fitzgen"
 user-name = "Nick Fitzgerald"
-
-[[publisher.equihash]]
-version = "0.2.0"
-when = "2022-06-24"
-user-id = 6289
-user-login = "str4d"
-
-[[publisher.f4jumble]]
-version = "0.1.0"
-when = "2022-05-10"
-user-id = 6289
-user-login = "str4d"
 
 [[publisher.halo2_gadgets]]
 version = "0.3.0"
@@ -44,13 +26,6 @@ version = "0.3.0"
 when = "2023-03-22"
 user-id = 1244
 user-login = "ebfull"
-
-[[publisher.incrementalmerkletree]]
-version = "0.5.1"
-when = "2024-03-25"
-user-id = 169181
-user-login = "nuttycom"
-user-name = "Kris Nuttycombe"
 
 [[publisher.orchard]]
 version = "0.8.0"
@@ -204,46 +179,9 @@ user-id = 64539
 user-login = "kennykerr"
 user-name = "Kenny Kerr"
 
-[[publisher.zcash_address]]
-version = "0.3.2"
-when = "2024-03-06"
-user-id = 6289
-user-login = "str4d"
-
-[[publisher.zcash_encoding]]
-version = "0.2.0"
-when = "2022-10-19"
-user-id = 1244
-user-login = "ebfull"
-
-[[publisher.zcash_history]]
-version = "0.4.0"
-when = "2024-03-01"
-user-id = 6289
-user-login = "str4d"
-
 [[publisher.zcash_note_encryption]]
 version = "0.4.0"
 when = "2023-06-06"
-user-id = 169181
-user-login = "nuttycom"
-user-name = "Kris Nuttycombe"
-
-[[publisher.zcash_primitives]]
-version = "0.15.1"
-when = "2024-05-24"
-user-id = 6289
-user-login = "str4d"
-
-[[publisher.zcash_proofs]]
-version = "0.15.0"
-when = "2024-03-25"
-user-id = 6289
-user-login = "str4d"
-
-[[publisher.zcash_protocol]]
-version = "0.1.1"
-when = "2024-03-25"
 user-id = 169181
 user-login = "nuttycom"
 user-name = "Kris Nuttycombe"
@@ -265,7 +203,7 @@ who = "Nick Fitzgerald <fitzgen@gmail.com>"
 criteria = "safe-to-deploy"
 user-id = 696 # Nick Fitzgerald (fitzgen)
 start = "2019-03-16"
-end = "2024-03-10"
+end = "2025-07-30"
 
 [[audits.bytecode-alliance.audits.addr2line]]
 who = "Alex Crichton <alex@alexcrichton.com>"
@@ -304,6 +242,17 @@ notes = "This crate has no dependencies, no build.rs, and contains no unsafe cod
 who = "Benjamin Bouvier <public@benj.me>"
 criteria = "safe-to-deploy"
 delta = "0.9.0 -> 0.10.2"
+
+[[audits.bytecode-alliance.audits.cc]]
+who = "Alex Crichton <alex@alexcrichton.com>"
+criteria = "safe-to-deploy"
+version = "1.0.73"
+notes = "I am the author of this crate."
+
+[[audits.bytecode-alliance.audits.cc]]
+who = "Alex Crichton <alex@alexcrichton.com>"
+criteria = "safe-to-deploy"
+delta = "1.0.83 -> 1.1.6"
 
 [[audits.bytecode-alliance.audits.cfg-if]]
 who = "Alex Crichton <alex@alexcrichton.com>"
@@ -1125,11 +1074,6 @@ who = "David Cook <dcook@divviup.org>"
 criteria = "safe-to-deploy"
 delta = "0.5.0 -> 0.5.1"
 
-[[audits.isrg.audits.untrusted]]
-who = "David Cook <dcook@divviup.org>"
-criteria = "safe-to-deploy"
-version = "0.7.1"
-
 [[audits.isrg.audits.wasm-bindgen-shared]]
 who = "David Cook <dcook@divviup.org>"
 criteria = "safe-to-deploy"
@@ -1169,6 +1113,18 @@ who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
 delta = "0.10.2 -> 0.10.3"
 aggregated-from = "https://hg.mozilla.org/mozilla-central/raw-file/tip/supply-chain/audits.toml"
+
+[[audits.mozilla.audits.cc]]
+who = "Mike Hommey <mh+mozilla@glandium.org>"
+criteria = "safe-to-deploy"
+delta = "1.0.73 -> 1.0.78"
+aggregated-from = "https://hg.mozilla.org/mozilla-central/raw-file/tip/supply-chain/audits.toml"
+
+[[audits.mozilla.audits.cc]]
+who = "Jan-Erik Rediger <jrediger@mozilla.com>"
+criteria = "safe-to-deploy"
+delta = "1.0.78 -> 1.0.83"
+aggregated-from = "https://raw.githubusercontent.com/mozilla/glean/main/supply-chain/audits.toml"
 
 [[audits.mozilla.audits.crossbeam-channel]]
 who = "Jan-Erik Rediger <jrediger@mozilla.com>"
@@ -1449,6 +1405,16 @@ criteria = "safe-to-deploy"
 delta = "1.2.0 -> 1.3.0"
 aggregated-from = "https://raw.githubusercontent.com/zcash/librustzcash/main/supply-chain/audits.toml"
 
+[[audits.zcash.audits.bip32]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+version = "0.5.1"
+notes = """
+- Crate has no unsafe code, and sets `#![forbid(unsafe_code)]`.
+- Crate has no powerful imports. Only filesystem acces is via `include_str!`, and is safe.
+"""
+aggregated-from = "https://raw.githubusercontent.com/zcash/librustzcash/main/supply-chain/audits.toml"
+
 [[audits.zcash.audits.either]]
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
@@ -1478,6 +1444,12 @@ aggregated-from = "https://raw.githubusercontent.com/zcash/librustzcash/main/sup
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "0.8.3 -> 0.8.4"
+aggregated-from = "https://raw.githubusercontent.com/zcash/librustzcash/main/supply-chain/audits.toml"
+
+[[audits.zcash.audits.secp256k1]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.26.0 -> 0.27.0"
 aggregated-from = "https://raw.githubusercontent.com/zcash/librustzcash/main/supply-chain/audits.toml"
 
 [[audits.zcash.audits.semver]]

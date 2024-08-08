@@ -54,7 +54,8 @@ public:
             consensus.vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight,
             consensus.vUpgrades[Consensus::UPGRADE_HEARTWOOD].nActivationHeight,
             consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight,
-            consensus.vUpgrades[Consensus::UPGRADE_NU5].nActivationHeight);
+            consensus.vUpgrades[Consensus::UPGRADE_NU5].nActivationHeight,
+            consensus.vUpgrades[Consensus::UPGRADE_NU6].nActivationHeight);
     }
     const CMessageHeader::MessageStartChars& MessageStart() const { return pchMessageStart; }
     const std::vector<unsigned char>& AlertKey() const { return vAlertPubKey; }
