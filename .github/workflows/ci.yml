@@ -268,9 +268,10 @@ jobs:
         run: >
           ./zcutil/build.sh
           -j"${{ steps.nproc.outputs.count }}"
+          tar -czvf depends-sources.tar.gz depends/sources
 
       - name: Upload depends/source artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ matrix.host }}-depends-sources
-          path: depends/sources
+          name: ${{ matrix.host }}-depends
+          path: depends-sources.tar.gz
