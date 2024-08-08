@@ -268,6 +268,10 @@ jobs:
         run: >
           ./zcutil/build.sh
           -j"${{ steps.nproc.outputs.count }}"
+
+      - name: depends-sources
+        shell: bash
+        run: |
           tar -czvf depends-sources.tar.gz depends/sources
 
       - name: Upload depends/source artifacts
