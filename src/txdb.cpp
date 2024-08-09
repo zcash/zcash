@@ -714,6 +714,7 @@ bool CBlockTreeDB::LoadBlockIndexGuts(
                 pindexNew->nTx            = diskindex.nTx;
                 pindexNew->nChainSupplyDelta = diskindex.nChainSupplyDelta;
                 pindexNew->nTransparentValue = diskindex.nTransparentValue;
+                pindexNew->nLockboxValue = diskindex.nLockboxValue;
                 pindexNew->nSproutValue   = diskindex.nSproutValue;
                 pindexNew->nSaplingValue  = diskindex.nSaplingValue;
                 pindexNew->nOrchardValue  = diskindex.nOrchardValue;
@@ -722,8 +723,8 @@ bool CBlockTreeDB::LoadBlockIndexGuts(
                 pindexNew->hashChainHistoryRoot = diskindex.hashChainHistoryRoot;
                 pindexNew->hashAuthDataRoot = diskindex.hashAuthDataRoot;
 
-                // Check the block hash against the required difficulty as encoded in the 
-                // nBits field. The probability of this succeeding randomly is low enough 
+                // Check the block hash against the required difficulty as encoded in the
+                // nBits field. The probability of this succeeding randomly is low enough
                 // that it is a useful check to detect logic or disk storage errors.
                 if (!CheckProofOfWork(pindexNew->GetBlockHash(), pindexNew->nBits, Params().GetConsensus()))
                     return error("LoadBlockIndex(): CheckProofOfWork failed: %s", pindexNew->ToString());

@@ -189,7 +189,7 @@ TEST(FoundersRewardTest, SlowStartSubsidy) {
 
     CAmount totalSubsidy = 0;
     for (int nHeight = 1; nHeight <= GetLastFoundersRewardHeight(Params().GetConsensus()); nHeight++) {
-        CAmount nSubsidy = GetBlockSubsidy(nHeight, params.GetConsensus()) / 5;
+        CAmount nSubsidy = params.GetConsensus().GetBlockSubsidy(nHeight) / 5;
         totalSubsidy += nSubsidy;
     }
     
@@ -208,7 +208,7 @@ void verifyNumberOfRewards() {
         if (ms.count(addr) == 0) {
             ms[addr] = 0;
         }
-        ms[addr] = ms[addr] + GetBlockSubsidy(nHeight, params.GetConsensus()) / 5;
+        ms[addr] = ms[addr] + params.GetConsensus().GetBlockSubsidy(nHeight) / 5;
     }
 
     EXPECT_EQ(ms[params.GetFoundersRewardAddressAtIndex(0)], 1960039937500);
@@ -253,7 +253,8 @@ TEST(FundingStreamsRewardTest, Zip207Distribution) {
                 {
                     "t2UNzUUx8mWBCRYPRezvA363EYXyEpHokyi",
                     shieldedAddr,
-                }
+                },
+                false
             )
         );
     }
@@ -261,8 +262,8 @@ TEST(FundingStreamsRewardTest, Zip207Distribution) {
     int maxHeight = GetMaxFundingStreamHeight(consensus);
     std::map<std::string, CAmount> ms;
     for (int nHeight = minHeight; nHeight <= maxHeight; nHeight++) {
-        auto blockSubsidy = GetBlockSubsidy(nHeight, consensus);
-        auto elems = GetActiveFundingStreamElements(nHeight, blockSubsidy, consensus);
+        auto blockSubsidy = consensus.GetBlockSubsidy(nHeight);
+        auto elems = consensus.GetActiveFundingStreamElements(nHeight, blockSubsidy);
 
         CAmount totalFunding = 0;
         for (Consensus::FundingStreamElement elem : elems) {
@@ -291,7 +292,8 @@ TEST(FundingStreamsRewardTest, ParseFundingStream) {
             {
                 "t2UNzUUx8mWBCRYPRezvA363EYXyEpHokyi",
                 shieldedAddr,
-            }
+            },
+            false
         ),
         std::runtime_error
     );

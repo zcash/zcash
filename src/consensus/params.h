@@ -8,6 +8,8 @@
 #define BITCOIN_CONSENSUS_PARAMS_H
 
 #include <script/script.h>
+#include <amount.h>
+#include <consensus/funding.h>
 #include "uint256.h"
 #include "key_constants.h"
 #include <zcash/address/sapling.hpp>
@@ -38,6 +40,7 @@ enum UpgradeIndex : uint32_t {
     UPGRADE_HEARTWOOD,
     UPGRADE_CANOPY,
     UPGRADE_NU5,
+    UPGRADE_NU6,
     // Add new network upgrades before this line.
     // NOTE: Also add new upgrades to NetworkUpgradeInfo in upgrades.cpp
     UPGRADE_ZFUTURE,
@@ -86,7 +89,30 @@ struct NetworkUpgrade {
     std::optional<uint256> hashActivationBlock;
 };
 
-typedef std::variant<libzcash::SaplingPaymentAddress, CScript> FundingStreamAddress;
+/**
+ * Type for the development funding lockbox(es). At present there is only one; this is
+ * not implemented as a singleton because it needs to be copyable so long as the
+ * `FundingStream` type is so.
+ */
+class Lockbox
+{
+public:
+    Lockbox() {}
+
+    // At present there is only a single lockbox.
+    friend bool operator==(const Lockbox& lhs, const Lockbox& rhs)
+    {
+        return true;
+    }
+
+    friend bool operator<(const Lockbox& lhs, const Lockbox& rhs)
+    {
+        return false;
+    }
+};
+
+typedef std::variant<libzcash::SaplingPaymentAddress, CScript, Lockbox> FundingStreamRecipient;
+typedef std::pair<FundingStreamRecipient, CAmount> FundingStreamElement;
 
 /**
  * Index into Params.vFundingStreams.
@@ -97,14 +123,19 @@ enum FundingStreamIndex : uint32_t {
     FS_ZIP214_BP,
     FS_ZIP214_ZF,
     FS_ZIP214_MG,
+    FS_ZIPTBD_ZCG,
+    FS_ZIPTBD_LOCKBOX,
     MAX_FUNDING_STREAMS,
 };
 const auto FIRST_FUNDING_STREAM = FS_ZIP214_BP;
+
+extern const struct FSInfo FundingStreamInfo[];
 
 enum FundingStreamError {
     CANOPY_NOT_ACTIVE,
     ILLEGAL_RANGE,
     INSUFFICIENT_ADDRESSES,
+    NU6_NOT_ACTIVE,
 };
 
 class FundingStream
@@ -112,19 +143,19 @@ class FundingStream
 private:
     int startHeight;
     int endHeight;
-    std::vector<FundingStreamAddress> addresses;
+    std::vector<FundingStreamRecipient> recipients;
 
-    FundingStream(int startHeight, int endHeight, const std::vector<FundingStreamAddress>& addresses):
-        startHeight(startHeight), endHeight(endHeight), addresses(addresses) { }
+    FundingStream(int startHeight, int endHeight, const std::vector<FundingStreamRecipient>& recipients):
+        startHeight(startHeight), endHeight(endHeight), recipients(recipients) { }
 public:
     FundingStream(const FundingStream& fs):
-        startHeight(fs.startHeight), endHeight(fs.endHeight), addresses(fs.addresses) { }
+        startHeight(fs.startHeight), endHeight(fs.endHeight), recipients(fs.recipients) { }
 
     static std::variant<FundingStream, FundingStreamError> ValidateFundingStream(
         const Consensus::Params& params,
         const int startHeight,
         const int endHeight,
-        const std::vector<FundingStreamAddress>& addresses
+        const std::vector<FundingStreamRecipient>& recipients
     );
 
     static FundingStream ParseFundingStream(
@@ -132,15 +163,16 @@ public:
         const KeyConstants& keyConstants,
         const int startHeight,
         const int endHeight,
-        const std::vector<std::string>& strAddresses);
+        const std::vector<std::string>& strAddresses,
+        const bool allowDeferredPool);
 
     int GetStartHeight() const { return startHeight; };
     int GetEndHeight() const { return endHeight; };
-    const std::vector<FundingStreamAddress>& GetAddresses() const {
-        return addresses;
+    const std::vector<FundingStreamRecipient>& GetRecipients() const {
+        return recipients;
     };
 
-    FundingStreamAddress RecipientAddress(const Params& params, int nHeight) const;
+    FundingStreamRecipient Recipient(const Params& params, int nHeight) const;
 };
 
 enum ConsensusFeature : uint32_t {
@@ -300,6 +332,39 @@ struct Params {
         int startHeight,
         int endHeight,
         const std::vector<std::string>& addresses);
+
+    void AddZIP207LockboxStream(
+        const KeyConstants& keyConstants,
+        FundingStreamIndex idx,
+        int startHeight,
+        int endHeight);
+
+    /**
+     * Returns the total block subsidy as of the given block height
+     */
+    CAmount GetBlockSubsidy(int nHeight) const;
+
+    /**
+     * Returns the vector of active funding streams as of the given height.
+     */
+    std::vector<FSInfo> GetActiveFundingStreams(int nHeight) const;
+
+    /**
+     * Returns the vector of active funding stream elements as of the given height.
+     */
+    std::set<FundingStreamElement> GetActiveFundingStreamElements(int nHeight) const;
+
+    /**
+     * Returns the active funding stream elements at the given height, with
+     * values determined based upon the specified block subsidy amount. This
+     * should always be set to the value returned by `GetBlockSubsidy` for the
+     * given height; it is passed explicitly rather than derived internally
+     * as many call sites will have already called `GetBlockSubsidy` directly
+     * for other purposes.
+     */
+    std::set<FundingStreamElement> GetActiveFundingStreamElements(
+        int nHeight,
+        CAmount blockSubsidy) const;
 
     /**
      * A set of features that have been explicitly force-enabled

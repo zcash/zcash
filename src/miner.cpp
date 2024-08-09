@@ -33,6 +33,7 @@
 #include "transaction_builder.h"
 #include "ui_interface.h"
 #include "util/system.h"
+#include "util/match.h"
 #include "util/moneystr.h"
 #include "validationinterface.h"
 #include "zip317.h"
@@ -89,34 +90,6 @@ bool IsShieldedMinerAddress(const MinerAddress& minerAddr) {
     return !std::holds_alternative<boost::shared_ptr<CReserveScript>>(minerAddr);
 }
 
-class AddFundingStreamValueToTx
-{
-private:
-    CMutableTransaction &mtx;
-    sapling::Builder& saplingBuilder;
-    const CAmount fundingStreamValue;
-    const libzcash::Zip212Enabled zip212Enabled;
-public:
-    AddFundingStreamValueToTx(
-            CMutableTransaction &mtx,
-            sapling::Builder& saplingBuilder,
-            const CAmount fundingStreamValue,
-            const libzcash::Zip212Enabled zip212Enabled): mtx(mtx), saplingBuilder(saplingBuilder), fundingStreamValue(fundingStreamValue), zip212Enabled(zip212Enabled) {}
-
-    void operator()(const libzcash::SaplingPaymentAddress& pa) const {
-        saplingBuilder.add_recipient(
-            {},
-            pa.GetRawBytes(),
-            fundingStreamValue,
-            libzcash::Memo::ToBytes(std::nullopt));
-    }
-
-    void operator()(const CScript& scriptPubKey) const {
-        mtx.vout.push_back(CTxOut(fundingStreamValue, scriptPubKey));
-    }
-};
-
-
 class AddOutputsToCoinbaseTxAndSign
 {
 private:
@@ -141,19 +114,30 @@ public:
     }
 
     CAmount SetFoundersRewardAndGetMinerValue(sapling::Builder& saplingBuilder) const {
-        auto block_subsidy = GetBlockSubsidy(nHeight, chainparams.GetConsensus());
+        auto block_subsidy = chainparams.GetConsensus().GetBlockSubsidy(nHeight);
         auto miner_reward = block_subsidy; // founders' reward or funding stream amounts will be subtracted below
 
         if (nHeight > 0) {
             if (chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY)) {
-                auto fundingStreamElements = Consensus::GetActiveFundingStreamElements(
+                auto fundingStreamElements = chainparams.GetConsensus().GetActiveFundingStreamElements(
                     nHeight,
-                    block_subsidy,
-                    chainparams.GetConsensus());
+                    block_subsidy);
 
                 for (Consensus::FundingStreamElement fselem : fundingStreamElements) {
                     miner_reward -= fselem.second;
-                    std::visit(AddFundingStreamValueToTx(mtx, saplingBuilder, fselem.second, GetZip212Flag()), fselem.first);
+                    examine(fselem.first, match {
+                        [&](const libzcash::SaplingPaymentAddress& pa) {
+                            saplingBuilder.add_recipient(
+                                {},
+                                pa.GetRawBytes(),
+                                fselem.second,
+                                libzcash::Memo::ToBytes(std::nullopt));
+                        },
+                        [&](const CScript& scriptPubKey) {
+                            mtx.vout.emplace_back(fselem.second, scriptPubKey);
+                        },
+                        [](const Consensus::Lockbox& lockbox) {}
+                    });
                 }
             } else if (nHeight <= chainparams.GetConsensus().GetLastFoundersRewardBlockHeight(nHeight)) {
                 // Founders reward is 20% of the block subsidy
