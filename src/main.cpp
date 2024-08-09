@@ -2062,9 +2062,9 @@ bool GetAddressUnspent(const uint160& addressHash, int type,
  * Return transaction in txOut, and if it was found inside a block, its hash is placed in hashBlock.
  * If blockIndex is provided, the transaction is fetched from the corresponding block.
  */
-bool GetTransaction(const uint256& hash, CTransaction& txOut, const Consensus::Params& consensusParams, uint256& hashBlock, bool fAllowSlow, CBlockIndex* blockIndex)
+bool GetTransaction(const uint256& hash, CTransaction& txOut, const Consensus::Params& consensusParams, uint256& hashBlock, bool fAllowSlow, const CBlockIndex* blockIndex)
 {
-    CBlockIndex* pindexSlow = blockIndex;
+    const CBlockIndex* pindexSlow = blockIndex;
 
     LOCK(cs_main);
 
