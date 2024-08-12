@@ -519,6 +519,7 @@ public:
     const std::vector<CTxOut> vout;
     const uint32_t nLockTime{0};
     const uint32_t nExpiryHeight{0};
+    const CAmount nBurnAmount{0};
     const std::vector<JSDescription> vJoinSplit;
     const ed25519::VerificationKey joinSplitPubKey;
     const ed25519::Signature joinSplitSig;
@@ -729,7 +730,7 @@ public:
      * shielded output values - is positive or negative.
      */
 
-    // Return sum of txouts, (negative valueBalanceSapling or zero) and JoinSplit vpub_old.
+    // Return sum of txouts, (negative valueBalanceSapling or zero), JoinSplit vpub_old, and burned value.
     CAmount GetValueOut() const;
     // GetValueIn() is a method on CCoinsViewCache, because
     // inputs must be known to compute value in.
@@ -776,6 +777,7 @@ struct CMutableTransaction
     std::vector<CTxOut> vout;
     uint32_t nLockTime{0};
     uint32_t nExpiryHeight{0};
+    CAmount nBurnAmount{0};
     SaplingBundle saplingBundle;
     OrchardBundle orchardBundle;
     std::vector<JSDescription> vJoinSplit;

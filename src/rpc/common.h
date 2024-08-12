@@ -133,7 +133,7 @@ static const CRPCConvertTable rpcCvtTable =
     { "z_converttex",                {{s}, {}} },
     { "getnewaddress",               {{}, {s}} },
     { "getrawchangeaddress",         {{}, {}} },
-    { "sendtoaddress",               {{s, o}, {s, s, o}} },
+    { "sendtoaddress",               {{s, o}, {s, s, o, o}} },
     { "listaddresses",               {{}, {}} },
     { "listaddressgroupings",        {{}, {o}} },
     { "signmessage",                 {{s, s}, {}} },
