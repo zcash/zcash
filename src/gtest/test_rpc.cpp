@@ -33,7 +33,7 @@ TEST(rpc, CheckExperimentalDisabledHelpMsg) {
 
     EXPECT_EQ(experimentalDisabledHelpMsg("somerpc", {"somevalue"}),
         "\nWARNING: somerpc is disabled.\n"
-        "To enable it, restart zcashd with the following command line options:\n"
+        "To enable it, restart " DAEMON_NAME " with the following command line options:\n"
         "-experimentalfeatures and -somevalue\n\n"
         "Alternatively add these two lines to the zcash.conf file:\n\n"
         "experimentalfeatures=1\n"
@@ -41,7 +41,7 @@ TEST(rpc, CheckExperimentalDisabledHelpMsg) {
 
     EXPECT_EQ(experimentalDisabledHelpMsg("somerpc", {"somevalue", "someothervalue"}),
         "\nWARNING: somerpc is disabled.\n"
-        "To enable it, restart zcashd with the following command line options:\n"
+        "To enable it, restart " DAEMON_NAME " with the following command line options:\n"
         "-experimentalfeatures and -somevalue"
         " or:\n-experimentalfeatures and -someothervalue"
         "\n\n"
@@ -54,7 +54,7 @@ TEST(rpc, CheckExperimentalDisabledHelpMsg) {
 
     EXPECT_EQ(experimentalDisabledHelpMsg("somerpc", {"somevalue", "someothervalue", "athirdvalue"}),
         "\nWARNING: somerpc is disabled.\n"
-        "To enable it, restart zcashd with the following command line options:\n"
+        "To enable it, restart " DAEMON_NAME " with the following command line options:\n"
         "-experimentalfeatures and -somevalue"
         " or:\n-experimentalfeatures and -someothervalue"
         " or:\n-experimentalfeatures and -athirdvalue"
