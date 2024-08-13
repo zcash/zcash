@@ -602,6 +602,8 @@ public:
 
             // Orchard Transaction Fields
             READWRITE(orchardBundle);
+
+            READWRITE(*const_cast<CAmount*>(&nBurnAmount));
         } else {
             // Legacy transaction formats
             READWRITE(*const_cast<std::vector<CTxIn>*>(&vin));

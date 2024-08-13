@@ -75,7 +75,9 @@ class NsmTest(BitcoinTestFramework):
             burn_amount
         )
 
-        alice.generate(1)
+        # Using the other node to mine ensures we test transaction serialization
+        sync_mempools([alice, bob])
+        bob.generate(1)
         block_height += 1
         self.sync_all()
 
