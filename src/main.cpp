@@ -3184,7 +3184,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     auto prevConsensusBranchId = CurrentEpochBranchId(pindex->nHeight - 1, consensusParams);
 
     // Initialize the chain supply delta to the value added to the lockbox for the block,
-    // as previously computed in `ReceivedBlockTransactions`
+    // as previously computed using `SetChainPoolValues`
     CAmount chainSupplyDelta = pindex->nLockboxValue;
     CAmount transparentValueDelta = 0;
     size_t total_sapling_tx = 0;
@@ -4596,17 +4596,13 @@ void FallbackSproutValuePoolBalance(
     }
 }
 
-/** Mark a block as having its data received and checked (up to BLOCK_VALID_TRANSACTIONS). */
-bool ReceivedBlockTransactions(
-    const CBlock &block,
-    CValidationState& state,
+// Compute the effect of `block` on the chain supply and the value in each value pool.
+// This requires `pindex->nHeight` and `pindex->pprev` to be set, but nothing else.
+void SetChainPoolValues(
     const CChainParams& chainparams,
-    CBlockIndex *pindexNew,
-    const CDiskBlockPos& pos)
+    const CBlock &block,
+    CBlockIndex *pindex)
 {
-    pindexNew->nTx = block.vtx.size();
-    pindexNew->nChainTx = 0;
-
     // the following values are computed here only for the genesis block
     CAmount chainSupplyDelta = 0;
     CAmount transparentValueDelta = 0;
@@ -4617,17 +4613,17 @@ bool ReceivedBlockTransactions(
 
     // Each lockbox funding stream produces a positive change to the lockbox value.
     CAmount lockboxValue = 0;
-    for (auto elem : chainparams.GetConsensus().GetActiveFundingStreamElements(pindexNew->nHeight)) {
+    for (auto elem : chainparams.GetConsensus().GetActiveFundingStreamElements(pindex->nHeight)) {
         if (std::holds_alternative<Consensus::Lockbox>(elem.first)) {
             lockboxValue += elem.second;
         }
     }
-    LogPrintf("%s: Lockbox value is %d at height %d", __func__, lockboxValue, pindexNew->nHeight);
+    LogPrintf("%s: Lockbox value is %d at height %d", __func__, lockboxValue, pindex->nHeight);
 
     for (auto tx : block.vtx) {
         // For the genesis block only, compute the chain supply delta and the transparent
         // output total.
-        if (pindexNew->pprev == nullptr) {
+        if (pindex->pprev == nullptr) {
             chainSupplyDelta = tx.GetValueOut();
             for (const auto& out : tx.vout) {
                 transparentValueDelta += out.nValue;
@@ -4651,25 +4647,37 @@ bool ReceivedBlockTransactions(
 
     // These values can only be computed here for the genesis block.
     // For all other blocks, we update them in ConnectBlock instead.
-    if (pindexNew->pprev == nullptr) {
-        pindexNew->nChainSupplyDelta = chainSupplyDelta;
-        pindexNew->nTransparentValue = transparentValueDelta;
+    if (pindex->pprev == nullptr) {
+        pindex->nChainSupplyDelta = chainSupplyDelta;
+        pindex->nTransparentValue = transparentValueDelta;
     } else {
-        pindexNew->nChainSupplyDelta = std::nullopt;
-        pindexNew->nTransparentValue = std::nullopt;
+        pindex->nChainSupplyDelta = std::nullopt;
+        pindex->nTransparentValue = std::nullopt;
     }
 
-    pindexNew->nChainTotalSupply = std::nullopt;
-    pindexNew->nChainTransparentValue = std::nullopt;
+    pindex->nChainTotalSupply = std::nullopt;
+    pindex->nChainTransparentValue = std::nullopt;
 
-    pindexNew->nSproutValue = sproutValue;
-    pindexNew->nChainSproutValue = std::nullopt;
-    pindexNew->nSaplingValue = saplingValue;
-    pindexNew->nChainSaplingValue = std::nullopt;
-    pindexNew->nOrchardValue = orchardValue;
-    pindexNew->nChainOrchardValue = std::nullopt;
-    pindexNew->nLockboxValue = lockboxValue;
-    pindexNew->nChainLockboxValue = std::nullopt;
+    pindex->nSproutValue = sproutValue;
+    pindex->nChainSproutValue = std::nullopt;
+    pindex->nSaplingValue = saplingValue;
+    pindex->nChainSaplingValue = std::nullopt;
+    pindex->nOrchardValue = orchardValue;
+    pindex->nChainOrchardValue = std::nullopt;
+    pindex->nLockboxValue = lockboxValue;
+    pindex->nChainLockboxValue = std::nullopt;
+}
+
+/** Mark a block as having its data received and checked (up to BLOCK_VALID_TRANSACTIONS). */
+bool ReceivedBlockTransactions(
+    const CBlock &block,
+    CValidationState& state,
+    const CChainParams& chainparams,
+    CBlockIndex *pindexNew,
+    const CDiskBlockPos& pos)
+{
+    pindexNew->nTx = block.vtx.size();
+    pindexNew->nChainTx = 0;
 
     pindexNew->nFile = pos.nFile;
     pindexNew->nDataPos = pos.nPos;
@@ -5155,6 +5163,8 @@ static bool AcceptBlock(const CBlock& block, CValidationState& state, const CCha
     if (!AcceptBlockHeader(block, state, chainparams, &pindex))
         return false;
 
+    SetChainPoolValues(chainparams, block, pindex);
+
     // Try to process all requested blocks that we don't have, but only
     // process an unrequested block if it's new and has enough work to
     // advance our tip, and isn't too many blocks ahead.
@@ -5271,6 +5281,7 @@ bool TestBlockValidity(
     CBlockIndex indexDummy(block);
     indexDummy.pprev = pindexPrev;
     indexDummy.nHeight = pindexPrev->nHeight + 1;
+    SetChainPoolValues(chainparams, block, &indexDummy);
 
     // JoinSplit proofs are verified in ConnectBlock
     auto verifier = ProofVerifier::Disabled();
@@ -6249,6 +6260,7 @@ bool InitBlockIndex(const CChainParams& chainparams)
             if (!WriteBlockToDisk(block, blockPos, chainparams.MessageStart()))
                 return error("LoadBlockIndex(): writing genesis block to disk failed");
             CBlockIndex *pindex = AddToBlockIndex(block, chainparams.GetConsensus());
+            SetChainPoolValues(chainparams, block, pindex);
             if (!ReceivedBlockTransactions(block, state, chainparams, pindex, blockPos))
                 return error("LoadBlockIndex(): genesis block not accepted");
             // Before the genesis block, there was an empty tree. We set its root here so

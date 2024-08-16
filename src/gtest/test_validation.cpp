@@ -10,6 +10,11 @@
 
 #include <optional>
 
+extern void SetChainPoolValues(
+    const CChainParams& chainparams,
+    const CBlock &block,
+    CBlockIndex *pindex);
+
 extern bool ReceivedBlockTransactions(
     const CBlock &block,
     CValidationState& state,
@@ -291,6 +296,7 @@ TEST(Validation, ReceivedBlockTransactions) {
 
     // Mark the second block's transactions as received first
     CValidationState state;
+    SetChainPoolValues(chainParams, block2, &fakeIndex2);
     EXPECT_TRUE(ReceivedBlockTransactions(block2, state, chainParams, &fakeIndex2, pos2));
     EXPECT_FALSE(fakeIndex1.IsValid(BLOCK_VALID_TRANSACTIONS));
     EXPECT_TRUE(fakeIndex2.IsValid(BLOCK_VALID_TRANSACTIONS));
@@ -306,6 +312,7 @@ TEST(Validation, ReceivedBlockTransactions) {
     EXPECT_FALSE((bool)fakeIndex2.nChainSproutValue);
 
     // Now mark the first block's transactions as received
+    SetChainPoolValues(chainParams, block1, &fakeIndex1);
     EXPECT_TRUE(ReceivedBlockTransactions(block1, state, chainParams, &fakeIndex1, pos1));
     EXPECT_TRUE(fakeIndex1.IsValid(BLOCK_VALID_TRANSACTIONS));
     EXPECT_TRUE(fakeIndex2.IsValid(BLOCK_VALID_TRANSACTIONS));

@@ -59,10 +59,12 @@ class CoinbaseFundingStreamsTest (BitcoinTestFramework):
         self.nodes[1].generate(2)
         self.sync_all()
 
-        # Restart node 0 with funding streams.
+        # Restart both nodes with funding streams.
         self.nodes[0].stop()
         bitcoind_processes[0].wait()
-        self.nodes[0] = self.start_node_with(0, [
+        self.nodes[1].stop()
+        bitcoind_processes[1].wait()
+        new_args = [
             "-mineraddress=%s" % miner_addr,
             "-minetolocalwallet=0",
             fundingstream(0, 5, 9, [fs_addr]),
@@ -70,7 +72,9 @@ class CoinbaseFundingStreamsTest (BitcoinTestFramework):
             fundingstream(2, 5, 9, [fs_addr]),
             fundingstream(3, 9, 13, [fs_addr, fs_addr]),
             fundingstream(4, 9, 13, ["DEFERRED_POOL", "DEFERRED_POOL"]),
-        ])
+        ]
+        self.nodes[0] = self.start_node_with(0, new_args)
+        self.nodes[1] = self.start_node_with(1, new_args)
         connect_nodes(self.nodes[1], 0)
         self.sync_all()
 
