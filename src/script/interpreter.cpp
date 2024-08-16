@@ -1190,7 +1190,9 @@ void PrecomputedTransactionData::SetPrecomputed(
 SigVersion SignatureHashVersion(const CTransaction& txTo)
 {
     if (txTo.fOverwintered) {
-        if (txTo.nVersionGroupId == ZIP225_VERSION_GROUP_ID) {
+        if (txTo.nVersionGroupId == ZFUTURE_VERSION_GROUP_ID) {
+            return SIGVERSION_ZIP244;
+        } else if (txTo.nVersionGroupId == ZIP225_VERSION_GROUP_ID) {
             return SIGVERSION_ZIP244;
         } else if (txTo.nVersionGroupId == SAPLING_VERSION_GROUP_ID) {
             return SIGVERSION_SAPLING;

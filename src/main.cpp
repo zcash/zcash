@@ -1260,7 +1260,7 @@ bool ContextualCheckTransaction(
                 }
 
                 // Reject transactions with invalid version
-                if (tx.nVersion > ZIP225_MAX_TX_VERSION + 1) {
+                if (tx.nVersion > ZFUTURE_TX_VERSION) {
                     return state.DoS(
                         dosLevelPotentiallyRelaxing,
                         error("ContextualCheckTransaction(): Future version too high"),

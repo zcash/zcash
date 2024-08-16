@@ -107,7 +107,7 @@ $(CXXBRIDGE_H) $(CXXBRIDGE_CPP): $(CXXBRIDGE_RS)
 #   requires https://github.com/rust-bitcoin/rust-secp256k1/issues/380 to be addressed.
 RUST_ENV_VARS = \
   RUSTC="$(RUSTC)" \
-  RUSTFLAGS="--cfg=rust_secp_no_symbol_renaming -L native=$(abs_top_srcdir)/src/secp256k1/.libs" \
+  RUSTFLAGS="--cfg=rust_secp_no_symbol_renaming --cfg zcash_unstable=\"zfuture\" --cfg zcash_unstable=\"nsm\" -L native=$(abs_top_srcdir)/src/secp256k1/.libs" \
   CC="$(CC)" \
   CFLAGS="$(CFLAGS)" \
   CXX="$(CXX)" \

@@ -5566,7 +5566,12 @@ bool CWallet::CreateTransaction(
         max_tx_size = MAX_TX_SIZE_BEFORE_SAPLING;
     }
 
-    txNew.nBurnAmount = nBurnAmount;
+    if (Params().GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_ZFUTURE)) {
+        txNew.nBurnAmount = nBurnAmount;
+    } else if (nBurnAmount > 0) {
+        strFailReason = _("Burning is not supported at this block height.");
+        return false;
+    }
 
     // Discourage fee sniping.
     //

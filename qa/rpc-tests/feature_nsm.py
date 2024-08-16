@@ -4,14 +4,17 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.test_framework import BitcoinTestFramework
+from test_framework.authproxy import JSONRPCException
 from test_framework.util import (
     assert_equal,
     assert_false,
+    assert_raises_message,
     connect_nodes_bi,
     start_nodes,
     sync_mempools,
     nuparams,
     NU5_BRANCH_ID,
+    ZFUTURE_BRANCH_ID,
 )
 import time
 
@@ -29,7 +32,9 @@ class NsmTest(BitcoinTestFramework):
         self.is_network_split = False
         self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[
             nuparams(NU5_BRANCH_ID, 1),
-            '-allowdeprecated=getnewaddress',
+            nuparams(ZFUTURE_BRANCH_ID, 103),
+            '-nurejectoldversions=false',
+            '-allowdeprecated=getnewaddress'
         ]] * self.num_nodes)
         connect_nodes_bi(self.nodes, 0, 1)
         self.sync_all()
@@ -65,15 +70,29 @@ class NsmTest(BitcoinTestFramework):
 
         send_amount = Decimal("1.23")
         burn_amount = Decimal("1.11")
-
-        alice.sendtoaddress(
+        sendtoaddress_args = [
             bob.getnewaddress(),
             send_amount,
             "",
             "",
             False,
             burn_amount
+        ]
+
+        assert_raises_message(
+            JSONRPCException,
+            "Burning is not supported at this block height.",
+            alice.sendtoaddress,
+            *sendtoaddress_args
         )
+
+        # After this block, NSM features will become available for inclusion in
+        # the following block.
+        alice.generate(1)
+        block_height += 1
+
+        # And now the same RPC call should succeed
+        alice.sendtoaddress(*sendtoaddress_args)
 
         # Using the other node to mine ensures we test transaction serialization
         sync_mempools([alice, bob])
@@ -83,7 +102,7 @@ class NsmTest(BitcoinTestFramework):
 
         transaction_fee = Decimal("0.0001")
         expected_alice_balance = (
-            (BLOCK_REWARD * 2)
+            (BLOCK_REWARD * 3)
             - send_amount
             - burn_amount
             - transaction_fee
