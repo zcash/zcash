@@ -3071,7 +3071,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         // the node was reindexed then this will be enforced for all blocks.
         if (pindex->nChainSproutValue) {
             if (*pindex->nChainSproutValue < 0) {
-                return state.DoS(100, error("ConnectBlock(): turnstile violation in Sprout shielded value pool"),
+                return state.DoS(100, error("%s: turnstile violation in Sprout shielded value pool", __func__),
                              REJECT_INVALID, "turnstile-violation-sprout-shielded-pool");
             }
         }
@@ -3085,7 +3085,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         // conditionally.
         if (pindex->nChainSaplingValue) {
             if (*pindex->nChainSaplingValue < 0) {
-                return state.DoS(100, error("ConnectBlock(): turnstile violation in Sapling shielded value pool"),
+                return state.DoS(100, error("%s: turnstile violation in Sapling shielded value pool", __func__),
                              REJECT_INVALID, "turnstile-violation-sapling-shielded-pool");
             }
         }
@@ -3099,7 +3099,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         // conditionally.
         if (pindex->nChainOrchardValue) {
             if (*pindex->nChainOrchardValue < 0) {
-                return state.DoS(100, error("ConnectBlock(): turnstile violation in Orchard shielded value pool"),
+                return state.DoS(100, error("%s: turnstile violation in Orchard shielded value pool", __func__),
                                  REJECT_INVALID, "turnstile-violation-orchard");
             }
         }
@@ -3110,7 +3110,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     for (const CTransaction& tx : block.vtx) {
         const CCoins* coins = view.AccessCoins(tx.GetHash());
         if (coins && !coins->IsPruned())
-            return state.DoS(100, error("ConnectBlock(): tried to overwrite transaction"),
+            return state.DoS(100, error("%s: tried to overwrite transaction", __func__),
                              REJECT_INVALID, "bad-txns-BIP30");
     }
 
@@ -3158,7 +3158,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     if (pindex->pprev && consensusParams.NetworkUpgradeActive(pindex->pprev->nHeight, Consensus::UPGRADE_NU5)) {
         // Verify that the view's current state corresponds to the previous block.
         assert(pindex->pprev->hashFinalOrchardRoot == view.GetBestAnchor(ORCHARD));
-        // We only call ConnectBlock() on top of the active chain's tip.
+        // We only call ConnectBlock on top of the active chain's tip.
         assert(!pindex->pprev->hashFinalOrchardRoot.IsNull());
 
         assert(view.GetOrchardAnchorAt(pindex->pprev->hashFinalOrchardRoot, orchard_tree));
@@ -3200,7 +3200,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         nInputs += tx.vin.size();
         nSigOps += GetLegacySigOpCount(tx);
         if (nSigOps > MAX_BLOCK_SIGOPS)
-            return state.DoS(100, error("ConnectBlock(): too many sigops"),
+            return state.DoS(100, error("%s: too many sigops", __func__),
                              REJECT_INVALID, "bad-blk-sigops");
 
         // Coinbase transactions are the only case where this vector will not be the same
@@ -3218,7 +3218,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         if (!tx.IsCoinBase())
         {
             if (!view.HaveInputs(tx))
-                return state.DoS(100, error("ConnectBlock(): inputs missing/spent"),
+                return state.DoS(100, error("%s: inputs missing/spent", __func__),
                                  REJECT_INVALID, "bad-txns-inputs-missingorspent");
 
             for (const auto& input : tx.vin) {
@@ -3264,7 +3264,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             // an incredibly-expensive-to-validate block.
             nSigOps += GetP2SHSigOpCount(tx, view);
             if (nSigOps > MAX_BLOCK_SIGOPS)
-                return state.DoS(100, error("ConnectBlock(): too many sigops"),
+                return state.DoS(100, error("%s: too many sigops", __func__),
                                  REJECT_INVALID, "bad-blk-sigops");
         }
 
@@ -3287,7 +3287,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
             std::vector<CScriptCheck> vChecks;
             if (!ContextualCheckInputs(tx, state, view, fExpensiveChecks, flags, fCacheResults, txdata.back(), consensusParams, consensusBranchId, nScriptCheckThreads ? &vChecks : NULL))
-                return error("ConnectBlock(): CheckInputs on %s failed with %s",
+                return error("%s: CheckInputs on %s failed with %s", __func__,
                     tx.GetHash().ToString(), FormatStateMessage(state));
             control.Add(vChecks);
         }
@@ -3306,7 +3306,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             true))
         {
             return error(
-                "ConnectBlock(): ContextualCheckShieldedInputs() on %s failed with %s",
+                "%s: ContextualCheckShieldedInputs() on %s failed with %s", __func__,
                 tx.GetHash().ToString(),
                 FormatStateMessage(state));
         }
@@ -3383,7 +3383,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                 }
             } catch (const rust::Error& e) {
                 return state.DoS(100,
-                    error("ConnectBlock(): block would overfill the Orchard commitment tree."),
+                    error("%s: block would overfill the Orchard commitment tree.", __func__),
                     REJECT_INVALID, "orchard-commitment-tree-full");
             }
         }
@@ -3446,7 +3446,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         //   CBlockIndex (which was ensured in AddToBlockIndex).
         // - If this block is on or after Heartwood activation, this is where we
         //   set the correct value of hashFinalSaplingRoot; in particular,
-        //   blocks that are never passed to ConnectBlock() (and thus never on
+        //   blocks that are never passed to ConnectBlock (and thus never on
         //   the main chain) will stay with hashFinalSaplingRoot set to null.
         if (consensusParams.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
             pindex->hashFinalSaplingRoot = sapling_tree.root();
@@ -3459,7 +3459,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         // - If this block is on or after NU5 activation, this is where we set
         //   the correct values of hashAuthDataRoot, hashFinalOrchardRoot, and
         //   hashChainHistoryRoot; in particular, blocks that are never passed
-        //   to ConnectBlock() (and thus never on the main chain) will stay with
+        //   to ConnectBlock (and thus never on the main chain) will stay with
         //   these set to null.
         if (consensusParams.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
             pindex->hashAuthDataRoot = hashAuthDataRoot.value();
@@ -3479,7 +3479,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                 hashAuthDataRoot.value());
             if (block.hashBlockCommitments != hashBlockCommitments) {
                 return state.DoS(100,
-                    error("ConnectBlock(): block's hashBlockCommitments is incorrect (should be ZIP 244 block commitment)"),
+                    error("%s: block's hashBlockCommitments is incorrect (should be ZIP 244 block commitment)", __func__),
                     REJECT_INVALID, "bad-block-commitments-hash");
             }
         }
@@ -3488,7 +3488,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         // be set to all zero bytes.
         if (!block.hashBlockCommitments.IsNull()) {
             return state.DoS(100,
-                error("ConnectBlock(): block's hashBlockCommitments is incorrect (should be null)"),
+                error("%s: block's hashBlockCommitments is incorrect (should be null)", __func__),
                 REJECT_INVALID, "bad-heartwood-root-in-block");
         }
     } else if (consensusParams.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
@@ -3502,7 +3502,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         //   block yet, view.GetHistoryRoot() returns the root we need.
         if (block.hashBlockCommitments != hashChainHistoryRoot.value()) {
             return state.DoS(100,
-                error("ConnectBlock(): block's hashBlockCommitments is incorrect (should be history tree root)"),
+                error("%s: block's hashBlockCommitments is incorrect (should be history tree root)", __func__),
                 REJECT_INVALID, "bad-heartwood-root-in-block");
         }
     } else if (consensusParams.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_SAPLING)) {
@@ -3510,7 +3510,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         // same as the root of the Sapling tree
         if (block.hashBlockCommitments != sapling_tree.root()) {
             return state.DoS(100,
-                error("ConnectBlock(): block's hashBlockCommitments is incorrect (should be Sapling tree root)"),
+                error("%s: block's hashBlockCommitments is incorrect (should be Sapling tree root)", __func__),
                 REJECT_INVALID, "bad-sapling-root-in-block");
         }
     }
@@ -3552,7 +3552,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     CAmount cbTotalInputValue = consensusParams.GetBlockSubsidy(pindex->nHeight) + nFees;
     if (cbTotalOutputValue > cbTotalInputValue) {
         return state.DoS(100,
-            error("ConnectBlock(): coinbase pays too much (actual=%d vs limit=%d)",
+            error("%s: coinbase pays too much (actual=%d vs limit=%d)", __func__,
                 cbTotalOutputValue - pindex->nLockboxValue, cbTotalInputValue - pindex->nLockboxValue),
                 REJECT_INVALID, "bad-cb-amount");
     } else if (
@@ -3560,9 +3560,12 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         cbTotalOutputValue != cbTotalInputValue
     ) {
         return state.DoS(100,
-            error("ConnectBlock(): coinbase pays the wrong amount (actual=%d vs expected=%d)",
-                cbTotalOutputValue - pindex->nLockboxValue, cbTotalInputValue - pindex->nLockboxValue),
-                REJECT_INVALID, "bad-cb-not-exact");
+            error(
+                "%s: coinbase pays the wrong amount (actual=%d vs expected=%d; lockbox value is %d)", __func__,
+                cbTotalOutputValue - pindex->nLockboxValue,
+                cbTotalInputValue - pindex->nLockboxValue,
+                pindex->nLockboxValue),
+            REJECT_INVALID, "bad-cb-not-exact");
     }
 
     // Ensure that the total chain supply is consistent with the value in each pool.
@@ -3582,7 +3585,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             pindex->nChainLockboxValue.value();
         if (expectedChainSupply != pindex->nChainTotalSupply.value()) {
             // This may be added as a rule to ZIP 209 and return a failure in a future soft-fork.
-            error("ConnectBlock(): chain total supply (%d) does not match sum of pool balances (%d) at height %d",
+            error("%s: chain total supply (%d) does not match sum of pool balances (%d) at height %d", __func__,
                     pindex->nChainTotalSupply.value(), expectedChainSupply, pindex->nHeight);
         }
     }
@@ -3590,14 +3593,14 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     // Ensure Sapling authorizations are valid (if we are checking them)
     if (saplingAuth.has_value() && !saplingAuth.value()->validate()) {
         return state.DoS(100,
-            error("ConnectBlock(): a Sapling bundle within the block is invalid"),
+            error("%s: a Sapling bundle within the block is invalid", __func__),
             REJECT_INVALID, "bad-sapling-bundle-authorization");
     }
 
     // Ensure Orchard signatures are valid (if we are checking them)
     if (orchardAuth.has_value() && !orchardAuth.value()->validate()) {
         return state.DoS(100,
-            error("ConnectBlock(): an Orchard bundle within the block is invalid"),
+            error("%s: an Orchard bundle within the block is invalid", __func__),
             REJECT_INVALID, "bad-orchard-bundle-authorization");
     }
 
@@ -3615,7 +3618,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         if (pindex->GetUndoPos().IsNull()) {
             CDiskBlockPos _pos;
             if (!FindUndoPos(state, pindex->nFile, _pos, ::GetSerializeSize(blockundo, SER_DISK, CLIENT_VERSION) + 40))
-                return error("ConnectBlock(): FindUndoPos failed");
+                return error("%s: FindUndoPos failed", __func__);
             if (!UndoWriteToDisk(blockundo, _pos, pindex->pprev->GetBlockHash(), chainparams.MessageStart()))
                 return AbortNode(state, "Failed to write undo data");
 
@@ -4619,6 +4622,7 @@ bool ReceivedBlockTransactions(
             lockboxValue += elem.second;
         }
     }
+    LogPrintf("%s: Lockbox value is %d at height %d", __func__, lockboxValue, pindexNew->nHeight);
 
     for (auto tx : block.vtx) {
         // For the genesis block only, compute the chain supply delta and the transparent
