@@ -148,6 +148,10 @@ def uint256_from_str(s):
     return r
 
 
+def uint256_from_reversed_hex(s):
+    return uint256_from_str(bytes.fromhex(s)[::-1])
+
+
 def uint256_from_compact(c):
     nbytes = (c >> 24) & 0xFF
     v = (c & 0xFFFFFF) << (8 * (nbytes - 3))
