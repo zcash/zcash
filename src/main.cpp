@@ -678,7 +678,7 @@ bool AddOrphanTx(const CTransaction& tx, NodeId peer) EXCLUSIVE_LOCKS_REQUIRED(c
     // 100 orphans, each of which is at most 99,999 bytes big is
     // at most 10 megabytes of orphans and somewhat more byprev index (in the worst case):
     unsigned int sz = GetSerializeSize(tx, SER_NETWORK, tx.nVersion);
-    if (sz >= MAX_TX_SIZE_BEFORE_SAPLING)
+    if (sz >= 100000)
     {
         LogPrint("mempool", "ignoring large orphan tx (size: %u, hash: %s)\n", sz, hash.ToString());
         return false;
@@ -737,6 +737,7 @@ unsigned int LimitOrphanTxSize(unsigned int nMaxOrphans) EXCLUSIVE_LOCKS_REQUIRE
     if (nNextSweep <= nNow) {
         // Sweep out expired orphan pool entries:
         int nErased = 0;
+        assert(nNow <= INT64_MAX - ORPHAN_TX_EXPIRE_TIME);
         int64_t nMinExpTime = nNow + ORPHAN_TX_EXPIRE_TIME - ORPHAN_TX_EXPIRE_INTERVAL;
         map<uint256, COrphanTx>::iterator iter = mapOrphanTransactions.begin();
         while (iter != mapOrphanTransactions.end())
@@ -749,6 +750,7 @@ unsigned int LimitOrphanTxSize(unsigned int nMaxOrphans) EXCLUSIVE_LOCKS_REQUIRE
             }
         }
         // Sweep again 5 minutes after the next entry that expires in order to batch the linear scan.
+        assert(nMinExpTime <= INT64_MAX - ORPHAN_TX_EXPIRE_INTERVAL);
         nNextSweep = nMinExpTime + ORPHAN_TX_EXPIRE_INTERVAL;
         if (nErased > 0) LogPrint("mempool", "Erased %d orphan tx due to expiration\n", nErased);
     }
@@ -7504,7 +7506,7 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
                  !tx.GetSaplingBundle().IsPresent() &&
                  !tx.GetOrchardBundle().IsPresent())
         {
-            bool fRejectedParents = false; // It may be the case that the orphans parents have all been rejected
+            bool fRejectedParents = false; // It may be the case that the orphan's parents have all been rejected
             for (const CTxIn& txin : tx.vin) {
                 if (recentRejects->contains(txin.prevout.hash)) {
                     fRejectedParents = true;
@@ -7519,7 +7521,8 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
                 }
                 AddOrphanTx(tx, pfrom->GetId());
 
-                // DoS prevention: do not allow mapOrphanTransactions to grow unbounded
+                // DoS prevention: do not allow mapOrphanTransactions and
+                // mapOrphanTransactionsByPrev to grow unbounded.
                 unsigned int nMaxOrphanTx = (unsigned int)std::max((int64_t)0, GetArg("-maxorphantx", DEFAULT_MAX_ORPHAN_TRANSACTIONS));
                 unsigned int nEvicted = LimitOrphanTxSize(nMaxOrphanTx);
                 if (nEvicted > 0)
