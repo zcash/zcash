@@ -81,16 +81,15 @@ class InvalidBlockRequestTest(ComparisonTestFramework):
         tx2 = create_transaction(tx1, 0, b'\x51', 10*100000000)
 
         block2.vtx.extend([tx1, tx2])
-        block2.hashMerkleRoot = block2.calc_merkle_root()
         block2.rehash()
         block2.solve()
         orig_hash = block2.sha256
         block2_orig = copy.deepcopy(block2)
 
-        # Mutate block 2
+        # Mutate block 2, but don't recalculate hashAuthDataRoot.
         block2.vtx.append(tx2)
         assert_equal(block2.hashMerkleRoot, block2.calc_merkle_root())
-        assert_equal(orig_hash, block2.rehash())
+        assert_equal(orig_hash, block2.rehash_without_recalc())
         assert(block2_orig.vtx != block2.vtx)
 
         self.tip = block2.sha256
@@ -103,9 +102,7 @@ class InvalidBlockRequestTest(ComparisonTestFramework):
         block3 = create_block(self.tip, create_coinbase(height), self.block_time)
         self.block_time += 1
         block3.vtx[0].vout[0].nValue = 100*100000000 # Too high!
-        block3.vtx[0].sha256=None
-        block3.vtx[0].calc_sha256()
-        block3.hashMerkleRoot = block3.calc_merkle_root()
+        block3.vtx[0].rehash()
         block3.rehash()
         block3.solve()
 

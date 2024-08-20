@@ -7,11 +7,14 @@
 
 from hashlib import blake2b
 
-from .mininode import CBlock, CTransaction, CTxIn, CTxOut, COutPoint
+from .mininode import (
+    CBlock, CTransaction, CTxIn, CTxOut, COutPoint,
+    BLOSSOM_POW_TARGET_SPACING_RATIO,
+)
 from .script import CScript, OP_0, OP_EQUAL, OP_HASH160, OP_TRUE, OP_CHECKSIG
 
 # Create a block (with regtest difficulty)
-def create_block(hashprev, coinbase, nTime=None, nBits=None, hashFinalSaplingRoot=None):
+def create_block(hashprev, coinbase, nTime=None, nBits=None, hashBlockCommitments=None):
     block = CBlock()
     if nTime is None:
         import time
@@ -19,10 +22,10 @@ def create_block(hashprev, coinbase, nTime=None, nBits=None, hashFinalSaplingRoo
     else:
         block.nTime = nTime
     block.hashPrevBlock = hashprev
-    if hashFinalSaplingRoot is None:
+    if hashBlockCommitments is None:
         # By default NUs up to Sapling are active from block 1, so we set this to the empty root.
-        hashFinalSaplingRoot = 0x3e49b5f954aa9d3545bc6c37744661eea48d7c34e3000d82b7f0010c30f4c2fb
-    block.hashFinalSaplingRoot = hashFinalSaplingRoot
+        hashBlockCommitments = 0x3e49b5f954aa9d3545bc6c37744661eea48d7c34e3000d82b7f0010c30f4c2fb
+    block.hashBlockCommitments = hashBlockCommitments
     if nBits is None:
         block.nBits = 0x200f0f0f # difficulty retargeting is disabled in REGTEST chainparams
     else:
@@ -60,20 +63,26 @@ def serialize_script_num(value):
 # Create a coinbase transaction, assuming no miner fees.
 # If pubkey is passed in, the coinbase output will be a P2PK output;
 # otherwise an anyone-can-spend output.
-def create_coinbase(height, pubkey = None):
+def create_coinbase(height, pubkey=None, after_blossom=False, outputs=[], lockboxvalue=0):
     coinbase = CTransaction()
+    coinbase.nExpiryHeight = height
     coinbase.vin.append(CTxIn(COutPoint(0, 0xffffffff),
-                CScript([height, OP_0]), 0xffffffff))
+                              CScript([height, OP_0]), 0xffffffff))
     coinbaseoutput = CTxOut()
     coinbaseoutput.nValue = int(12.5*100000000)
-    halvings = int(height/150) # regtest
+    if after_blossom:
+        coinbaseoutput.nValue //= BLOSSOM_POW_TARGET_SPACING_RATIO
+    halvings = height // 150 # regtest
     coinbaseoutput.nValue >>= halvings
+    coinbaseoutput.nValue -= lockboxvalue
+
     if (pubkey != None):
         coinbaseoutput.scriptPubKey = CScript([pubkey, OP_CHECKSIG])
     else:
         coinbaseoutput.scriptPubKey = CScript([OP_TRUE])
     coinbase.vout = [ coinbaseoutput ]
-    if halvings == 0: # regtest
+
+    if len(outputs) == 0 and halvings == 0: # regtest
         froutput = CTxOut()
         froutput.nValue = coinbaseoutput.nValue // 5
         # regtest
@@ -82,7 +91,11 @@ def create_coinbase(height, pubkey = None):
                             0x32, 0x13, 0xa4, 0x91])
         froutput.scriptPubKey = CScript([OP_HASH160, fraddr, OP_EQUAL])
         coinbaseoutput.nValue -= froutput.nValue
-        coinbase.vout = [ coinbaseoutput, froutput ]
+        coinbase.vout.append(froutput)
+
+    coinbaseoutput.nValue -= sum(output.nValue for output in outputs)
+    assert coinbaseoutput.nValue >= 0, coinbaseoutput.nValue
+    coinbase.vout.extend(outputs)
     coinbase.calc_sha256()
     return coinbase
 
