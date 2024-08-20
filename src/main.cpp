@@ -1484,7 +1484,8 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     if (tx.vout.empty() &&
         tx.vJoinSplit.empty() &&
         tx.GetSaplingOutputsCount() == 0 &&
-        !orchard_bundle.OutputsEnabled())
+        !orchard_bundle.OutputsEnabled() &&
+        tx.nBurnAmount == 0)
     {
         return state.DoS(10, false, REJECT_INVALID, "bad-txns-no-sink-of-funds");
     }

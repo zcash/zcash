@@ -206,6 +206,62 @@ class NsmTest(BitcoinTestFramework):
         )
 
         #####
+        # Inputs don't cover the burned value
+        decoded_transaction = alice.decoderawtransaction(funded_transaction["hex"])
+        raw_transaction = (
+            alice.createrawtransaction(
+                [
+                    # The change from the previous transaction
+                    {
+                        "txid": decoded_transaction["txid"],
+                        "vout": 0
+                    }
+                ],
+                {},
+                None,
+                None,
+                99999
+            )
+        )
+        assert_raises_message(
+            JSONRPCException,
+            "min relay fee not met",
+            alice.sendrawtransaction,
+            raw_transaction
+        )
+
+        #####
+        # Insufficient funds in wallet
+        raw_transaction = alice.createrawtransaction([], {}, None, None, 99999)
+        assert_raises_message(
+            JSONRPCException,
+            "Insufficient funds",
+            alice.fundrawtransaction,
+            raw_transaction
+        )
+        assert_raises_message(
+            JSONRPCException,
+            "Insufficient funds",
+            alice.sendtoaddress,
+            bob_address, 1, "", "", False, 99999
+        )
+
+        #####
+        # Negative burns
+        assert_raises_message(
+            JSONRPCException,
+            "Amount out of range",
+            alice.createrawtransaction,
+            [], {}, None, None, -1
+        )
+        assert_raises_message(
+            JSONRPCException,
+            "Amount out of range",
+            alice.sendtoaddress,
+            bob_address, 1, "", "", False, -1
+        )
+
+        #####
         # Check that we can't make a truly empty transaction
         raw_transaction = alice.createrawtransaction([], {}, None, None, 0)
         assert_raises_message(

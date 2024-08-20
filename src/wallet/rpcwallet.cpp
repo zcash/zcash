@@ -302,13 +302,14 @@ static void SendMoney(
     CAmount nBurnAmount,
     CWalletTx& wtxNew)
 {
+    CAmount nTotalValue { nValue + nBurnAmount };
     CAmount curBalance = pwalletMain->GetBalance(std::nullopt);
 
     // Check amount
     if (nValue <= 0)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid amount");
 
-    if (nValue > curBalance)
+    if (nTotalValue > curBalance)
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Insufficient funds");
 
     // Parse Zcash address
