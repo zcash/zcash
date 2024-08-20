@@ -42,6 +42,7 @@ class NsmTest(BitcoinTestFramework):
     def run_test(self):
         BLOCK_REWARD = Decimal("6.25")
         COINBASE_MATURATION_BLOCK_COUNT = 100
+        TRANSACTION_FEE = Decimal("0.0001")
 
         alice, bob = self.nodes
 
@@ -68,10 +69,11 @@ class NsmTest(BitcoinTestFramework):
         assert_equal(alice.getbalance(), BLOCK_REWARD)
         assert_equal(bob.getbalance(), 0)
 
+        bob_address = bob.getnewaddress()
         send_amount = Decimal("1.23")
         burn_amount = Decimal("1.11")
         sendtoaddress_args = [
-            bob.getnewaddress(),
+            bob_address,
             send_amount,
             "",
             "",
@@ -100,18 +102,62 @@ class NsmTest(BitcoinTestFramework):
         block_height += 1
         self.sync_all()
 
-        transaction_fee = Decimal("0.0001")
         expected_alice_balance = (
             (BLOCK_REWARD * 3)
             - send_amount
             - burn_amount
-            - transaction_fee
+            - TRANSACTION_FEE
         )
+        expected_bob_balance = send_amount
 
         assert_equal(alice.getbalance(), expected_alice_balance)
-        assert_equal(bob.getbalance(), send_amount)
+        assert_equal(bob.getbalance(), expected_bob_balance)
 
         expected_chain_value = BLOCK_REWARD * block_height - burn_amount
+        assert_equal(
+            alice.getblockchaininfo()["chainSupply"]["chainValue"],
+            expected_chain_value
+        )
+        assert_equal(
+            bob.getblockchaininfo()["chainSupply"]["chainValue"],
+            expected_chain_value
+        )
+
+        # Try the same using createrawtransaction
+        raw_transaction = (
+            alice.createrawtransaction(
+                [],
+                {bob_address: send_amount},
+                None,
+                None,
+                burn_amount
+            )
+        )
+        funded_transaction = alice.fundrawtransaction(raw_transaction)
+        signed_transaction = alice.signrawtransaction(funded_transaction["hex"])
+        transaction_hash = alice.sendrawtransaction(signed_transaction["hex"])
+
+        assert_equal(alice.decoderawtransaction(raw_transaction)["burnAmount"], burn_amount)
+        assert_equal(alice.decoderawtransaction(funded_transaction["hex"])["burnAmount"], burn_amount)
+        assert_equal(alice.decoderawtransaction(signed_transaction["hex"])["burnAmount"], burn_amount)
+
+        alice.generate(1)
+        self.sync_all()
+
+        assert_equal(bob.getrawtransaction(transaction_hash, 1)["burnAmount"], burn_amount)
+
+        expected_alice_balance += (
+            BLOCK_REWARD
+            - send_amount
+            - burn_amount
+            - TRANSACTION_FEE
+        )
+        expected_bob_balance += send_amount
+
+        assert_equal(alice.getbalance(), expected_alice_balance)
+        assert_equal(bob.getbalance(), expected_bob_balance)
+
+        expected_chain_value += BLOCK_REWARD - burn_amount
         assert_equal(
             alice.getblockchaininfo()["chainSupply"]["chainValue"],
             expected_chain_value

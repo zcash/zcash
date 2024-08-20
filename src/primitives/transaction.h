@@ -856,6 +856,10 @@ struct CMutableTransaction
 
             // Orchard Transaction Fields
             READWRITE(orchardBundle);
+
+            if (isFuture) {
+                READWRITE(*const_cast<CAmount*>(&nBurnAmount));
+            }
         } else {
             // Legacy transaction formats
             READWRITE(vin);

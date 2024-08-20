@@ -95,6 +95,7 @@ CMutableTransaction::CMutableTransaction() : nVersion(CTransaction::SPROUT_MIN_C
 CMutableTransaction::CMutableTransaction(const CTransaction& tx) : nVersion(tx.nVersion), fOverwintered(tx.fOverwintered), nVersionGroupId(tx.nVersionGroupId), nExpiryHeight(tx.nExpiryHeight),
                                                                    nConsensusBranchId(tx.GetConsensusBranchId()),
                                                                    vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime),
+                                                                   nBurnAmount(tx.nBurnAmount),
                                                                    saplingBundle(tx.GetSaplingBundle()),
                                                                    orchardBundle(tx.GetOrchardBundle()),
                                                                    vJoinSplit(tx.vJoinSplit), joinSplitPubKey(tx.joinSplitPubKey), joinSplitSig(tx.joinSplitSig)

@@ -109,7 +109,7 @@ static const CRPCConvertTable rpcCvtTable =
     { "getrawtransaction",           {{s}, {o, s}} },
     { "gettxoutproof",               {{o}, {s}} },
     { "verifytxoutproof",            {{s}, {}} },
-    { "createrawtransaction",        {{o, o}, {o, o}} },
+    { "createrawtransaction",        {{o, o}, {o, o, o}} },
     { "decoderawtransaction",        {{s}, {}} },
     { "decodescript",                {{s}, {}} },
     { "signrawtransaction",          {{s}, {o, o, s, s}} },

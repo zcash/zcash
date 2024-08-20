@@ -335,6 +335,10 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
             }
         }
     }
+
+    if (tx.nVersion >= ZFUTURE_TX_VERSION) {
+        entry.pushKV("burnAmount", ValueFromAmount(tx.nBurnAmount));
+    }
 }
 
 UniValue getrawtransaction(const UniValue& params, bool fHelp)
@@ -495,6 +499,7 @@ UniValue getrawtransaction(const UniValue& params, bool fHelp)
             "  \"confirmations\" : n,            (numeric) The confirmations\n"
             "  \"time\" : ttt,                   (numeric) The transaction time in seconds since epoch (Jan 1 1970 GMT)\n"
             "  \"blocktime\" : ttt               (numeric) The block time in seconds since epoch (Jan 1 1970 GMT)\n"
+            "  \"burnAmount\" : x.xxx            (numeric) Burned value in " + CURRENCY_UNIT + "\n"
             "}\n"
 
             "\nExamples:\n"
@@ -672,7 +677,7 @@ UniValue verifytxoutproof(const UniValue& params, bool fHelp)
 
 UniValue createrawtransaction(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() < 2 || params.size() > 4)
+    if (fHelp || params.size() < 2 || params.size() > 5)
         throw runtime_error(
             "createrawtransaction [{\"txid\":\"id\",\"vout\":n},...] {\"address\":amount,...} ( locktime ) ( expiryheight )\n"
             "\nCreate a transaction spending the given inputs and sending to the given addresses.\n"
@@ -699,6 +704,7 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
             "4. expiryheight          (numeric, optional, default="
                 + strprintf("nextblockheight+%d (pre-Blossom) or nextblockheight+%d (post-Blossom)", DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA, DEFAULT_POST_BLOSSOM_TX_EXPIRY_DELTA) + ") "
                 "Expiry height of transaction (if Overwinter is active)\n"
+            "5. burn-amount           (numeric, optional, default=0) The amount in " + CURRENCY_UNIT + " to burn.\n"
             "\nResult:\n"
             "\"transaction\"            (string) hex string of the transaction\n"
 
@@ -792,6 +798,11 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
         rawTx.vout.push_back(out);
     }
 
+    rawTx.nBurnAmount =
+        params.size() > 4 ?
+            AmountFromValue(params[4]) :
+            0;
+
     return EncodeHexTx(rawTx);
 }
 
@@ -871,6 +882,7 @@ UniValue decoderawtransaction(const UniValue& params, bool fHelp)
             "     }\n"
             "     ,...\n"
             "  ],\n"
+            "  \"burnAmount\" : x.xxx    (numeric) burned value in " + CURRENCY_UNIT + "\n"
             "}\n"
 
             "\nExamples:\n"
