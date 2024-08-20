@@ -460,7 +460,7 @@ def _rpchost_to_args(rpchost):
     if rpchost is None:
         return []
 
-    match = re.match('(\[[0-9a-fA-f:]+\]|[^:]+)(?::([0-9]+))?$', rpchost)
+    match = re.match(r'(\[[0-9a-fA-f:]+\]|[^:]+)(?::([0-9]+))?$', rpchost)
     if not match:
         raise ValueError('Invalid RPC host spec ' + rpchost)
 

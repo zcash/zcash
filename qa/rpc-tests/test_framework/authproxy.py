@@ -35,7 +35,7 @@
 
 import base64
 import decimal
-import simplejson as json
+import json
 import logging
 from http.client import HTTPConnection, HTTPSConnection, BadStatusLine
 from urllib.parse import urlparse

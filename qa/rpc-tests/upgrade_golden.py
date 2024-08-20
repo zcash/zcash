@@ -83,7 +83,7 @@ class UpgradeGoldenTest(BitcoinTestFramework):
                 regtest_path = self.options.tmpdir+"/node"+ str(i)+"/regtest"
                 shutil.rmtree(regtest_path)
                 with tarfile.open(upgrade.tgz_path, "r:gz") as tgz:
-                    tgz.extractall(path = regtest_path)
+                    tgz.extractall(path = regtest_path, filter = 'data')
 
                     # Upgrade each node to the latest network version. If any fails to
                     # start, this will fail the test.

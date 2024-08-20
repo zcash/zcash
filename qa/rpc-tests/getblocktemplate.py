@@ -4,7 +4,7 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from io import BytesIO
-import codecs
+
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_equal,
@@ -121,7 +121,7 @@ class GetBlockTemplateTest(BitcoinTestFramework):
         block.solve()
         block.calc_sha256()
 
-        submitblock_reply = node.submitblock(codecs.encode(block.serialize(), 'hex_codec'))
+        submitblock_reply = node.submitblock(block.serialize().hex())
         assert_equal(None, submitblock_reply)
         assert_equal(block.hash, node.getbestblockhash())
         # Wait until the wallet has been notified of all blocks, so that it doesn't try to
