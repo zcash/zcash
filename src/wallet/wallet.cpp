@@ -5536,7 +5536,7 @@ bool CWallet::CreateTransaction(
         if (recipient.fSubtractFeeFromAmount)
             nSubtractFeeFromAmount++;
     }
-    if (vecSend.empty() || nValue < 0)
+    if (nValue < 0 || (vecSend.empty() && nValue == 0))
     {
         strFailReason = _("Transaction amounts must be positive");
         return false;
