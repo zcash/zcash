@@ -13,6 +13,7 @@ from test_framework.util import (
 from test_framework.authproxy import JSONRPCException
 
 import os.path
+from time import sleep
 
 # Pick a subset of the deprecated RPC methods to test with. This test assumes that
 # the deprecation feature name is the same as the RPC method name, and that the RPC
@@ -53,13 +54,18 @@ class WalletDeprecationTest(BitcoinTestFramework):
         self.nodes = start_nodes(self.num_nodes, self.options.tmpdir)
 
     def verify_enabled(self, function):
-        try:
-            getattr(self.nodes[0], function)()
-        except JSONRPCException as e:
-            raise AssertionError("'%s' not enabled (failed with '%s')" % (
-                function,
-                e.error['message'],
-            ))
+        while True:
+            try:
+                getattr(self.nodes[0], function)()
+                return
+            except JSONRPCException as e:
+                if 'disabled while reindexing' in e.error['message']:
+                    sleep(10)
+                else:
+                    raise AssertionError("'%s' not enabled (failed with '%s')" % (
+                        function,
+                        e.error['message'],
+                    ))
 
     def verify_disabled(self, function):
         errorString = ''
