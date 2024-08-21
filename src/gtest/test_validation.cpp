@@ -179,12 +179,25 @@ TEST(Validation, ContextualCheckInputsDetectsOldBranchId) {
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, 10);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, 20);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_BLOSSOM, 30);
+
+    // Also test with the last three upgrades.
+    // If this changes, remember to update RegtestDeactivate* at the end of the test.
+    const Consensus::UpgradeIndex lastUpgrade = Consensus::UPGRADE_NU6;
+    static_assert(lastUpgrade > Consensus::UPGRADE_OVERWINTER + 2); // in-range and not redundant
+    UpdateNetworkUpgradeParameters(Consensus::UpgradeIndex(lastUpgrade - 2), 40);
+    UpdateNetworkUpgradeParameters(Consensus::UpgradeIndex(lastUpgrade - 1), 50);
+    UpdateNetworkUpgradeParameters(lastUpgrade, 60);
+
     const CChainParams& params = Params(CBaseChainParams::REGTEST);
     const Consensus::Params& consensusParams = params.GetConsensus();
 
     auto overwinterBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_OVERWINTER].nBranchId;
     auto saplingBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId;
     auto blossomBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_BLOSSOM].nBranchId;
+
+    auto antepenultimateBranchId = NetworkUpgradeInfo[lastUpgrade - 2].nBranchId;
+    auto penultimateBranchId = NetworkUpgradeInfo[lastUpgrade - 1].nBranchId;
+    auto lastBranchId = NetworkUpgradeInfo[lastUpgrade].nBranchId;
 
     CBasicKeyStore keystore;
     CKey tsk = AddTestCKeyToKeyStore(keystore);
@@ -208,53 +221,104 @@ TEST(Validation, ContextualCheckInputsDetectsOldBranchId) {
     CTxOut txOut;
     txOut.scriptPubKey = scriptPubKey;
     txOut.nValue = coinValue;
-    ValidationFakeCoinsViewDB fakeDB(blockHash, utxo.hash, txOut, 12);
-    CCoinsViewCache view(&fakeDB);
 
-    // Create a transparent transaction that spends the coin, targeting
-    // a height during the Overwinter epoch.
-    auto builder = TransactionBuilder(params, 15, std::nullopt, SaplingMerkleTree::empty_root(), &keystore);
-    builder.AddTransparentInput(utxo, scriptPubKey, coinValue);
-    builder.AddTransparentOutput(destination, 4000);
-    auto tx = builder.Build().GetTxOrThrow();
-    ASSERT_FALSE(tx.IsCoinBase());
+    {
+        ValidationFakeCoinsViewDB fakeDB(blockHash, utxo.hash, txOut, 12);
+        CCoinsViewCache view(&fakeDB);
 
-    // Ensure that the inputs validate against Overwinter.
-    CValidationState state;
-    PrecomputedTransactionData txdata(tx, {CTxOut(coinValue, scriptPubKey)});
-    EXPECT_TRUE(ContextualCheckInputs(
-        tx, state, view, true, 0, false, txdata,
-        consensusParams, overwinterBranchId));
+        // Create a transparent transaction that spends the coin, targeting
+        // a height during the Overwinter epoch.
+        auto builder = TransactionBuilder(params, 15, std::nullopt, SaplingMerkleTree::empty_root(), &keystore);
+        builder.AddTransparentInput(utxo, scriptPubKey, coinValue);
+        builder.AddTransparentOutput(destination, 4000);
+        auto tx = builder.Build().GetTxOrThrow();
+        ASSERT_FALSE(tx.IsCoinBase());
 
-    // Attempt to validate the inputs against Sapling. We should be notified
-    // that an old consensus branch ID was used for an input.
-    MockCValidationState mockState;
-    EXPECT_CALL(mockState, DoS(
-        10, false, REJECT_INVALID,
-        strprintf("old-consensus-branch-id (Expected %s, found %s)",
-            HexInt(saplingBranchId),
-            HexInt(overwinterBranchId)),
-        false, "")).Times(1);
-    EXPECT_FALSE(ContextualCheckInputs(
-        tx, mockState, view, true, 0, false, txdata,
-        consensusParams, saplingBranchId));
+        // Ensure that the inputs validate against Overwinter.
+        CValidationState state;
+        PrecomputedTransactionData txdata(tx, {CTxOut(coinValue, scriptPubKey)});
+        EXPECT_TRUE(ContextualCheckInputs(
+            tx, state, view, true, 0, false, txdata,
+            consensusParams, overwinterBranchId));
 
-    // Attempt to validate the inputs against Blossom. All we should learn is
-    // that the signature is invalid, because we don't check more than one
-    // network upgrade back.
-    EXPECT_CALL(mockState, DoS(
-        100, false, REJECT_INVALID,
-        "mandatory-script-verify-flag-failed (Script evaluated without error but finished with a false/empty top stack element)",
-        false, "")).Times(1);
-    EXPECT_FALSE(ContextualCheckInputs(
-        tx, mockState, view, true, 0, false, txdata,
-        consensusParams, blossomBranchId));
+        // Attempt to validate the inputs against Sapling. We should be notified
+        // that an old consensus branch ID was used for an input.
+        MockCValidationState mockState;
+        EXPECT_CALL(mockState, DoS(
+            10, false, REJECT_INVALID,
+            strprintf("old-consensus-branch-id (Expected %s, found %s)",
+                HexInt(saplingBranchId),
+                HexInt(overwinterBranchId)),
+            false, "")).Times(1);
+        EXPECT_FALSE(ContextualCheckInputs(
+            tx, mockState, view, true, 0, false, txdata,
+            consensusParams, saplingBranchId));
+
+        // Attempt to validate the inputs against Blossom. All we should learn is
+        // that the signature is invalid, because we don't check more than one
+        // network upgrade back.
+        EXPECT_CALL(mockState, DoS(
+            100, false, REJECT_INVALID,
+            "mandatory-script-verify-flag-failed (Script evaluated without error but finished with a false/empty top stack element)",
+            false, "")).Times(1);
+        EXPECT_FALSE(ContextualCheckInputs(
+            tx, mockState, view, true, 0, false, txdata,
+            consensusParams, blossomBranchId));
+    }
+
+    // Check that we didn't break this by repeating for the last three upgrades.
+    {
+        ValidationFakeCoinsViewDB fakeDB(blockHash, utxo.hash, txOut, 42);
+        CCoinsViewCache view(&fakeDB);
+
+        // Create a transparent transaction that spends the coin, targeting
+        // a height during the antepenultimate epoch.
+        auto builder = TransactionBuilder(params, 45, std::nullopt, SaplingMerkleTree::empty_root(), &keystore);
+        builder.AddTransparentInput(utxo, scriptPubKey, coinValue);
+        builder.AddTransparentOutput(destination, 4000);
+        auto tx = builder.Build().GetTxOrThrow();
+        ASSERT_FALSE(tx.IsCoinBase());
+
+        // Ensure that the inputs validate against the antepenultimate epoch.
+        CValidationState state;
+        PrecomputedTransactionData txdata(tx, {CTxOut(coinValue, scriptPubKey)});
+        EXPECT_TRUE(ContextualCheckInputs(
+            tx, state, view, true, 0, false, txdata,
+            consensusParams, antepenultimateBranchId));
+
+        // Attempt to validate the inputs against the penultimate epoch.
+        // We should be notified that an old consensus branch ID was used for an input.
+        MockCValidationState mockState;
+        EXPECT_CALL(mockState, DoS(
+            10, false, REJECT_INVALID,
+            strprintf("old-consensus-branch-id (Expected %s, found %s)",
+                HexInt(penultimateBranchId),
+                HexInt(antepenultimateBranchId)),
+            false, "")).Times(1);
+        EXPECT_FALSE(ContextualCheckInputs(
+            tx, mockState, view, true, 0, false, txdata,
+            consensusParams, penultimateBranchId));
+
+        // Attempt to validate the inputs against the last epoch. All we should learn
+        // is that the signature is invalid, because we don't check more than one
+        // network upgrade back.
+        EXPECT_CALL(mockState, DoS(
+            100, false, REJECT_INVALID,
+            "mandatory-script-verify-flag-failed (Script evaluated without error but finished with a false/empty top stack element)",
+            false, "")).Times(1);
+        EXPECT_FALSE(ContextualCheckInputs(
+            tx, mockState, view, true, 0, false, txdata,
+            consensusParams, lastBranchId));
+    }
 
     // Tear down
     chainActive.SetTip(NULL);
     mapBlockIndex.erase(blockHash);
 
     // Revert to default
+    RegtestDeactivateNU6();
+    RegtestDeactivateNU5();
+    RegtestDeactivateCanopy();
     RegtestDeactivateBlossom();
 }
 
