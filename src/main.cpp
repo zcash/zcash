@@ -4668,7 +4668,10 @@ void SetChainPoolValues(
     pindex->nChainLockboxValue = std::nullopt;
 }
 
-/** Mark a block as having its data received and checked (up to BLOCK_VALID_TRANSACTIONS). */
+/**
+ * Mark a block as having its data received and checked (up to BLOCK_VALID_TRANSACTIONS).
+ * The caller is expected to mark `pindexNew` as dirty by adding it to `setDirtyBlockIndex`.
+ */
 bool ReceivedBlockTransactions(
     const CBlock &block,
     CValidationState& state,
@@ -4684,7 +4687,6 @@ bool ReceivedBlockTransactions(
     pindexNew->nUndoPos = 0;
     pindexNew->nStatus |= BLOCK_HAVE_DATA;
     pindexNew->RaiseValidity(BLOCK_VALID_TRANSACTIONS);
-    setDirtyBlockIndex.insert(pindexNew);
 
     if (pindexNew->pprev == NULL || pindexNew->pprev->nChainTx) {
         // If pindexNew is the genesis block or all parents are BLOCK_VALID_TRANSACTIONS.
@@ -5209,11 +5211,16 @@ static bool AcceptBlock(const CBlock& block, CValidationState& state, const CCha
             blockPos = *dbp;
         if (!FindBlockPos(state, blockPos, nBlockSize+8, nHeight, block.GetBlockTime(), dbp != NULL))
             return error("AcceptBlock(): FindBlockPos failed");
-        if (dbp == NULL)
-            if (!WriteBlockToDisk(block, blockPos, chainparams.MessageStart()))
+
+        if (dbp == NULL) {
+            if (!WriteBlockToDisk(block, blockPos, chainparams.MessageStart())) {
                 AbortNode(state, "Failed to write block");
-        if (!ReceivedBlockTransactions(block, state, chainparams, pindex, blockPos))
+            }
+        }
+        setDirtyBlockIndex.insert(pindex);
+        if (!ReceivedBlockTransactions(block, state, chainparams, pindex, blockPos)) {
             return error("AcceptBlock(): ReceivedBlockTransactions failed");
+        }
     } catch (const std::runtime_error& e) {
         return AbortNode(state, std::string("System error: ") + e.what());
     }
@@ -6261,8 +6268,10 @@ bool InitBlockIndex(const CChainParams& chainparams)
                 return error("LoadBlockIndex(): writing genesis block to disk failed");
             CBlockIndex *pindex = AddToBlockIndex(block, chainparams.GetConsensus());
             SetChainPoolValues(chainparams, block, pindex);
-            if (!ReceivedBlockTransactions(block, state, chainparams, pindex, blockPos))
+            setDirtyBlockIndex.insert(pindex);
+            if (!ReceivedBlockTransactions(block, state, chainparams, pindex, blockPos)) {
                 return error("LoadBlockIndex(): genesis block not accepted");
+            }
             // Before the genesis block, there was an empty tree. We set its root here so
             // that the block import thread doesn't race other methods that need to query
             // the Sprout tree (namely CWallet::ScanForWalletTransactions).
