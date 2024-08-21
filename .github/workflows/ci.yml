@@ -692,7 +692,7 @@ jobs:
         run: |
           python3 -m venv ./venv
           . ./venv/bin/activate
-          pip install simplejson zmq asyncio
+          pip install zmq asyncio base58
 
   test-rpc:
     name: RPC tests tier ${{ matrix.tier }} platform ${{ matrix.platform }} ${{ matrix.shard }}
