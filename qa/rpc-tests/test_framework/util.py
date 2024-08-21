@@ -344,14 +344,14 @@ def initialize_chain(test_dir, num_nodes, cachedir, cache_behavior='current'):
 
             # Copy the same chain data to all nodes
             with tarfile.open(chain_cache_filename, "r:gz") as chain_cache_file:
-                chain_cache_file.extractall(path = to_dir)
+                tarfile_extractall(chain_cache_file, to_dir)
 
             # Copy in per-node wallet data
             wallet_tgz_filename = os.path.join(cache_path, "node"+str(i)+"_wallet.tar.gz")
             if not os.path.exists(wallet_tgz_filename):
                 raise Exception('Wallet cache missing for cache behavior %s, node %d' % (cache_behavior, i))
             with tarfile.open(wallet_tgz_filename, "r:gz") as wallet_tgz_file:
-                wallet_tgz_file.extractall(path = os.path.join(to_dir, "wallet.dat"))
+                tarfile_extractall(wallet_tgz_file, os.path.join(to_dir, "wallet.dat"))
 
             # Copy in per-node wallet config and update zcash.conf to set the
             # clock offsets correctly.
@@ -758,3 +758,9 @@ def nustr(branch_id):
 
 def nuparams(branch_id, height):
     return '-nuparams=%s:%d' % (nustr(branch_id), height)
+
+def tarfile_extractall(tarfile, path):
+    if sys.version_info >= (3, 11, 4):
+        tarfile.extractall(path=path, filter='data')
+    else:
+        tarfile.extractall(path=path)

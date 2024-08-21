@@ -7,7 +7,8 @@
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     initialize_chain_clean, start_nodes, start_node,
-    bitcoind_processes)
+    bitcoind_processes, tarfile_extractall,
+)
 from test_framework.util import (
     nuparams,
     OVERWINTER_BRANCH_ID, SAPLING_BRANCH_ID, BLOSSOM_BRANCH_ID, HEARTWOOD_BRANCH_ID, CANOPY_BRANCH_ID, NU5_BRANCH_ID, NU6_BRANCH_ID)
@@ -83,7 +84,7 @@ class UpgradeGoldenTest(BitcoinTestFramework):
                 regtest_path = self.options.tmpdir+"/node"+ str(i)+"/regtest"
                 shutil.rmtree(regtest_path)
                 with tarfile.open(upgrade.tgz_path, "r:gz") as tgz:
-                    tgz.extractall(path = regtest_path, filter = 'data')
+                    tarfile_extractall(tgz, regtest_path)
 
                     # Upgrade each node to the latest network version. If any fails to
                     # start, this will fail the test.
