@@ -4766,6 +4766,12 @@ bool ReceivedBlockTransactions(
     return true;
 }
 
+// This should not be used outside tests.
+void EnsureUnreferencedAsKeyOfMapBlocksUnlinked(const CBlockIndex *pindex) {
+    LOCK(cs_main);
+    assert(mapBlocksUnlinked.erase(const_cast<CBlockIndex *>(pindex)) == 0);
+}
+
 bool FindBlockPos(CValidationState &state, CDiskBlockPos &pos, unsigned int nAddSize, unsigned int nHeight, uint64_t nTime, bool fKnown = false)
 {
     LOCK(cs_LastBlockFile);

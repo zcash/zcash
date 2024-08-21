@@ -22,6 +22,9 @@ extern bool ReceivedBlockTransactions(
     CBlockIndex *pindexNew,
     const CDiskBlockPos& pos);
 
+extern void EnsureUnreferencedAsKeyOfMapBlocksUnlinked(
+    const CBlockIndex *pindex);
+
 void ExpectAmount(CAmount expected, std::optional<CAmount> actual) {
     EXPECT_EQ(std::make_optional(expected), actual);
 }
@@ -443,4 +446,10 @@ TEST(Validation, ReceivedBlockTransactions) {
     { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex1.nChainLockboxValue); }
     { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex2.nLockboxValue); }
     { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex2.nChainLockboxValue); }
+
+    // Ensure that the fake CBlockIndex objects aren't still referenced by mapBlocksUnlinked.
+    // (In practice, we only have &fakeIndex1 as a key pointing to &fakeIndex2 after the
+    // first call to ReceivedBlockTransactions, which is removed by the second call.)
+    EnsureUnreferencedAsKeyOfMapBlocksUnlinked(&fakeIndex1);
+    EnsureUnreferencedAsKeyOfMapBlocksUnlinked(&fakeIndex2);
 }
