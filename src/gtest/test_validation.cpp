@@ -22,11 +22,8 @@ extern bool ReceivedBlockTransactions(
     CBlockIndex *pindexNew,
     const CDiskBlockPos& pos);
 
-void ExpectOptionalAmount(CAmount expected, std::optional<CAmount> actual) {
-    EXPECT_TRUE((bool)actual);
-    if (actual) {
-        EXPECT_EQ(expected, *actual);
-    }
+void ExpectAmount(CAmount expected, std::optional<CAmount> actual) {
+    EXPECT_EQ(std::make_optional(expected), actual);
 }
 
 // Fake a view that optionally contains a single coin.
@@ -324,8 +321,8 @@ TEST(Validation, ContextualCheckInputsDetectsOldBranchId) {
 
 TEST(Validation, ReceivedBlockTransactions) {
     SelectParams(CBaseChainParams::REGTEST);
-    auto chainParams = Params();
-    auto sk = libzcash::SproutSpendingKey::random();
+    const auto chainParams = Params();
+    const auto sk = libzcash::SproutSpendingKey::random();
 
     // Create a fake genesis block
     CBlock block1;
@@ -353,10 +350,10 @@ TEST(Validation, ReceivedBlockTransactions) {
     EXPECT_FALSE(fakeIndex2.IsValid(BLOCK_VALID_TRANSACTIONS));
 
     // Sprout pool values should not be set
-    EXPECT_FALSE((bool)fakeIndex1.nSproutValue);
-    EXPECT_FALSE((bool)fakeIndex1.nChainSproutValue);
-    EXPECT_FALSE((bool)fakeIndex2.nSproutValue);
-    EXPECT_FALSE((bool)fakeIndex2.nChainSproutValue);
+    EXPECT_FALSE(fakeIndex1.nSproutValue.has_value());
+    EXPECT_FALSE(fakeIndex1.nChainSproutValue.has_value());
+    EXPECT_FALSE(fakeIndex2.nSproutValue.has_value());
+    EXPECT_FALSE(fakeIndex2.nChainSproutValue.has_value());
 
     // Mark the second block's transactions as received first
     CValidationState state;
@@ -367,13 +364,10 @@ TEST(Validation, ReceivedBlockTransactions) {
 
     // Sprout pool value delta should now be set for the second block,
     // but not any chain totals
-    EXPECT_FALSE((bool)fakeIndex1.nSproutValue);
-    EXPECT_FALSE((bool)fakeIndex1.nChainSproutValue);
-    {
-        SCOPED_TRACE("ExpectOptionalAmount call");
-        ExpectOptionalAmount(20, fakeIndex2.nSproutValue);
-    }
-    EXPECT_FALSE((bool)fakeIndex2.nChainSproutValue);
+    EXPECT_FALSE(fakeIndex1.nSproutValue.has_value());
+    EXPECT_FALSE(fakeIndex1.nChainSproutValue.has_value());
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(20, fakeIndex2.nSproutValue); }
+    EXPECT_FALSE(fakeIndex2.nChainSproutValue.has_value());
 
     // Now mark the first block's transactions as received
     SetChainPoolValues(chainParams, block1, &fakeIndex1);
@@ -382,20 +376,8 @@ TEST(Validation, ReceivedBlockTransactions) {
     EXPECT_TRUE(fakeIndex2.IsValid(BLOCK_VALID_TRANSACTIONS));
 
     // Sprout pool values should now be set for both blocks
-    {
-        SCOPED_TRACE("ExpectOptionalAmount call");
-        ExpectOptionalAmount(10, fakeIndex1.nSproutValue);
-    }
-    {
-        SCOPED_TRACE("ExpectOptionalAmount call");
-        ExpectOptionalAmount(10, fakeIndex1.nChainSproutValue);
-    }
-    {
-        SCOPED_TRACE("ExpectOptionalAmount call");
-        ExpectOptionalAmount(20, fakeIndex2.nSproutValue);
-    }
-    {
-        SCOPED_TRACE("ExpectOptionalAmount call");
-        ExpectOptionalAmount(30, fakeIndex2.nChainSproutValue);
-    }
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(10, fakeIndex1.nSproutValue); }
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(10, fakeIndex1.nChainSproutValue); }
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(20, fakeIndex2.nSproutValue); }
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(30, fakeIndex2.nChainSproutValue); }
 }
