@@ -355,6 +355,24 @@ TEST(Validation, ReceivedBlockTransactions) {
     EXPECT_FALSE(fakeIndex2.nSproutValue.has_value());
     EXPECT_FALSE(fakeIndex2.nChainSproutValue.has_value());
 
+    // Sapling pool values should not be set
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex1.nSaplingValue); }
+    EXPECT_FALSE(fakeIndex1.nChainSaplingValue.has_value());
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex2.nSaplingValue); }
+    EXPECT_FALSE(fakeIndex2.nChainSaplingValue.has_value());
+
+    // Orchard pool values should not be set
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex1.nOrchardValue); }
+    EXPECT_FALSE(fakeIndex1.nChainOrchardValue.has_value());
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex2.nOrchardValue); }
+    EXPECT_FALSE(fakeIndex2.nChainOrchardValue.has_value());
+
+    // Lockbox pool values should not be set
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex1.nLockboxValue); }
+    EXPECT_FALSE(fakeIndex1.nChainLockboxValue.has_value());
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex2.nLockboxValue); }
+    EXPECT_FALSE(fakeIndex2.nChainLockboxValue.has_value());
+
     // Mark the second block's transactions as received first
     CValidationState state;
     SetChainPoolValues(chainParams, block2, &fakeIndex2);
@@ -369,6 +387,24 @@ TEST(Validation, ReceivedBlockTransactions) {
     { SCOPED_TRACE("ExpectAmount"); ExpectAmount(20, fakeIndex2.nSproutValue); }
     EXPECT_FALSE(fakeIndex2.nChainSproutValue.has_value());
 
+    // Same for Sapling (TODO: make these nonzero)
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex1.nSaplingValue); }
+    EXPECT_FALSE(fakeIndex1.nChainSaplingValue.has_value());
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex2.nSaplingValue); }
+    EXPECT_FALSE(fakeIndex2.nChainSaplingValue.has_value());
+
+    // Same for Orchard (TODO: make these nonzero)
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex1.nOrchardValue); }
+    EXPECT_FALSE(fakeIndex1.nChainOrchardValue.has_value());
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex2.nOrchardValue); }
+    EXPECT_FALSE(fakeIndex2.nChainOrchardValue.has_value());
+
+    // Same for the lockbox (TODO: make these nonzero)
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex1.nLockboxValue); }
+    EXPECT_FALSE(fakeIndex1.nChainLockboxValue.has_value());
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex2.nLockboxValue); }
+    EXPECT_FALSE(fakeIndex2.nChainLockboxValue.has_value());
+
     // Now mark the first block's transactions as received
     SetChainPoolValues(chainParams, block1, &fakeIndex1);
     EXPECT_TRUE(ReceivedBlockTransactions(block1, state, chainParams, &fakeIndex1, pos1));
@@ -380,4 +416,22 @@ TEST(Validation, ReceivedBlockTransactions) {
     { SCOPED_TRACE("ExpectAmount"); ExpectAmount(10, fakeIndex1.nChainSproutValue); }
     { SCOPED_TRACE("ExpectAmount"); ExpectAmount(20, fakeIndex2.nSproutValue); }
     { SCOPED_TRACE("ExpectAmount"); ExpectAmount(30, fakeIndex2.nChainSproutValue); }
+
+    // Sapling pool values should now be set for both blocks (TODO: make these nonzero)
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex1.nSaplingValue); }
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex1.nChainSaplingValue); }
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex2.nSaplingValue); }
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex2.nChainSaplingValue); }
+
+    // Orchard pool values should now be set for both blocks (TODO: make these nonzero)
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex1.nOrchardValue); }
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex1.nChainOrchardValue); }
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex2.nOrchardValue); }
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex2.nChainOrchardValue); }
+
+    // Lockbox pool values should now be set for both blocks (TODO: make these nonzero)
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex1.nLockboxValue); }
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex1.nChainLockboxValue); }
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex2.nLockboxValue); }
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex2.nChainLockboxValue); }
 }
