@@ -364,24 +364,14 @@ BOOST_AUTO_TEST_CASE(rpc_insightexplorer)
         "JSON value is not a boolean as expected");
 
     BOOST_CHECK_NO_THROW(CallRPC("getaddressdeltas {\"addresses\":[]}"));
-    CheckRPCThrows("getaddressdeltas {\"addresses\":[],\"start\":0,\"end\":0,\"chainInfo\":true}",
-        "Start and end are expected to be greater than zero");
-    CheckRPCThrows("getaddressdeltas {\"addresses\":[],\"start\":3,\"end\":2,\"chainInfo\":true}",
-        "End value is expected to be greater than or equal to start");
-    // in this test environment, only the genesis block (0) exists
-    CheckRPCThrows("getaddressdeltas {\"addresses\":[],\"start\":2,\"end\":3,\"chainInfo\":true}",
-        "Start or end is outside chain range");
+    CheckRPCThrows("getaddressdeltas {\"addresses\":[],\"start\":-2,\"chainInfo\":true}",
+        "Start height must be nonnegative");
+    CheckRPCThrows("getaddressdeltas {\"addresses\":[],\"end\":-2,\"chainInfo\":true}",
+        "End height must be nonnegative");
 
     BOOST_CHECK_NO_THROW(CallRPC("getaddressbalance {\"addresses\":[]}"));
 
     BOOST_CHECK_NO_THROW(CallRPC("getaddresstxids {\"addresses\":[]}"));
-    CheckRPCThrows("getaddresstxids {\"addresses\":[],\"start\":0,\"end\":0,\"chainInfo\":true}",
-        "Start and end are expected to be greater than zero");
-    CheckRPCThrows("getaddresstxids {\"addresses\":[],\"start\":3,\"end\":2,\"chainInfo\":true}",
-        "End value is expected to be greater than or equal to start");
-    // in this test environment, only the genesis block (0) exists
-    CheckRPCThrows("getaddresstxids {\"addresses\":[],\"start\":2,\"end\":3,\"chainInfo\":true}",
-        "Start or end is outside chain range");
 
     // transaction does not exist:
     CheckRPCThrows("getspentinfo {\"txid\":\"b4cc287e58f87cdae59417329f710f3ecd75a4ee1d2872b7248f50977c8493f3\",\"index\":0}",

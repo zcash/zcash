@@ -831,23 +831,32 @@ static void getHeightRange(const UniValue& params, int& start, int& end)
         UniValue startValue = find_value(params[0].get_obj(), "start");
         UniValue endValue = find_value(params[0].get_obj(), "end");
         // If either is not specified, the other is ignored.
-        if (!startValue.isNull() && !endValue.isNull()) {
+        if (!startValue.isNull()) {
             start = startValue.get_int();
-            end = endValue.get_int();
-            if (start <= 0 || end <= 0) {
+            if (start < 0) {
                 throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY,
-                    "Start and end are expected to be greater than zero");
+                    "Start height must be nonnegative");
             }
-            if (end < start) {
+        }
+        if (!endValue.isNull()) {
+            end = endValue.get_int();
+            if (end < 0) {
                 throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY,
-                    "End value is expected to be greater than or equal to start");
+                    "End height must be nonnegative");
             }
         }
     }
 
-    LOCK(cs_main);  // for chainActive
-    if (start > chainActive.Height() || end > chainActive.Height()) {
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Start or end is outside chain range");
+    int height;
+    {
+        LOCK(cs_main);  // for chainActive
+        height = chainActive.Height();
+    }
+    if (start > height) start = height;
+    if (end == 0 || end > height) end = height;
+    if (start > end) {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY,
+            "End value is expected to be greater than or equal to start");
     }
 }
 
@@ -881,7 +890,9 @@ UniValue getaddressdeltas(const UniValue& params, bool fHelp)
             "getaddressdeltas {\"addresses\": [\"taddr\", ...], (\"start\": n), (\"end\": n), (\"chainInfo\": true|false)}\n"
             "\nReturns all changes for an address.\n"
             "\nReturns information about all changes to the given transparent addresses within the given (inclusive)\n"
-            "\nblock height range, default is the full blockchain.\n"
+            "\nblock height range, default is the full blockchain."
+            "\nIf start or end are not specified, they default to zero."
+            "\nIf end is zero, it's interpreted as the latest block height.\n"
             + disabledMsg +
             "\nArguments:\n"
             "{\n"
@@ -1066,9 +1077,12 @@ UniValue getaddresstxids(const UniValue& params, bool fHelp)
         throw runtime_error(
             "getaddresstxids {\"addresses\": [\"taddr\", ...], (\"start\": n), (\"end\": n)}\n"
             "\nReturns the txids for given transparent addresses within the given (inclusive)\n"
-            "\nblock height range, default is the full blockchain.\n"
-            "\nStarting v4.5.0, returned txids are in the order they appear in blocks, which \n"
-            "\nensures that they are topologically sorted (i.e. parent txids will appear before child txids).\n"
+            "\nblock height range, default is the full blockchain."
+            "\nIf start or end are not specified, they default to zero."
+            "\nIf end is zero, it's interpreted as the latest block height.\n"
+            "\nThe returned txids are in the order they appear in blocks, which"
+            "\nensures that they are topologically sorted (i.e. parent txids"
+            "\nappear before child txids).\n"
             + disabledMsg +
             "\nArguments:\n"
             "{\n"
