@@ -46,86 +46,86 @@ def get_dependency_list():
             BerkeleyDbReleaseLister(),
             DependsVersionGetter("bdb")),
         Dependency("boost",
-            GithubTagReleaseLister("boostorg", "boost", "^boost-(\d+)\.(\d+)\.(\d+)$",
+            GithubTagReleaseLister("boostorg", "boost", r"^boost-(\d+)\.(\d+)\.(\d+)$",
                 { "boost-1.69.0": (1, 69, 0), "boost-1.69.0-beta1": None }),
             DependsVersionGetter("boost")),
         Dependency("googletest",
-            GithubTagReleaseLister("google", "googletest", "^release-(\d+)\.(\d+)\.(\d+)$",
+            GithubTagReleaseLister("google", "googletest", r"^release-(\d+)\.(\d+)\.(\d+)$",
                 { "release-1.8.1": (1, 8, 1) }),
             DependsVersionGetter("googletest")),
         # libc++ matches the Clang version
         Dependency("libcxx",
-            GithubTagReleaseLister("llvm", "llvm-project", "^llvmorg-(\d+)\.(\d+).(\d+)$",
+            GithubTagReleaseLister("llvm", "llvm-project", r"^llvmorg-(\d+)\.(\d+).(\d+)$",
                 { "llvmorg-11.0.0": (11, 0, 0), "llvmorg-9.0.1-rc3": None}),
             DependsVersionGetter("native_clang")),
         Dependency("libevent",
-            GithubTagReleaseLister("libevent", "libevent", "^release-(\d+)\.(\d+)\.(\d+)-stable$",
+            GithubTagReleaseLister("libevent", "libevent", r"^release-(\d+)\.(\d+)\.(\d+)-stable$",
                 { "release-2.0.22-stable": (2, 0, 22), "release-2.1.9-beta": None }),
             DependsVersionGetter("libevent")),
         Dependency("libsodium",
-            GithubTagReleaseLister("jedisct1", "libsodium", "^(\d+)\.(\d+)\.(\d+)-RELEASE$",
+            GithubTagReleaseLister("jedisct1", "libsodium", r"^(\d+)\.(\d+)\.(\d+)-RELEASE$",
                 { "1.0.18-RELEASE": (1, 0, 18) }),
             DependsVersionGetter("libsodium")),
         # b2 matches the Boost version
         Dependency("native_b2",
-            GithubTagReleaseLister("boostorg", "boost", "^boost-(\d+)\.(\d+)\.(\d+)$",
+            GithubTagReleaseLister("boostorg", "boost", r"^boost-(\d+)\.(\d+)\.(\d+)$",
                 { "boost-1.69.0": (1, 69, 0), "boost-1.69.0-beta1": None }),
             DependsVersionGetter("boost")),
         Dependency("native_ccache",
-            GithubTagReleaseLister("ccache", "ccache", "^v?(\d+)\.(\d+)(?:\.(\d+))?$",
+            GithubTagReleaseLister("ccache", "ccache", r"^v?(\d+)\.(\d+)(?:\.(\d+))?$",
                 { "v3.5.1": (3, 5, 1), "v3.6": (3, 6)}),
             DependsVersionGetter("native_ccache")),
         Dependency("native_clang",
-            GithubTagReleaseLister("llvm", "llvm-project", "^llvmorg-(\d+)\.(\d+).(\d+)$",
+            GithubTagReleaseLister("llvm", "llvm-project", r"^llvmorg-(\d+)\.(\d+).(\d+)$",
                 { "llvmorg-11.0.0": (11, 0, 0), "llvmorg-9.0.1-rc3": None}),
             DependsVersionGetter("native_clang")),
         Dependency("native_cmake",
-            GithubTagReleaseLister("Kitware", "CMake", "^v?(\d+)\.(\d+)(?:\.(\d+))?$",
+            GithubTagReleaseLister("Kitware", "CMake", r"^v?(\d+)\.(\d+)(?:\.(\d+))?$",
                 { "v3.21.2": (3, 21, 2), "v3.20.0-rc4": None}),
             DependsVersionGetter("native_cmake")),
         Dependency("native_cxxbridge",
-            GithubTagReleaseLister("dtolnay", "cxx", "^(\d+)\.(\d+)\.(\d+)$",
+            GithubTagReleaseLister("dtolnay", "cxx", r"^(\d+)\.(\d+)\.(\d+)$",
                 { "1.0.17": (1, 0, 17) }),
             DependsVersionGetter("native_cxxbridge")),
         Dependency("native_fmt",
-            GithubTagReleaseLister("fmtlib", "fmt", "^(\d+)\.(\d+)\.(\d+)$",
+            GithubTagReleaseLister("fmtlib", "fmt", r"^(\d+)\.(\d+)\.(\d+)$",
                 { "8.1.1": (8, 1, 1), "11.0.0": (11, 0, 0)}),
             DependsVersionGetter("native_fmt")),
         Dependency("native_rust",
-            GithubTagReleaseLister("rust-lang", "rust", "^(\d+)\.(\d+)(?:\.(\d+))?$",
+            GithubTagReleaseLister("rust-lang", "rust", r"^(\d+)\.(\d+)(?:\.(\d+))?$",
                 { "1.33.0": (1, 33, 0), "0.9": (0, 9) }),
             DependsVersionGetter("native_rust")),
         Dependency("native_xxhash",
-            GithubTagReleaseLister("Cyan4973", "xxHash", "^v(\d+)\.(\d+)\.(\d+)$",
+            GithubTagReleaseLister("Cyan4973", "xxHash", r"^v(\d+)\.(\d+)\.(\d+)$",
                 { "v0.8.0": (0, 8, 0), "v0.8.2": (0, 8, 2)}),
             DependsVersionGetter("native_xxhash")),
         Dependency("native_zstd",
-            GithubTagReleaseLister("facebook", "zstd", "^v?(\d+)\.(\d+)(?:\.(\d+))?$",
+            GithubTagReleaseLister("facebook", "zstd", r"^v?(\d+)\.(\d+)(?:\.(\d+))?$",
                 { "v1.5.0": (1, 5, 0), "zstd-0.4.2": None}),
             DependsVersionGetter("native_zstd")),
         # rustcxx matches the cxxbridge version
         Dependency("rustcxx",
-            GithubTagReleaseLister("dtolnay", "cxx", "^(\d+)\.(\d+)\.(\d+)$",
+            GithubTagReleaseLister("dtolnay", "cxx", r"^(\d+)\.(\d+)\.(\d+)$",
                 { "1.0.17": (1, 0, 17) }),
             DependsVersionGetter("native_cxxbridge")),
         Dependency("zeromq",
-            GithubTagReleaseLister("zeromq", "libzmq", "^v(\d+)\.(\d+)(?:\.(\d+))?$",
+            GithubTagReleaseLister("zeromq", "libzmq", r"^v(\d+)\.(\d+)(?:\.(\d+))?$",
                 { "v4.3.1": (4, 3, 1), "v4.2.0-rc1": None }),
             DependsVersionGetter("zeromq")),
         Dependency("leveldb",
-            GithubTagReleaseLister("google", "leveldb", "^v?(\d+)\.(\d+)$",
+            GithubTagReleaseLister("google", "leveldb", r"^v?(\d+)\.(\d+)$",
                 { "v1.13": (1, 13), "1.23": (1, 23) }),
             LevelDbVersionGetter()),
         Dependency("tl_expected",
-            GithubTagReleaseLister("TartanLlama", "expected", "^v(\d+)\.(\d+)(?:\.(\d+))?$",
+            GithubTagReleaseLister("TartanLlama", "expected", r"^v(\d+)\.(\d+)(?:\.(\d+))?$",
                 { "v0.3": (0, 3), "v1.0.0": (1, 0, 0) }),
             DependsVersionGetter("tl_expected")),
         Dependency("univalue",
-            GithubTagReleaseLister("bitcoin-core", "univalue", "^v(\d+)\.(\d+)\.(\d+)$",
+            GithubTagReleaseLister("bitcoin-core", "univalue", r"^v(\d+)\.(\d+)\.(\d+)$",
                 { "v1.0.1": (1, 0, 1) }),
             UnivalueVersionGetter()),
         Dependency("utfcpp",
-            GithubTagReleaseLister("nemtrif", "utfcpp", "^v(\d+)\.(\d+)(?:\.(\d+))?$",
+            GithubTagReleaseLister("nemtrif", "utfcpp", r"^v(\d+)\.(\d+)(?:\.(\d+))?$",
                 { "v3.1": (3, 1), "v3.0.3": (3, 0, 3) }),
             DependsVersionGetter("utfcpp"))
     ]
@@ -261,7 +261,7 @@ class BerkeleyDbReleaseLister:
 
         # We use a set because the search will result in duplicates.
         release_versions = set()
-        for match in re.findall("berkeleydb/html/changelog_(\d+)_(\d+)_(\d+).html", page):
+        for match in re.findall(r"berkeleydb/html/changelog_(\d+)_(\d+)_(\d+).html", page):
             release_versions.add(Version(match))
 
         if len(release_versions) == 0:
@@ -278,12 +278,12 @@ class DependsVersionGetter:
         mk_file = open(mk_file_path, 'r', encoding='utf8').read()
 
         regexp_whitelist = [
-            "package\)_default_version=(\d+)\.(\d+)\.(\d+)$",
-            "package\)_version=(\d+)\.(\d+)\.(\d+)$",
-            "package\)_version=(\d+)\.(\d+)$",
-            "package\)_version=(\d+)_(\d+)_(\d+)$",
-            "package\)_version=(\d+)\.(\d+)\.(\d+)([a-z])$",
-            "package\)_version=([0-9a-f]{40})$",
+            r"package\)_default_version=(\d+)\.(\d+)\.(\d+)$",
+            r"package\)_version=(\d+)\.(\d+)\.(\d+)$",
+            r"package\)_version=(\d+)\.(\d+)$",
+            r"package\)_version=(\d+)_(\d+)_(\d+)$",
+            r"package\)_version=(\d+)\.(\d+)\.(\d+)([a-z])$",
+            r"package\)_version=([0-9a-f]{40})$",
         ]
 
         current_version = None
@@ -305,7 +305,7 @@ class LevelDbVersionGetter:
         header_path = os.path.join(SOURCE_ROOT, "src", "leveldb", "include", "leveldb", "db.h")
         header_contents = open(header_path, 'r', encoding='utf8').read()
 
-        match = re.search("kMajorVersion\s*=\s*(\d+);\s*.*kMinorVersion\s*=\s*(\d+);\s*$", header_contents, re.MULTILINE)
+        match = re.search(r"kMajorVersion\s*=\s*(\d+);\s*.*kMinorVersion\s*=\s*(\d+);\s*$", header_contents, re.MULTILINE)
         if match:
             return Version(match.groups())
         else:
@@ -316,7 +316,7 @@ class UnivalueVersionGetter:
         configure_path = os.path.join(SOURCE_ROOT, "src", "univalue", "configure.ac")
         configure_contents = open(configure_path, 'r', encoding='utf8').read()
 
-        match = re.search("AC_INIT.*univalue.*\[(\d+)\.(\d+)\.(\d+)\]", configure_contents)
+        match = re.search(r"AC_INIT.*univalue.*\[(\d+)\.(\d+)\.(\d+)\]", configure_contents)
         if match:
             return Version(match.groups())
         else:
@@ -333,9 +333,9 @@ class PostponedUpdates():
 
         file = open(postponedlist_path, 'r', encoding='utf8')
         for line in file.readlines():
-            stripped = re.sub('#.*$', '', line).strip()
+            stripped = re.sub(r'#.*$', '', line).strip()
             if stripped != "":
-                match = re.match('^(\S+)\s+(\S+)\s+(\S+)$', stripped)
+                match = re.match(r'^(\S+)\s+(\S+)\s+(\S+)$', stripped)
                 if match:
                     postponed_name = match.groups()[0]
                     postponed_version = Version(match.groups()[1].split("."))
@@ -350,13 +350,13 @@ class PostponedUpdates():
         return (name, str(version)) in self.postponedlist
 
 def safe(string):
-    if re.match('^[a-zA-Z0-9_-]*$', string):
+    if re.match(r'^[a-zA-Z0-9_-]*$', string):
         return string
     else:
         raise RuntimeError("Potentially-dangerous string encountered.")
 
 def safe_depends(string):
-    if re.match('^[a-zA-Z0-9._-]*$', string):
+    if re.match(r'^[a-zA-Z0-9._-]*$', string):
         return string
     else:
         raise RuntimeError("Potentially-dangerous string encountered.")

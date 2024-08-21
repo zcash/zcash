@@ -120,7 +120,7 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         assert_equal(params["minconf"], Decimal('10')) # default
         assert_equal(params["fromaddress"], mytaddr)
         assert_equal(params["amounts"][0]["address"], myzaddr)
-        assert_equal(params["amounts"][0]["amount"], Decimal('1.23456789'))
+        assert_equal(Decimal(params["amounts"][0]["amount"]), Decimal('1.23456789'))
 
         # Add viewing key for myzaddr to Node 3
         myviewingkey = self.nodes[0].z_exportviewingkey(myzaddr)
