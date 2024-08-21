@@ -4,11 +4,12 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
+from time import sleep
+
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, \
     start_nodes, start_node, connect_nodes_bi, bitcoind_processes
-
 
 class ZapWalletTXesTest (BitcoinTestFramework):
 
@@ -70,6 +71,7 @@ class ZapWalletTXesTest (BitcoinTestFramework):
 
         # restart zcashd with zapwallettxes
         self.nodes[0] = start_node(0,self.options.tmpdir, ["-zapwallettxes=1"])
+        sleep(10)
 
         aException = False
         try:
