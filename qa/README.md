@@ -7,20 +7,23 @@ tests locally.
 
 Test dependencies
 =================
+
 Before running the tests, the following must be installed.
 
 Unix
 ----
-The python3-zmq library and simplejson are required. On Ubuntu or Debian they
-can be installed via:
+
+The `zmq` and `base58` Python libraries are required. On Ubuntu or Debian-based
+distributions they can be installed via:
 ```
-sudo apt-get install python3-simplejson python3-zmq
+sudo apt-get install python3-zmq python3-base58
 ```
 
 OS X
 ------
+
 ```
-pip3 install pyzmq simplejson
+pip3 install pyzmq base58
 ```
 
 Running tests
