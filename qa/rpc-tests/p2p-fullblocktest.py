@@ -57,7 +57,6 @@ class FullBlockTest(ComparisonTestFramework):
     def add_transactions_to_block(self, block, tx_list):
         [ tx.rehash() for tx in tx_list ]
         block.vtx.extend(tx_list)
-        block.hashMerkleRoot = block.calc_merkle_root()
         block.rehash()
         return block
     
@@ -65,7 +64,7 @@ class FullBlockTest(ComparisonTestFramework):
     # if spend is specified, then 1 satoshi will be spent from that to an anyone-can-spend output,
     # and rest will go to fees.
     def next_block(self, number, spend=None, additional_coinbase_value=0, script=None):
-        if self.tip == None:
+        if self.tip is None:
             base_block_hash = self.genesis_hash
         else:
             base_block_hash = self.tip.sha256
@@ -73,18 +72,18 @@ class FullBlockTest(ComparisonTestFramework):
         height = self.block_heights[base_block_hash] + 1
         coinbase = create_coinbase(height, self.coinbase_pubkey)
         coinbase.vout[0].nValue += additional_coinbase_value
-        if (spend != None):
+        if spend is not None:
             coinbase.vout[0].nValue += spend.tx.vout[spend.n].nValue - 1 # all but one satoshi to fees
         coinbase.rehash()
         block = create_block(base_block_hash, coinbase, self.block_time)
-        if (spend != None):
+        if spend is not None:
             tx = CTransaction()
             tx.vin.append(CTxIn(COutPoint(spend.tx.sha256, spend.n), b"", 0xffffffff))  # no signature yet
             # This copies the java comparison tool testing behavior: the first
             # txout has a garbage scriptPubKey, "to make sure we're not
             # pre-verifying too much" (?)
             tx.vout.append(CTxOut(0, CScript([random.randint(0,255), height & 255])))
-            if script == None:
+            if script is None:
                 tx.vout.append(CTxOut(1, CScript([OP_TRUE])))
             else:
                 tx.vout.append(CTxOut(1, script))

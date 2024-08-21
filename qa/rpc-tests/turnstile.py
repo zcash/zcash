@@ -174,7 +174,7 @@ class TurnstileTest (BitcoinTestFramework):
         self.assert_pool_balance(self.nodes[2], POOL_NAME.lower(), Decimal('199'))
 
         # Stop node 0 and check logs to verify the block was rejected as a turnstile violation
-        string_to_find1 = "ConnectBlock(): turnstile violation in " + POOL_NAME.capitalize() + " shielded value pool"
+        string_to_find1 = "ConnectBlock: turnstile violation in " + POOL_NAME.capitalize() + " shielded value pool"
         string_to_find2 = "InvalidChainFound: invalid block="
         string_to_find3 = "ConnectTip(): ConnectBlock " + newhash + " failed"
         check_node_log(self, 0, string_to_find1, True)

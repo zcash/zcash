@@ -123,10 +123,12 @@ public:
                     nHeight,
                     block_subsidy);
 
+                LogPrint("pow", "%s: Constructing funding stream outputs for height %d", __func__, nHeight);
                 for (Consensus::FundingStreamElement fselem : fundingStreamElements) {
                     miner_reward -= fselem.second;
                     examine(fselem.first, match {
                         [&](const libzcash::SaplingPaymentAddress& pa) {
+                            LogPrint("pow", "%s: Adding Sapling funding stream output of value %d", __func__, fselem.second);
                             saplingBuilder.add_recipient(
                                 {},
                                 pa.GetRawBytes(),
@@ -134,9 +136,12 @@ public:
                                 libzcash::Memo::ToBytes(std::nullopt));
                         },
                         [&](const CScript& scriptPubKey) {
+                            LogPrint("pow", "%s: Adding transparent funding stream output of value %d", __func__, fselem.second);
                             mtx.vout.emplace_back(fselem.second, scriptPubKey);
                         },
-                        [](const Consensus::Lockbox& lockbox) {}
+                        [&](const Consensus::Lockbox& lockbox) {
+                            LogPrint("pow", "%s: Noting lockbox output of value %d", __func__, fselem.second);
+                        }
                     });
                 }
             } else if (nHeight <= chainparams.GetConsensus().GetLastFoundersRewardBlockHeight(nHeight)) {
@@ -151,6 +156,7 @@ public:
                 // last Founders' Reward block height + 1.
             }
         }
+        LogPrint("pow", "%s: Miner reward at height %d is %d", __func__, nHeight, miner_reward);
 
         return miner_reward + nFees;
     }

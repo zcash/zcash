@@ -95,7 +95,6 @@ class BIP66Test(ComparisonTestFramework):
                                  hashFinalSaplingRoot)
             block.nVersion = 4
             block.vtx.append(spendtx)
-            block.hashMerkleRoot = block.calc_merkle_root()
             block.rehash()
             block.solve()
             self.tip = block.sha256

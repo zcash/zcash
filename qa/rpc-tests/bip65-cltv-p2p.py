@@ -87,7 +87,6 @@ class BIP65Test(ComparisonTestFramework):
                                  hashFinalSaplingRoot)
             block.nVersion = 4
             block.vtx.append(spendtx)
-            block.hashMerkleRoot = block.calc_merkle_root()
             block.rehash()
             block.solve()
             self.block_time += 1

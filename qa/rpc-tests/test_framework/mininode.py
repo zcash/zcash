@@ -67,6 +67,8 @@ MAX_INV_SZ = 50000
 
 COIN = 100000000 # 1 zec in zatoshis
 
+BLOSSOM_POW_TARGET_SPACING_RATIO = 2
+
 # The placeholder value used for the auth digest of pre-v5 transactions.
 LEGACY_TX_AUTH_DIGEST = (1 << 256) - 1
 
@@ -146,6 +148,10 @@ def uint256_from_str(s):
     for i in range(8):
         r += t[i] << (i * 32)
     return r
+
+
+def uint256_from_reversed_hex(s):
+    return uint256_from_str(bytes.fromhex(s)[::-1])
 
 
 def uint256_from_compact(c):
@@ -1176,7 +1182,7 @@ class CBlockHeader(object):
             self.nVersion = header.nVersion
             self.hashPrevBlock = header.hashPrevBlock
             self.hashMerkleRoot = header.hashMerkleRoot
-            self.hashFinalSaplingRoot = header.hashFinalSaplingRoot
+            self.hashBlockCommitments = header.hashBlockCommitments
             self.nTime = header.nTime
             self.nBits = header.nBits
             self.nNonce = header.nNonce
@@ -1189,7 +1195,7 @@ class CBlockHeader(object):
         self.nVersion = 4
         self.hashPrevBlock = 0
         self.hashMerkleRoot = 0
-        self.hashFinalSaplingRoot = 0
+        self.hashBlockCommitments = 0
         self.nTime = 0
         self.nBits = 0
         self.nNonce = 0
@@ -1201,7 +1207,7 @@ class CBlockHeader(object):
         self.nVersion = struct.unpack("<i", f.read(4))[0]
         self.hashPrevBlock = deser_uint256(f)
         self.hashMerkleRoot = deser_uint256(f)
-        self.hashFinalSaplingRoot = deser_uint256(f)
+        self.hashBlockCommitments = deser_uint256(f)
         self.nTime = struct.unpack("<I", f.read(4))[0]
         self.nBits = struct.unpack("<I", f.read(4))[0]
         self.nNonce = deser_uint256(f)
@@ -1214,7 +1220,7 @@ class CBlockHeader(object):
         r += struct.pack("<i", self.nVersion)
         r += ser_uint256(self.hashPrevBlock)
         r += ser_uint256(self.hashMerkleRoot)
-        r += ser_uint256(self.hashFinalSaplingRoot)
+        r += ser_uint256(self.hashBlockCommitments)
         r += struct.pack("<I", self.nTime)
         r += struct.pack("<I", self.nBits)
         r += ser_uint256(self.nNonce)
@@ -1227,7 +1233,7 @@ class CBlockHeader(object):
             r += struct.pack("<i", self.nVersion)
             r += ser_uint256(self.hashPrevBlock)
             r += ser_uint256(self.hashMerkleRoot)
-            r += ser_uint256(self.hashFinalSaplingRoot)
+            r += ser_uint256(self.hashBlockCommitments)
             r += struct.pack("<I", self.nTime)
             r += struct.pack("<I", self.nBits)
             r += ser_uint256(self.nNonce)
@@ -1241,8 +1247,8 @@ class CBlockHeader(object):
         return self.sha256
 
     def __repr__(self):
-        return "CBlockHeader(nVersion=%i hashPrevBlock=%064x hashMerkleRoot=%064x hashFinalSaplingRoot=%064x nTime=%s nBits=%08x nNonce=%064x nSolution=%r)" \
-            % (self.nVersion, self.hashPrevBlock, self.hashMerkleRoot, self.hashFinalSaplingRoot,
+        return "CBlockHeader(nVersion=%i hashPrevBlock=%064x hashMerkleRoot=%064x hashBlockCommitments=%064x nTime=%s nBits=%08x nNonce=%064x nSolution=%r)" \
+            % (self.nVersion, self.hashPrevBlock, self.hashMerkleRoot, self.hashBlockCommitments,
                time.ctime(self.nTime), self.nBits, self.nNonce, self.nSolution)
 
 
@@ -1260,6 +1266,14 @@ class CBlock(CBlockHeader):
         r += super(CBlock, self).serialize()
         r += ser_vector(self.vtx)
         return r
+
+    def rehash_without_recalc(self):
+        return super(CBlock, self).rehash()
+
+    def rehash(self):
+        self.hashMerkleRoot = self.calc_merkle_root()
+        self.hashAuthDataRoot = self.calc_auth_data_root()
+        return self.rehash_without_recalc()
 
     def calc_merkle_root(self):
         hashes = []
@@ -1334,9 +1348,9 @@ class CBlock(CBlockHeader):
             self.nNonce += 1
 
     def __repr__(self):
-        return "CBlock(nVersion=%i hashPrevBlock=%064x hashMerkleRoot=%064x hashFinalSaplingRoot=%064x nTime=%s nBits=%08x nNonce=%064x nSolution=%r vtx=%r)" \
+        return "CBlock(nVersion=%i hashPrevBlock=%064x hashMerkleRoot=%064x hashBlockCommitments=%064x nTime=%s nBits=%08x nNonce=%064x nSolution=%r vtx=%r)" \
             % (self.nVersion, self.hashPrevBlock, self.hashMerkleRoot,
-               self.hashFinalSaplingRoot, time.ctime(self.nTime), self.nBits,
+               self.hashBlockCommitments, time.ctime(self.nTime), self.nBits,
                self.nNonce, self.nSolution, self.vtx)
 
 

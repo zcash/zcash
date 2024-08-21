@@ -10,6 +10,11 @@
 
 #include <optional>
 
+extern void SetChainPoolValues(
+    const CChainParams& chainparams,
+    const CBlock &block,
+    CBlockIndex *pindex);
+
 extern bool ReceivedBlockTransactions(
     const CBlock &block,
     CValidationState& state,
@@ -17,11 +22,11 @@ extern bool ReceivedBlockTransactions(
     CBlockIndex *pindexNew,
     const CDiskBlockPos& pos);
 
-void ExpectOptionalAmount(CAmount expected, std::optional<CAmount> actual) {
-    EXPECT_TRUE((bool)actual);
-    if (actual) {
-        EXPECT_EQ(expected, *actual);
-    }
+extern void EnsureUnreferencedAsKeyOfMapBlocksUnlinked(
+    const CBlockIndex *pindex);
+
+void ExpectAmount(CAmount expected, std::optional<CAmount> actual) {
+    EXPECT_EQ(std::make_optional(expected), actual);
 }
 
 // Fake a view that optionally contains a single coin.
@@ -174,12 +179,25 @@ TEST(Validation, ContextualCheckInputsDetectsOldBranchId) {
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, 10);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, 20);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_BLOSSOM, 30);
+
+    // Also test with the last three upgrades.
+    // If this changes, remember to update RegtestDeactivate* at the end of the test.
+    const Consensus::UpgradeIndex lastUpgrade = Consensus::UPGRADE_NU6;
+    static_assert(lastUpgrade > Consensus::UPGRADE_OVERWINTER + 2); // in-range and not redundant
+    UpdateNetworkUpgradeParameters(Consensus::UpgradeIndex(lastUpgrade - 2), 40);
+    UpdateNetworkUpgradeParameters(Consensus::UpgradeIndex(lastUpgrade - 1), 50);
+    UpdateNetworkUpgradeParameters(lastUpgrade, 60);
+
     const CChainParams& params = Params(CBaseChainParams::REGTEST);
     const Consensus::Params& consensusParams = params.GetConsensus();
 
     auto overwinterBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_OVERWINTER].nBranchId;
     auto saplingBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId;
     auto blossomBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_BLOSSOM].nBranchId;
+
+    auto antepenultimateBranchId = NetworkUpgradeInfo[lastUpgrade - 2].nBranchId;
+    auto penultimateBranchId = NetworkUpgradeInfo[lastUpgrade - 1].nBranchId;
+    auto lastBranchId = NetworkUpgradeInfo[lastUpgrade].nBranchId;
 
     CBasicKeyStore keystore;
     CKey tsk = AddTestCKeyToKeyStore(keystore);
@@ -203,60 +221,111 @@ TEST(Validation, ContextualCheckInputsDetectsOldBranchId) {
     CTxOut txOut;
     txOut.scriptPubKey = scriptPubKey;
     txOut.nValue = coinValue;
-    ValidationFakeCoinsViewDB fakeDB(blockHash, utxo.hash, txOut, 12);
-    CCoinsViewCache view(&fakeDB);
 
-    // Create a transparent transaction that spends the coin, targeting
-    // a height during the Overwinter epoch.
-    auto builder = TransactionBuilder(params, 15, std::nullopt, SaplingMerkleTree::empty_root(), &keystore);
-    builder.AddTransparentInput(utxo, scriptPubKey, coinValue);
-    builder.AddTransparentOutput(destination, 4000);
-    auto tx = builder.Build().GetTxOrThrow();
-    ASSERT_FALSE(tx.IsCoinBase());
+    {
+        ValidationFakeCoinsViewDB fakeDB(blockHash, utxo.hash, txOut, 12);
+        CCoinsViewCache view(&fakeDB);
 
-    // Ensure that the inputs validate against Overwinter.
-    CValidationState state;
-    PrecomputedTransactionData txdata(tx, {CTxOut(coinValue, scriptPubKey)});
-    EXPECT_TRUE(ContextualCheckInputs(
-        tx, state, view, true, 0, false, txdata,
-        consensusParams, overwinterBranchId));
+        // Create a transparent transaction that spends the coin, targeting
+        // a height during the Overwinter epoch.
+        auto builder = TransactionBuilder(params, 15, std::nullopt, SaplingMerkleTree::empty_root(), &keystore);
+        builder.AddTransparentInput(utxo, scriptPubKey, coinValue);
+        builder.AddTransparentOutput(destination, 4000);
+        auto tx = builder.Build().GetTxOrThrow();
+        ASSERT_FALSE(tx.IsCoinBase());
 
-    // Attempt to validate the inputs against Sapling. We should be notified
-    // that an old consensus branch ID was used for an input.
-    MockCValidationState mockState;
-    EXPECT_CALL(mockState, DoS(
-        10, false, REJECT_INVALID,
-        strprintf("old-consensus-branch-id (Expected %s, found %s)",
-            HexInt(saplingBranchId),
-            HexInt(overwinterBranchId)),
-        false, "")).Times(1);
-    EXPECT_FALSE(ContextualCheckInputs(
-        tx, mockState, view, true, 0, false, txdata,
-        consensusParams, saplingBranchId));
+        // Ensure that the inputs validate against Overwinter.
+        CValidationState state;
+        PrecomputedTransactionData txdata(tx, {CTxOut(coinValue, scriptPubKey)});
+        EXPECT_TRUE(ContextualCheckInputs(
+            tx, state, view, true, 0, false, txdata,
+            consensusParams, overwinterBranchId));
 
-    // Attempt to validate the inputs against Blossom. All we should learn is
-    // that the signature is invalid, because we don't check more than one
-    // network upgrade back.
-    EXPECT_CALL(mockState, DoS(
-        100, false, REJECT_INVALID,
-        "mandatory-script-verify-flag-failed (Script evaluated without error but finished with a false/empty top stack element)",
-        false, "")).Times(1);
-    EXPECT_FALSE(ContextualCheckInputs(
-        tx, mockState, view, true, 0, false, txdata,
-        consensusParams, blossomBranchId));
+        // Attempt to validate the inputs against Sapling. We should be notified
+        // that an old consensus branch ID was used for an input.
+        MockCValidationState mockState;
+        EXPECT_CALL(mockState, DoS(
+            10, false, REJECT_INVALID,
+            strprintf("old-consensus-branch-id (Expected %s, found %s)",
+                HexInt(saplingBranchId),
+                HexInt(overwinterBranchId)),
+            false, "")).Times(1);
+        EXPECT_FALSE(ContextualCheckInputs(
+            tx, mockState, view, true, 0, false, txdata,
+            consensusParams, saplingBranchId));
+
+        // Attempt to validate the inputs against Blossom. All we should learn is
+        // that the signature is invalid, because we don't check more than one
+        // network upgrade back.
+        EXPECT_CALL(mockState, DoS(
+            100, false, REJECT_INVALID,
+            "mandatory-script-verify-flag-failed (Script evaluated without error but finished with a false/empty top stack element)",
+            false, "")).Times(1);
+        EXPECT_FALSE(ContextualCheckInputs(
+            tx, mockState, view, true, 0, false, txdata,
+            consensusParams, blossomBranchId));
+    }
+
+    // Check that we didn't break this by repeating for the last three upgrades.
+    {
+        ValidationFakeCoinsViewDB fakeDB(blockHash, utxo.hash, txOut, 42);
+        CCoinsViewCache view(&fakeDB);
+
+        // Create a transparent transaction that spends the coin, targeting
+        // a height during the antepenultimate epoch.
+        auto builder = TransactionBuilder(params, 45, std::nullopt, SaplingMerkleTree::empty_root(), &keystore);
+        builder.AddTransparentInput(utxo, scriptPubKey, coinValue);
+        builder.AddTransparentOutput(destination, 4000);
+        auto tx = builder.Build().GetTxOrThrow();
+        ASSERT_FALSE(tx.IsCoinBase());
+
+        // Ensure that the inputs validate against the antepenultimate epoch.
+        CValidationState state;
+        PrecomputedTransactionData txdata(tx, {CTxOut(coinValue, scriptPubKey)});
+        EXPECT_TRUE(ContextualCheckInputs(
+            tx, state, view, true, 0, false, txdata,
+            consensusParams, antepenultimateBranchId));
+
+        // Attempt to validate the inputs against the penultimate epoch.
+        // We should be notified that an old consensus branch ID was used for an input.
+        MockCValidationState mockState;
+        EXPECT_CALL(mockState, DoS(
+            10, false, REJECT_INVALID,
+            strprintf("old-consensus-branch-id (Expected %s, found %s)",
+                HexInt(penultimateBranchId),
+                HexInt(antepenultimateBranchId)),
+            false, "")).Times(1);
+        EXPECT_FALSE(ContextualCheckInputs(
+            tx, mockState, view, true, 0, false, txdata,
+            consensusParams, penultimateBranchId));
+
+        // Attempt to validate the inputs against the last epoch. All we should learn
+        // is that the signature is invalid, because we don't check more than one
+        // network upgrade back.
+        EXPECT_CALL(mockState, DoS(
+            100, false, REJECT_INVALID,
+            "mandatory-script-verify-flag-failed (Script evaluated without error but finished with a false/empty top stack element)",
+            false, "")).Times(1);
+        EXPECT_FALSE(ContextualCheckInputs(
+            tx, mockState, view, true, 0, false, txdata,
+            consensusParams, lastBranchId));
+    }
 
     // Tear down
     chainActive.SetTip(NULL);
     mapBlockIndex.erase(blockHash);
 
     // Revert to default
+    RegtestDeactivateNU6();
+    RegtestDeactivateNU5();
+    RegtestDeactivateCanopy();
     RegtestDeactivateBlossom();
 }
 
 TEST(Validation, ReceivedBlockTransactions) {
     SelectParams(CBaseChainParams::REGTEST);
-    auto chainParams = Params();
-    auto sk = libzcash::SproutSpendingKey::random();
+    const auto chainParams = Params();
+    const auto sk = libzcash::SproutSpendingKey::random();
 
     // Create a fake genesis block
     CBlock block1;
@@ -284,47 +353,103 @@ TEST(Validation, ReceivedBlockTransactions) {
     EXPECT_FALSE(fakeIndex2.IsValid(BLOCK_VALID_TRANSACTIONS));
 
     // Sprout pool values should not be set
-    EXPECT_FALSE((bool)fakeIndex1.nSproutValue);
-    EXPECT_FALSE((bool)fakeIndex1.nChainSproutValue);
-    EXPECT_FALSE((bool)fakeIndex2.nSproutValue);
-    EXPECT_FALSE((bool)fakeIndex2.nChainSproutValue);
+    EXPECT_FALSE(fakeIndex1.nSproutValue.has_value());
+    EXPECT_FALSE(fakeIndex1.nChainSproutValue.has_value());
+    EXPECT_FALSE(fakeIndex2.nSproutValue.has_value());
+    EXPECT_FALSE(fakeIndex2.nChainSproutValue.has_value());
+
+    // Sapling pool values should not be set
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex1.nSaplingValue); }
+    EXPECT_FALSE(fakeIndex1.nChainSaplingValue.has_value());
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex2.nSaplingValue); }
+    EXPECT_FALSE(fakeIndex2.nChainSaplingValue.has_value());
+
+    // Orchard pool values should not be set
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex1.nOrchardValue); }
+    EXPECT_FALSE(fakeIndex1.nChainOrchardValue.has_value());
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex2.nOrchardValue); }
+    EXPECT_FALSE(fakeIndex2.nChainOrchardValue.has_value());
+
+    // Lockbox pool values should not be set
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex1.nLockboxValue); }
+    EXPECT_FALSE(fakeIndex1.nChainLockboxValue.has_value());
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex2.nLockboxValue); }
+    EXPECT_FALSE(fakeIndex2.nChainLockboxValue.has_value());
 
     // Mark the second block's transactions as received first
     CValidationState state;
-    EXPECT_TRUE(ReceivedBlockTransactions(block2, state, chainParams, &fakeIndex2, pos2));
+    {
+        // Taking cs_main is required even when working on a fake index.
+        LOCK(cs_main);
+        SetChainPoolValues(chainParams, block2, &fakeIndex2);
+        EXPECT_TRUE(ReceivedBlockTransactions(block2, state, chainParams, &fakeIndex2, pos2));
+    }
+
     EXPECT_FALSE(fakeIndex1.IsValid(BLOCK_VALID_TRANSACTIONS));
     EXPECT_TRUE(fakeIndex2.IsValid(BLOCK_VALID_TRANSACTIONS));
 
     // Sprout pool value delta should now be set for the second block,
     // but not any chain totals
-    EXPECT_FALSE((bool)fakeIndex1.nSproutValue);
-    EXPECT_FALSE((bool)fakeIndex1.nChainSproutValue);
-    {
-        SCOPED_TRACE("ExpectOptionalAmount call");
-        ExpectOptionalAmount(20, fakeIndex2.nSproutValue);
-    }
-    EXPECT_FALSE((bool)fakeIndex2.nChainSproutValue);
+    EXPECT_FALSE(fakeIndex1.nSproutValue.has_value());
+    EXPECT_FALSE(fakeIndex1.nChainSproutValue.has_value());
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(20, fakeIndex2.nSproutValue); }
+    EXPECT_FALSE(fakeIndex2.nChainSproutValue.has_value());
+
+    // Same for Sapling (TODO: make these nonzero)
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex1.nSaplingValue); }
+    EXPECT_FALSE(fakeIndex1.nChainSaplingValue.has_value());
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex2.nSaplingValue); }
+    EXPECT_FALSE(fakeIndex2.nChainSaplingValue.has_value());
+
+    // Same for Orchard (TODO: make these nonzero)
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex1.nOrchardValue); }
+    EXPECT_FALSE(fakeIndex1.nChainOrchardValue.has_value());
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex2.nOrchardValue); }
+    EXPECT_FALSE(fakeIndex2.nChainOrchardValue.has_value());
+
+    // Same for the lockbox (TODO: make these nonzero)
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex1.nLockboxValue); }
+    EXPECT_FALSE(fakeIndex1.nChainLockboxValue.has_value());
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex2.nLockboxValue); }
+    EXPECT_FALSE(fakeIndex2.nChainLockboxValue.has_value());
 
     // Now mark the first block's transactions as received
-    EXPECT_TRUE(ReceivedBlockTransactions(block1, state, chainParams, &fakeIndex1, pos1));
+    {
+        // Taking cs_main is required even when working on a fake index.
+        LOCK(cs_main);
+        SetChainPoolValues(chainParams, block1, &fakeIndex1);
+        EXPECT_TRUE(ReceivedBlockTransactions(block1, state, chainParams, &fakeIndex1, pos1));
+    }
     EXPECT_TRUE(fakeIndex1.IsValid(BLOCK_VALID_TRANSACTIONS));
     EXPECT_TRUE(fakeIndex2.IsValid(BLOCK_VALID_TRANSACTIONS));
 
     // Sprout pool values should now be set for both blocks
-    {
-        SCOPED_TRACE("ExpectOptionalAmount call");
-        ExpectOptionalAmount(10, fakeIndex1.nSproutValue);
-    }
-    {
-        SCOPED_TRACE("ExpectOptionalAmount call");
-        ExpectOptionalAmount(10, fakeIndex1.nChainSproutValue);
-    }
-    {
-        SCOPED_TRACE("ExpectOptionalAmount call");
-        ExpectOptionalAmount(20, fakeIndex2.nSproutValue);
-    }
-    {
-        SCOPED_TRACE("ExpectOptionalAmount call");
-        ExpectOptionalAmount(30, fakeIndex2.nChainSproutValue);
-    }
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(10, fakeIndex1.nSproutValue); }
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(10, fakeIndex1.nChainSproutValue); }
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(20, fakeIndex2.nSproutValue); }
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(30, fakeIndex2.nChainSproutValue); }
+
+    // Sapling pool values should now be set for both blocks (TODO: make these nonzero)
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex1.nSaplingValue); }
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex1.nChainSaplingValue); }
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex2.nSaplingValue); }
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex2.nChainSaplingValue); }
+
+    // Orchard pool values should now be set for both blocks (TODO: make these nonzero)
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex1.nOrchardValue); }
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex1.nChainOrchardValue); }
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex2.nOrchardValue); }
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex2.nChainOrchardValue); }
+
+    // Lockbox pool values should now be set for both blocks (TODO: make these nonzero)
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex1.nLockboxValue); }
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex1.nChainLockboxValue); }
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex2.nLockboxValue); }
+    { SCOPED_TRACE("ExpectAmount"); ExpectAmount(0, fakeIndex2.nChainLockboxValue); }
+
+    // Ensure that the fake CBlockIndex objects aren't still referenced by mapBlocksUnlinked.
+    // (In practice, we only have &fakeIndex1 as a key pointing to &fakeIndex2 after the
+    // first call to ReceivedBlockTransactions, which is removed by the second call.)
+    EnsureUnreferencedAsKeyOfMapBlocksUnlinked(&fakeIndex1);
+    EnsureUnreferencedAsKeyOfMapBlocksUnlinked(&fakeIndex2);
 }

@@ -86,6 +86,7 @@ class WalletOrchardReindexTest(BitcoinTestFramework):
         while self.nodes[0].getblockcount() < blockcount:
             time.sleep(0.1)
         assert_equal(self.nodes[0].getblockcount(), blockcount)
+        time.sleep(10)
 
         # Confirm that we still see the Orchard note in the wallet.
         assert_equal(

@@ -3,10 +3,7 @@ import struct
 from typing import (List, Optional)
 
 from .mininode import (CBlockHeader, block_work_from_compact, ser_compactsize, ser_uint256)
-from .util import (
-    NU5_BRANCH_ID,
-    assert_equal,
-)
+from .util import (NU5_BRANCH_ID, NU6_BRANCH_ID)
 
 def H(msg: bytes, consensusBranchId: int) -> bytes:
     digest = blake2b(
@@ -48,7 +45,7 @@ class ZcashMMRNode():
     ) -> 'ZcashMMRNode':
         '''Create a leaf node from a block'''
         if v2_data is not None:
-            assert_equal(consensusBranchId, NU5_BRANCH_ID)
+            assert consensusBranchId in [NU5_BRANCH_ID, NU6_BRANCH_ID]
             orchard_root = v2_data[0]
             orchard_tx_count = v2_data[1]
         else:
