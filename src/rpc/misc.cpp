@@ -830,7 +830,6 @@ static void getHeightRange(const UniValue& params, int& start, int& end)
     if (params[0].isObject()) {
         UniValue startValue = find_value(params[0].get_obj(), "start");
         UniValue endValue = find_value(params[0].get_obj(), "end");
-        // If either is not specified, the other is ignored.
         if (!startValue.isNull()) {
             start = startValue.get_int();
             if (start < 0) {
@@ -892,6 +891,7 @@ UniValue getaddressdeltas(const UniValue& params, bool fHelp)
             "\nReturns information about all changes to the given transparent addresses within the given (inclusive)\n"
             "\nblock height range, default is the full blockchain."
             "\nIf start or end are not specified, they default to zero."
+            "\nIf start is greater than the latest block height, it's interpreted as that height.\n"
             "\nIf end is zero, it's interpreted as the latest block height.\n"
             + disabledMsg +
             "\nArguments:\n"
@@ -1079,6 +1079,7 @@ UniValue getaddresstxids(const UniValue& params, bool fHelp)
             "\nReturns the txids for given transparent addresses within the given (inclusive)\n"
             "\nblock height range, default is the full blockchain."
             "\nIf start or end are not specified, they default to zero."
+            "\nIf start is greater than the latest block height, it's interpreted as that height.\n"
             "\nIf end is zero, it's interpreted as the latest block height.\n"
             "\nThe returned txids are in the order they appear in blocks, which"
             "\nensures that they are topologically sorted (i.e. parent txids"
