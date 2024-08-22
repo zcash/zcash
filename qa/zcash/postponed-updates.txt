@@ -7,8 +7,10 @@
 # Boost 1.84.0 causes gtests to fail on macOS.
 boost 1.84.0 2024-09-15
 boost 1.85.0 2024-09-15
+boost 1.86.0 2024-09-15
 native_b2 1.84.0 2024-09-15
 native_b2 1.85.0 2024-09-15
+native_b2 1.86.0 2024-09-15
 
 # Clang and Rust are currently pinned to LLVM 18
 
