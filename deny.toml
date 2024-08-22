@@ -31,10 +31,3 @@ exceptions = [
     { name = "terminfo", allow = ["WTFPL"] },
     { name = "unicode-ident", allow = ["Unicode-DFS-2016"] },
 ]
-
-[[licenses.clarify]]
-name = "ring"
-expression = "LicenseRef-ring"
-license-files = [
-    { path = "LICENSE", hash = 0xbd0eed23 },
-]
