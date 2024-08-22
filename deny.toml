@@ -25,13 +25,11 @@ allow = [
 exceptions = [
     { name = "arrayref", allow = ["BSD-2-Clause"] },
     { name = "curve25519-dalek", allow = ["BSD-3-Clause"] },
-    { name = "ring", allow = ["LicenseRef-ring"] },
     { name = "secp256k1", allow = ["CC0-1.0"] },
     { name = "secp256k1-sys", allow = ["CC0-1.0"] },
     { name = "subtle", allow = ["BSD-3-Clause"] },
     { name = "terminfo", allow = ["WTFPL"] },
     { name = "unicode-ident", allow = ["Unicode-DFS-2016"] },
-    { name = "untrusted", allow = ["ISC"] },
 ]
 
 [[licenses.clarify]]
