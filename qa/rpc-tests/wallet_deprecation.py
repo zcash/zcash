@@ -68,17 +68,22 @@ class WalletDeprecationTest(BitcoinTestFramework):
                     ))
 
     def verify_disabled(self, function):
-        errorString = ''
-        try:
-            getattr(self.nodes[0], function)()
-        except JSONRPCException as e:
-            errorString = e.error['message']
-        assert_true(
-            "DEPRECATED" in errorString,
-            "'%s' not disabled (%s)" % (
-                function,
-                "failed with '%s'" % errorString if len(errorString) > 0 else "succeeded",
-            ))
+        while True:
+            errorString = ''
+            try:
+                getattr(self.nodes[0], function)()
+            except JSONRPCException as e:
+                errorString = e.error['message']
+                if 'disabled while reindexing' in e.error['message']:
+                    sleep(10)
+                    continue
+
+            assert_true(
+                "DEPRECATED" in errorString,
+                "'%s' not disabled (%s)" % (
+                    function,
+                    "failed with '%s'" % errorString if len(errorString) > 0 else "succeeded",
+                ))
 
     def test_case(self, start_mode, features_to_allow, expected_state, default_enabled, default_disabled):
         stop_nodes(self.nodes)
