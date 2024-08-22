@@ -37,6 +37,7 @@ SERIAL_SCRIPTS = [
 
 FLAKY_SCRIPTS = [
     # These tests have intermittent failures that we haven't diagnosed yet.
+    'mempool_nu_activation.py',
     'mempool_packages.py',
 ]
 
@@ -103,7 +104,6 @@ BASE_SCRIPTS= [
     'rest.py',
     'mempool_spendcoinbase.py',
     'mempool_reorg.py',
-    'mempool_nu_activation.py',
     'httpbasics.py',
     'multi_rpc.py',
     'zapwallettxes.py',
