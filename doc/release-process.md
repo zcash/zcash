@@ -145,6 +145,11 @@ Examples:
 Ordinarily, we choose a release height that is a couple hundred blocks in
 the future in order to give time for CI to run.
 
+If it is necessary that the version you are building reach its end-of-service
+halt in less time than the ordinary 16 weeks, it may be necessary to modify
+the value of the `RELEASE_TO_DEPRECATION_WEEKS` constant in `deprecation.h`
+prior to running `make-release.py`.
+
 ### Create, Review, and Merge the release branch pull request
 
 Review the automated changes in git:
