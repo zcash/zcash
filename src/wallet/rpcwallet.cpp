@@ -314,10 +314,14 @@ static void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtr
     CAmount nFeeRequired = -1;
     std::string strError;
     vector<CRecipient> vecSend;
-    int nChangePosRet = -1; // never used
     CRecipient recipient = {scriptPubKey, nValue, fSubtractFeeFromAmount};
     vecSend.push_back(recipient);
-    if (!pwalletMain->CreateTransaction(vecSend, wtxNew, reservekey, nFeeRequired, nChangePosRet, strError)) {
+    bool fCreated;
+    {
+        int nChangePosRet = -1; // never used
+        fCreated = pwalletMain->CreateTransaction(vecSend, wtxNew, reservekey, nFeeRequired, nChangePosRet, strError);
+    }
+    if (!fCreated) {
         if (!fSubtractFeeFromAmount && nFeeRequired >= 0 && nValue + nFeeRequired > curBalance) {
             strError = strprintf("Error: Insufficient funds to pay the fee. This transaction needs to spend %s "
                                  "plus a fee of at least %s, but only %s is available",
@@ -1348,10 +1352,13 @@ UniValue sendmany(const UniValue& params, bool fHelp)
 
     // Send
     CReserveKey keyChange(pwalletMain);
-    CAmount nFeeRequired = -1; // never used
-    int nChangePosRet = -1;    // never used
     string strFailReason;
-    bool fCreated = pwalletMain->CreateTransaction(vecSend, wtx, keyChange, nFeeRequired, nChangePosRet, strFailReason);
+    bool fCreated;
+    {
+        CAmount nFeeRequired = -1; // never used
+        int nChangePosRet = -1;    // never used
+        fCreated = pwalletMain->CreateTransaction(vecSend, wtx, keyChange, nFeeRequired, nChangePosRet, strFailReason);
+    }
     if (!fCreated)
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, strFailReason);
     CValidationState state;
