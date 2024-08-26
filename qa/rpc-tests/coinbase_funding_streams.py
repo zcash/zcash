@@ -96,8 +96,8 @@ class CoinbaseFundingStreamsTest(BitcoinTestFramework):
             fundingstream(0, 3, 4, [fs_sapling]), # FS_ZIP214_BP: 7%
             fundingstream(1, 3, 4, [fs_sapling]), # FS_ZIP214_ZF: 5%
             fundingstream(2, 3, 4, [fs_sapling]), # FS_ZIP214_MG: 8%
-            fundingstream(3, 4, 8, [fs_transparent, fs_transparent]),   # FS_ZIPTBD_ZCG: 8%
-            fundingstream(4, 4, 8, ["DEFERRED_POOL", "DEFERRED_POOL"]), # FS_ZIPTBD_LOCKBOX: 12%
+            fundingstream(3, 4, 8, [fs_transparent, fs_transparent]),   # FS_FPF_ZCG: 8%
+            fundingstream(4, 4, 8, ["DEFERRED_POOL", "DEFERRED_POOL"]), # FS_DEFERRED: 12%
         ]
         self.nodes[0] = self.start_node_with(0, new_args)
         self.nodes[1] = self.start_node_with(1, new_args)

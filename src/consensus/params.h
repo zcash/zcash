@@ -123,8 +123,8 @@ enum FundingStreamIndex : uint32_t {
     FS_ZIP214_BP,
     FS_ZIP214_ZF,
     FS_ZIP214_MG,
-    FS_ZIPTBD_ZCG,
-    FS_ZIPTBD_LOCKBOX,
+    FS_FPF_ZCG,
+    FS_DEFERRED,
     MAX_FUNDING_STREAMS,
 };
 const auto FIRST_FUNDING_STREAM = FS_ZIP214_BP;

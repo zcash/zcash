@@ -551,13 +551,13 @@ public:
             //auto nu6Activation = consensus.vUpgrades[Consensus::UPGRADE_NU6].nActivationHeight;
             //consensus.AddZIP207FundingStream(
             //    keyConstants,
-            //    Consensus::FS_ZIPTBD_ZCG,
+            //    Consensus::FS_FPF_ZCG,
             //    nu6Activation,
             //    nu6Activation + (12 * consensus.nFundingPeriodLength,
             //    <FIXME>);
             //consensus.AddZIP207LockboxStream(
             //    keyConstants,
-            //    Consensus::FS_ZIPTBD_LOCKBOX,
+            //    Consensus::FS_DEFERRED,
             //    nu6Activation,
             //    nu6Activation + (12 * consensus.nFundingPeriodLength);
         }
