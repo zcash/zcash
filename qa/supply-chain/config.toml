@@ -666,20 +666,8 @@ criteria = "safe-to-deploy"
 version = "2.5.0"
 criteria = "safe-to-deploy"
 
-[[exemptions.zcash_address]]
-version = "0.4.0"
-criteria = "safe-to-deploy"
-
 [[exemptions.zcash_encoding]]
 version = "0.2.1"
-criteria = "safe-to-deploy"
-
-[[exemptions.zcash_primitives]]
-version = "0.16.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.zcash_proofs]]
-version = "0.16.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.zerocopy]]
