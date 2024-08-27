@@ -78,18 +78,18 @@ jobs:
               test_os: ubuntu-22.04
               host: x86_64-pc-linux-gnu
 
-            - name: macos-12
-              tier: 3
-              platform: macOS 12 Monterey
-              build_os: macos-12
-              test_os: macos-12
-              brew_deps: >
-                autoconf
-                automake
-                coreutils
-                libtool
-                pkgconfig
-              host: x86_64-apple-darwin
+            # - name: macos-12
+            #   tier: 3
+            #   platform: macOS 12 Monterey
+            #   build_os: macos-12
+            #   test_os: macos-12
+            #   brew_deps: >
+            #     autoconf
+            #     automake
+            #     coreutils
+            #     libtool
+            #     pkgconfig
+            #   host: x86_64-apple-darwin
 
             - name: mingw32
               tier: 3

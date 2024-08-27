@@ -132,6 +132,13 @@ user-id = 64539
 user-login = "kennykerr"
 user-name = "Kenny Kerr"
 
+[[publisher.zcash_address]]
+version = "0.5.0"
+when = "2024-08-26"
+user-id = 169181
+user-login = "nuttycom"
+user-name = "Kris Nuttycombe"
+
 [[publisher.zcash_history]]
 version = "0.4.0"
 when = "2024-03-01"
@@ -146,9 +153,23 @@ user-id = 169181
 user-login = "nuttycom"
 user-name = "Kris Nuttycombe"
 
+[[publisher.zcash_primitives]]
+version = "0.17.0"
+when = "2024-08-26"
+user-id = 169181
+user-login = "nuttycom"
+user-name = "Kris Nuttycombe"
+
+[[publisher.zcash_proofs]]
+version = "0.17.0"
+when = "2024-08-26"
+user-id = 169181
+user-login = "nuttycom"
+user-name = "Kris Nuttycombe"
+
 [[publisher.zcash_protocol]]
-version = "0.2.0"
-when = "2024-08-19"
+version = "0.3.0"
+when = "2024-08-26"
 user-id = 169181
 user-login = "nuttycom"
 user-name = "Kris Nuttycombe"
