@@ -1,6 +1,12 @@
 Notable changes
 ===============
 
+Network Upgrade
+---------------
+
+- This release includes support for NU6 on Testnet. A further upgrade will be
+  needed for NU6 on Mainnet.
+
 RPC Changes
 -----------
 
