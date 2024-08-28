@@ -61,15 +61,16 @@ BOOST_DATA_TEST_CASE(multisig_verify, boost::unit_test::data::xrange(static_cast
     CScript escrow;
     escrow << OP_2 << ToByteVector(key[0].GetPubKey()) << ToByteVector(key[1].GetPubKey()) << ToByteVector(key[2].GetPubKey()) << OP_3 << OP_CHECKMULTISIG;
 
-    CMutableTransaction txFrom;  // Funding transaction
-    txFrom.vout.resize(3);
-    txFrom.vout[0].scriptPubKey = a_and_b;
-    txFrom.vout[1].scriptPubKey = a_or_b;
-    txFrom.vout[2].scriptPubKey = escrow;
+    CMutableTransaction mtxFrom;  // Funding transaction
+    mtxFrom.vout.resize(3);
+    mtxFrom.vout[0].scriptPubKey = a_and_b;
+    mtxFrom.vout[1].scriptPubKey = a_or_b;
+    mtxFrom.vout[2].scriptPubKey = escrow;
     // Meaningless values, but we need them for the Rust code to parse this.
-    txFrom.vout[0].nValue = 10;
-    txFrom.vout[1].nValue = 10;
-    txFrom.vout[2].nValue = 10;
+    mtxFrom.vout[0].nValue = 10;
+    mtxFrom.vout[1].nValue = 10;
+    mtxFrom.vout[2].nValue = 10;
+    CTransaction txFrom(mtxFrom);
 
     CMutableTransaction txTo[3]; // Spending transaction
     std::vector<PrecomputedTransactionData> txdata;
@@ -80,7 +81,7 @@ BOOST_DATA_TEST_CASE(multisig_verify, boost::unit_test::data::xrange(static_cast
         txTo[i].vin[0].prevout.n = i;
         txTo[i].vin[0].prevout.hash = txFrom.GetHash();
         txTo[i].vout[0].nValue = 1;
-        txdata.push_back(PrecomputedTransactionData(txTo[i], {txFrom.vout[i]}));
+        txdata.push_back(PrecomputedTransactionData(CTransaction(txTo[i]), {txFrom.vout[i]}));
     }
 
     vector<CKey> keys;
@@ -89,20 +90,20 @@ BOOST_DATA_TEST_CASE(multisig_verify, boost::unit_test::data::xrange(static_cast
     // Test a AND b:
     keys.assign(1,key[0]);
     keys.push_back(key[1]);
-    s = sign_multisig(a_and_b, keys, txTo[0], txdata[0], 0, consensusBranchId);
+    s = sign_multisig(a_and_b, keys, CTransaction(txTo[0]), txdata[0], 0, consensusBranchId);
     BOOST_CHECK(VerifyScript(s, a_and_b, flags, MutableTransactionSignatureChecker(&txTo[0], txdata[0], 0, amount), consensusBranchId, &err));
     BOOST_CHECK_MESSAGE(err == SCRIPT_ERR_OK, ScriptErrorString(err));
 
     for (int i = 0; i < 4; i++)
     {
         keys.assign(1,key[i]);
-        s = sign_multisig(a_and_b, keys, txTo[0], txdata[0], 0, consensusBranchId);
+        s = sign_multisig(a_and_b, keys, CTransaction(txTo[0]), txdata[0], 0, consensusBranchId);
         BOOST_CHECK_MESSAGE(!VerifyScript(s, a_and_b, flags, MutableTransactionSignatureChecker(&txTo[0], txdata[0], 0, amount), consensusBranchId, &err), strprintf("a&b 1: %d", i));
         BOOST_CHECK_MESSAGE(err == SCRIPT_ERR_INVALID_STACK_OPERATION, ScriptErrorString(err));
 
         keys.assign(1,key[1]);
         keys.push_back(key[i]);
-        s = sign_multisig(a_and_b, keys, txTo[0], txdata[0], 0, consensusBranchId);
+        s = sign_multisig(a_and_b, keys, CTransaction(txTo[0]), txdata[0], 0, consensusBranchId);
         BOOST_CHECK_MESSAGE(!VerifyScript(s, a_and_b, flags, MutableTransactionSignatureChecker(&txTo[0], txdata[0], 0, amount), consensusBranchId, &err), strprintf("a&b 2: %d", i));
         BOOST_CHECK_MESSAGE(err == SCRIPT_ERR_EVAL_FALSE, ScriptErrorString(err));
     }
@@ -111,7 +112,7 @@ BOOST_DATA_TEST_CASE(multisig_verify, boost::unit_test::data::xrange(static_cast
     for (int i = 0; i < 4; i++)
     {
         keys.assign(1,key[i]);
-        s = sign_multisig(a_or_b, keys, txTo[1], txdata[1], 0, consensusBranchId);
+        s = sign_multisig(a_or_b, keys, CTransaction(txTo[1]), txdata[1], 0, consensusBranchId);
         if (i == 0 || i == 1)
         {
             BOOST_CHECK_MESSAGE(VerifyScript(s, a_or_b, flags, MutableTransactionSignatureChecker(&txTo[1], txdata[1], 0, amount), consensusBranchId, &err), strprintf("a|b: %d", i));
@@ -134,7 +135,7 @@ BOOST_DATA_TEST_CASE(multisig_verify, boost::unit_test::data::xrange(static_cast
         {
             keys.assign(1,key[i]);
             keys.push_back(key[j]);
-            s = sign_multisig(escrow, keys, txTo[2], txdata[2], 0, consensusBranchId);
+            s = sign_multisig(escrow, keys, CTransaction(txTo[2]), txdata[2], 0, consensusBranchId);
             if (i < j && i < 3 && j < 3)
             {
                 BOOST_CHECK_MESSAGE(VerifyScript(s, escrow, flags, MutableTransactionSignatureChecker(&txTo[2], txdata[2], 0, amount), consensusBranchId, &err), strprintf("escrow 1: %d %d", i, j));
@@ -207,15 +208,16 @@ BOOST_DATA_TEST_CASE(multisig_Sign, boost::unit_test::data::xrange(static_cast<i
     CScript escrow;
     escrow << OP_2 << ToByteVector(key[0].GetPubKey()) << ToByteVector(key[1].GetPubKey()) << ToByteVector(key[2].GetPubKey()) << OP_3 << OP_CHECKMULTISIG;
 
-    CMutableTransaction txFrom;  // Funding transaction
-    txFrom.vout.resize(3);
-    txFrom.vout[0].scriptPubKey = a_and_b;
-    txFrom.vout[1].scriptPubKey = a_or_b;
-    txFrom.vout[2].scriptPubKey = escrow;
+    CMutableTransaction mtxFrom;  // Funding transaction
+    mtxFrom.vout.resize(3);
+    mtxFrom.vout[0].scriptPubKey = a_and_b;
+    mtxFrom.vout[1].scriptPubKey = a_or_b;
+    mtxFrom.vout[2].scriptPubKey = escrow;
     // Meaningless values, but we need them for the Rust code to parse this.
-    txFrom.vout[0].nValue = 10;
-    txFrom.vout[1].nValue = 10;
-    txFrom.vout[2].nValue = 10;
+    mtxFrom.vout[0].nValue = 10;
+    mtxFrom.vout[1].nValue = 10;
+    mtxFrom.vout[2].nValue = 10;
+    CTransaction txFrom(mtxFrom);
 
     CMutableTransaction txTo[3]; // Spending transaction
     std::vector<PrecomputedTransactionData> txdata;
@@ -226,7 +228,7 @@ BOOST_DATA_TEST_CASE(multisig_Sign, boost::unit_test::data::xrange(static_cast<i
         txTo[i].vin[0].prevout.n = i;
         txTo[i].vin[0].prevout.hash = txFrom.GetHash();
         txTo[i].vout[0].nValue = 1;
-        txdata.push_back(PrecomputedTransactionData(txTo[i], {txFrom.vout[i]}));
+        txdata.push_back(PrecomputedTransactionData(CTransaction(txTo[i]), {txFrom.vout[i]}));
     }
 
     for (int i = 0; i < 3; i++)
