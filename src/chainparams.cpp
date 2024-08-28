@@ -440,8 +440,7 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_NU5].hashActivationBlock =
             uint256S("0006d75c60b3093d1b671ff7da11c99ea535df9927c02e6ed9eb898605eb7381");
         consensus.vUpgrades[Consensus::UPGRADE_NU6].nProtocolVersion = 170110;
-        consensus.vUpgrades[Consensus::UPGRADE_NU6].nActivationHeight =
-            Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
+        consensus.vUpgrades[Consensus::UPGRADE_NU6].nActivationHeight = 2976000;
         consensus.vUpgrades[Consensus::UPGRADE_ZFUTURE].nProtocolVersion = 0x7FFFFFFF;
         consensus.vUpgrades[Consensus::UPGRADE_ZFUTURE].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
@@ -548,18 +547,19 @@ public:
                 consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight, 2796000,
                 mg_addresses);
 
-            //auto nu6Activation = consensus.vUpgrades[Consensus::UPGRADE_NU6].nActivationHeight;
-            //consensus.AddZIP207FundingStream(
-            //    keyConstants,
-            //    Consensus::FS_ZIPTBD_ZCG,
-            //    nu6Activation,
-            //    nu6Activation + (12 * consensus.nFundingPeriodLength,
-            //    <FIXME>);
-            //consensus.AddZIP207LockboxStream(
-            //    keyConstants,
-            //    Consensus::FS_ZIPTBD_LOCKBOX,
-            //    nu6Activation,
-            //    nu6Activation + (12 * consensus.nFundingPeriodLength);
+            auto nu6Activation = consensus.vUpgrades[Consensus::UPGRADE_NU6].nActivationHeight;
+            std::vector<std::string> zcg_addresses(13, "t2HifwjUj9uyxr9bknR8LFuQbc98c3vkXtu");
+            consensus.AddZIP207FundingStream(
+                keyConstants,
+                Consensus::FS_FPF_ZCG,
+                nu6Activation,
+                3396000,
+                zcg_addresses);
+            consensus.AddZIP207LockboxStream(
+                keyConstants,
+                Consensus::FS_DEFERRED,
+                nu6Activation,
+                3396000);
         }
 
         // On testnet we activate this rule 6 blocks after Blossom activation. From block 299188 and

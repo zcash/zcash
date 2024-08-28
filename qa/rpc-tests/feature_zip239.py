@@ -171,6 +171,7 @@ class Zip239Test(BitcoinTestFramework):
         [x.wait_for_verack() for x in test_nodes]
 
         net_version = self.nodes[0].getnetworkinfo()["protocolversion"]
+        print("Net version: {}".format(net_version))
         if net_version < NU5_PROTO_VERSION:
             # Sending a getdata message containing a MSG_WTX CInv message type
             # results in a reject message.

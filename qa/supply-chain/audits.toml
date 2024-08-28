@@ -135,6 +135,11 @@ who = "Sean Bowe <ewillbefull@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "0.3.6 -> 0.3.7"
 
+[[audits.arrayref]]
+who = "Daira-Emma Hopwood <daira@jacaranda.org>"
+criteria = "safe-to-deploy"
+delta = "0.3.6 -> 0.3.8"
+
 [[audits.backtrace]]
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
@@ -317,6 +322,11 @@ initialization code in `parallel::job_token::JobTokenServer` and file operations
 This crate executes commands, and my review is likely not sufficient to detect subtle backdoors.
 I did not review the use of library handles in the `com` package on Windows.
 """
+
+[[audits.cc]]
+who = "Daira-Emma Hopwood <daira@jacaranda.org>"
+criteria = "safe-to-deploy"
+delta = "1.1.6 -> 1.1.13"
 
 [[audits.chacha20]]
 who = "Jack Grigg <jack@z.cash>"
@@ -2443,6 +2453,11 @@ delta = "3.5.0 -> 3.6.0"
 notes = "New `build.rs` file uses `autocfg` crate to conditionally enable new trait impls."
 
 [[audits.tempfile]]
+who = "Daira-Emma Hopwood <daira@jacaranda.org>"
+criteria = "safe-to-run"
+delta = "3.5.0 -> 3.12.0"
+
+[[audits.tempfile]]
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "3.6.0 -> 3.8.0"
@@ -2966,7 +2981,7 @@ delta = "1.4.1 -> 1.4.2"
 
 [[trusted.bridgetree]]
 criteria = "safe-to-deploy"
-user-id = 6289 # str4d
+user-id = 6289 # Jack Grigg (str4d)
 start = "2023-09-08"
 end = "2024-09-21"
 
@@ -2978,13 +2993,13 @@ end = "2024-09-21"
 
 [[trusted.equihash]]
 criteria = "safe-to-deploy"
-user-id = 6289 # str4d
+user-id = 6289 # Jack Grigg (str4d)
 start = "2020-06-26"
 end = "2024-09-21"
 
 [[trusted.f4jumble]]
 criteria = ["safe-to-deploy", "crypto-reviewed"]
-user-id = 6289 # str4d
+user-id = 6289 # Jack Grigg (str4d)
 start = "2021-09-22"
 end = "2024-09-21"
 
@@ -3008,7 +3023,7 @@ end = "2024-09-21"
 
 [[trusted.incrementalmerkletree]]
 criteria = "safe-to-deploy"
-user-id = 6289 # str4d
+user-id = 6289 # Jack Grigg (str4d)
 start = "2021-12-17"
 end = "2024-09-21"
 
@@ -3026,7 +3041,7 @@ end = "2024-09-21"
 
 [[trusted.orchard]]
 criteria = ["safe-to-deploy", "crypto-reviewed", "license-reviewed"]
-user-id = 6289 # str4d
+user-id = 6289 # Jack Grigg (str4d)
 start = "2021-01-07"
 end = "2024-09-21"
 
@@ -3038,7 +3053,7 @@ end = "2024-09-21"
 
 [[trusted.sapling-crypto]]
 criteria = ["safe-to-deploy", "crypto-reviewed", "license-reviewed"]
-user-id = 6289 # str4d
+user-id = 6289 # Jack Grigg (str4d)
 start = "2024-01-26"
 end = "2025-03-18"
 
@@ -3110,9 +3125,15 @@ end = "2024-09-21"
 
 [[trusted.zcash_address]]
 criteria = "safe-to-deploy"
-user-id = 6289 # str4d
+user-id = 6289 # Jack Grigg (str4d)
 start = "2021-03-07"
 end = "2025-03-18"
+
+[[trusted.zcash_address]]
+criteria = "safe-to-deploy"
+user-id = 169181 # Kris Nuttycombe (nuttycom)
+start = "2024-08-20"
+end = "2025-08-26"
 
 [[trusted.zcash_encoding]]
 criteria = "safe-to-deploy"
@@ -3128,7 +3149,7 @@ end = "2024-09-21"
 
 [[trusted.zcash_history]]
 criteria = "safe-to-deploy"
-user-id = 6289 # str4d
+user-id = 6289 # Jack Grigg (str4d)
 start = "2024-03-01"
 end = "2025-03-18"
 
@@ -3140,7 +3161,7 @@ end = "2024-09-21"
 
 [[trusted.zcash_primitives]]
 criteria = ["safe-to-deploy", "crypto-reviewed", "license-reviewed"]
-user-id = 6289 # str4d
+user-id = 6289 # Jack Grigg (str4d)
 start = "2021-03-26"
 end = "2024-09-21"
 
@@ -3150,11 +3171,23 @@ user-id = 1244 # ebfull
 start = "2019-10-08"
 end = "2024-09-21"
 
+[[trusted.zcash_primitives]]
+criteria = "safe-to-deploy"
+user-id = 169181 # Kris Nuttycombe (nuttycom)
+start = "2024-08-20"
+end = "2025-08-26"
+
 [[trusted.zcash_proofs]]
 criteria = ["safe-to-deploy", "crypto-reviewed", "license-reviewed"]
-user-id = 6289 # str4d
+user-id = 6289 # Jack Grigg (str4d)
 start = "2021-03-26"
 end = "2024-09-21"
+
+[[trusted.zcash_proofs]]
+criteria = "safe-to-deploy"
+user-id = 169181 # Kris Nuttycombe (nuttycom)
+start = "2024-08-20"
+end = "2025-08-26"
 
 [[trusted.zcash_protocol]]
 criteria = "safe-to-deploy"
@@ -3164,12 +3197,12 @@ end = "2025-04-16"
 
 [[trusted.zcash_spec]]
 criteria = ["safe-to-deploy", "crypto-reviewed", "license-reviewed"]
-user-id = 6289 # str4d
+user-id = 6289 # Jack Grigg (str4d)
 start = "2023-12-07"
 end = "2025-03-18"
 
 [[trusted.zip32]]
 criteria = "safe-to-deploy"
-user-id = 6289 # str4d
+user-id = 6289 # Jack Grigg (str4d)
 start = "2023-12-06"
 end = "2025-03-18"

@@ -59,20 +59,20 @@ redjubjub = "0.7"
 tracing = "0.1"
 tracing-core = "0.1"
 tracing-appender = "0.2"
-zcash_address = "0.4"
+zcash_address = "0.5"
 zcash_encoding = "0.2.1"
 zcash_history = "0.4"
 zcash_note_encryption = "0.4"
-zcash_primitives = { version = "0.16", features = ["temporary-zcashd", "transparent-inputs"] }
-zcash_proofs = { version = "0.16", features = ["directories"] }
-zcash_protocol = { version = "0.2", features = ["local-consensus"] }
+zcash_primitives = { version = "0.17", features = ["temporary-zcashd", "transparent-inputs"] }
+zcash_proofs = { version = "0.17", features = ["directories"] }
+zcash_protocol = { version = "0.3", features = ["local-consensus"] }
 ed25519-zebra = "4"
 zeroize = "1.4.2"
 wagyu-zcash-parameters = "0.2"
 
 # Rust/C++ interop
 # The version needs to match depends/packages/native_cxxbridge.mk
-cxx = { version = "=1.0.124", features = ["c++17"] }
+cxx = { version = "=1.0.126", features = ["c++17"] }
 
 # Rust threading
 rayon = "1.5"
@@ -100,7 +100,7 @@ time = { version = "0.3", features = ["formatting", "macros"] }
 [dev-dependencies]
 incrementalmerkletree = { version = "0.6", features = ["test-dependencies"] }
 proptest = "1.0.0"
-zcash_primitives = { version = "0.16", features = ["temporary-zcashd", "transparent-inputs", "test-dependencies"] }
+zcash_primitives = { version = "0.17", features = ["temporary-zcashd", "transparent-inputs", "test-dependencies"] }
 
 [dependencies.tracing-subscriber]
 version = "0.3"
