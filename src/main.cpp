@@ -6985,8 +6985,21 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
         std::string strSubVer;
         std::string cleanSubVer;
         try {
-            uint64_t nServices;
-            vRecv >> nVersion >> nServices >> nTime >> addrMe;
+            uint64_t nServiceInt;
+            vRecv >> nVersion >> nServiceInt >> nTime >> addrMe;
+            pfrom->nServices = ServiceFlags(nServiceInt);
+            if (!pfrom->fInbound)
+            {
+                addrman.SetServices(pfrom->addr, pfrom->nServices);
+            }
+            if (pfrom->nServicesExpected & ~pfrom->nServices)
+            {
+                LogPrint("net", "peer=%d does not offer the expected services (%08x offered, %08x expected); disconnecting\n", pfrom->id, pfrom->nServices, pfrom->nServicesExpected);
+                pfrom->PushMessage(NetMsgType::REJECT, strCommand, REJECT_NONSTANDARD,
+                                   strprintf("Expected to offer services %08x", pfrom->nServicesExpected));
+                pfrom->fDisconnect = true;
+                return false;
+            }
 
             if (nVersion < MIN_PEER_PROTO_VERSION)
             {
@@ -7029,7 +7042,6 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
             // We've successfully parsed the mandatory fields and checked the version.
             // It's safe to leave these set even if subsequent parsing fails.
             pfrom->nVersion = nVersion;
-            pfrom->nServices = nServices;
 
             if (!vRecv.empty()) {
                 vRecv >> addrFrom >> nNonce;
@@ -7235,6 +7247,9 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
         for (CAddress& addr : vAddr)
         {
             boost::this_thread::interruption_point();
+
+            if ((addr.nServices & REQUIRED_SERVICES) != REQUIRED_SERVICES)
+                continue;
 
             // Apply rate limiting if the address is not whitelisted
             if (pfrom->m_addr_token_bucket < 1.0) {
