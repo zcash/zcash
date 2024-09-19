@@ -36,7 +36,7 @@ TEST(FoundersRewardTest, create_testnet_2of3multisig) {
     ASSERT_EQ(DB_LOAD_OK, pWallet->LoadWallet(fFirstRun));
     pWallet->TopUpKeyPool();
     std::cout << "Test wallet and logs saved in folder: " << pathTemp.native() << std::endl;
-    
+
     int numKeys = 48;
     std::vector<CPubKey> pubkeys;
     pubkeys.resize(3);
@@ -65,7 +65,7 @@ TEST(FoundersRewardTest, create_testnet_2of3multisig) {
         std::string address = keyIO.EncodeDestination(innerID);
         addresses.push_back(address);
     }
-    
+
     // Print out the addresses, 4 on each line.
     std::string s = "vFoundersRewardAddress = {\n";
     int i=0;
@@ -118,7 +118,7 @@ TEST(FoundersRewardTest, General) {
     SelectParams(CBaseChainParams::TESTNET);
 
     CChainParams params = Params();
-    
+
     // Fourth testnet reward:
     // address = t2ENg7hHVqqs9JwU5cgjvSbxnT2a9USNfhy
     // script.ToString() = OP_HASH160 55d64928e69829d9376c776550b6cc710d427153 OP_EQUAL
@@ -131,12 +131,12 @@ TEST(FoundersRewardTest, General) {
     EXPECT_EQ(params.GetFoundersRewardAddressAtHeight(53127), "t2ENg7hHVqqs9JwU5cgjvSbxnT2a9USNfhy");
 
     int maxHeight = GetLastFoundersRewardHeight(params.GetConsensus());
-    
+
     // If the block height parameter is out of bounds, there is an assert.
     EXPECT_DEATH(params.GetFoundersRewardScriptAtHeight(0), "nHeight");
     EXPECT_DEATH(params.GetFoundersRewardScriptAtHeight(maxHeight+1), "nHeight");
     EXPECT_DEATH(params.GetFoundersRewardAddressAtHeight(0), "nHeight");
-    EXPECT_DEATH(params.GetFoundersRewardAddressAtHeight(maxHeight+1), "nHeight"); 
+    EXPECT_DEATH(params.GetFoundersRewardAddressAtHeight(maxHeight+1), "nHeight");
 }
 
 TEST(FoundersRewardTest, RegtestGetLastBlockBlossom) {
@@ -189,10 +189,10 @@ TEST(FoundersRewardTest, SlowStartSubsidy) {
 
     CAmount totalSubsidy = 0;
     for (int nHeight = 1; nHeight <= GetLastFoundersRewardHeight(Params().GetConsensus()); nHeight++) {
-        CAmount nSubsidy = params.GetConsensus().GetBlockSubsidy(nHeight) / 5;
+        CAmount nSubsidy = params.GetConsensus().GetBlockSubsidy(nHeight, 0) / 5;
         totalSubsidy += nSubsidy;
     }
-    
+
     ASSERT_TRUE(totalSubsidy == MAX_MONEY/10.0);
 }
 
@@ -208,7 +208,7 @@ void verifyNumberOfRewards() {
         if (ms.count(addr) == 0) {
             ms[addr] = 0;
         }
-        ms[addr] = ms[addr] + params.GetConsensus().GetBlockSubsidy(nHeight) / 5;
+        ms[addr] = ms[addr] + params.GetConsensus().GetBlockSubsidy(nHeight, 0) / 5;
     }
 
     EXPECT_EQ(ms[params.GetFoundersRewardAddressAtIndex(0)], 1960039937500);
@@ -248,8 +248,8 @@ TEST(FundingStreamsRewardTest, Zip207Distribution) {
             Consensus::FundingStream::ParseFundingStream(
                 consensus,
                 Params(),
-                minHeight, 
-                minHeight + 12, 
+                minHeight,
+                minHeight + 12,
                 {
                     "t2UNzUUx8mWBCRYPRezvA363EYXyEpHokyi",
                     shieldedAddr,
@@ -262,7 +262,7 @@ TEST(FundingStreamsRewardTest, Zip207Distribution) {
     int maxHeight = GetMaxFundingStreamHeight(consensus);
     std::map<std::string, CAmount> ms;
     for (int nHeight = minHeight; nHeight <= maxHeight; nHeight++) {
-        auto blockSubsidy = consensus.GetBlockSubsidy(nHeight);
+        auto blockSubsidy = consensus.GetBlockSubsidy(nHeight, 0);
         auto elems = consensus.GetActiveFundingStreamElements(nHeight, blockSubsidy);
 
         CAmount totalFunding = 0;
@@ -287,8 +287,8 @@ TEST(FundingStreamsRewardTest, ParseFundingStream) {
         Consensus::FundingStream::ParseFundingStream(
             consensus,
             Params(),
-            minHeight, 
-            minHeight + 13, 
+            minHeight,
+            minHeight + 13,
             {
                 "t2UNzUUx8mWBCRYPRezvA363EYXyEpHokyi",
                 shieldedAddr,

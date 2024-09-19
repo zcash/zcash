@@ -7,6 +7,7 @@
 #include <amount.h>
 #include <key_io.h>
 #include <script/standard.h>
+#include "main.h"
 #include "upgrades.h"
 #include "util/system.h"
 #include "util/match.h"
@@ -303,7 +304,7 @@ namespace Consensus {
         vFundingStreams[idx] = std::visit(GetFundingStreamOrThrow(), validationResult);
     };
 
-    CAmount Params::GetBlockSubsidy(int nHeight) const
+    CAmount Params::GetBlockSubsidy(int nHeight, const CAmount& nMoneyReserve) const
     {
         CAmount nSubsidy = 12.5 * COIN;
 
@@ -328,13 +329,17 @@ namespace Consensus {
         if (halvings >= 64)
             return 0;
 
-        // zip208
-        // BlockSubsidy(height) :=
-        // SlowStartRate · height, if height < SlowStartInterval / 2
-        // SlowStartRate · (height + 1), if SlowStartInterval / 2 ≤ height and height < SlowStartInterval
-        // floor(MaxBlockSubsidy / 2^Halving(height)), if SlowStartInterval ≤ height and not IsBlossomActivated(height)
-        // floor(MaxBlockSubsidy / (BlossomPoWTargetSpacingRatio · 2^Halving(height))), otherwise
-        if (this->NetworkUpgradeActive(nHeight, Consensus::UPGRADE_BLOSSOM)) {
+        if (this->NetworkUpgradeActive(nHeight, Consensus::UPGRADE_ZFUTURE)) {
+            const auto ceil_div{[](CAmount num, CAmount den) { return (num + den - 1) / den; }};
+            const CAmount blockSubsidy{ceil_div(nMoneyReserve * 4126, 10000000000)};
+            return blockSubsidy;
+        } else if (this->NetworkUpgradeActive(nHeight, Consensus::UPGRADE_BLOSSOM)) {
+            // zip208
+            // BlockSubsidy(height) :=
+            // SlowStartRate · height, if height < SlowStartInterval / 2
+            // SlowStartRate · (height + 1), if SlowStartInterval / 2 ≤ height and height < SlowStartInterval
+            // floor(MaxBlockSubsidy / 2^Halving(height)), if SlowStartInterval ≤ height and not IsBlossomActivated(height)
+            // floor(MaxBlockSubsidy / (BlossomPoWTargetSpacingRatio · 2^Halving(height))), otherwise
             return (nSubsidy / Consensus::BLOSSOM_POW_TARGET_SPACING_RATIO) >> halvings;
         } else {
             // Subsidy is cut in half every 840,000 blocks which will occur approximately every 4 years.
@@ -358,11 +363,6 @@ namespace Consensus {
 
         return activeStreams;
     };
-
-    std::set<FundingStreamElement> Params::GetActiveFundingStreamElements(int nHeight) const
-    {
-        return GetActiveFundingStreamElements(nHeight, GetBlockSubsidy(nHeight));
-    }
 
     std::set<FundingStreamElement> Params::GetActiveFundingStreamElements(
         int nHeight,

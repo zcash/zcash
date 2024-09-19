@@ -98,13 +98,15 @@ private:
     const CChainParams &chainparams;
     const int nHeight;
     const CAmount nFees;
+    const CAmount nMoneyReserve;
 
 public:
     AddOutputsToCoinbaseTxAndSign(
-        CMutableTransaction &mtx,
-        const CChainParams &chainparams,
+        CMutableTransaction& mtx,
+        const CChainParams& chainparams,
         const int nHeight,
-        const CAmount nFees) : mtx(mtx), chainparams(chainparams), nHeight(nHeight), nFees(nFees) {}
+        const CAmount nFees,
+        const CAmount nMoneyReserve) : mtx(mtx), chainparams(chainparams), nHeight(nHeight), nFees(nFees), nMoneyReserve(nMoneyReserve) {}
 
     const libzcash::Zip212Enabled GetZip212Flag() const {
         if (chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY)) {
@@ -115,7 +117,7 @@ public:
     }
 
     CAmount SetFoundersRewardAndGetMinerValue(sapling::Builder& saplingBuilder) const {
-        auto block_subsidy = chainparams.GetConsensus().GetBlockSubsidy(nHeight);
+        auto block_subsidy = chainparams.GetConsensus().GetBlockSubsidy(nHeight, nMoneyReserve);
         auto miner_reward = block_subsidy; // founders' reward or funding stream amounts will be subtracted below
 
         if (nHeight > 0) {
@@ -279,30 +281,36 @@ public:
     }
 };
 
-CMutableTransaction CreateCoinbaseTransaction(const CChainParams& chainparams, CAmount nFees, const MinerAddress& minerAddress, int nHeight, const CAmount nBurnAmount)
+CMutableTransaction CreateCoinbaseTransaction(
+    const CChainParams& chainparams,
+    CAmount nFees,
+    const MinerAddress& minerAddress,
+    int nHeight,
+    const CAmount nBurnAmount,
+    const CAmount nMoneyReserve)
 {
-        CMutableTransaction mtx = CreateNewContextualCMutableTransaction(
-                chainparams.GetConsensus(), nHeight,
-                !std::holds_alternative<libzcash::OrchardRawAddress>(minerAddress) && nPreferredTxVersion < ZIP225_MIN_TX_VERSION);
-        mtx.vin.resize(1);
-        mtx.vin[0].prevout.SetNull();
-        if (chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU5)) {
-            // ZIP 203: From NU5 onwards, nExpiryHeight is set to the block height in
-            // coinbase transactions.
-            mtx.nExpiryHeight = nHeight;
-        } else {
-            // Set to 0 so expiry height does not apply to coinbase txs
-            mtx.nExpiryHeight = 0;
-        }
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(
+        chainparams.GetConsensus(), nHeight,
+        !std::holds_alternative<libzcash::OrchardRawAddress>(minerAddress) && nPreferredTxVersion < ZIP225_MIN_TX_VERSION);
+    mtx.vin.resize(1);
+    mtx.vin[0].prevout.SetNull();
+    if (chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU5)) {
+        // ZIP 203: From NU5 onwards, nExpiryHeight is set to the block height in
+        // coinbase transactions.
+        mtx.nExpiryHeight = nHeight;
+    } else {
+        // Set to 0 so expiry height does not apply to coinbase txs
+        mtx.nExpiryHeight = 0;
+    }
 
-        // Add outputs and sign
-        mtx.nBurnAmount = nBurnAmount;
-        std::visit(
-            AddOutputsToCoinbaseTxAndSign(mtx, chainparams, nHeight, nFees),
-            minerAddress);
+    // Add outputs and sign
+    mtx.nBurnAmount = nBurnAmount;
+    std::visit(
+        AddOutputsToCoinbaseTxAndSign(mtx, chainparams, nHeight, nFees, nMoneyReserve),
+        minerAddress);
 
-        mtx.vin[0].scriptSig = CScript() << nHeight << OP_0;
-        return mtx;
+    mtx.vin[0].scriptSig = CScript() << nHeight << OP_0;
+    return mtx;
 }
 
 BlockAssembler::BlockAssembler(const CChainParams& _chainparams)
@@ -424,7 +432,14 @@ CBlockTemplate* BlockAssembler::CreateNewBlock(
     if (next_cb_mtx) {
         pblock->vtx[0] = *next_cb_mtx;
     } else {
-        pblock->vtx[0] = CreateCoinbaseTransaction(chainparams, nFees, minerAddress, nHeight, nBurnAmount);
+        pblock->vtx[0] =
+            CreateCoinbaseTransaction(
+                chainparams,
+                nFees,
+                minerAddress,
+                nHeight,
+                nBurnAmount,
+                pindexPrev->GetMoneyReserve());
     }
     pblocktemplate->vTxFees[0] = -nFees;
 

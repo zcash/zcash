@@ -605,6 +605,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
         cached_next_cb_mtx = nullopt;
     }
 
+    const CAmount nMoneyReserve{chainActive.Tip()->GetMoneyReserve()};
     std::optional<CMutableTransaction> next_cb_mtx(cached_next_cb_mtx);
 
     if (!lpval.isNull())
@@ -647,7 +648,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
                 if (!cached_next_cb_mtx && IsShieldedMinerAddress(minerAddress)) {
                     cached_next_cb_height = nHeight + 2;
                     cached_next_cb_mtx = CreateCoinbaseTransaction(
-                        Params(), CAmount{0}, minerAddress, cached_next_cb_height, CAmount{0});
+                        Params(), CAmount{0}, minerAddress, cached_next_cb_height, CAmount{0}, nMoneyReserve);
                     next_cb_mtx = cached_next_cb_mtx;
                 }
                 bool timedout = g_best_block_cv.wait_until(lock, checktxtime) == std::cv_status::timeout;
@@ -764,7 +765,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
             auto nextHeight = pindexPrev->nHeight+1;
             bool canopyActive = consensus.NetworkUpgradeActive(nextHeight, Consensus::UPGRADE_CANOPY);
             if (!canopyActive && nextHeight > 0 && nextHeight <= consensus.GetLastFoundersRewardBlockHeight(nextHeight)) {
-                CAmount nBlockSubsidy = consensus.GetBlockSubsidy(nextHeight);
+                CAmount nBlockSubsidy = consensus.GetBlockSubsidy(nextHeight, nMoneyReserve);
                 entry.pushKV("foundersreward", nBlockSubsidy / 5);
             }
             entry.pushKV("required", true);
@@ -961,7 +962,9 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
 
     const Consensus::Params& consensus = Params().GetConsensus();
-    CAmount nBlockSubsidy = consensus.GetBlockSubsidy(nHeight);
+    const CBlockIndex* blockIndex{chainActive[nHeight]};
+    const CAmount nMoneyReserve{(blockIndex == nullptr) ? MAX_MONEY : blockIndex->GetMoneyReserve()};
+    CAmount nBlockSubsidy = consensus.GetBlockSubsidy(nHeight, nMoneyReserve);
     CAmount nFoundersReward = 0;
     CAmount nFundingStreamsTotal = 0;
     CAmount nLockboxTotal = 0;
