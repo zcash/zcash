@@ -286,15 +286,16 @@ CMutableTransaction CreateCoinbaseTransaction(
     CAmount nFees,
     const MinerAddress& minerAddress,
     int nHeight,
-    const CAmount nBurnAmount,
+    const std::optional<CAmount> nBurnAmount,
     const CAmount nMoneyReserve)
 {
+    const auto& consensus{chainparams.GetConsensus()};
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(
-        chainparams.GetConsensus(), nHeight,
+        consensus, nHeight,
         !std::holds_alternative<libzcash::OrchardRawAddress>(minerAddress) && nPreferredTxVersion < ZIP225_MIN_TX_VERSION);
     mtx.vin.resize(1);
     mtx.vin[0].prevout.SetNull();
-    if (chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU5)) {
+    if (consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU5)) {
         // ZIP 203: From NU5 onwards, nExpiryHeight is set to the block height in
         // coinbase transactions.
         mtx.nExpiryHeight = nHeight;
@@ -303,8 +304,17 @@ CMutableTransaction CreateCoinbaseTransaction(
         mtx.nExpiryHeight = 0;
     }
 
+    // Apply voluntary burn amount if provided, or else apply the minimum.
+    const CAmount minBurnAmount{
+        consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_ZFUTURE) ?
+            nFees * 6 / 10 :
+            0};
+    mtx.nBurnAmount =
+        nBurnAmount.has_value() ?
+            nBurnAmount.value() :
+            minBurnAmount;
+
     // Add outputs and sign
-    mtx.nBurnAmount = nBurnAmount;
     std::visit(
         AddOutputsToCoinbaseTxAndSign(mtx, chainparams, nHeight, nFees, nMoneyReserve),
         minerAddress);
@@ -354,7 +364,7 @@ void BlockAssembler::resetBlock(const MinerAddress& minerAddress)
 CBlockTemplate* BlockAssembler::CreateNewBlock(
     const MinerAddress& minerAddress,
     const std::optional<CMutableTransaction>& next_cb_mtx,
-    const CAmount nBurnAmount)
+    const std::optional<CAmount> nBurnAmount)
 {
     resetBlock(minerAddress);
 

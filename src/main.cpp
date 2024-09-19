@@ -3607,6 +3607,17 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     int64_t nTime1 = GetTimeMicros(); nTimeConnect += nTime1 - nTimeStart;
     LogPrint("bench", "      - Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs]\n", (unsigned)block.vtx.size(), 0.001 * (nTime1 - nTimeStart), 0.001 * (nTime1 - nTimeStart) / block.vtx.size(), nInputs <= 1 ? 0 : 0.001 * (nTime1 - nTimeStart) / (nInputs-1), nTimeConnect * 0.000001);
 
+    if (consensusParams.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_ZFUTURE)) {
+        const CAmount cbBurnAmount{block.vtx[0].nBurnAmount};
+        const CAmount minBurnAmount{nFees * 6 / 10};
+        if (cbBurnAmount < minBurnAmount) {
+            return state.DoS(100,
+                error("%s: coinbase burn is insufficient (actual=%d vs expected=%d)", __func__, cbBurnAmount, minBurnAmount),
+                REJECT_INVALID,
+                "bad-cb-insufficient-burn");
+        }
+    }
+
     const CAmount nMoneyReserve{(pindex->pprev == nullptr) ? MAX_MONEY : pindex->pprev->GetMoneyReserve()};
     CAmount cbTotalOutputValue = block.vtx[0].GetValueOut() + pindex->nLockboxValue;
     CAmount cbTotalInputValue = consensusParams.GetBlockSubsidy(pindex->nHeight, nMoneyReserve) + nFees;

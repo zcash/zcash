@@ -175,7 +175,7 @@ UniValue generate(const UniValue& params, bool fHelp)
             "\nNote: this function can only be used on the regtest network\n"
             "\nArguments:\n"
             "1. numblocks    (numeric, required) How many blocks are generated immediately.\n"
-            "2. burn-amount  (numeric, optional, default=0) The amount in " + CURRENCY_UNIT + " to burn.\n"
+            "2. burn-amount  (numeric, optional, default=minimum) The amount in " + CURRENCY_UNIT + " to burn.\n"
             "\nResult\n"
             "[ blockhashes ]     (array) hashes of blocks generated\n"
             "\nExamples:\n"
@@ -191,10 +191,10 @@ UniValue generate(const UniValue& params, bool fHelp)
     int nHeight = 0;
     int nGenerate = params[0].get_int();
 
-    CAmount nBurnAmount{
-        params.size() >= 2 ?
-            AmountFromValue(params[1]) :
-            0};
+    const auto nBurnAmount{
+        params.size() >= 2 && !params[1].isNull() ?
+            std::optional<CAmount>(AmountFromValue(params[1])) :
+            nullopt};
 
     std::optional<MinerAddress> maybeMinerAddress;
     GetMainSignals().AddressForMining(maybeMinerAddress);
@@ -648,7 +648,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
                 if (!cached_next_cb_mtx && IsShieldedMinerAddress(minerAddress)) {
                     cached_next_cb_height = nHeight + 2;
                     cached_next_cb_mtx = CreateCoinbaseTransaction(
-                        Params(), CAmount{0}, minerAddress, cached_next_cb_height, CAmount{0}, nMoneyReserve);
+                        Params(), CAmount{0}, minerAddress, cached_next_cb_height, nullopt, nMoneyReserve);
                     next_cb_mtx = cached_next_cb_mtx;
                 }
                 bool timedout = g_best_block_cv.wait_until(lock, checktxtime) == std::cv_status::timeout;

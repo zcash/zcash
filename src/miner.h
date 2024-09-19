@@ -101,7 +101,7 @@ CMutableTransaction CreateCoinbaseTransaction(
     CAmount nFees,
     const MinerAddress& minerAddress,
     int nHeight,
-    const CAmount nBurnAmount,
+    const std::optional<CAmount> nBurnAmount,
     const CAmount nMoneyReserve);
 
 /** Generate a new block, without valid proof-of-work */
@@ -145,7 +145,7 @@ public:
     CBlockTemplate* CreateNewBlock(
         const MinerAddress& minerAddress,
         const std::optional<CMutableTransaction>& next_coinbase_mtx = std::nullopt,
-        const CAmount nBurnAmount = 0);
+        const std::optional<CAmount> nBurnAmount = std::nullopt);
 
 private:
     void constructZIP317BlockTemplate();
