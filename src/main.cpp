@@ -3322,7 +3322,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             // Add the output value of the coinbase transaction to the chain supply
             // delta. This includes fees, which are then canceled out by the fee
             // subtractions in the other branch of this conditional.
-            chainSupplyDelta += tx.GetValueOut();
+            chainSupplyDelta += tx.GetValueOut() - tx.nBurnAmount;
         } else {
             const auto txFee = view.GetValueIn(tx) - tx.GetValueOut();
             nFees += txFee;

@@ -68,7 +68,7 @@ static const CRPCConvertTable rpcCvtTable =
     { "getnetworksolps",             {{}, {o, o}} },
     { "getnetworkhashps",            {{}, {o, o}} },
     { "getgenerate",                 {{}, {}} },
-    { "generate",                    {{o}, {}} },
+    { "generate",                    {{o}, {o}} },
     { "setgenerate",                 {{o}, {o}} },
     { "getmininginfo",               {{}, {}} },
     { "prioritisetransaction",       {{s, o, o}, {}} },
