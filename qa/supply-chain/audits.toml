@@ -140,6 +140,12 @@ who = "Daira-Emma Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
 delta = "0.3.6 -> 0.3.8"
 
+[[audits.arrayref]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.3.8 -> 0.3.9"
+notes = "Changes to `unsafe` lines are to make some existing `unsafe fn`s `const`."
+
 [[audits.backtrace]]
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
@@ -306,6 +312,11 @@ There is significant use of `unsafe` code, but safety requirements are well docu
 and appear correct as far as I can see.
 """
 
+[[audits.bytes]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.7.1 -> 1.7.2"
+
 [[audits.cc]]
 who = "Daira-Emma Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
@@ -407,6 +418,11 @@ criteria = "safe-to-deploy"
 delta = "0.2.6 -> 0.3.0"
 notes = "Replaces some `unsafe` code by bumping MSRV to 1.66 (to access `core::hint::black_box`)."
 
+[[audits.constant_time_eq]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.3.0 -> 0.3.1"
+
 [[audits.cpufeatures]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -437,6 +453,15 @@ the same as the existing Linux code for AArch64.
 who = "Daira-Emma Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
 delta = "0.2.11 -> 0.2.12"
+
+[[audits.cpufeatures]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.2.13 -> 0.2.14"
+notes = """
+New `unsafe` block is to call `sysctlbyname` to detect DIT on Apple ARM64, which
+is done in the same way as existing target feature checks on that arch.
+"""
 
 [[audits.crossbeam-channel]]
 who = "Jack Grigg <jack@electriccoin.co>"
@@ -985,6 +1010,11 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "2.0.2 -> 2.1.0"
 
+[[audits.fastrand]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "2.1.0 -> 2.1.1"
+
 [[audits.ff]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -1333,6 +1363,11 @@ delta = "2.7.2 -> 2.8.0"
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "2.8.0 -> 2.9.0"
+
+[[audits.ipnet]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "2.9.0 -> 2.10.0"
 
 [[audits.itoa]]
 who = "Jack Grigg <jack@z.cash>"
@@ -2124,6 +2159,12 @@ If an adversary can arbitrarily set the `$RUSTC` environment variable then this 
 execute arbitrary code. But when this crate is used within a build script, `$RUSTC` should
 be set correctly by `cargo`.
 """
+
+[[audits.rustc_version]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.4.0 -> 0.4.1"
+notes = "Changes to `Command` usage are to add support for `RUSTC_WRAPPER`."
 
 [[audits.rustix]]
 who = "Daira-Emma Hopwood <daira@jacaranda.org>"
