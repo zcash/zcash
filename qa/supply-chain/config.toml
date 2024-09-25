@@ -42,16 +42,8 @@ criteria = "safe-to-deploy"
 version = "1.1.1"
 criteria = "safe-to-deploy"
 
-[[exemptions.allocator-api2]]
-version = "0.2.14"
-criteria = "safe-to-deploy"
-
 [[exemptions.anyhow]]
 version = "1.0.86"
-criteria = "safe-to-deploy"
-
-[[exemptions.arrayvec]]
-version = "0.7.6"
 criteria = "safe-to-deploy"
 
 [[exemptions.backtrace]]
@@ -96,10 +88,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.bs58]]
 version = "0.5.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.byteorder]]
-version = "1.4.3"
 criteria = "safe-to-deploy"
 
 [[exemptions.bytes]]
@@ -300,10 +288,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.linux-raw-sys]]
 version = "0.4.14"
-criteria = "safe-to-deploy"
-
-[[exemptions.log]]
-version = "0.4.22"
 criteria = "safe-to-deploy"
 
 [[exemptions.memchr]]
@@ -576,10 +560,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.tracing-attributes]]
 version = "0.1.23"
-criteria = "safe-to-deploy"
-
-[[exemptions.tracing-core]]
-version = "0.1.30"
 criteria = "safe-to-deploy"
 
 [[exemptions.typenum]]
