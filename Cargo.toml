@@ -12,14 +12,14 @@ authors = [
     "Kris Nuttycombe <kris@electriccoin.co>",
     "Greg Pfeil",
     "Larry Ruane <larry@electriccoin.co>",
-    "Steven Smith <steven@electriccoin.co>"
+    "Steven Smith",
 ]
 homepage = "https://github.com/zcash/zcash"
 repository = "https://github.com/zcash/zcash"
 readme = "README.md"
 license = "MIT OR Apache-2.0"
 edition = "2018"
-rust-version = "1.80"
+rust-version = "1.81"
 
 [package.metadata.vet]
 store = { path = "./qa/supply-chain" }
