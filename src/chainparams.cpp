@@ -172,7 +172,7 @@ public:
 
         keyConstants.bech32mHRPs[TEX_ADDRESS]                 = "tex";
         {
-            std::vector<std::string> ecc_addresses = {
+            std::vector<std::string> bp_addresses = {
                 "t3LmX1cxWPPPqL4TZHx42HU3U5ghbFjRiif",
                 "t3Toxk1vJQ6UjWQ42tUJz2rV2feUWkpbTDs",
                 "t3ZBdBe4iokmsjdhMuwkxEdqMCFN16YxKe6",
@@ -232,7 +232,7 @@ public:
                 keyConstants,
                 Consensus::FS_ZIP214_BP,
                 consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight, 2726400,
-                ecc_addresses);
+                bp_addresses);
             consensus.AddZIP207FundingStream(
                 keyConstants,
                 Consensus::FS_ZIP214_ZF,
@@ -473,7 +473,7 @@ public:
 
         // Testnet funding streams
         {
-            std::vector<std::string> ecc_addresses = {
+            std::vector<std::string> bp_addresses = {
                 "t26ovBdKAJLtrvBsE2QGF4nqBkEuptuPFZz",
                 "t26ovBdKAJLtrvBsE2QGF4nqBkEuptuPFZz",
                 "t26ovBdKAJLtrvBsE2QGF4nqBkEuptuPFZz",
@@ -535,7 +535,7 @@ public:
                 keyConstants,
                 Consensus::FS_ZIP214_BP,
                 consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight, 2796000,
-                ecc_addresses);
+                bp_addresses);
             consensus.AddZIP207FundingStream(
                 keyConstants,
                 Consensus::FS_ZIP214_ZF,
