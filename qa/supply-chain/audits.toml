@@ -678,6 +678,15 @@ notes = """
   `isize` to check if it is an alias for `[u]int8_t`.
 """
 
+[[audits.cxx]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.126 -> 1.0.128"
+notes = """
+`unsafe` changes are to copy the `SyncUnsafeCell` type from nightly Rust. It is
+used as the ZST `SyncUnsafeCell<PhantomData<()>>` to fix an LLVM miscompilation.
+"""
+
 [[audits.cxxbridge-flags]]
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
@@ -833,6 +842,11 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.122 -> 1.0.124"
 notes = "Only changes to lints."
+
+[[audits.cxxbridge-macro]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.126 -> 1.0.128"
 
 [[audits.der]]
 who = "Daira-Emma Hopwood <daira@jacaranda.org>"
