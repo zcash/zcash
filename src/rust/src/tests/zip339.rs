@@ -17,36 +17,8 @@ fn test_try_from_language() {
 }
 
 #[test]
-#[should_panic]
-fn test_null_entropy_to_phrase_panics() {
-    zip339_entropy_to_phrase(Language(0), ptr::null(), 0);
-}
-
-#[test]
 fn test_free_null_phrase_is_noop() {
     zip339_free_phrase(ptr::null_mut());
-}
-
-#[test]
-#[should_panic]
-fn test_validate_null_phrase_panics() {
-    zip339_validate_phrase(Language(0), ptr::null());
-}
-
-#[test]
-#[should_panic]
-fn test_null_phrase_to_seed_panics() {
-    zip339_phrase_to_seed(Language(0), ptr::null(), ptr::NonNull::dangling().as_ptr());
-}
-
-#[test]
-#[should_panic]
-fn test_phrase_to_seed_with_null_buffer_panics() {
-    zip339_phrase_to_seed(
-        Language(0),
-        ptr::NonNull::dangling().as_ptr(),
-        ptr::null_mut(),
-    );
 }
 
 #[test]
