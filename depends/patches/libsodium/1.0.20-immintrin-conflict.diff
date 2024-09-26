@@ -1,0 +1,34 @@
+diff -ur libsodium-1.0.20-orig/src/libsodium/randombytes/internal/randombytes_internal_random.c libsodium-1.0.20/src/libsodium/randombytes/internal/randombytes_internal_random.c
+--- libsodium-1.0.20-orig/src/libsodium/randombytes/internal/randombytes_internal_random.c	2024-05-25 12:15:18.000000000 +0000
++++ libsodium-1.0.20/src/libsodium/randombytes/internal/randombytes_internal_random.c	2024-09-26 18:11:50.173273070 +0000
+@@ -44,14 +44,6 @@
+ #ifdef BLOCK_ON_DEV_RANDOM
+ # include <poll.h>
+ #endif
+-#ifdef HAVE_RDRAND
+-# ifdef __clang__
+-#  pragma clang attribute push(__attribute__((target("rdrnd"))), apply_to = function)
+-# elif defined(__GNUC__)
+-#  pragma GCC target("rdrnd")
+-# endif
+-# include <immintrin.h>
+-#endif
+ 
+ #include "core.h"
+ #include "crypto_core_hchacha20.h"
+@@ -109,6 +101,15 @@
+ # endif
+ #endif
+ 
++#ifdef HAVE_RDRAND
++# ifdef __clang__
++#  pragma clang attribute push(__attribute__((target("rdrnd"))), apply_to = function)
++# elif defined(__GNUC__)
++#  pragma GCC target("rdrnd")
++# endif
++# include <immintrin.h>
++#endif
++
+ typedef struct InternalRandomGlobal_ {
+     int           initialized;
+     int           random_data_source_fd;

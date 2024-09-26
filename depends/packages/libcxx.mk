@@ -1,6 +1,6 @@
 package=libcxx
 $(package)_version=$(if $(native_clang_version_$(host_arch)_$(host_os)),$(native_clang_version_$(host_arch)_$(host_os)),$(if $(native_clang_version_$(host_os)),$(native_clang_version_$(host_os)),$(native_clang_default_version)))
-$(package)_msys2_version=18.1.8-1
+$(package)_msys2_version=18.1.6-1
 
 ifneq ($(canonical_host),$(build))
 ifneq ($(host_os),mingw32)
@@ -30,7 +30,7 @@ else
 $(package)_download_path=https://repo.msys2.org/mingw/x86_64
 $(package)_download_file=mingw-w64-x86_64-libc++-$($(package)_msys2_version)-any.pkg.tar.zst
 $(package)_file_name=mingw-w64-x86_64-libcxx-$($(package)_msys2_version)-any.pkg.tar.zst
-$(package)_sha256_hash=4673dba0e8c4bac3c4d645a4a64b947855228b21c82f6366b201e7636a78bc1a
+$(package)_sha256_hash=6857cc24cbe326c0cd571e52872bffe95f64ab67a8c5032c04875a9778fdece7
 
 define $(package)_stage_cmds
   mkdir -p $($(package)_staging_prefix_dir)/lib && \
