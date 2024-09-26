@@ -12,14 +12,14 @@ authors = [
     "Kris Nuttycombe <kris@electriccoin.co>",
     "Greg Pfeil",
     "Larry Ruane <larry@electriccoin.co>",
-    "Steven Smith <steven@electriccoin.co>"
+    "Steven Smith",
 ]
 homepage = "https://github.com/zcash/zcash"
 repository = "https://github.com/zcash/zcash"
 readme = "README.md"
 license = "MIT OR Apache-2.0"
 edition = "2018"
-rust-version = "1.80"
+rust-version = "1.81"
 
 [package.metadata.vet]
 store = { path = "./qa/supply-chain" }
@@ -72,7 +72,7 @@ wagyu-zcash-parameters = "0.2"
 
 # Rust/C++ interop
 # The version needs to match depends/packages/native_cxxbridge.mk
-cxx = { version = "=1.0.126", features = ["c++17"] }
+cxx = { version = "=1.0.128", features = ["c++17"] }
 
 # Rust threading
 rayon = "1.5"

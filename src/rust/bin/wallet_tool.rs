@@ -499,14 +499,13 @@ fn run(opts: &CliOptions) -> anyhow::Result<()> {
             ));
             Ok(())
         })
-        .map_err(|e| {
+        .inspect_err(|_| {
             println!(concat!(
                 "\nzcash-wallet-tool was unable to communicate to zcashd that the\n",
                 "backup was confirmed. This can happen if zcashd stopped, in which\n",
                 "case you should try again. If zcashd is still running, please seek\n",
                 "help or try to use 'zcash-cli -stdin walletconfirmbackup' manually.\n"
             ));
-            e
         })?;
     Ok(())
 }
@@ -531,10 +530,7 @@ fn prompt(input: &mut Stdin) -> anyhow::Result<SecretString> {
 }
 
 fn strip(input: &SecretString) -> &str {
-    input
-        .expose_secret()
-        .trim_end_matches(|c| c == '\r' || c == '\n')
-        .trim()
+    input.expose_secret().trim_end_matches(['\r', '\n']).trim()
 }
 
 fn ordinal(num: usize) -> String {

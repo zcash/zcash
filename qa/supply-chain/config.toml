@@ -42,20 +42,12 @@ criteria = "safe-to-deploy"
 version = "1.1.1"
 criteria = "safe-to-deploy"
 
-[[exemptions.allocator-api2]]
-version = "0.2.14"
-criteria = "safe-to-deploy"
-
 [[exemptions.anyhow]]
-version = "1.0.86"
-criteria = "safe-to-deploy"
-
-[[exemptions.arrayvec]]
-version = "0.7.6"
+version = "1.0.89"
 criteria = "safe-to-deploy"
 
 [[exemptions.backtrace]]
-version = "0.3.73"
+version = "0.3.74"
 criteria = "safe-to-deploy"
 
 [[exemptions.base64ct]]
@@ -96,10 +88,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.bs58]]
 version = "0.5.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.byteorder]]
-version = "1.4.3"
 criteria = "safe-to-deploy"
 
 [[exemptions.bytes]]
@@ -287,7 +275,7 @@ version = "1.2.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.libc]]
-version = "0.2.158"
+version = "0.2.159"
 criteria = "safe-to-deploy"
 
 [[exemptions.libm]]
@@ -300,10 +288,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.linux-raw-sys]]
 version = "0.4.14"
-criteria = "safe-to-deploy"
-
-[[exemptions.log]]
-version = "0.4.22"
 criteria = "safe-to-deploy"
 
 [[exemptions.memchr]]
@@ -355,7 +339,7 @@ version = "1.13.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.object]]
-version = "0.36.3"
+version = "0.36.4"
 criteria = "safe-to-deploy"
 
 [[exemptions.once_cell]]
@@ -407,7 +391,7 @@ version = "0.7.2"
 criteria = "safe-to-deploy"
 
 [[exemptions.portable-atomic]]
-version = "1.7.0"
+version = "1.8.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.ppv-lite86]]
@@ -498,14 +482,6 @@ criteria = "safe-to-deploy"
 version = "0.8.0"
 criteria = "safe-to-deploy"
 
-[[exemptions.serde]]
-version = "1.0.208"
-criteria = "safe-to-deploy"
-
-[[exemptions.serde_derive]]
-version = "1.0.208"
-criteria = "safe-to-deploy"
-
 [[exemptions.sha2]]
 version = "0.10.8"
 criteria = "safe-to-deploy"
@@ -559,7 +535,7 @@ version = "0.3.30"
 criteria = "safe-to-deploy"
 
 [[exemptions.tokio]]
-version = "1.39.3"
+version = "1.40.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.tower-service]]
@@ -576,10 +552,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.tracing-attributes]]
 version = "0.1.23"
-criteria = "safe-to-deploy"
-
-[[exemptions.tracing-core]]
-version = "0.1.30"
 criteria = "safe-to-deploy"
 
 [[exemptions.typenum]]
