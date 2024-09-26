@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2018 The Zcash developers
+# Copyright (c) 2018-2024 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -7,7 +7,9 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, initialize_chain_clean, \
     start_nodes, stop_nodes, connect_nodes_bi, \
     wait_and_assert_operationid_status, wait_bitcoinds, get_coinbase_address, \
-    sync_blocks, sync_mempools, LEGACY_DEFAULT_FEE
+    sync_blocks, sync_mempools
+from test_framework.zip317 import conventional_fee
+
 from decimal import Decimal
 
 class WalletAnchorForkTest (BitcoinTestFramework):
@@ -51,9 +53,9 @@ class WalletAnchorForkTest (BitcoinTestFramework):
         # Node 0 creates a joinsplit transaction
         mytaddr0 = get_coinbase_address(self.nodes[0])
         myzaddr0 = self.nodes[0].z_getnewaddress()
-        recipients = []
-        recipients.append({"address":myzaddr0, "amount": Decimal('10.0') - LEGACY_DEFAULT_FEE})
-        myopid = self.nodes[0].z_sendmany(mytaddr0, recipients, 1, LEGACY_DEFAULT_FEE, 'AllowRevealedSenders')
+        fee = conventional_fee(3)
+        recipients = [{"address": myzaddr0, "amount": Decimal('10.0') - fee}]
+        myopid = self.nodes[0].z_sendmany(mytaddr0, recipients, 1, fee, 'AllowRevealedSenders')
         wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         # Sync up mempools and mine the transaction.  All nodes have the same anchor.
@@ -75,9 +77,9 @@ class WalletAnchorForkTest (BitcoinTestFramework):
         self.nodes[1].generate(1)
 
         # Partition A, node 0 creates a joinsplit transaction
-        recipients = []
-        recipients.append({"address":myzaddr0, "amount": Decimal('10.0') - LEGACY_DEFAULT_FEE})
-        myopid = self.nodes[0].z_sendmany(mytaddr0, recipients, 1, LEGACY_DEFAULT_FEE, 'AllowRevealedSenders')
+        fee = conventional_fee(3)
+        recipients = [{"address": myzaddr0, "amount": Decimal('10.0') - fee}]
+        myopid = self.nodes[0].z_sendmany(mytaddr0, recipients, 1, fee, 'AllowRevealedSenders')
         txid = wait_and_assert_operationid_status(self.nodes[0], myopid)
         rawhex = self.nodes[0].getrawtransaction(txid)
 

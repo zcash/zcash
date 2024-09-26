@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2019 The Zcash developers
+# Copyright (c) 2019-2024 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 #
@@ -32,6 +32,8 @@ from test_framework.script import (
     OP_DROP,
 )
 
+from test_framework.zip317 import MARGINAL_FEE
+
 from test_framework.mininode import (
     COIN,
     CTransaction,
@@ -50,7 +52,6 @@ class AddressIndexTest(BitcoinTestFramework):
 
     def setup_network(self):
         base_args = [
-            '-minrelaytxfee=0',
             '-debug',
             '-txindex',
             '-experimentalfeatures',
@@ -374,7 +375,7 @@ class AddressIndexTest(BitcoinTestFramework):
         tx.vout = [
             CTxOut(1 * COIN, scriptPubKey),
             CTxOut(2 * COIN, scriptPubKey),
-            CTxOut(7 * COIN, scriptUnknown),
+            CTxOut(7 * COIN - 3 * MARGINAL_FEE, scriptUnknown),
         ]
         tx = self.nodes[0].signrawtransaction(hexlify(tx.serialize()).decode('utf-8'))
         txid = self.nodes[0].sendrawtransaction(tx['hex'], True)

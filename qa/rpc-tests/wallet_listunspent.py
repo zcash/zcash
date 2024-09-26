@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-# Copyright (c) 2016-2022 The Zcash developers
+# Copyright (c) 2016-2024 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.test_framework import BitcoinTestFramework
+from test_framework.mininode import COIN
 from test_framework.util import (
     assert_equal,
     get_coinbase_address,
@@ -12,6 +13,7 @@ from test_framework.util import (
     wait_and_assert_operationid_status,
     NU5_BRANCH_ID
 )
+from test_framework.zip317 import conventional_fee
 
 from decimal import Decimal
 
@@ -21,7 +23,6 @@ def unspent_total(unspent):
 class WalletListUnspent(BitcoinTestFramework):
     def setup_nodes(self):
         return start_nodes(4, self.options.tmpdir, extra_args=[[
-            '-minrelaytxfee=0',
             nuparams(NU5_BRANCH_ID, 201),
             '-allowdeprecated=getnewaddress',
         ]] * 4)
@@ -33,24 +34,23 @@ class WalletListUnspent(BitcoinTestFramework):
         def expected_matured_at_height(height):
             return (height-200)*10 + 250
 
-        assert_equal(self.nodes[0].getbalance(), expected_matured_at_height(200))
-        assert_equal(self.nodes[1].getbalance(), expected_matured_at_height(200))
+        assert_equal(Decimal(self.nodes[0].getbalance()), expected_matured_at_height(200))
+        assert_equal(Decimal(self.nodes[1].getbalance()), expected_matured_at_height(200))
 
         # Activate NU5
         self.nodes[1].generate(1) # height 201
         self.sync_all()
-        assert_equal(self.nodes[0].getbalance(), expected_matured_at_height(201))
+        assert_equal(Decimal(self.nodes[0].getbalance()), expected_matured_at_height(201))
         # check balances from before the latest tx
-        assert_equal(self.nodes[0].getbalance("", 1, False, False, 200), expected_matured_at_height(200))
+        assert_equal(Decimal(self.nodes[0].getbalance("", 1, False, False, 200)), expected_matured_at_height(200))
         assert_equal(self.matured_at_height(200), expected_matured_at_height(200))
 
         # Shield some coinbase funds so that they become spendable
         n1acct = self.nodes[1].z_getnewaccount()['account']
         n1uaddr = self.nodes[1].z_getaddressforaccount(n1acct)['address']
-        opid = self.nodes[0].z_sendmany(
-                get_coinbase_address(self.nodes[0]),
-                [{'address': n1uaddr, 'amount': 10}],
-                1, 0, 'AllowRevealedSenders')
+        fee = conventional_fee(3)
+        recipients = [{'address': n1uaddr, 'amount': Decimal('10') - fee}]
+        opid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, fee, 'AllowRevealedSenders')
         wait_and_assert_operationid_status(self.nodes[0], opid)
 
         self.sync_all()
@@ -60,60 +60,52 @@ class WalletListUnspent(BitcoinTestFramework):
 
         assert_equal(
                 self.nodes[1].z_getbalanceforaccount(n1acct, 1)['pools']['orchard']['valueZat'],
-                Decimal('1000000000'))
+                (Decimal('10') - fee) * COIN)
 
         # Get a bare legacy transparent address for node 0
         n0addr = self.nodes[0].getnewaddress()
 
         # Send funds to the node 0 address so we have transparent funds to spend.
-        opid = self.nodes[1].z_sendmany(
-                n1uaddr,
-                [{'address': n0addr, 'amount': 10}],
-                1, 0, 'AllowRevealedRecipients')
+        recipients = [{'address': n0addr, 'amount': Decimal('10') - 2 * fee}]
+        opid = self.nodes[1].z_sendmany(n1uaddr, recipients, 1, fee, 'AllowRevealedRecipients')
         wait_and_assert_operationid_status(self.nodes[1], opid)
 
         self.sync_all()
         self.nodes[1].generate(2)
         self.sync_all() # height 205
-        assert_equal(self.nodes[0].getbalance(), expected_matured_at_height(205) - 10 + 10)
+        assert_equal(Decimal(self.nodes[0].getbalance()), expected_matured_at_height(205) - 10 + 10 - 2 * fee)
 
         # We will then perform several spends, and then check the list of
         # unspent notes as of various heights.
 
-        opid = self.nodes[0].z_sendmany(
-                'ANY_TADDR',
-                [{'address': n1uaddr, 'amount': 2}],
-                1, 0, 'AllowFullyTransparent')
+        recipients = [{'address': n1uaddr, 'amount': Decimal('2')}]
+        opid = self.nodes[0].z_sendmany('ANY_TADDR', recipients, 1, fee, 'AllowFullyTransparent')
         wait_and_assert_operationid_status(self.nodes[0], opid)
 
         self.nodes[0].generate(2)
         self.sync_all() # height 207
-        assert_equal(self.nodes[0].getbalance(), expected_matured_at_height(207) - 10 + 10 - 2)
+        assert_equal(Decimal(self.nodes[0].getbalance()), expected_matured_at_height(207) - 10 + 10 - 2 - 3 * fee)
 
-        opid = self.nodes[0].z_sendmany(
-                'ANY_TADDR',
-                [{'address': n1uaddr, 'amount': 3}],
-                1, 0, 'AllowFullyTransparent')
+        recipients = [{'address': n1uaddr, 'amount': Decimal('3')}]
+        opid = self.nodes[0].z_sendmany('ANY_TADDR', recipients, 1, fee, 'AllowFullyTransparent')
         wait_and_assert_operationid_status(self.nodes[0], opid)
 
         self.nodes[0].generate(2)
         self.sync_all() # height 209
-        assert_equal(self.nodes[0].getbalance(), expected_matured_at_height(209) - 10 + 10 - 2 - 3)
+        assert_equal(Decimal(self.nodes[0].getbalance()), expected_matured_at_height(209) - 10 + 10 - 2 - 3 - 4 * fee)
 
-        opid = self.nodes[0].z_sendmany(
-                'ANY_TADDR',
-                [{'address': n1uaddr, 'amount': 5}],
-                1, 0, 'AllowRevealedSenders')
+        recipients = [{'address': n1uaddr, 'amount': Decimal('5') - 5 * fee}]
+        opid = self.nodes[0].z_sendmany('ANY_TADDR', recipients, 1, fee, 'AllowRevealedSenders')
         wait_and_assert_operationid_status(self.nodes[0], opid)
 
         self.nodes[0].generate(2)
         self.sync_all() # height 211
-        assert_equal(self.nodes[0].getbalance(), expected_matured_at_height(211) - 10 + 10 - 2 - 3 - 5)
+        assert_equal(Decimal(self.nodes[0].getbalance()), expected_matured_at_height(211) - 10 + 10 - 2 - 3 - 5)
 
         # check balances at various past points in the chain
-        assert_equal(self.matured_at_height(205), expected_matured_at_height(205) - 10 + 10)
-        assert_equal(self.matured_at_height(207), expected_matured_at_height(207) - 10 + 10 - 2)
-        assert_equal(self.matured_at_height(209), expected_matured_at_height(209) - 10 + 10 - 2 - 3)
+        assert_equal(self.matured_at_height(205), expected_matured_at_height(205) - 10 + 10 - 2 * fee)
+        assert_equal(self.matured_at_height(207), expected_matured_at_height(207) - 10 + 10 - 2 - 3 * fee)
+        assert_equal(self.matured_at_height(209), expected_matured_at_height(209) - 10 + 10 - 2 - 3 - 4 * fee)
         assert_equal(self.matured_at_height(211), expected_matured_at_height(211) - 10 + 10 - 2 - 3 - 5)
 
 if __name__ == '__main__':

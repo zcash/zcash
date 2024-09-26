@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2022 The Zcash developers
+# Copyright (c) 2022-2024 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -9,6 +9,7 @@ import os.path
 from decimal import Decimal
 
 from test_framework.test_framework import BitcoinTestFramework
+from test_framework.mininode import COIN
 from test_framework.util import (
     NU5_BRANCH_ID,
     assert_equal,
@@ -19,6 +20,7 @@ from test_framework.util import (
     wait_bitcoinds,
     wait_and_assert_operationid_status,
 )
+from test_framework.zip317 import conventional_fee, ZIP_317_FEE
 
 # Test wallet behaviour with the Orchard protocol
 class OrchardWalletInitTest(BitcoinTestFramework):
@@ -28,7 +30,6 @@ class OrchardWalletInitTest(BitcoinTestFramework):
 
     def setup_nodes(self):
         return start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[
-            '-minrelaytxfee=0',
             nuparams(NU5_BRANCH_ID, 205),
             '-regtestwalletsetbestchaineveryblock'
         ]] * self.num_nodes)
@@ -50,8 +51,10 @@ class OrchardWalletInitTest(BitcoinTestFramework):
         ua1 = self.nodes[1].z_getaddressforaccount(acct1, ['orchard'])['address']
 
         # Send a transaction to node 1 so that it has an Orchard note to spend.
-        recipients = [{"address": ua1, "amount": 10}]
-        myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, 0, 'AllowRevealedSenders')
+        coinbase_fee = conventional_fee(3)
+        balance1 = Decimal('10') - coinbase_fee
+        recipients = [{"address": ua1, "amount": balance1}]
+        myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, coinbase_fee, 'AllowRevealedSenders')
         wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         self.sync_all()
@@ -60,12 +63,12 @@ class OrchardWalletInitTest(BitcoinTestFramework):
 
         # Check the value sent to ua1 was received
         assert_equal(
-                {'pools': {'orchard': {'valueZat': 10_0000_0000}}, 'minimum_confirmations': 1},
+                {'pools': {'orchard': {'valueZat': balance1 * COIN}}, 'minimum_confirmations': 1},
                 self.nodes[1].z_getbalanceforaccount(acct1))
 
         # Create an Orchard spend, so that the note commitment tree root gets altered.
         recipients = [{"address": ua0, "amount": 1}]
-        myopid = self.nodes[1].z_sendmany(ua1, recipients, 1, 0)
+        myopid = self.nodes[1].z_sendmany(ua1, recipients, 1, ZIP_317_FEE)
         wait_and_assert_operationid_status(self.nodes[1], myopid)
 
         self.sync_all()
@@ -73,8 +76,9 @@ class OrchardWalletInitTest(BitcoinTestFramework):
         self.sync_all()
 
         # Verify the balance on both nodes
+        balance1 -= Decimal('1') + conventional_fee(2)
         assert_equal(
-                {'pools': {'orchard': {'valueZat': 9_0000_0000}}, 'minimum_confirmations': 1},
+                {'pools': {'orchard': {'valueZat': balance1 * COIN}}, 'minimum_confirmations': 1},
                 self.nodes[1].z_getbalanceforaccount(acct1))
 
         assert_equal(
@@ -103,7 +107,7 @@ class OrchardWalletInitTest(BitcoinTestFramework):
         self.setup_network(True)
 
         assert_equal(
-                {'pools': {'orchard': {'valueZat': 9_0000_0000}}, 'minimum_confirmations': 1},
+                {'pools': {'orchard': {'valueZat': balance1 * COIN}}, 'minimum_confirmations': 1},
                 self.nodes[1].z_getbalanceforaccount(acct1))
 
         # Get a new account with an Orchard UA on node 0
@@ -114,7 +118,7 @@ class OrchardWalletInitTest(BitcoinTestFramework):
         # the bug causes the state of note commitment tree in the wallet to not match
         # the state of the global note commitment tree.
         recipients = [{"address": ua0new, "amount": 1}]
-        myopid = self.nodes[1].z_sendmany(ua1, recipients, 1, 0)
+        myopid = self.nodes[1].z_sendmany(ua1, recipients, 1, ZIP_317_FEE)
         rollback_tx = wait_and_assert_operationid_status(self.nodes[1], myopid)
 
         self.sync_all()
@@ -140,21 +144,23 @@ class OrchardWalletInitTest(BitcoinTestFramework):
         self.nodes[0].generate(1)
         self.sync_all()
 
+        balance1 -= Decimal('1') + conventional_fee(2)
         assert_equal(
                 {'pools': {'orchard': {'valueZat': 1_0000_0000}}, 'minimum_confirmations': 1},
                 self.nodes[0].z_getbalanceforaccount(acct0new))
 
         # Spend from the note that was just received
         recipients = [{"address": ua1, "amount": Decimal('0.3')}]
-        myopid = self.nodes[0].z_sendmany(ua0new, recipients, 1, 0)
+        myopid = self.nodes[0].z_sendmany(ua0new, recipients, 1, ZIP_317_FEE)
         wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         self.sync_all()
         self.nodes[0].generate(1)
         self.sync_all()
 
+        balance1 += Decimal('0.3')
         assert_equal(
-                {'pools': {'orchard': {'valueZat': 8_3000_0000}}, 'minimum_confirmations': 1},
+                {'pools': {'orchard': {'valueZat': balance1 * COIN}}, 'minimum_confirmations': 1},
                 self.nodes[1].z_getbalanceforaccount(acct1))
 
 

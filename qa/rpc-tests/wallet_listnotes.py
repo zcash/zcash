@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2018 The Zcash developers
+# Copyright (c) 2018-2024 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -12,8 +12,8 @@ from test_framework.util import (
     nuparams,
     start_nodes,
     wait_and_assert_operationid_status,
-    LEGACY_DEFAULT_FEE
 )
+from test_framework.zip317 import conventional_fee
 
 from decimal import Decimal
 
@@ -25,7 +25,6 @@ class WalletListNotes(BitcoinTestFramework):
 
     def setup_nodes(self):
         return start_nodes(4, self.options.tmpdir, extra_args=[[
-            '-minrelaytxfee=0',
             nuparams(NU5_BRANCH_ID, 215),
             '-allowdeprecated=z_getnewaddress',
             '-allowdeprecated=z_getbalance',
@@ -46,10 +45,11 @@ class WalletListNotes(BitcoinTestFramework):
         # Send 1.0 minus default fee from sproutzaddr to a new Sapling zaddr
         saplingzaddr = self.nodes[0].z_getnewaddress('sapling')
         receive_amount_2 = Decimal('1.0')
-        change_amount_2 = receive_amount_1 - receive_amount_2 - LEGACY_DEFAULT_FEE
+        fee = conventional_fee(4)
+        change_amount_2 = receive_amount_1 - receive_amount_2 - fee
         assert_equal('sapling', self.nodes[0].z_validateaddress(saplingzaddr)['address_type'])
         recipients = [{"address": saplingzaddr, "amount":receive_amount_2}]
-        myopid = self.nodes[0].z_sendmany(sproutzaddr, recipients, 1, LEGACY_DEFAULT_FEE, 'AllowRevealedAmounts')
+        myopid = self.nodes[0].z_sendmany(sproutzaddr, recipients, 1, fee, 'AllowRevealedAmounts')
         txid_2 = wait_and_assert_operationid_status(self.nodes[0], myopid)
         self.sync_all()
 
@@ -86,9 +86,10 @@ class WalletListNotes(BitcoinTestFramework):
         # Send 2.0 minus default fee to a new sapling zaddr
         saplingzaddr2 = self.nodes[0].z_getnewaddress('sapling')
         receive_amount_3 = Decimal('2.0')
-        change_amount_3 = change_amount_2 - receive_amount_3 - LEGACY_DEFAULT_FEE
+        fee = conventional_fee(4)
+        change_amount_3 = change_amount_2 - receive_amount_3 - fee
         recipients = [{"address": saplingzaddr2, "amount":receive_amount_3}]
-        myopid = self.nodes[0].z_sendmany(sproutzaddr, recipients, 1, LEGACY_DEFAULT_FEE, 'AllowRevealedAmounts')
+        myopid = self.nodes[0].z_sendmany(sproutzaddr, recipients, 1, fee, 'AllowRevealedAmounts')
         txid_3 = wait_and_assert_operationid_status(self.nodes[0], myopid)
         self.sync_all()
         unspent_tx = self.nodes[0].z_listunspent(0)
@@ -146,9 +147,10 @@ class WalletListNotes(BitcoinTestFramework):
         # Create an Orchard note.
         account0 = self.nodes[0].z_getnewaccount()['account']
         ua0 = self.nodes[0].z_getaddressforaccount(account0)['address']
-        receive_amount_4 = Decimal('10.0')
+        fee = conventional_fee(3)
+        receive_amount_4 = Decimal('10.0') - fee
         recipients = [{"address": ua0, "amount": receive_amount_4}]
-        myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, 0, 'AllowRevealedSenders')
+        myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, fee, 'AllowRevealedSenders')
         txid_4 = wait_and_assert_operationid_status(self.nodes[0], myopid)
         self.sync_all()
 

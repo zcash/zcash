@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2019 The Zcash developers
+# Copyright (c) 2019-2024 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -7,6 +7,7 @@ from decimal import Decimal
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, get_coinbase_address, \
     start_nodes, wait_and_assert_operationid_status
+from test_framework.zip317 import conventional_fee
 from mergetoaddress_helper import assert_mergetoaddress_exception
 
 
@@ -18,7 +19,6 @@ class MergeToAddressMixedNotes(BitcoinTestFramework):
     def setup_nodes(self):
         self.num_nodes = 4
         return start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[
-            '-minrelaytxfee=0',
             '-anchorconfirmations=1',
             '-allowdeprecated=getnewaddress',
             '-allowdeprecated=legacy_privacy',
@@ -38,10 +38,11 @@ class MergeToAddressMixedNotes(BitcoinTestFramework):
         assert_equal(self.nodes[0].z_getbalance(saplingAddr), Decimal('0'))
         assert_equal(Decimal(self.nodes[1].z_gettotalbalance()["transparent"]), Decimal('200'))
         # Make sure we cannot use "ANY_SPROUT" and "ANY_SAPLING" even if we only have Sprout Notes
+        fee = conventional_fee(3)
         assert_mergetoaddress_exception(
             "Cannot send from both Sprout and Sapling addresses using z_mergetoaddress",
             lambda: self.nodes[0].z_mergetoaddress(["ANY_SPROUT", "ANY_SAPLING"], t_addr))
-        opid = self.nodes[0].z_sendmany(coinbase_addr, [{"address": saplingAddr, "amount": Decimal('10')}], 1, 0, 'AllowRevealedSenders')
+        opid = self.nodes[0].z_sendmany(coinbase_addr, [{"address": saplingAddr, "amount": Decimal('10') - fee}], 1, fee, 'AllowRevealedSenders')
         wait_and_assert_operationid_status(self.nodes[0], opid)
         self.nodes[0].generate(1)
         self.sync_all()
@@ -49,28 +50,28 @@ class MergeToAddressMixedNotes(BitcoinTestFramework):
         assert_equal(Decimal(self.nodes[1].z_gettotalbalance()["transparent"]), Decimal('200'))
 
         # Merge Sprout -> taddr
-        result = self.nodes[0].z_mergetoaddress(["ANY_SPROUT"], t_addr, 0)
+        result = self.nodes[0].z_mergetoaddress(["ANY_SPROUT"], t_addr)
         wait_and_assert_operationid_status(self.nodes[0], result['opid'])
         self.nodes[0].generate(1)
         self.sync_all()
 
         assert_equal(self.nodes[0].z_getbalance(sproutAddr), Decimal('0'))
-        assert_equal(self.nodes[0].z_getbalance(saplingAddr), Decimal('10'))
-        assert_equal(Decimal(self.nodes[1].z_gettotalbalance()["transparent"]), Decimal('250'))
+        assert_equal(self.nodes[0].z_getbalance(saplingAddr), Decimal('10') - fee)
+        assert_equal(Decimal(self.nodes[1].z_gettotalbalance()["transparent"]), Decimal('250') - fee)
 
         # Make sure we cannot use "ANY_SPROUT" and "ANY_SAPLING" even if we only have Sapling Notes
         assert_mergetoaddress_exception(
             "Cannot send from both Sprout and Sapling addresses using z_mergetoaddress",
-            lambda: self.nodes[0].z_mergetoaddress(["ANY_SPROUT", "ANY_SAPLING"], t_addr))
+            lambda: self.nodes[0].z_mergetoaddress(["ANY_SPROUT", "ANY_SAPLING"], t_addr, fee))
         # Merge Sapling -> taddr
-        result = self.nodes[0].z_mergetoaddress(["ANY_SAPLING"], t_addr, 0)
+        result = self.nodes[0].z_mergetoaddress(["ANY_SAPLING"], t_addr, fee)
         wait_and_assert_operationid_status(self.nodes[0], result['opid'])
         self.nodes[0].generate(1)
         self.sync_all()
 
         assert_equal(self.nodes[0].z_getbalance(sproutAddr), Decimal('0'))
         assert_equal(self.nodes[0].z_getbalance(saplingAddr), Decimal('0'))
-        assert_equal(Decimal(self.nodes[1].z_gettotalbalance()["transparent"]), Decimal('260'))
+        assert_equal(Decimal(self.nodes[1].z_gettotalbalance()["transparent"]), Decimal('260') - 3*fee)
 
 
 if __name__ == '__main__':

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2022 The Zcash developers
+# Copyright (c) 2022-2024 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -14,6 +14,7 @@ from test_framework.util import (
     start_nodes,
     wait_and_assert_operationid_status,
 )
+from test_framework.zip317 import conventional_fee, ZIP_317_FEE
 
 from decimal import Decimal
 
@@ -33,7 +34,6 @@ class FinalOrchardRootTest(BitcoinTestFramework):
 
     def setup_network(self, split=False):
         self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[
-            '-minrelaytxfee=0',
             '-txindex', # Avoid JSONRPC error: No information available about transaction
             '-reindex', # Required due to enabling -txindex
             nuparams(NU5_BRANCH_ID, 200),
@@ -138,9 +138,9 @@ class FinalOrchardRootTest(BitcoinTestFramework):
         assert_equal(acct0, addrRes0['account'])
         assert_equal(addrRes0['receiver_types'], ['orchard'])
         orchardAddr0 = addrRes0['address']
-        recipients = []
-        recipients.append({"address": orchardAddr0, "amount": Decimal('10')})
-        myopid = self.nodes[0].z_sendmany(taddr0, recipients, 1, 0, 'AllowRevealedSenders')
+        fee = conventional_fee(3)
+        recipients = [{"address": orchardAddr0, "amount": Decimal('10') - fee}]
+        myopid = self.nodes[0].z_sendmany(taddr0, recipients, 1, fee, 'AllowRevealedSenders')
         mytxid = wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         self.sync_all()
@@ -158,8 +158,8 @@ class FinalOrchardRootTest(BitcoinTestFramework):
         assert_equal(len(result["orchard"]["actions"]), 2)
         assert_equal(blk["trees"]["orchard"]["size"], 2)
 
-        # Since there is a now orchard shielded input in the blockchain,
-        # the orchard values should have changed
+        # Since there is now an Orchard shielded input in the blockchain,
+        # the Orchard values should have changed
         new_treestate = self.nodes[0].z_gettreestate(str(-1))
         assert_equal(new_treestate["orchard"]["commitments"]["finalRoot"], root)
         assert_equal(new_treestate["sprout"], treestate["sprout"])
@@ -192,8 +192,9 @@ class FinalOrchardRootTest(BitcoinTestFramework):
         # Mine a block with a Sprout shielded tx and verify the final Orchard root does not change
         zaddr0 = self.nodes[0].listaddresses()[0]['sprout']['addresses'][0]
         assert_equal(self.nodes[0].z_getbalance(zaddr0), Decimal('50'))
+        fee = conventional_fee(3)
         recipients = [{"address": taddr0, "amount": Decimal('12.34')}]
-        opid = self.nodes[0].z_sendmany(zaddr0, recipients, 1, 0, 'AllowRevealedRecipients')
+        opid = self.nodes[0].z_sendmany(zaddr0, recipients, 1, fee, 'AllowRevealedRecipients')
         wait_and_assert_operationid_status(self.nodes[0], opid)
 
         self.sync_all()
@@ -202,7 +203,7 @@ class FinalOrchardRootTest(BitcoinTestFramework):
 
         blk = self.nodes[0].getblock("214")
         assert_equal(len(blk["tx"]), 2)
-        assert_equal(self.nodes[0].z_getbalance(zaddr0), Decimal("37.66"))
+        assert_equal(self.nodes[0].z_getbalance(zaddr0), Decimal("37.66") - fee)
         assert_equal(root, blk["finalorchardroot"])
         assert_equal(blk["trees"]["orchard"]["size"], 2)
 
@@ -218,7 +219,7 @@ class FinalOrchardRootTest(BitcoinTestFramework):
         # Mine a block with a Sapling shielded tx and verify the final Orchard root does not change
         saplingAddr1 = self.nodes[1].z_getnewaddress("sapling")
         recipients = [{"address": saplingAddr1, "amount": Decimal('2.34')}]
-        myopid = self.nodes[0].z_sendmany(zaddr0, recipients, 1, 0, 'AllowRevealedAmounts')
+        myopid = self.nodes[0].z_sendmany(zaddr0, recipients, 1, ZIP_317_FEE, 'AllowRevealedAmounts')
         mytxid = wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         self.sync_all()
@@ -247,7 +248,7 @@ class FinalOrchardRootTest(BitcoinTestFramework):
         assert_equal(addrRes1['receiver_types'], ['orchard'])
         orchardAddr1 = addrRes1['address']
         recipients = [{"address": orchardAddr1, "amount": Decimal('2.34')}]
-        myopid = self.nodes[0].z_sendmany(orchardAddr0, recipients, 1, 0)
+        myopid = self.nodes[0].z_sendmany(orchardAddr0, recipients, 1, ZIP_317_FEE)
         mytxid = wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         self.sync_all()
@@ -275,9 +276,9 @@ class FinalOrchardRootTest(BitcoinTestFramework):
 
         # Mine a block with an Orchard shielded sender and transparent recipient and verify the final Orchard root changes (because actions)
         taddr2 = self.nodes[0].getnewaddress()
-        recipients = []
-        recipients.append({"address": taddr2, "amount": Decimal('2.34')})
-        myopid = self.nodes[1].z_sendmany(orchardAddr1, recipients, 1, 0, 'AllowRevealedRecipients')
+        fee = conventional_fee(3)
+        recipients = [{"address": taddr2, "amount": Decimal('2.34') - fee}]
+        myopid = self.nodes[1].z_sendmany(orchardAddr1, recipients, 1, fee, 'AllowRevealedRecipients')
         mytxid = wait_and_assert_operationid_status(self.nodes[1], myopid)
 
         self.sync_all()
@@ -286,7 +287,8 @@ class FinalOrchardRootTest(BitcoinTestFramework):
 
         blk = self.nodes[0].getblock("217")
         assert_equal(len(blk["tx"]), 2)
-        assert_equal(self.nodes[0].z_getbalance(taddr2), Decimal("2.34"))
+        assert_equal(self.nodes[0].z_getbalance(taddr2), Decimal("2.34") - fee)
+        assert_equal(self.nodes[1].z_getbalance(orchardAddr1), 0)
         assert root != blk["finalorchardroot"]
 
         # Verify there is a Orchard output description (its commitment was added to tree)

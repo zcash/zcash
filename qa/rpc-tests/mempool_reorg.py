@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2014-2016 The Bitcoin Core developers
-# Copyright (c) 2019-2022 The Zcash developers
+# Copyright (c) 2019-2024 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -9,9 +9,12 @@
 # that spend (directly or indirectly) coinbase transactions.
 #
 
+from decimal import Decimal
+
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, assert_raises, start_node, connect_nodes
+from test_framework.zip317 import conventional_fee
 
 
 # Create one-input, one-output, no-fee transaction:
@@ -24,7 +27,6 @@ class MempoolCoinbaseTest(BitcoinTestFramework):
 
     def setup_network(self):
         args = [
-            '-minrelaytxfee=0',
             '-checkmempool',
             '-debug=mempool',
             '-allowdeprecated=getnewaddress',
@@ -61,12 +63,13 @@ class MempoolCoinbaseTest(BitcoinTestFramework):
         # and make sure the mempool code behaves correctly.
         b = [ self.nodes[0].getblockhash(n) for n in range(101, 105) ]
         coinbase_txids = [ self.nodes[0].getblock(h)['tx'][0] for h in b ]
-        spend_101_raw = self.create_tx(coinbase_txids[1], node1_address, 10)
-        spend_102_raw = self.create_tx(coinbase_txids[2], node0_address, 10)
-        spend_103_raw = self.create_tx(coinbase_txids[3], node0_address, 10)
+        fee = conventional_fee(2)
+        spend_101_raw = self.create_tx(coinbase_txids[1], node1_address, Decimal('10') - fee)
+        spend_102_raw = self.create_tx(coinbase_txids[2], node0_address, Decimal('10') - fee)
+        spend_103_raw = self.create_tx(coinbase_txids[3], node0_address, Decimal('10') - fee)
 
         # Create a block-height-locked transaction which will be invalid after reorg
-        timelock_tx = self.nodes[0].createrawtransaction([{"txid": coinbase_txids[0], "vout": 0}], {node0_address: 10})
+        timelock_tx = self.nodes[0].createrawtransaction([{"txid": coinbase_txids[0], "vout": 0}], {node0_address: Decimal('10') - fee})
         # Set the time lock, ensuring we don't clobber the rest of the Sapling v4 tx format
         timelock_tx = timelock_tx.replace("ffffffff", "11111111", 1)
         timelock_tx = timelock_tx[:-38] + hex(self.nodes[0].getblockcount() + 2)[2:] + "000000" + timelock_tx[-30:]
@@ -80,8 +83,8 @@ class MempoolCoinbaseTest(BitcoinTestFramework):
         assert_raises(JSONRPCException, self.nodes[0].sendrawtransaction, timelock_tx)
 
         # Create 102_1 and 103_1:
-        spend_102_1_raw = self.create_tx(spend_102_id, node1_address, 10)
-        spend_103_1_raw = self.create_tx(spend_103_id, node1_address, 10)
+        spend_102_1_raw = self.create_tx(spend_102_id, node1_address, Decimal('10') - 2*fee)
+        spend_103_1_raw = self.create_tx(spend_103_id, node1_address, Decimal('10') - 2*fee)
 
         # Broadcast and mine 103_1:
         spend_103_1_id = self.nodes[0].sendrawtransaction(spend_103_1_raw)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2016 The Zcash developers
+# Copyright (c) 2016-2024 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -9,7 +9,8 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, initialize_chain_clean, \
     initialize_datadir, start_nodes, start_node, connect_nodes_bi, \
     bitcoind_processes, wait_and_assert_operationid_status, \
-    get_coinbase_address, LEGACY_DEFAULT_FEE
+    get_coinbase_address
+from test_framework.zip317 import conventional_fee
 
 from decimal import Decimal
 
@@ -67,9 +68,9 @@ class Wallet1941RegressionTest (BitcoinTestFramework):
         myzaddr = self.nodes[0].z_getnewaddress()
 
         # Send 10 coins to our zaddr.
-        recipients = []
-        recipients.append({"address":myzaddr, "amount":Decimal('10.0') - LEGACY_DEFAULT_FEE})
-        myopid = self.nodes[0].z_sendmany(mytaddr, recipients, 1, LEGACY_DEFAULT_FEE, 'AllowRevealedSenders')
+        fee = conventional_fee(3)
+        recipients = [{"address": myzaddr, "amount": Decimal('10.0') - fee}]
+        myopid = self.nodes[0].z_sendmany(mytaddr, recipients, 1, fee, 'AllowRevealedSenders')
         wait_and_assert_operationid_status(self.nodes[0], myopid)
         self.nodes[0].generate(1)
 
@@ -82,7 +83,7 @@ class Wallet1941RegressionTest (BitcoinTestFramework):
 
         # Confirm the balance on node 0.
         resp = self.nodes[0].z_getbalance(myzaddr)
-        assert_equal(Decimal(resp), Decimal('10.0') - LEGACY_DEFAULT_FEE)
+        assert_equal(Decimal(resp), Decimal('10.0') - fee)
 
         # Export the key for the zaddr from node 0.
         key = self.nodes[0].z_exportkey(myzaddr)
@@ -109,7 +110,7 @@ class Wallet1941RegressionTest (BitcoinTestFramework):
         # Confirm that the balance on node 1 is valid now (node 1 must
         # have rescanned)
         resp = self.nodes[1].z_getbalance(myzaddr)
-        assert_equal(Decimal(resp), Decimal('10.0') - LEGACY_DEFAULT_FEE)
+        assert_equal(Decimal(resp), Decimal('10.0') - fee)
 
 
 if __name__ == '__main__':

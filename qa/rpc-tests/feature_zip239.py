@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2021 The Zcash developers
+# Copyright (c) 2021-2024 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -21,7 +21,6 @@ from test_framework.util import (
     HEARTWOOD_BRANCH_ID,
     CANOPY_BRANCH_ID,
     NU5_BRANCH_ID,
-    LEGACY_DEFAULT_FEE,
     assert_equal,
     assert_false,
     assert_true,
@@ -31,6 +30,7 @@ from test_framework.util import (
     start_nodes,
     wait_and_assert_operationid_status,
 )
+from test_framework.zip317 import ZIP_317_FEE
 from tx_expiry_helper import TestNode
 
 import os.path
@@ -201,7 +201,7 @@ class Zip239Test(BitcoinTestFramework):
         opid = self.nodes[0].z_sendmany(sproutzaddr, [{
             'address': node1_taddr,
             'amount': 1,
-        }], 1, LEGACY_DEFAULT_FEE, 'AllowRevealedRecipients')
+        }], 1, ZIP_317_FEE, 'AllowRevealedRecipients')
         v4_txid = uint256_from_reversed_hex(
             wait_and_assert_operationid_status(self.nodes[0], opid)
         )

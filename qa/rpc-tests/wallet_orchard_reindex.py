@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2023 The Zcash developers
+# Copyright (c) 2023-2024 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -16,12 +16,12 @@ from test_framework.util import (
     wait_and_assert_operationid_status,
     wait_bitcoinds,
 )
+from test_framework.zip317 import conventional_fee
 
 from decimal import Decimal
 import time
 
 BASE_ARGS = [
-    '-minrelaytxfee=0',
     nuparams(NU5_BRANCH_ID, 210),
     '-regtestwalletsetbestchaineveryblock',
 ]
@@ -49,10 +49,11 @@ class WalletOrchardReindexTest(BitcoinTestFramework):
 
         # Create a transaction with an Orchard output to advance the Orchard
         # commitment tree.
-        recipients = [{'address': ua, 'amount': Decimal('10')}]
+        coinbase_fee = conventional_fee(3)
+        recipients = [{'address': ua, 'amount': Decimal('10') - coinbase_fee}]
         myopid = self.nodes[0].z_sendmany(
             get_coinbase_address(self.nodes[0]),
-            recipients, 1, 0, 'AllowRevealedSenders')
+            recipients, 1, coinbase_fee, 'AllowRevealedSenders')
         wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         # Mine the transaction.
@@ -62,7 +63,7 @@ class WalletOrchardReindexTest(BitcoinTestFramework):
 
         # Confirm that we see the Orchard note in the wallet.
         assert_equal(
-            {'pools': {'orchard': {'valueZat': Decimal('10') * COIN}}, 'minimum_confirmations': 1},
+            {'pools': {'orchard': {'valueZat': (Decimal('10') - coinbase_fee) * COIN}}, 'minimum_confirmations': 1},
             self.nodes[0].z_getbalanceforaccount(acct))
 
         # Mine blocks to ensure that the wallet's tip is far enough beyond NU5
@@ -90,7 +91,7 @@ class WalletOrchardReindexTest(BitcoinTestFramework):
 
         # Confirm that we still see the Orchard note in the wallet.
         assert_equal(
-            {'pools': {'orchard': {'valueZat': Decimal('10') * COIN}}, 'minimum_confirmations': 1},
+            {'pools': {'orchard': {'valueZat': (Decimal('10') - coinbase_fee) * COIN}}, 'minimum_confirmations': 1},
             self.nodes[0].z_getbalanceforaccount(acct))
 
 if __name__ == '__main__':

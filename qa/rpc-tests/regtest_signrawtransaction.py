@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-# Copyright (c) 2018 The Zcash developers
+# Copyright (c) 2018-2024 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
-    LEGACY_DEFAULT_FEE,
     start_nodes,
     wait_and_assert_operationid_status,
 )
+from test_framework.zip317 import ZIP_317_FEE
 
 class RegtestSignrawtransactionTest (BitcoinTestFramework):
 
@@ -33,7 +33,7 @@ class RegtestSignrawtransactionTest (BitcoinTestFramework):
         opid = self.nodes[1].z_sendmany(
             taddr,
             [{'address': zaddr1, 'amount': 1}],
-            1, LEGACY_DEFAULT_FEE, 'AllowFullyTransparent')
+            1, ZIP_317_FEE, 'AllowFullyTransparent')
         wait_and_assert_operationid_status(self.nodes[1], opid)
 
 if __name__ == '__main__':

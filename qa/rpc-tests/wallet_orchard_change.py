@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
-# Copyright (c) 2022 The Zcash developers
+# Copyright (c) 2022-2024 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
+from decimal import Decimal
+
 from test_framework.test_framework import BitcoinTestFramework
+from test_framework.mininode import COIN
 from test_framework.util import (
     NU5_BRANCH_ID,
     assert_equal,
@@ -14,6 +17,7 @@ from test_framework.util import (
     wait_and_assert_operationid_status,
     wait_bitcoinds,
 )
+from test_framework.zip317 import conventional_fee, ZIP_317_FEE
 
 # Test wallet behaviour with the Orchard protocol
 class WalletOrchardChangeTest(BitcoinTestFramework):
@@ -23,7 +27,6 @@ class WalletOrchardChangeTest(BitcoinTestFramework):
 
     def setup_nodes(self):
         return start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[
-            '-minrelaytxfee=0',
             nuparams(NU5_BRANCH_ID, 205),
             '-regtestwalletsetbestchaineveryblock',
         ]] * self.num_nodes)
@@ -46,8 +49,10 @@ class WalletOrchardChangeTest(BitcoinTestFramework):
         acct0 = self.nodes[0].z_getnewaccount()['account']
         ua0 = self.nodes[0].z_getaddressforaccount(acct0, ['sapling', 'orchard'])['address']
 
-        recipients = [{"address": ua0, "amount": 10}]
-        myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, 0, 'AllowRevealedSenders')
+        coinbase_fee = conventional_fee(3)
+        balance0 = Decimal('10') - coinbase_fee
+        recipients = [{"address": ua0, "amount": balance0}]
+        myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, coinbase_fee, 'AllowRevealedSenders')
         wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         # Mine the tx & activate NU5.
@@ -56,7 +61,7 @@ class WalletOrchardChangeTest(BitcoinTestFramework):
         self.sync_all()
 
         assert_equal(
-            {'pools': {'sapling': {'valueZat': 10_0000_0000}}, 'minimum_confirmations': 1},
+            {'pools': {'sapling': {'valueZat': balance0 * COIN}}, 'minimum_confirmations': 1},
             self.nodes[0].z_getbalanceforaccount(acct0),
         )
 
@@ -65,8 +70,12 @@ class WalletOrchardChangeTest(BitcoinTestFramework):
         acct1 = self.nodes[1].z_getnewaccount()['account']
         ua1 = self.nodes[1].z_getaddressforaccount(acct1, ['orchard'])['address']
 
-        recipients = [{"address": ua1, "amount": 1}]
-        myopid = self.nodes[0].z_sendmany(ua0, recipients, 1, 0, 'AllowRevealedAmounts')
+        recipients = [{"address": ua1, "amount": Decimal('1')}]
+        # TODO The z_sendmany call fails when passed `null` because it calculates a fee
+        # that is too low. If we passed `fee` in here instead, it would succeed.
+        # https://github.com/zcash/zcash/issues/6956
+        fee = conventional_fee(4)
+        myopid = self.nodes[0].z_sendmany(ua0, recipients, 1, ZIP_317_FEE, 'AllowRevealedAmounts')
         source_tx = wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         self.sync_all()
@@ -74,8 +83,9 @@ class WalletOrchardChangeTest(BitcoinTestFramework):
         self.sync_all()
 
         # The nodes have the expected split of funds.
+        balance0 -= Decimal('1') + fee
         assert_equal(
-            {'pools': {'orchard': {'valueZat': 9_0000_0000}}, 'minimum_confirmations': 1},
+            {'pools': {'orchard': {'valueZat': balance0 * COIN}}, 'minimum_confirmations': 1},
             self.nodes[0].z_getbalanceforaccount(acct0),
         )
         assert_equal(
@@ -88,8 +98,8 @@ class WalletOrchardChangeTest(BitcoinTestFramework):
             'pool': 'orchard',
             'outgoing': False,
             'walletInternal': True,
-            'value': 9,
-            'valueZat': 9_0000_0000,
+            'value': balance0,
+            'valueZat': balance0 * COIN,
         })
 
         # Shut down the nodes, and restart so that we can check wallet load
@@ -99,7 +109,7 @@ class WalletOrchardChangeTest(BitcoinTestFramework):
 
         # The nodes have unaltered balances.
         assert_equal(
-            {'pools': {'orchard': {'valueZat': 9_0000_0000}}, 'minimum_confirmations': 1},
+            {'pools': {'orchard': {'valueZat': balance0 * COIN}}, 'minimum_confirmations': 1},
             self.nodes[0].z_getbalanceforaccount(acct0),
         )
         assert_equal(
@@ -108,15 +118,16 @@ class WalletOrchardChangeTest(BitcoinTestFramework):
         )
 
         # Send another Orchard transaction from node 0 to node 1.
-        myopid = self.nodes[0].z_sendmany(ua0, recipients, 1, 0)
+        myopid = self.nodes[0].z_sendmany(ua0, recipients, 1, ZIP_317_FEE)
         wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         self.sync_all()
         self.nodes[0].generate(1)
         self.sync_all()
 
+        balance0 -= Decimal('1') + conventional_fee(2)
         assert_equal(
-            {'pools': {'orchard': {'valueZat': 8_0000_0000}}, 'minimum_confirmations': 1},
+            {'pools': {'orchard': {'valueZat': balance0 * COIN}}, 'minimum_confirmations': 1},
             self.nodes[0].z_getbalanceforaccount(acct0),
         )
 
