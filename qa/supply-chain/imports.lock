@@ -55,6 +55,13 @@ user-id = 169181
 user-login = "nuttycom"
 user-name = "Kris Nuttycombe"
 
+[[publisher.incrementalmerkletree-testing]]
+version = "0.1.0"
+when = "2024-09-27"
+user-id = 169181
+user-login = "nuttycom"
+user-name = "Kris Nuttycombe"
+
 [[publisher.unicode-normalization]]
 version = "0.1.23"
 when = "2024-02-20"
