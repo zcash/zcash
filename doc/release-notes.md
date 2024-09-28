@@ -4,3 +4,4 @@ release-notes at release time)
 Notable changes
 ===============
 
+- Windows builds have been fixed.
