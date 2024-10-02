@@ -346,10 +346,6 @@ criteria = "safe-to-deploy"
 version = "1.17.0"
 criteria = "safe-to-deploy"
 
-[[exemptions.orchard]]
-version = "0.9.0"
-criteria = "safe-to-deploy"
-
 [[exemptions.pairing]]
 version = "0.22.0"
 criteria = "safe-to-deploy"
@@ -464,10 +460,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.rusty-fork]]
 version = "0.3.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.sapling-crypto]]
-version = "0.2.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.secp256k1]]

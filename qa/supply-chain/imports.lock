@@ -8,6 +8,13 @@ user-id = 169181
 user-login = "nuttycom"
 user-name = "Kris Nuttycombe"
 
+[[publisher.bridgetree]]
+version = "0.6.0"
+when = "2024-09-25"
+user-id = 169181
+user-login = "nuttycom"
+user-name = "Kris Nuttycombe"
+
 [[publisher.bumpalo]]
 version = "3.16.0"
 when = "2024-04-08"
@@ -55,9 +62,30 @@ user-id = 169181
 user-login = "nuttycom"
 user-name = "Kris Nuttycombe"
 
+[[publisher.incrementalmerkletree]]
+version = "0.7.0"
+when = "2024-09-25"
+user-id = 169181
+user-login = "nuttycom"
+user-name = "Kris Nuttycombe"
+
 [[publisher.incrementalmerkletree-testing]]
 version = "0.1.0"
-when = "2024-09-27"
+when = "2024-09-25"
+user-id = 169181
+user-login = "nuttycom"
+user-name = "Kris Nuttycombe"
+
+[[publisher.orchard]]
+version = "0.10.0"
+when = "2024-10-02"
+user-id = 169181
+user-login = "nuttycom"
+user-name = "Kris Nuttycombe"
+
+[[publisher.sapling-crypto]]
+version = "0.3.0"
+when = "2024-10-02"
 user-id = 169181
 user-login = "nuttycom"
 user-name = "Kris Nuttycombe"

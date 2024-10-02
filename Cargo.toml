@@ -50,8 +50,8 @@ libc = "0.2"
 jubjub = "0.10"
 memuse = "0.2"
 nonempty = "0.7"
-orchard = "0.9"
-sapling = { package = "sapling-crypto", version = "0.2", features = ["temporary-zcashd"] }
+orchard = "0.10"
+sapling = { package = "sapling-crypto", version = "0.3", features = ["temporary-zcashd"] }
 secp256k1 = "0.27"
 subtle = "2.2"
 rand_core = "0.6"
@@ -113,14 +113,10 @@ panic = 'abort'
 codegen-units = 1
 
 [patch.crates-io]
-bridgetree = { git = "https://github.com/zcash/incrementalmerkletree", rev = "ffe4234788fd22662b937ba7c6ea01535fcc1293" }
-incrementalmerkletree = { git = "https://github.com/zcash/incrementalmerkletree", rev = "ffe4234788fd22662b937ba7c6ea01535fcc1293" }
-orchard = { git = "https://github.com/zcash/orchard", rev = "55fb089a335bbbc1cda186c706bc037073df8eb7" }
-sapling-crypto = { git = "https://github.com/zcash/sapling-crypto", rev = "b1ad3694ee13a2fc5d291ad04721a6252da0993c" }
-equihash = { git = "https://github.com/zcash/librustzcash.git", rev = "1410f1449100a417bfbc4f6c7167aa9808e38792" }
-zcash_address = { git = "https://github.com/zcash/librustzcash.git", rev = "1410f1449100a417bfbc4f6c7167aa9808e38792" }
-zcash_encoding = { git = "https://github.com/zcash/librustzcash.git", rev = "1410f1449100a417bfbc4f6c7167aa9808e38792" }
-zcash_history = { git = "https://github.com/zcash/librustzcash.git", rev = "1410f1449100a417bfbc4f6c7167aa9808e38792" }
-zcash_primitives = { git = "https://github.com/zcash/librustzcash.git", rev = "1410f1449100a417bfbc4f6c7167aa9808e38792" }
-zcash_proofs = { git = "https://github.com/zcash/librustzcash.git", rev = "1410f1449100a417bfbc4f6c7167aa9808e38792" }
-zcash_protocol = { git = "https://github.com/zcash/librustzcash.git", rev = "1410f1449100a417bfbc4f6c7167aa9808e38792" }
+equihash = { git = "https://github.com/zcash/librustzcash.git", rev = "9ef4117504a7aa51447ffa8691c7d86c5a1dcd05" }
+zcash_address = { git = "https://github.com/zcash/librustzcash.git", rev = "9ef4117504a7aa51447ffa8691c7d86c5a1dcd05" }
+zcash_encoding = { git = "https://github.com/zcash/librustzcash.git", rev = "9ef4117504a7aa51447ffa8691c7d86c5a1dcd05" }
+zcash_history = { git = "https://github.com/zcash/librustzcash.git", rev = "9ef4117504a7aa51447ffa8691c7d86c5a1dcd05" }
+zcash_primitives = { git = "https://github.com/zcash/librustzcash.git", rev = "9ef4117504a7aa51447ffa8691c7d86c5a1dcd05" }
+zcash_proofs = { git = "https://github.com/zcash/librustzcash.git", rev = "9ef4117504a7aa51447ffa8691c7d86c5a1dcd05" }
+zcash_protocol = { git = "https://github.com/zcash/librustzcash.git", rev = "9ef4117504a7aa51447ffa8691c7d86c5a1dcd05" }
