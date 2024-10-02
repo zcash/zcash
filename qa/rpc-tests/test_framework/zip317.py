@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2023 The Zcash developers
+# Copyright (c) 2023-2024 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -19,6 +19,9 @@ MARGINAL_FEE = 5000
 # https://zips.z.cash/zip-0317#fee-calculation.
 GRACE_ACTIONS = 2
 
+# The minimum ZIP 317 fee.
+MINIMUM_FEE = MARGINAL_FEE * GRACE_ACTIONS
+
 # Limits the relative probability of picking a given transaction to be at most `WEIGHT_RATIO_CAP`
 # times greater than a transaction that pays exactly the conventional fee. See
 # https://zips.z.cash/zip-0317#recommended-algorithm-for-block-template-construction
@@ -26,7 +29,7 @@ WEIGHT_RATIO_CAP = 4
 
 # Default limit on the number of unpaid actions in a block. See
 # https://zips.z.cash/zip-0317#recommended-algorithm-for-block-template-construction
-DEFAULT_BLOCK_UNPAID_ACTION_LIMIT = 50
+DEFAULT_BLOCK_UNPAID_ACTION_LIMIT = 0
 
 # The zcashd RPC sentinel value to indicate the conventional_fee when a positional argument is
 # required.

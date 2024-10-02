@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2019 The Zcash developers
+# Copyright (c) 2019-2024 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -38,10 +38,11 @@ from test_framework.util import (
     bitcoind_processes,
     check_node_log
 )
+from test_framework.zip317 import conventional_fee, ZIP_317_FEE
+
 from decimal import Decimal
 
 BASE_ARGS = [
-    '-minrelaytxfee=0',
     '-allowdeprecated=z_getnewaddress',
     '-allowdeprecated=z_getbalance',
 ]
@@ -91,14 +92,14 @@ class TurnstileTest (BitcoinTestFramework):
         self.sync_all()
 
         taddr0 = get_coinbase_address(self.nodes[0])
+        fee = conventional_fee(3)
         if (POOL_NAME == "SPROUT"):
             dest_addr = self.nodes[0].listaddresses()[0]['sprout']['addresses'][0]
         elif (POOL_NAME == "SAPLING"):
             # Node 0 shields some funds
             dest_addr = self.nodes[0].z_getnewaddress('sapling')
-            recipients = []
-            recipients.append({"address": dest_addr, "amount": Decimal('50')})
-            myopid = self.nodes[0].z_sendmany(taddr0, recipients, 1, 0)
+            recipients = [{"address": dest_addr, "amount": Decimal('50') - fee}]
+            myopid = self.nodes[0].z_sendmany(taddr0, recipients, 1, fee)
             wait_and_assert_operationid_status(self.nodes[0], myopid)
         else:
             fail("Unrecognized pool name: " + POOL_NAME)
@@ -121,9 +122,8 @@ class TurnstileTest (BitcoinTestFramework):
         self.assert_pool_balance(self.nodes[2], POOL_NAME.lower(), Decimal('200'))
 
         # Node 0 creates an unshielding transaction
-        recipients = []
-        recipients.append({"address": taddr0, "amount": Decimal('1')})
-        myopid = self.nodes[0].z_sendmany(dest_addr, recipients, 1, 0, 'AllowRevealedRecipients')
+        recipients = [{"address": taddr0, "amount": Decimal('1')}]
+        myopid = self.nodes[0].z_sendmany(dest_addr, recipients, 1, ZIP_317_FEE, 'AllowRevealedRecipients')
         mytxid = wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         # Verify transaction appears in mempool of nodes
@@ -170,8 +170,8 @@ class TurnstileTest (BitcoinTestFramework):
 
         # Verify size of shielded pool
         self.assert_pool_balance(self.nodes[0], POOL_NAME.lower(), Decimal('0'))
-        self.assert_pool_balance(self.nodes[1], POOL_NAME.lower(), Decimal('199'))
-        self.assert_pool_balance(self.nodes[2], POOL_NAME.lower(), Decimal('199'))
+        self.assert_pool_balance(self.nodes[1], POOL_NAME.lower(), Decimal('199') - fee)
+        self.assert_pool_balance(self.nodes[2], POOL_NAME.lower(), Decimal('199') - fee)
 
         # Stop node 0 and check logs to verify the block was rejected as a turnstile violation
         string_to_find1 = "ConnectBlock: turnstile violation in " + POOL_NAME.capitalize() + " shielded value pool"

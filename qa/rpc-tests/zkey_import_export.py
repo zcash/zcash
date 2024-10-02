@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
-# Copyright (c) 2017 The Zcash developers
+# Copyright (c) 2017-2024 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from decimal import Decimal
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal, assert_greater_than, start_nodes,\
-    initialize_chain_clean, connect_nodes_bi, wait_and_assert_operationid_status, \
-    LEGACY_DEFAULT_FEE
+from test_framework.authproxy import JSONRPCException
+from test_framework.util import (
+    assert_equal, assert_greater_than, assert_raises_message, start_nodes,
+    initialize_chain_clean, connect_nodes_bi, wait_and_assert_operationid_status,
+)
+from test_framework.zip317 import conventional_fee
+
 from functools import reduce
 import logging
 import sys
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO, stream=sys.stdout)
-
-fee = LEGACY_DEFAULT_FEE # constant (but can be changed within reason)
 
 class ZkeyImportExportTest (BitcoinTestFramework):
 
@@ -24,7 +26,6 @@ class ZkeyImportExportTest (BitcoinTestFramework):
 
     def setup_network(self, split=False):
         self.nodes = start_nodes(5, self.options.tmpdir, extra_args=[[
-            '-minrelaytxfee=0',
             '-allowdeprecated=getnewaddress',
             '-allowdeprecated=z_getnewaddress',
             '-allowdeprecated=z_getbalance',
@@ -39,28 +40,27 @@ class ZkeyImportExportTest (BitcoinTestFramework):
         self.sync_all()
 
     def run_test(self):
-        [alice, bob, charlie, david, miner] = self.nodes
+        [alice, bob, charlie, daira, miner] = self.nodes
+        fee = conventional_fee(2)
 
         # the sender loses 'amount' plus fee; to_addr receives exactly 'amount'
         def z_send(from_node, from_addr, to_addr, amount):
-            global fee
-            
-            opid = from_node.z_sendmany(from_addr,
-                [{"address": to_addr, "amount": Decimal(amount)}], 1, int(fee))
+            recipients = [{"address": to_addr, "amount": amount}]
+            opid = from_node.z_sendmany(from_addr, recipients, 1, fee)
             wait_and_assert_operationid_status(from_node, opid)
             self.sync_all()
             miner.generate(1)
             self.sync_all()
 
-        def verify_utxos(node, amts, zaddr):
-            amts.sort(reverse=True)
+        def verify_utxos(node, amounts, zaddr):
+            amounts.sort(reverse=True)
             txs = node.z_listreceivedbyaddress(zaddr)
             txs.sort(key=lambda x: x["amount"], reverse=True)
             print("Sorted txs", txs)
-            print("amts", amts)
+            print("amounts", amounts)
 
             try:
-                assert_equal(amts, [tx["amount"] for tx in txs])
+                assert_equal(amounts, [tx["amount"] for tx in txs])
                 for tx in txs:
                     # make sure Sapling outputs exist and have valid values
                     assert_equal("outindex" in tx, True)
@@ -68,7 +68,7 @@ class ZkeyImportExportTest (BitcoinTestFramework):
             except AssertionError:
                 logging.error(
                     'Expected amounts: %r; txs: %r',
-                    amts, txs)
+                    amounts, txs)
                 raise
 
         def get_private_balance(node):
@@ -91,8 +91,8 @@ class ZkeyImportExportTest (BitcoinTestFramework):
         # Now get a pristine z-address for receiving transfers:
         bob_zaddr = bob.z_getnewaddress()
         verify_utxos(bob, [], bob_zaddr)
-        # TODO: Verify that charlie doesn't have funds in addr
-        # verify_utxos(charlie, [])
+        assert_raises_message(JSONRPCException, "From address does not belong to this node",
+                              charlie.z_listreceivedbyaddress, bob_zaddr)
 
         # the amounts of each txn embodied which generates a single UTXO:
         amounts = list(map(Decimal, ['2.3', '3.7', '0.1', '0.5', '1.0', '0.19']))
@@ -114,7 +114,8 @@ class ZkeyImportExportTest (BitcoinTestFramework):
             z_send(alice, alice_zaddr, bob_zaddr, amount)
 
         verify_utxos(bob, amounts[:4], bob_zaddr)
-        # verify_utxos(charlie, [])
+        assert_raises_message(JSONRPCException, "From address does not belong to this node",
+                              charlie.z_listreceivedbyaddress, bob_zaddr)
 
         logging.info("Importing bob_privkey into charlie...")
         # z_importkey rescan defaults to "whenkeyisnew", so should rescan here
@@ -141,26 +142,24 @@ class ZkeyImportExportTest (BitcoinTestFramework):
         verify_utxos(charlie, amounts, ipk_zaddr["address"])
         verify_utxos(charlie, amounts, ipk_zaddr2["address"])
 
-        # keep track of the fees incurred by bob (his sends)
-        bob_fee = Decimal("0")
+        # keep track of bob's expected balance
+        bob_balance = sum(amounts)
 
         # Try to reproduce zombie balance reported in #1936
         # At generated zaddr, receive ZEC, and send ZEC back out. bob -> alice
         for amount in amounts[:2]:
             print("Sending amount from bob to alice: ", amount)
             z_send(bob, bob_zaddr, alice_zaddr, amount)
-            bob_fee += fee
+            bob_balance -= amount + fee
 
-        bob_balance = sum(amounts[2:]) - int(bob_fee)
-        
         assert_equal(bob.z_getbalance(bob_zaddr), bob_balance)
 
-        # z_import onto new node "david" (blockchain rescan, default or True?)
-        d_ipk_zaddr = david.z_importkey(bob_privkey)
+        # z_import onto new node "daira" (rescans by default because the key is new)
+        d_ipk_zaddr = daira.z_importkey(bob_privkey)
 
-        # Check if amt bob spent is deducted for charlie and david
+        # Check if amount bob spent is deducted for charlie and daira
         assert_equal(charlie.z_getbalance(ipk_zaddr["address"]), bob_balance)
-        assert_equal(david.z_getbalance(d_ipk_zaddr["address"]), bob_balance)
+        assert_equal(daira.z_getbalance(d_ipk_zaddr["address"]), bob_balance)
 
 if __name__ == '__main__':
     ZkeyImportExportTest().main()

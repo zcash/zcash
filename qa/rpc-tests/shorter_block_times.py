@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2019 The Zcash developers
+# Copyright (c) 2019-2024 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -13,6 +13,7 @@ from test_framework.util import (
     start_nodes,
     wait_and_assert_operationid_status,
 )
+from test_framework.zip317 import conventional_fee
 
 
 class ShorterBlockTimes(BitcoinTestFramework):
@@ -23,7 +24,6 @@ class ShorterBlockTimes(BitcoinTestFramework):
 
     def setup_nodes(self):
         return start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[
-            '-minrelaytxfee=0',
             nuparams(BLOSSOM_BRANCH_ID, 106),
             '-allowdeprecated=z_getnewaddress',
             '-allowdeprecated=z_gettotalbalance',
@@ -39,14 +39,15 @@ class ShorterBlockTimes(BitcoinTestFramework):
 
         node0_taddr = get_coinbase_address(self.nodes[0])
         node0_zaddr = self.nodes[0].z_getnewaddress('sapling')
-        recipients = [{'address': node0_zaddr, 'amount': Decimal('10.0')}]
-        myopid = self.nodes[0].z_sendmany(node0_taddr, recipients, 1, 0, 'AllowRevealedSenders')
+        fee = conventional_fee(3)
+        recipients = [{'address': node0_zaddr, 'amount': Decimal('10.0') - fee}]
+        myopid = self.nodes[0].z_sendmany(node0_taddr, recipients, 1, fee, 'AllowRevealedSenders')
         txid = wait_and_assert_operationid_status(self.nodes[0], myopid)
         assert_equal(105, self.nodes[0].getrawtransaction(txid, 1)['expiryheight'])  # Blossom activation - 1
         self.sync_all()
         self.nodes[0].generate(1)
         self.sync_all()
-        assert_equal(10, Decimal(self.nodes[0].z_gettotalbalance()['private']))
+        assert_equal(10 - fee, Decimal(self.nodes[0].z_gettotalbalance()['private']))
 
         self.nodes[0].generate(2)
         self.sync_all()
@@ -65,13 +66,13 @@ class ShorterBlockTimes(BitcoinTestFramework):
         assert_equal(15, self.nodes[1].getwalletinfo()['immature_balance'])
 
         # Send and mine a transaction after activation
-        myopid = self.nodes[0].z_sendmany(node0_taddr, recipients, 1, 0, 'AllowRevealedSenders')
+        myopid = self.nodes[0].z_sendmany(node0_taddr, recipients, 1, fee, 'AllowFullyTransparent')
         txid = wait_and_assert_operationid_status(self.nodes[0], myopid)
         assert_equal(147, self.nodes[0].getrawtransaction(txid, 1)['expiryheight'])  # height + 1 + 40
         self.sync_all() # Ensure the transaction has propagated to node 1
         self.nodes[1].generate(1)
         self.sync_all()
-        assert_equal(20, Decimal(self.nodes[0].z_gettotalbalance()['private']))
+        assert_equal(20 - fee*2, Decimal(self.nodes[0].z_gettotalbalance()['private']))
 
 
 if __name__ == '__main__':

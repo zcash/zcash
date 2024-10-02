@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2014-2016 The Bitcoin Core developers
-# Copyright (c) 2016-2022 The Zcash developers
+# Copyright (c) 2016-2024 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -11,8 +11,8 @@
 import string
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
-from test_framework.util import assert_equal, assert_raises, \
-    start_node, connect_nodes
+from test_framework.util import assert_equal, assert_raises_message, start_node, connect_nodes
+from test_framework.zip317 import conventional_fee
 
 
 class MerkleBlockTest(BitcoinTestFramework):
@@ -24,7 +24,6 @@ class MerkleBlockTest(BitcoinTestFramework):
 
     def setup_network(self):
         base_args = [
-            '-minrelaytxfee=0',
             '-debug',
             '-allowdeprecated=getnewaddress',
         ]
@@ -53,11 +52,11 @@ class MerkleBlockTest(BitcoinTestFramework):
         assert_equal(self.nodes[2].getbalance(), 0)
 
         node0utxos = self.nodes[0].listunspent(1)
-        tx1 = self.nodes[0].createrawtransaction([node0utxos.pop()], {self.nodes[1].getnewaddress(): 10})
+        tx1 = self.nodes[0].createrawtransaction([node0utxos.pop()], {self.nodes[1].getnewaddress(): 10 - conventional_fee(1)})
         txid1 = self.nodes[0].sendrawtransaction(self.nodes[0].signrawtransaction(tx1)["hex"])
-        tx2 = self.nodes[0].createrawtransaction([node0utxos.pop()], {self.nodes[1].getnewaddress(): 10})
+        tx2 = self.nodes[0].createrawtransaction([node0utxos.pop()], {self.nodes[1].getnewaddress(): 10 - conventional_fee(1)})
         txid2 = self.nodes[0].sendrawtransaction(self.nodes[0].signrawtransaction(tx2)["hex"])
-        assert_raises(JSONRPCException, self.nodes[0].gettxoutproof, [txid1])
+        assert_raises_message(JSONRPCException, "Transaction not yet in block", self.nodes[0].gettxoutproof, [txid1])
 
         self.nodes[0].generate(1)
         blockhash = self.nodes[0].getblockhash(chain_height + 1)
@@ -73,7 +72,7 @@ class MerkleBlockTest(BitcoinTestFramework):
         assert_equal(self.nodes[2].verifytxoutproof(self.nodes[2].gettxoutproof([txid1, txid2], blockhash)), txlist)
 
         txin_spent = self.nodes[1].listunspent(1).pop()
-        tx3 = self.nodes[1].createrawtransaction([txin_spent], {self.nodes[0].getnewaddress(): 10})
+        tx3 = self.nodes[1].createrawtransaction([txin_spent], {self.nodes[0].getnewaddress(): 10 - 2*conventional_fee(1)})
         self.nodes[0].sendrawtransaction(self.nodes[1].signrawtransaction(tx3)["hex"])
         self.nodes[0].generate(1)
         self.sync_all()
@@ -82,7 +81,7 @@ class MerkleBlockTest(BitcoinTestFramework):
         txid_unspent = txid1 if txin_spent["txid"] != txid1 else txid2
 
         # We can't find the block from a fully-spent tx
-        assert_raises(JSONRPCException, self.nodes[2].gettxoutproof, [txid_spent])
+        assert_raises_message(JSONRPCException, "Transaction not yet in block", self.nodes[2].gettxoutproof, [txid_spent])
         # ...but we can if we specify the block
         assert_equal(self.nodes[2].verifytxoutproof(self.nodes[2].gettxoutproof([txid_spent], blockhash)), [txid_spent])
         # ...or if the first tx is not fully-spent
@@ -104,15 +103,15 @@ class MerkleBlockTest(BitcoinTestFramework):
 
         # Test getblock heights including negatives relative to the head
         assert_equal(self.nodes[0].getblock("0")["height"], 0)
-        assert_raises(JSONRPCException, self.nodes[0].getblock, ["108"])
+        assert_raises_message(JSONRPCException, "Block height out of range", self.nodes[0].getblock, "108")
         assert_equal(self.nodes[0].getblock("107")["height"], 107)
         assert_equal(self.nodes[0].getblock("-1")["height"], 107)
         assert_equal(self.nodes[0].getblock("-2")["height"], 106)
         assert_equal(self.nodes[0].getblock("-20")["height"], 88)
         assert_equal(self.nodes[0].getblock("-107")["height"], 1)
         assert_equal(self.nodes[0].getblock("-108")["height"], 0)
-        assert_raises(JSONRPCException, self.nodes[0].getblock, ["-109"])
-        assert_raises(JSONRPCException, self.nodes[0].getblock, ["-0"])
+        assert_raises_message(JSONRPCException, "Block height out of range", self.nodes[0].getblock, "-109")
+        assert_raises_message(JSONRPCException, "Invalid block height parameter", self.nodes[0].getblock, "-0")
 
         # Test getblockhash negative heights
         assert_equal(self.nodes[0].getblockhash(-1), self.nodes[0].getblockhash(107))

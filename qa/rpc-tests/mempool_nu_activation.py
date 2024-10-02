@@ -1,20 +1,21 @@
 #!/usr/bin/env python3
-# Copyright (c) 2018 The Zcash developers
+# Copyright (c) 2018-2024 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.mininode import NU5_PROTO_VERSION
 from test_framework.util import (
     BLOSSOM_BRANCH_ID,
     CANOPY_BRANCH_ID,
     HEARTWOOD_BRANCH_ID,
     NU5_BRANCH_ID,
+    NU6_BRANCH_ID,
     assert_equal, assert_true,
     nuparams,
     start_node, connect_nodes, wait_and_assert_operationid_status,
     get_coinbase_address
 )
+from test_framework.zip317 import conventional_fee
 
 from decimal import Decimal
 
@@ -30,18 +31,17 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
 
     def setup_network(self):
         args = [
-            '-minrelaytxfee=0',
             '-checkmempool',
             '-debug=mempool',
             '-blockmaxsize=4000',
             '-allowdeprecated=getnewaddress',
-            '-allowdeprecated=legacy_privacy',
             '-allowdeprecated=z_getnewaddress',
             '-allowdeprecated=z_getbalance',
             nuparams(BLOSSOM_BRANCH_ID, 200),
             nuparams(HEARTWOOD_BRANCH_ID, 210),
             nuparams(CANOPY_BRANCH_ID, 220),
             nuparams(NU5_BRANCH_ID, 230),
+            nuparams(NU6_BRANCH_ID, 240),
         ]
         self.nodes = []
         self.nodes.append(start_node(0, self.options.tmpdir, args))
@@ -62,9 +62,13 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
         # Shield some ZEC
         node1_taddr = get_coinbase_address(self.nodes[1])
         node0_zaddr = self.nodes[0].z_getnewaddress('sapling')
-        recipients = [{'address': node0_zaddr, 'amount': Decimal('10')}]
-        myopid = self.nodes[1].z_sendmany(node1_taddr, recipients, 1, 0)
-        print(wait_and_assert_operationid_status(self.nodes[1], myopid))
+        coinbase_fee = conventional_fee(3)
+        recipients = [{'address': node0_zaddr, 'amount': Decimal('10') - coinbase_fee}]
+        myopid = self.nodes[1].z_sendmany(node1_taddr, recipients, 1, coinbase_fee, 'AllowRevealedSenders')
+        wait_and_assert_operationid_status(self.nodes[1], myopid)
+        node0_balance = Decimal('10') - coinbase_fee
+        fee = conventional_fee(2)
+
         self.sync_all()
         self.nodes[0].generate(1)
         self.sync_all()
@@ -79,14 +83,22 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
             assert_equal(set(self.nodes[0].getrawmempool()), set())
 
             # Check node 0 shielded balance
-            assert_equal(self.nodes[0].z_getbalance(node0_zaddr), Decimal('10'))
+            assert_equal(self.nodes[0].z_getbalance(node0_zaddr), node0_balance)
 
             # Fill the mempool with more transactions than can fit into 4 blocks
+            # (note `-blockmaxsize=4000` in the node arguments).
             node0_taddr = self.nodes[0].getnewaddress()
             x_txids = []
+            print("Filling mempool", end="", flush=True)
             while self.nodes[1].getmempoolinfo()['bytes'] < 8 * 4000:
                 x_txids.append(self.nodes[1].sendtoaddress(node0_taddr, Decimal('0.001')))
+                if len(x_txids) % 10 == 0:
+                    print(".", end="", flush=True)
+                    # this sync is important for reliability
+                    self.sync_all()
+
             self.sync_all()
+            print(" done")
 
             # Spends should be in the mempool
             x_mempool = set(self.nodes[0].getrawmempool())
@@ -147,8 +159,8 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
             self.sync_all()
 
             # Create a shielded Y transaction
-            recipients = [{'address': node0_zaddr, 'amount': Decimal('10')}]
-            myopid = self.nodes[0].z_sendmany(node0_zaddr, recipients, 1,0)
+            recipients = [{'address': node0_zaddr, 'amount': node0_balance - fee}]
+            myopid = self.nodes[0].z_sendmany(node0_zaddr, recipients, 1, fee)
             shielded = wait_and_assert_operationid_status(self.nodes[0], myopid)
             assert(shielded != None)
             y_txids.append(shielded)
@@ -179,7 +191,7 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
             assert_equal(set(self.nodes[1].getrawmempool()), set(y_txids))
 
             # Node 0 note should be spendable again
-            assert_equal(self.nodes[0].z_getbalance(node0_zaddr), Decimal('10'))
+            assert_equal(self.nodes[0].z_getbalance(node0_zaddr), node0_balance)
 
             # Reconsider block H - 1.
             self.nodes[0].reconsiderblock(block_hm1)
@@ -189,28 +201,31 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
             self.nodes[1].generate(6)
             self.sync_all()
 
-        net_version = self.nodes[0].getnetworkinfo()["protocolversion"]
-
         print('Testing Sapling -> Blossom activation boundary')
-        # Current height = 195
+        assert_equal(self.nodes[0].getblockcount(), 195)
         nu_activation_checks()
-        # Current height = 205
+        node0_balance -= fee
+        assert_equal(self.nodes[0].getblockcount(), 205)
 
         print('Testing Blossom -> Heartwood activation boundary')
         nu_activation_checks()
-        # Current height = 215
+        node0_balance -= fee
+        assert_equal(self.nodes[0].getblockcount(), 215)
 
         print('Testing Heartwood -> Canopy activation boundary')
         nu_activation_checks()
-        # Current height = 225
-
-        if net_version < NU5_PROTO_VERSION:
-            print("Node's block index is not NU5-aware, skipping remaining tests")
-            return
+        node0_balance -= fee
+        assert_equal(self.nodes[0].getblockcount(), 225)
 
         print('Testing Canopy -> NU5 activation boundary')
         nu_activation_checks()
-        # Current height = 235
+        node0_balance -= fee
+        assert_equal(self.nodes[0].getblockcount(), 235)
+
+        print('Testing NU5 -> NU6 activation boundary')
+        nu_activation_checks()
+        node0_balance -= fee
+        assert_equal(self.nodes[0].getblockcount(), 245)
 
 if __name__ == '__main__':
     MempoolUpgradeActivationTest().main()

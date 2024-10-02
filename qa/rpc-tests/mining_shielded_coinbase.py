@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2019 The Zcash developers
+# Copyright (c) 2019-2024 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -20,6 +20,7 @@ from test_framework.util import (
     wait_and_assert_operationid_status,
     check_node_log,
 )
+from test_framework.zip317 import conventional_fee
 
 class ShieldCoinbaseTest (BitcoinTestFramework):
 
@@ -30,7 +31,6 @@ class ShieldCoinbaseTest (BitcoinTestFramework):
 
     def start_node_with(self, index, extra_args=[]):
         args = [
-            '-minrelaytxfee=0',
             nuparams(BLOSSOM_BRANCH_ID, 1),
             nuparams(HEARTWOOD_BRANCH_ID, 10),
             nuparams(CANOPY_BRANCH_ID, 20),
@@ -96,16 +96,16 @@ class ShieldCoinbaseTest (BitcoinTestFramework):
         self.sync_all()
 
         # Transparent coinbase outputs are subject to coinbase maturity
-        assert_equal(self.nodes[0].getbalance(), Decimal('0'))
-        assert_equal(self.nodes[0].z_gettotalbalance()['transparent'], '0.00')
-        assert_equal(self.nodes[0].z_gettotalbalance()['private'], '0.00')
-        assert_equal(self.nodes[0].z_gettotalbalance()['total'], '0.00')
+        assert_equal(Decimal(self.nodes[0].getbalance()), Decimal('0'))
+        assert_equal(Decimal(self.nodes[0].z_gettotalbalance()['transparent']), Decimal('0'))
+        assert_equal(Decimal(self.nodes[0].z_gettotalbalance()['private']), Decimal('0'))
+        assert_equal(Decimal(self.nodes[0].z_gettotalbalance()['total']), Decimal('0'))
 
         # Shielded coinbase outputs are not subject to coinbase maturity
-        assert_equal(self.nodes[1].z_getbalance(node1_zaddr, 0), 5)
-        assert_equal(self.nodes[1].z_getbalance(node1_zaddr), 5)
-        assert_equal(self.nodes[1].z_gettotalbalance()['private'], '5.00')
-        assert_equal(self.nodes[1].z_gettotalbalance()['total'], '5.00')
+        assert_equal(Decimal(self.nodes[1].z_getbalance(node1_zaddr, 0)), Decimal('5'))
+        assert_equal(Decimal(self.nodes[1].z_getbalance(node1_zaddr)), Decimal('5'))
+        assert_equal(Decimal(self.nodes[1].z_gettotalbalance()['private']), Decimal('5'))
+        assert_equal(Decimal(self.nodes[1].z_gettotalbalance()['total']), Decimal('5'))
 
         # Send from Sapling coinbase to Sapling address and transparent address
         # (to check that a non-empty vout is allowed when spending shielded
@@ -113,18 +113,20 @@ class ShieldCoinbaseTest (BitcoinTestFramework):
         print("Sending Sapling coinbase to Sapling address")
         node0_zaddr = self.nodes[0].z_getnewaddress('sapling')
         node0_taddr = self.nodes[0].getnewaddress()
-        recipients = []
-        recipients.append({"address": node0_zaddr, "amount": Decimal('2')})
-        recipients.append({"address": node0_taddr, "amount": Decimal('2')})
-        myopid = self.nodes[1].z_sendmany(node1_zaddr, recipients, 1, 0, 'AllowRevealedRecipients')
+        fee = conventional_fee(3)
+        recipients = [
+            {"address": node0_zaddr, "amount": Decimal('2')},
+            {"address": node0_taddr, "amount": Decimal('2')},
+        ]
+        myopid = self.nodes[1].z_sendmany(node1_zaddr, recipients, 1, fee, 'AllowRevealedRecipients')
         wait_and_assert_operationid_status(self.nodes[1], myopid)
         self.sync_all()
         self.nodes[0].generate(1)
         self.sync_all()
 
-        assert_equal(self.nodes[0].z_getbalance(node0_zaddr), 2)
-        assert_equal(self.nodes[0].z_getbalance(node0_taddr), 2)
-        assert_equal(self.nodes[1].z_getbalance(node1_zaddr), 1)
+        assert_equal(Decimal(self.nodes[0].z_getbalance(node0_zaddr)), Decimal('2'))
+        assert_equal(Decimal(self.nodes[0].z_getbalance(node0_taddr)), Decimal('2'))
+        assert_equal(Decimal(self.nodes[1].z_getbalance(node1_zaddr)), Decimal('1') - fee)
 
         # Generate a Unified Address for node 1
         self.nodes[1].z_getnewaccount()

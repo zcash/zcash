@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2014-2016 The Bitcoin Core developers
-# Copyright (c) 2016-2022 The Zcash developers
+# Copyright (c) 2016-2024 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -10,7 +10,8 @@
 #
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal, start_node, LEGACY_DEFAULT_FEE
+from test_framework.util import assert_equal, start_node
+from test_framework.zip317 import conventional_fee
 
 from decimal import Decimal
 
@@ -25,7 +26,6 @@ class MempoolCoinbaseTest(BitcoinTestFramework):
     def setup_network(self):
         # Just need one node for this test
         args = [
-            '-minrelaytxfee=0',
             '-checkmempool',
             '-debug=mempool',
             '-allowdeprecated=getnewaddress',
@@ -56,13 +56,14 @@ class MempoolCoinbaseTest(BitcoinTestFramework):
 
         b = [ self.nodes[0].getblockhash(n) for n in range(1, 4) ]
         coinbase_txids = [ self.nodes[0].getblock(h)['tx'][0] for h in b ]
-        spends1_raw = [ self.create_tx(txid, node0_address, 10) for txid in coinbase_txids ]
+        fee = conventional_fee(1)
+        spends1_raw = [ self.create_tx(txid, node0_address, Decimal('10') - fee) for txid in coinbase_txids ]
         spends1_id = [ self.nodes[0].sendrawtransaction(tx) for tx in spends1_raw ]
 
         blocks = []
         blocks.extend(self.nodes[0].generate(1))
 
-        spends2_raw = [ self.create_tx(txid, node0_address, Decimal('10.0') - LEGACY_DEFAULT_FEE) for txid in spends1_id ]
+        spends2_raw = [ self.create_tx(txid, node0_address, Decimal('10') - 2*fee) for txid in spends1_id ]
         spends2_id = [ self.nodes[0].sendrawtransaction(tx) for tx in spends2_raw ]
 
         blocks.extend(self.nodes[0].generate(1))

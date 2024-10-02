@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2017 The Zcash developers
+# Copyright (c) 2017-2024 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -20,7 +20,6 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
 
     def setup_network(self, split=False):
         args = [
-            '-minrelaytxfee=0',
             '-regtestprotectcoinbase',
             '-debug=zrpcunsafe',
             nuparams(NU5_BRANCH_ID, self.nu5_activation),
@@ -45,8 +44,8 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
         self.nodes[0].generate(4)
         self.sync_all()
         walletinfo = self.nodes[0].getwalletinfo()
-        assert_equal(walletinfo['immature_balance'], 50)
-        assert_equal(walletinfo['balance'], 0)
+        assert_equal(Decimal(walletinfo['immature_balance']), Decimal('50'))
+        assert_equal(Decimal(walletinfo['balance']), Decimal('0'))
         self.sync_all()
         self.nodes[2].generate(1)
         self.nodes[2].generate(1)
@@ -54,9 +53,9 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
         self.sync_all()
         self.nodes[1].generate(101)
         self.sync_all()
-        assert_equal(self.nodes[0].getbalance(), 50)
-        assert_equal(self.nodes[1].getbalance(), 10)
-        assert_equal(self.nodes[2].getbalance(), 30)
+        assert_equal(Decimal(self.nodes[0].getbalance()), Decimal('50'))
+        assert_equal(Decimal(self.nodes[1].getbalance()), Decimal('10'))
+        assert_equal(Decimal(self.nodes[2].getbalance()), Decimal('30'))
 
         # create one zaddr that is the target of all shielding
         myzaddr = self.test_init_zaddr(self.nodes[0])
@@ -102,31 +101,33 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
             errorString = e.error['message']
         assert_equal("JSON integer out of range" in errorString, True)
 
-        # Shield coinbase utxos from node 0 of value 40, standard fee
-        result = self.nodes[0].z_shieldcoinbase(mytaddr, myzaddr)
+        # Shield coinbase utxos from node 0 of value 40
+        fee = conventional_fee(6)
+        result = self.nodes[0].z_shieldcoinbase(mytaddr, myzaddr, fee)
         wait_and_assert_operationid_status(self.nodes[0], result['opid'])
         self.sync_all()
         self.nodes[1].generate(1)
         self.sync_all()
 
         # Confirm balances and that do_not_shield_taddr containing funds of 10 was left alone
-        assert_equal(self.nodes[0].getbalance(), 10)
-        assert_equal(self.nodes[0].z_getbalance(do_not_shield_taddr), Decimal('10.0'))
-        self.test_check_balance_zaddr(self.nodes[0], Decimal('40.0') - conventional_fee(6))
-        assert_equal(self.nodes[1].getbalance(), 20)
-        assert_equal(self.nodes[2].getbalance(), 30)
+        assert_equal(Decimal(self.nodes[0].getbalance()), Decimal('10'))
+        assert_equal(Decimal(self.nodes[0].z_getbalance(do_not_shield_taddr)), Decimal('10'))
+        self.test_check_balance_zaddr(self.nodes[0], Decimal('40') - fee)
+        assert_equal(Decimal(self.nodes[1].getbalance()), Decimal('20'))
+        assert_equal(Decimal(self.nodes[2].getbalance()), Decimal('30'))
 
-        # Shield coinbase utxos from any node 2 taddr, and set fee to 0
-        result = self.nodes[2].z_shieldcoinbase("*", myzaddr, 0, None, None, 'AllowLinkingAccountAddresses')
+        # Shield coinbase utxos from any node 2 taddr
+        fee2 = conventional_fee(5)
+        result = self.nodes[2].z_shieldcoinbase("*", myzaddr, fee2, None, None, 'AllowLinkingAccountAddresses')
         wait_and_assert_operationid_status(self.nodes[2], result['opid'])
         self.sync_all()
         self.nodes[1].generate(1)
         self.sync_all()
 
-        assert_equal(self.nodes[0].getbalance(), 10)
-        self.test_check_balance_zaddr(self.nodes[0], Decimal('70.0') - conventional_fee(6))
-        assert_equal(self.nodes[1].getbalance(), 30)
-        assert_equal(self.nodes[2].getbalance(), 0)
+        assert_equal(Decimal(self.nodes[0].getbalance()), Decimal('10'))
+        self.test_check_balance_zaddr(self.nodes[0], Decimal('70') - fee - fee2)
+        assert_equal(Decimal(self.nodes[1].getbalance()), Decimal('30'))
+        assert_equal(Decimal(self.nodes[2].getbalance()), Decimal('0'))
 
         # Generate 800 coinbase utxos on node 0, and 20 coinbase utxos on node 2
         self.nodes[0].generate(800)
@@ -139,17 +140,17 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
 
         def verify_locking(first, second, limit):
             result = self.nodes[0].z_shieldcoinbase(mytaddr, myzaddr, ZIP_317_FEE, limit)
-            assert_equal(result["shieldingUTXOs"], Decimal(first))
-            assert_equal(result["remainingUTXOs"], Decimal(second))
+            assert_equal(Decimal(result["shieldingUTXOs"]), Decimal(first))
+            assert_equal(Decimal(result["remainingUTXOs"]), Decimal(second))
             remainingValue = result["remainingValue"]
             opid1 = result['opid']
 
             # Verify that utxos are locked (not available for selection) by queuing up another shielding operation
             result = self.nodes[0].z_shieldcoinbase(mytaddr, myzaddr, ZIP_317_FEE, 0)
-            assert_equal(result["shieldingValue"], Decimal(remainingValue))
-            assert_equal(result["shieldingUTXOs"], Decimal(second))
-            assert_equal(result["remainingValue"], Decimal('0'))
-            assert_equal(result["remainingUTXOs"], Decimal('0'))
+            assert_equal(Decimal(result["shieldingValue"]), Decimal(remainingValue))
+            assert_equal(Decimal(result["shieldingUTXOs"]), Decimal(second))
+            assert_equal(Decimal(result["remainingValue"]), Decimal('0'))
+            assert_equal(Decimal(result["remainingUTXOs"]), Decimal('0'))
             opid2 = result['opid']
 
             # wait for both async operations to complete
@@ -172,14 +173,14 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
         self.sync_all()
         mytaddr = get_coinbase_address(self.nodes[0], 100)
         result = self.nodes[0].z_shieldcoinbase(mytaddr, myzaddr, ZIP_317_FEE, None, 'DEADBEEF')
-        assert_equal(result["shieldingUTXOs"], Decimal('50'))
-        assert_equal(result["remainingUTXOs"], Decimal('50'))
+        assert_equal(Decimal(result["shieldingUTXOs"]), Decimal('50'))
+        assert_equal(Decimal(result["remainingUTXOs"]), Decimal('50'))
         wait_and_assert_operationid_status(self.nodes[0], result['opid'])
 
         # Verify maximum number of utxos which node 0 can shield can be set by the limit parameter
         result = self.nodes[0].z_shieldcoinbase(mytaddr, myzaddr, ZIP_317_FEE, 33, None)
-        assert_equal(result["shieldingUTXOs"], Decimal('33'))
-        assert_equal(result["remainingUTXOs"], Decimal('17'))
+        assert_equal(Decimal(result["shieldingUTXOs"]), Decimal('33'))
+        assert_equal(Decimal(result["remainingUTXOs"]), Decimal('17'))
         wait_and_assert_operationid_status(self.nodes[0], result['opid'])
         # Don't sync node 2 which rejects the tx due to its mempooltxinputlimit
         sync_blocks(self.nodes[:2])

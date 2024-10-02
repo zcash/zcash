@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
-# Copyright (c) 2018 The Zcash developers
+# Copyright (c) 2018-2024 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
+
+from decimal import Decimal
 
 from test_framework.authproxy import JSONRPCException
 from test_framework.mininode import NodeConn, NetworkThread, CInv, \
@@ -9,6 +11,8 @@ from test_framework.mininode import NodeConn, NetworkThread, CInv, \
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, connect_nodes_bi, fail, \
     p2p_port, start_nodes, sync_blocks, sync_mempools
+from test_framework.zip317 import conventional_fee
+
 from tx_expiry_helper import TestNode, create_transaction
 
 
@@ -21,7 +25,6 @@ class TxExpiringSoonTest(BitcoinTestFramework):
 
     def setup_network(self):
         self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[
-            '-minrelaytxfee=0',
             '-allowdeprecated=getnewaddress',
         ]] * self.num_nodes)
         connect_nodes_bi(self.nodes, 0, 1)
@@ -31,7 +34,7 @@ class TxExpiringSoonTest(BitcoinTestFramework):
         tx = create_transaction(self.nodes[0],
                                 block,
                                 address,
-                                10.0,
+                                Decimal("10.0") - conventional_fee(2),
                                 expiry_height)
         testnode.send_message(msg_tx(tx))
 
