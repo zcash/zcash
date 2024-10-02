@@ -71,11 +71,11 @@ class WalletOrchardChangeTest(BitcoinTestFramework):
         ua1 = self.nodes[1].z_getaddressforaccount(acct1, ['orchard'])['address']
 
         recipients = [{"address": ua1, "amount": Decimal('1')}]
-        # TODO The z_sendmany call fails when passed `null` because it calculates a fee
-        # that is too low. If we passed `fee` in here instead, it would succeed.
+        # TODO The z_sendmany call fails when passed `None`/`ZIP_317_FEE` because it calculates
+        # a fee that is too low, so we have to pass in an explicit fee instead.
         # https://github.com/zcash/zcash/issues/6956
         fee = conventional_fee(4)
-        myopid = self.nodes[0].z_sendmany(ua0, recipients, 1, ZIP_317_FEE, 'AllowRevealedAmounts')
+        myopid = self.nodes[0].z_sendmany(ua0, recipients, 1, fee, 'AllowRevealedAmounts')
         source_tx = wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         self.sync_all()
