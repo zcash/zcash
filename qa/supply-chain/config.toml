@@ -562,10 +562,6 @@ criteria = "safe-to-deploy"
 version = "0.9.5"
 criteria = "safe-to-deploy"
 
-[[exemptions.visibility]]
-version = "0.1.1"
-criteria = "safe-to-deploy"
-
 [[exemptions.wait-timeout]]
 version = "0.2.0"
 criteria = "safe-to-deploy"
@@ -628,10 +624,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.xdg]]
 version = "2.5.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.zcash_encoding]]
-version = "0.2.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.zerocopy]]

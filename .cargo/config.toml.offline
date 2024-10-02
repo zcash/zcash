@@ -4,10 +4,5 @@ linker = "aarch64-linux-gnu-gcc"
 [source.crates-io]
 replace-with = "vendored-sources"
 
-[source."https://github.com/zcash/librustzcash.git"]
-git = "https://github.com/zcash/librustzcash.git"
-rev = "9ef4117504a7aa51447ffa8691c7d86c5a1dcd05"
-replace-with = "vendored-sources"
-
 [source.vendored-sources]
 # The directory for this source is set to RUST_VENDORED_SOURCES by src/Makefile.am

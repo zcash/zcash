@@ -140,8 +140,7 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_NU5].hashActivationBlock =
             uint256S("0000000000d723156d9b65ffcf4984da7a19675ed7e2f06d9e5d5188af087bf8");
         consensus.vUpgrades[Consensus::UPGRADE_NU6].nProtocolVersion = 170120;
-        consensus.vUpgrades[Consensus::UPGRADE_NU6].nActivationHeight =
-            Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
+        consensus.vUpgrades[Consensus::UPGRADE_NU6].nActivationHeight = 2726400;
         consensus.vUpgrades[Consensus::UPGRADE_ZFUTURE].nProtocolVersion = 0x7FFFFFFF;
         consensus.vUpgrades[Consensus::UPGRADE_ZFUTURE].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
@@ -172,6 +171,10 @@ public:
 
         keyConstants.bech32mHRPs[TEX_ADDRESS]                 = "tex";
         {
+            auto canopyActivation = consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight;
+            auto nu6Activation = consensus.vUpgrades[Consensus::UPGRADE_NU6].nActivationHeight;
+
+            // ZIP 214 Revision 0
             std::vector<std::string> bp_addresses = {
                 "t3LmX1cxWPPPqL4TZHx42HU3U5ghbFjRiif",
                 "t3Toxk1vJQ6UjWQ42tUJz2rV2feUWkpbTDs",
@@ -231,18 +234,37 @@ public:
             consensus.AddZIP207FundingStream(
                 keyConstants,
                 Consensus::FS_ZIP214_BP,
-                consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight, 2726400,
+                canopyActivation,
+                nu6Activation,
                 bp_addresses);
             consensus.AddZIP207FundingStream(
                 keyConstants,
                 Consensus::FS_ZIP214_ZF,
-                consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight, 2726400,
+                canopyActivation,
+                nu6Activation,
                 zf_addresses);
             consensus.AddZIP207FundingStream(
                 keyConstants,
                 Consensus::FS_ZIP214_MG,
-                consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight, 2726400,
+                canopyActivation,
+                nu6Activation,
                 mg_addresses);
+
+            // ZIP 214 Revision 1
+            // FPF uses a single address repeated 12 times, once for each funding period.
+            std::vector<std::string> fpf_addresses(12, "t3cFfPt1Bcvgez9ZbMBFWeZsskxTkPzGCow");
+
+            consensus.AddZIP207FundingStream(
+                keyConstants,
+                Consensus::FS_FPF_ZCG,
+                nu6Activation,
+                3146400,
+                fpf_addresses);
+            consensus.AddZIP207LockboxStream(
+                keyConstants,
+                Consensus::FS_DEFERRED,
+                nu6Activation,
+                3146400);
         }
 
         // The best chain should have at least this much work.
@@ -473,6 +495,10 @@ public:
 
         // Testnet funding streams
         {
+            auto canopyActivation = consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight;
+            auto nu6Activation = consensus.vUpgrades[Consensus::UPGRADE_NU6].nActivationHeight;
+
+            // ZIP 214 Revision 0
             std::vector<std::string> bp_addresses = {
                 "t26ovBdKAJLtrvBsE2QGF4nqBkEuptuPFZz",
                 "t26ovBdKAJLtrvBsE2QGF4nqBkEuptuPFZz",
@@ -534,27 +560,32 @@ public:
             consensus.AddZIP207FundingStream(
                 keyConstants,
                 Consensus::FS_ZIP214_BP,
-                consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight, 2796000,
+                canopyActivation,
+                2796000, // *not* the NU6 activation height
                 bp_addresses);
             consensus.AddZIP207FundingStream(
                 keyConstants,
                 Consensus::FS_ZIP214_ZF,
-                consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight, 2796000,
+                canopyActivation,
+                2796000, // *not* the NU6 activation height
                 zf_addresses);
             consensus.AddZIP207FundingStream(
                 keyConstants,
                 Consensus::FS_ZIP214_MG,
-                consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight, 2796000,
+                canopyActivation,
+                2796000, // *not* the NU6 activation height
                 mg_addresses);
 
-            auto nu6Activation = consensus.vUpgrades[Consensus::UPGRADE_NU6].nActivationHeight;
-            std::vector<std::string> zcg_addresses(13, "t2HifwjUj9uyxr9bknR8LFuQbc98c3vkXtu");
+            // ZIP 214 Revision 1
+            // FPF uses a single address repeated 13 times, once for each funding period.
+            // There are 13 periods because the start height does not align with a period boundary.
+            std::vector<std::string> fpf_addresses(13, "t2HifwjUj9uyxr9bknR8LFuQbc98c3vkXtu");
             consensus.AddZIP207FundingStream(
                 keyConstants,
                 Consensus::FS_FPF_ZCG,
                 nu6Activation,
                 3396000,
-                zcg_addresses);
+                fpf_addresses);
             consensus.AddZIP207LockboxStream(
                 keyConstants,
                 Consensus::FS_DEFERRED,
