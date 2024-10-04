@@ -194,7 +194,7 @@ namespace Consensus {
 
         const auto expectedRecipients = params.FundingPeriodIndex(startHeight, endHeight - 1) + 1;
         if (expectedRecipients > recipients.size()) {
-            return FundingStreamError::INSUFFICIENT_ADDRESSES;
+            return FundingStreamError::INSUFFICIENT_RECIPIENTS;
         }
 
         // Lockbox output periods must not start before NU6
@@ -221,8 +221,8 @@ namespace Consensus {
                     throw std::runtime_error("Canopy network upgrade not active at funding stream start height.");
                 case FundingStreamError::ILLEGAL_RANGE:
                     throw std::runtime_error("Illegal start/end height combination for funding stream.");
-                case FundingStreamError::INSUFFICIENT_ADDRESSES:
-                    throw std::runtime_error("Insufficient payment addresses to fully exhaust funding stream.");
+                case FundingStreamError::INSUFFICIENT_RECIPIENTS:
+                    throw std::runtime_error("Insufficient recipient identifiers to fully exhaust funding stream.");
                 case FundingStreamError::NU6_NOT_ACTIVE:
                     throw std::runtime_error("NU6 network upgrade not active at lockbox period start height.");
                 default:
