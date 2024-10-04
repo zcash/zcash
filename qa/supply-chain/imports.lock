@@ -2,8 +2,8 @@
 # cargo-vet imports lock
 
 [[publisher.bridgetree]]
-version = "0.5.0"
-when = "2024-08-12"
+version = "0.6.0"
+when = "2024-09-25"
 user-id = 169181
 user-login = "nuttycom"
 user-name = "Kris Nuttycombe"
@@ -49,15 +49,29 @@ user-id = 1244
 user-login = "ebfull"
 
 [[publisher.incrementalmerkletree]]
-version = "0.6.0"
-when = "2024-08-12"
+version = "0.7.0"
+when = "2024-09-25"
 user-id = 169181
 user-login = "nuttycom"
 user-name = "Kris Nuttycombe"
 
 [[publisher.incrementalmerkletree-testing]]
 version = "0.1.0"
-when = "2024-09-27"
+when = "2024-09-25"
+user-id = 169181
+user-login = "nuttycom"
+user-name = "Kris Nuttycombe"
+
+[[publisher.orchard]]
+version = "0.10.0"
+when = "2024-10-02"
+user-id = 169181
+user-login = "nuttycom"
+user-name = "Kris Nuttycombe"
+
+[[publisher.sapling-crypto]]
+version = "0.3.0"
+when = "2024-10-02"
 user-id = 169181
 user-login = "nuttycom"
 user-name = "Kris Nuttycombe"
@@ -140,11 +154,17 @@ user-login = "kennykerr"
 user-name = "Kenny Kerr"
 
 [[publisher.zcash_address]]
-version = "0.5.0"
-when = "2024-08-26"
-user-id = 169181
-user-login = "nuttycom"
-user-name = "Kris Nuttycombe"
+version = "0.6.0"
+when = "2024-10-02"
+user-id = 6289
+user-login = "str4d"
+user-name = "Jack Grigg"
+
+[[publisher.zcash_encoding]]
+version = "0.2.0"
+when = "2022-10-19"
+user-id = 1244
+user-login = "ebfull"
 
 [[publisher.zcash_history]]
 version = "0.4.0"
@@ -161,22 +181,22 @@ user-login = "nuttycom"
 user-name = "Kris Nuttycombe"
 
 [[publisher.zcash_primitives]]
-version = "0.17.0"
-when = "2024-08-26"
-user-id = 169181
-user-login = "nuttycom"
-user-name = "Kris Nuttycombe"
+version = "0.19.0"
+when = "2024-10-02"
+user-id = 6289
+user-login = "str4d"
+user-name = "Jack Grigg"
 
 [[publisher.zcash_proofs]]
-version = "0.17.0"
-when = "2024-08-26"
-user-id = 169181
-user-login = "nuttycom"
-user-name = "Kris Nuttycombe"
+version = "0.19.0"
+when = "2024-10-02"
+user-id = 6289
+user-login = "str4d"
+user-name = "Jack Grigg"
 
 [[publisher.zcash_protocol]]
-version = "0.3.0"
-when = "2024-08-26"
+version = "0.4.0"
+when = "2024-10-02"
 user-id = 169181
 user-login = "nuttycom"
 user-name = "Kris Nuttycombe"
@@ -1676,4 +1696,22 @@ aggregated-from = "https://raw.githubusercontent.com/zcash/librustzcash/main/sup
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.61 -> 1.0.63"
+aggregated-from = "https://raw.githubusercontent.com/zcash/librustzcash/main/supply-chain/audits.toml"
+
+[[audits.zcash.audits.visibility]]
+who = "Kris Nuttycombe <kris@nutty.land>"
+criteria = "safe-to-deploy"
+version = "0.1.1"
+notes = """
+- Crate has no unsafe code, and sets `#![forbid(unsafe_code)]`.
+- Crate has no powerful imports, and exclusively provides a proc macro
+  that safely malleates a visibility modifier.
+"""
+aggregated-from = "https://raw.githubusercontent.com/zcash/librustzcash/main/supply-chain/audits.toml"
+
+[[audits.zcash.audits.zcash_encoding]]
+who = "Kris Nuttycombe <kris@nutty.land>"
+criteria = "safe-to-deploy"
+delta = "0.2.0 -> 0.2.1"
+notes = "This release adds minor convenience methods and involves no unsafe code."
 aggregated-from = "https://raw.githubusercontent.com/zcash/librustzcash/main/supply-chain/audits.toml"

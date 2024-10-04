@@ -3044,7 +3044,7 @@ end = "2024-09-21"
 criteria = "safe-to-deploy"
 user-id = 169181 # Kris Nuttycombe (nuttycom)
 start = "2022-07-22"
-end = "2024-09-21"
+end = "2025-10-02"
 
 [[trusted.equihash]]
 criteria = "safe-to-deploy"
@@ -3092,13 +3092,13 @@ end = "2024-09-21"
 criteria = "safe-to-deploy"
 user-id = 169181 # Kris Nuttycombe (nuttycom)
 start = "2023-02-28"
-end = "2024-09-21"
+end = "2025-10-02"
 
 [[trusted.incrementalmerkletree-testing]]
 criteria = "safe-to-deploy"
 user-id = 169181 # Kris Nuttycombe (nuttycom)
-start = "2024-09-27"
-end = "2025-09-27"
+start = "2024-09-25"
+end = "2025-10-02"
 
 [[trusted.orchard]]
 criteria = ["safe-to-deploy", "crypto-reviewed", "license-reviewed"]
@@ -3112,11 +3112,23 @@ user-id = 1244 # ebfull
 start = "2022-10-19"
 end = "2024-09-21"
 
+[[trusted.orchard]]
+criteria = "safe-to-deploy"
+user-id = 169181 # Kris Nuttycombe (nuttycom)
+start = "2024-08-12"
+end = "2025-10-02"
+
 [[trusted.sapling-crypto]]
 criteria = ["safe-to-deploy", "crypto-reviewed", "license-reviewed"]
 user-id = 6289 # Jack Grigg (str4d)
 start = "2024-01-26"
 end = "2025-03-18"
+
+[[trusted.sapling-crypto]]
+criteria = ["safe-to-deploy", "crypto-reviewed"]
+user-id = 169181 # Kris Nuttycombe (nuttycom)
+start = "2024-08-12"
+end = "2025-10-02"
 
 [[trusted.windows-sys]]
 criteria = "safe-to-deploy"
@@ -3238,6 +3250,12 @@ user-id = 169181 # Kris Nuttycombe (nuttycom)
 start = "2024-08-20"
 end = "2025-08-26"
 
+[[trusted.zcash_primitives]]
+criteria = "safe-to-deploy"
+user-id = 6289 # Jack Grigg (str4d)
+start = "2021-03-26"
+end = "2025-10-02"
+
 [[trusted.zcash_proofs]]
 criteria = ["safe-to-deploy", "crypto-reviewed", "license-reviewed"]
 user-id = 6289 # Jack Grigg (str4d)
@@ -3249,6 +3267,12 @@ criteria = "safe-to-deploy"
 user-id = 169181 # Kris Nuttycombe (nuttycom)
 start = "2024-08-20"
 end = "2025-08-26"
+
+[[trusted.zcash_proofs]]
+criteria = "safe-to-deploy"
+user-id = 6289 # Jack Grigg (str4d)
+start = "2021-03-26"
+end = "2025-10-02"
 
 [[trusted.zcash_protocol]]
 criteria = "safe-to-deploy"

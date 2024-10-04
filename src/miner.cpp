@@ -75,6 +75,7 @@ int64_t UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParam
         nNewTime = std::min(nNewTime, medianTimePast + MAX_FUTURE_BLOCK_TIME_MTP);
     }
 
+    // The timestamp of a given block template should not go backwards.
     if (nOldTime < nNewTime)
         pblock->nTime = nNewTime;
 
@@ -366,7 +367,11 @@ CBlockTemplate* BlockAssembler::CreateNewBlock(
     if (chainparams.MineBlocksOnDemand())
         pblock->nVersion = GetArg("-blockversion", pblock->nVersion);
 
-    pblock->nTime = GetTime();
+    // Setting nTime to 0 and then calling UpdateTime ensures that it is set to the
+    // nearest timestamp to the current time in the consensus-valid range (see #6960).
+    pblock->nTime = 0;
+    UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
+
     const int64_t nMedianTimePast = pindexPrev->GetMedianTimePast();
     CCoinsViewCache view(pcoinsTip);
 
