@@ -375,8 +375,9 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     auto nTime = pblocktemplate->block.nTime;
     delete pblocktemplate;
 
-    // Set the clock to be just ahead of the last "mined" block, to ensure we satisfy the
-    // future timestamp soft fork rule.
+    // Set the clock to the timestamp of the last "mined" block, to ensure we satisfy the
+    // future timestamp soft fork rule. We use a fixed clock here because the time should
+    // not advance from `nTime` for the calls to `CreateNewBlock`.
     FixedClock::SetGlobal();
     FixedClock::Instance()->Set(std::chrono::seconds(nTime));
 
@@ -406,6 +407,9 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     BOOST_CHECK_EQUAL(pblocktemplate->block.nTime, minTime);
     delete pblocktemplate;
 
+    // Set the clock back to the timestamp of the last "mined" block (and allow it to advance
+    // from that point), to ensure we satisfy both the rule that it is after the MTP, and the
+    // future timestamp soft fork rule.
     auto curTime = GetTime();
     OffsetClock::SetGlobal();
     OffsetClock::Instance()->Set(std::chrono::seconds(-curTime + nTime));
