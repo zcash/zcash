@@ -43,7 +43,7 @@ namespace Consensus {
         },
         {
             .recipient = "Lockbox NU6",
-            .specification = "https://zips.z.cash/draft-nuttycom-funding-allocation",
+            .specification = "https://zips.z.cash/zip-0214",
             .valueNumerator = 12,
             .valueDenominator = 100,
         }
