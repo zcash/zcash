@@ -342,16 +342,16 @@ namespace Consensus {
         }
     }
 
-    std::vector<FSInfo> Params::GetActiveFundingStreams(int nHeight) const
+    std::vector<std::pair<FSInfo, FundingStream>> Params::GetActiveFundingStreams(int nHeight) const
     {
-        std::vector<FSInfo> activeStreams;
+        std::vector<std::pair<FSInfo, FundingStream>> activeStreams;
 
         // Funding streams are disabled if Canopy is not active.
         if (NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY)) {
             for (uint32_t idx = Consensus::FIRST_FUNDING_STREAM; idx < Consensus::MAX_FUNDING_STREAMS; idx++) {
                 auto fs = vFundingStreams[idx];
                 if (fs && nHeight >= fs.value().GetStartHeight() && nHeight < fs.value().GetEndHeight()) {
-                    activeStreams.push_back(FundingStreamInfo[idx]);
+                    activeStreams.push_back(std::make_pair(FundingStreamInfo[idx], fs.value()));
                 }
             }
         }

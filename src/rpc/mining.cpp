@@ -968,7 +968,7 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
         UniValue lockboxstreams(UniValue::VARR);
         auto fsinfos = consensus.GetActiveFundingStreams(nHeight);
         for (int idx = 0; idx < fsinfos.size(); idx++) {
-            const auto& fsinfo = fsinfos[idx];
+            const auto& fsinfo = fsinfos[idx].first;
             CAmount nStreamAmount = fsinfo.Value(nBlockSubsidy);
 
             UniValue fsobj(UniValue::VOBJ);
@@ -977,8 +977,8 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
             fsobj.pushKV("value", ValueFromAmount(nStreamAmount));
             fsobj.pushKV("valueZat", nStreamAmount);
 
-            auto fs = consensus.vFundingStreams[idx];
-            auto recipient = fs.value().Recipient(consensus, nHeight);
+            auto fs = fsinfos[idx].second;
+            auto recipient = fs.Recipient(consensus, nHeight);
 
             examine(recipient, match {
                 [&](const CScript& scriptPubKey) {
