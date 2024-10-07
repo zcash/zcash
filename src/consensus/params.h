@@ -134,7 +134,7 @@ extern const struct FSInfo FundingStreamInfo[];
 enum FundingStreamError {
     CANOPY_NOT_ACTIVE,
     ILLEGAL_RANGE,
-    INSUFFICIENT_ADDRESSES,
+    INSUFFICIENT_RECIPIENTS,
     NU6_NOT_ACTIVE,
 };
 
