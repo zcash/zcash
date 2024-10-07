@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # blocktools.py - utilities for manipulating blocks and transactions
 # Copyright (c) 2015-2016 The Bitcoin Core developers
-# Copyright (c) 2017-2022 The Zcash developers
+# Copyright (c) 2017-2024 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -101,10 +101,10 @@ def create_coinbase(height, pubkey=None, after_blossom=False, outputs=[], lockbo
 
 # Create a transaction with an anyone-can-spend output, that spends the
 # nth output of prevtx.
-def create_transaction(prevtx, n, sig, value):
+def create_transaction(prevtx, n, sig, value_zats):
     tx = CTransaction()
     assert(n < len(prevtx.vout))
     tx.vin.append(CTxIn(COutPoint(prevtx.sha256, n), sig, 0xffffffff))
-    tx.vout.append(CTxOut(value, b""))
+    tx.vout.append(CTxOut(value_zats, b""))
     tx.calc_sha256()
     return tx

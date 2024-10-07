@@ -372,17 +372,43 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     // Stop here if we needed to mine more blocks.
     assert(nblocks == sizeof(blockinfo)/sizeof(*blockinfo));
 
+    auto nTime = pblocktemplate->block.nTime;
+    delete pblocktemplate;
+
     // Set the clock to be just ahead of the last "mined" block, to ensure we satisfy the
     // future timestamp soft fork rule.
-    auto curTime = GetTime();
-    OffsetClock::SetGlobal();
-    OffsetClock::Instance()->Set(std::chrono::seconds(-curTime + pblocktemplate->block.nTime));
-
-    delete pblocktemplate;
+    FixedClock::SetGlobal();
+    FixedClock::Instance()->Set(std::chrono::seconds(nTime));
 
     // Just to make sure we can still make simple blocks
     BOOST_CHECK(pblocktemplate = BlockAssembler(chainparams).CreateNewBlock(scriptPubKey));
+    BOOST_CHECK_EQUAL(pblocktemplate->block.nTime, nTime);
+
+    auto mtp = chainActive.Tip()->GetMedianTimePast();
     delete pblocktemplate;
+    auto minTime = mtp + 1;
+    auto maxTime = mtp + MAX_FUTURE_BLOCK_TIME_MTP;
+
+    // Set the clock to be too far ahead of the MTP, violating the future timestamp rule.
+    FixedClock::Instance()->Set(std::chrono::seconds(maxTime + 1));
+
+    // This should succeed, and nTime should be clamped to the maximum consensus-valid value.
+    BOOST_CHECK(pblocktemplate = BlockAssembler(chainparams).CreateNewBlock(scriptPubKey));
+    BOOST_CHECK_EQUAL(pblocktemplate->block.nTime, maxTime);
+    delete pblocktemplate;
+
+    // Set the clock to be equal to the median-time-past, violating the rule that it must
+    // be after the MTP.
+    FixedClock::Instance()->Set(std::chrono::seconds(minTime - 1));
+
+    // This should succeed, and nTime should be clamped to the minimum consensus-valid value.
+    BOOST_CHECK(pblocktemplate = BlockAssembler(chainparams).CreateNewBlock(scriptPubKey));
+    BOOST_CHECK_EQUAL(pblocktemplate->block.nTime, minTime);
+    delete pblocktemplate;
+
+    auto curTime = GetTime();
+    OffsetClock::SetGlobal();
+    OffsetClock::Instance()->Set(std::chrono::seconds(-curTime + nTime));
 
     TestMemPoolEntryHelper entry;
     entry.nFee = 0;

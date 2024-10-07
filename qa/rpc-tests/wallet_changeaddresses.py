@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2019 The Zcash developers
+# Copyright (c) 2019-2024 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -13,6 +13,7 @@ from test_framework.util import (
     start_node,
     wait_and_assert_operationid_status,
 )
+from test_framework.zip317 import conventional_fee, ZIP_317_FEE
 
 from decimal import Decimal
 
@@ -25,7 +26,6 @@ class WalletChangeAddressesTest(BitcoinTestFramework):
 
     def setup_network(self):
         args = [
-            '-minrelaytxfee=0',
             nuparams(SAPLING_BRANCH_ID, 1),
             '-txindex',              # Avoid JSONRPC error: No information available about transaction
             '-allowdeprecated=getnewaddress',
@@ -43,30 +43,32 @@ class WalletChangeAddressesTest(BitcoinTestFramework):
 
         # Obtain some transparent funds
         midAddr = self.nodes[0].z_getnewaddress('sapling')
-        myopid = self.nodes[0].z_shieldcoinbase(get_coinbase_address(self.nodes[0]), midAddr, 0)['opid']
+        coinbase_fee = conventional_fee(12)
+        myopid = self.nodes[0].z_shieldcoinbase(get_coinbase_address(self.nodes[0]), midAddr, coinbase_fee)['opid']
         wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         self.sync_all()
         self.nodes[1].generate(1)
         self.sync_all()
+
         taddrSource = self.nodes[0].getnewaddress()
+        recipients = [{"address": taddrSource, "amount": Decimal('2')}]
         for _ in range(6):
-            recipients = [{"address": taddrSource, "amount": Decimal('2')}]
-            myopid = self.nodes[0].z_sendmany(midAddr, recipients, 1, 0, 'AllowRevealedRecipients')
+            myopid = self.nodes[0].z_sendmany(midAddr, recipients, 1, ZIP_317_FEE, 'AllowRevealedRecipients')
             wait_and_assert_operationid_status(self.nodes[0], myopid)
             self.sync_all()
             self.nodes[1].generate(1)
             self.sync_all()
 
-        def check_change_taddr_reuse(target, policy):
+        def check_change_taddr_reuse(target, fee, policy):
             recipients = [{"address": target, "amount": Decimal('1')}]
 
             # Send funds to recipient address twice
-            myopid = self.nodes[0].z_sendmany(taddrSource, recipients, 1, 0, policy)
+            myopid = self.nodes[0].z_sendmany(taddrSource, recipients, 1, fee, policy)
             txid1 = wait_and_assert_operationid_status(self.nodes[0], myopid)
             self.nodes[1].generate(1)
             self.sync_all()
-            myopid = self.nodes[0].z_sendmany(taddrSource, recipients, 1, 0, policy)
+            myopid = self.nodes[0].z_sendmany(taddrSource, recipients, 1, fee, policy)
             txid2 = wait_and_assert_operationid_status(self.nodes[0], myopid)
             self.nodes[1].generate(1)
             self.sync_all()
@@ -88,10 +90,10 @@ class WalletChangeAddressesTest(BitcoinTestFramework):
 
         print()
         print('Checking z_sendmany(taddr->Sapling)')
-        check_change_taddr_reuse(saplingAddr, 'AllowFullyTransparent')
+        check_change_taddr_reuse(saplingAddr, conventional_fee(3), 'AllowFullyTransparent')
         print()
         print('Checking z_sendmany(taddr->taddr)')
-        check_change_taddr_reuse(taddr, 'AllowFullyTransparent')
+        check_change_taddr_reuse(taddr, conventional_fee(1), 'AllowFullyTransparent')
 
 if __name__ == '__main__':
     WalletChangeAddressesTest().main()

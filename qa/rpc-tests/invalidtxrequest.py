@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
-#
+# Copyright (c) 2015-2016 The Bitcoin Core developers
+# Copyright (c) 2021-2024 The Zcash developers
 # Distributed under the MIT/X11 software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #
 
 from test_framework.test_framework import ComparisonTestFramework
 from test_framework.comptool import TestManager, TestInstance, RejectResult
-from test_framework.mininode import NetworkThread
+from test_framework.mininode import NetworkThread, COIN
 from test_framework.blocktools import create_block, create_coinbase, create_transaction
-import time
+from test_framework.zip317 import MINIMUM_FEE
 
+import time
 
 '''
 In this test we connect to one node over p2p, and test tx requests.
@@ -19,7 +21,6 @@ In this test we connect to one node over p2p, and test tx requests.
 class InvalidTxRequestTest(ComparisonTestFramework):
     def __init__(self):
         super().__init__()
-        self.additional_args = ['-minrelaytxfee=0']
 
     ''' Can either run this test as 1 node with expected answers, or two and compare them. 
         Change the "outcome" variable from each TestInstance object to only do the comparison. '''
@@ -64,7 +65,7 @@ class InvalidTxRequestTest(ComparisonTestFramework):
 
         # b'\x64' is OP_NOTIF
         # Transaction will be rejected with code 16 (REJECT_INVALID)
-        tx1 = create_transaction(self.block1.vtx[0], 0, b'\x64', 10*100000000)
+        tx1 = create_transaction(self.block1.vtx[0], 0, b'\x64', 10*COIN - MINIMUM_FEE)
         yield TestInstance([[tx1, RejectResult(16, b'mandatory-script-verify-flag-failed')]])
 
         # TODO: test further transactions...

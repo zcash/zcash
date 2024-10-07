@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2018 The Zcash developers
+# Copyright (c) 2018-2024 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -9,8 +9,8 @@ from test_framework.util import (
     get_coinbase_address,
     start_nodes,
     wait_and_assert_operationid_status,
-    LEGACY_DEFAULT_FEE
 )
+from test_framework.zip317 import ZIP_317_FEE, conventional_fee
 
 from decimal import Decimal
 
@@ -19,7 +19,6 @@ class WalletSaplingTest(BitcoinTestFramework):
 
     def setup_nodes(self):
         return start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[
-            '-minrelaytxfee=0',
             '-allowdeprecated=getnewaddress',
             '-allowdeprecated=z_getnewaddress',
             '-allowdeprecated=z_getbalance',
@@ -42,21 +41,21 @@ class WalletSaplingTest(BitcoinTestFramework):
         assert_equal(self.nodes[0].z_validateaddress(saplingAddr1)['address_type'], 'sapling')
 
         # Verify balance
-        assert_equal(self.nodes[0].z_getbalance(saplingAddr0), Decimal('0'))
-        assert_equal(self.nodes[1].z_getbalance(saplingAddr1), Decimal('0'))
-        assert_equal(self.nodes[1].z_getbalance(taddr1), Decimal('0'))
+        assert_equal(Decimal(self.nodes[0].z_getbalance(saplingAddr0)), Decimal('0'))
+        assert_equal(Decimal(self.nodes[1].z_getbalance(saplingAddr1)), Decimal('0'))
+        assert_equal(Decimal(self.nodes[1].z_getbalance(taddr1)), Decimal('0'))
 
         # Node 0 shields some funds
         # taddr -> Sapling
-        recipients = []
-        recipients.append({"address": saplingAddr0, "amount": Decimal('10')})
-        myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, 0, 'AllowRevealedSenders')
+        coinbase_fee = conventional_fee(3)
+        recipients = [{"address": saplingAddr0, "amount": Decimal('10') - coinbase_fee}]
+        myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, coinbase_fee, 'AllowRevealedSenders')
         mytxid = wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         self.sync_all()
 
         # Shield another coinbase UTXO
-        myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, 0, 'AllowRevealedSenders')
+        myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, coinbase_fee, 'AllowRevealedSenders')
         mytxid = wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         self.sync_all()
@@ -64,16 +63,17 @@ class WalletSaplingTest(BitcoinTestFramework):
         self.sync_all()
 
         # Verify balance
-        assert_equal(self.nodes[0].z_getbalance(saplingAddr0), Decimal('20'))
-        assert_equal(self.nodes[1].z_getbalance(saplingAddr1), Decimal('0'))
-        assert_equal(self.nodes[1].z_getbalance(taddr1), Decimal('0'))
+        balance0 = Decimal('20') - 2 * coinbase_fee
+        assert_equal(Decimal(self.nodes[0].z_getbalance(saplingAddr0)), balance0)
+        assert_equal(Decimal(self.nodes[1].z_getbalance(saplingAddr1)), Decimal('0'))
+        assert_equal(Decimal(self.nodes[1].z_getbalance(taddr1)), Decimal('0'))
 
         # Node 0 sends some shielded funds to node 1
         # Sapling -> Sapling
         #         -> Sapling (change)
         recipients = []
         recipients.append({"address": saplingAddr1, "amount": Decimal('15')})
-        myopid = self.nodes[0].z_sendmany(saplingAddr0, recipients, 1, 0)
+        myopid = self.nodes[0].z_sendmany(saplingAddr0, recipients, 1, ZIP_317_FEE)
         mytxid = wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         self.sync_all()
@@ -81,9 +81,11 @@ class WalletSaplingTest(BitcoinTestFramework):
         self.sync_all()
 
         # Verify balance
-        assert_equal(self.nodes[0].z_getbalance(saplingAddr0), Decimal('5'))
-        assert_equal(self.nodes[1].z_getbalance(saplingAddr1), Decimal('15'))
-        assert_equal(self.nodes[1].z_getbalance(taddr1), Decimal('0'))
+        balance1 = Decimal('15')
+        balance0 -= balance1 + conventional_fee(2)
+        assert_equal(Decimal(self.nodes[0].z_getbalance(saplingAddr0)), balance0)
+        assert_equal(Decimal(self.nodes[1].z_getbalance(saplingAddr1)), balance1)
+        assert_equal(Decimal(self.nodes[1].z_getbalance(taddr1)), Decimal('0'))
 
         # Node 1 sends some shielded funds to node 0, as well as unshielding
         # Sapling -> Sapling
@@ -92,7 +94,7 @@ class WalletSaplingTest(BitcoinTestFramework):
         recipients = []
         recipients.append({"address": saplingAddr0, "amount": Decimal('5')})
         recipients.append({"address": taddr1, "amount": Decimal('5')})
-        myopid = self.nodes[1].z_sendmany(saplingAddr1, recipients, 1, 0, 'AllowRevealedRecipients')
+        myopid = self.nodes[1].z_sendmany(saplingAddr1, recipients, 1, ZIP_317_FEE, 'AllowRevealedRecipients')
         mytxid = wait_and_assert_operationid_status(self.nodes[1], myopid)
 
         self.sync_all()
@@ -100,13 +102,16 @@ class WalletSaplingTest(BitcoinTestFramework):
         self.sync_all()
 
         # Verify balance
-        assert_equal(self.nodes[0].z_getbalance(saplingAddr0), Decimal('10'))
-        assert_equal(self.nodes[1].z_getbalance(saplingAddr1), Decimal('5'))
-        assert_equal(self.nodes[1].z_getbalance(taddr1), Decimal('5'))
+        fee = conventional_fee(3)
+        balance0 += Decimal('5')
+        balance1 -= Decimal('10') + fee
+        assert_equal(Decimal(self.nodes[0].z_getbalance(saplingAddr0)), balance0)
+        assert_equal(Decimal(self.nodes[1].z_getbalance(saplingAddr1)), balance1)
+        assert_equal(Decimal(self.nodes[1].z_getbalance(taddr1)), Decimal('5'))
 
-        # Verify existence of Sapling related JSON fields
+        # Verify existence of Sapling-related JSON fields
         resp = self.nodes[0].getrawtransaction(mytxid, 1)
-        assert_equal(resp['valueBalance'], Decimal('5'))
+        assert_equal(resp['valueBalance'], Decimal('5') + fee)
         assert(len(resp['vShieldedSpend']) == 1)
         assert(len(resp['vShieldedOutput']) == 2)
         assert('bindingSig' in resp)
@@ -130,37 +135,38 @@ class WalletSaplingTest(BitcoinTestFramework):
         saplingAddrInfo0 = self.nodes[2].z_importkey(sk0, "yes")
         assert_equal(saplingAddrInfo0["address_type"], "sapling")
         assert_equal(saplingAddrInfo0["address"], saplingAddr0)
-        assert_equal(self.nodes[2].z_getbalance(saplingAddrInfo0["address"]), Decimal('10'))
+        assert_equal(Decimal(self.nodes[2].z_getbalance(saplingAddrInfo0["address"])), balance0)
         sk1 = self.nodes[1].z_exportkey(saplingAddr1)
         saplingAddrInfo1 = self.nodes[2].z_importkey(sk1, "yes")
         assert_equal(saplingAddrInfo1["address_type"], "sapling")
         assert_equal(saplingAddrInfo1["address"], saplingAddr1)
-        assert_equal(self.nodes[2].z_getbalance(saplingAddrInfo1["address"]), Decimal('5'))
+        assert_equal(Decimal(self.nodes[2].z_getbalance(saplingAddrInfo1["address"])), balance1)
 
         # Verify importing a viewing key will update the nullifiers and witnesses correctly
         extfvk0 = self.nodes[0].z_exportviewingkey(saplingAddr0)
         saplingAddrInfo0 = self.nodes[3].z_importviewingkey(extfvk0, "yes")
         assert_equal(saplingAddrInfo0["address_type"], "sapling")
         assert_equal(saplingAddrInfo0["address"], saplingAddr0)
-        assert_equal(self.nodes[3].z_getbalance(saplingAddrInfo0["address"]), Decimal('10'))
+        assert_equal(Decimal(self.nodes[3].z_getbalance(saplingAddrInfo0["address"])), balance0)
         extfvk1 = self.nodes[1].z_exportviewingkey(saplingAddr1)
         saplingAddrInfo1 = self.nodes[3].z_importviewingkey(extfvk1, "yes")
         assert_equal(saplingAddrInfo1["address_type"], "sapling")
         assert_equal(saplingAddrInfo1["address"], saplingAddr1)
-        assert_equal(self.nodes[3].z_getbalance(saplingAddrInfo1["address"]), Decimal('5'))
+        assert_equal(Decimal(self.nodes[3].z_getbalance(saplingAddrInfo1["address"])), balance1)
 
         # Verify that z_gettotalbalance only includes watch-only addresses when requested
-        assert_equal(self.nodes[3].z_gettotalbalance()['private'], '0.00')
-        assert_equal(self.nodes[3].z_gettotalbalance(1, True)['private'], '15.00')
+        assert_equal(Decimal(self.nodes[3].z_gettotalbalance()['private']), Decimal('0.00'))
+        assert_equal(Decimal(self.nodes[3].z_gettotalbalance(1, True)['private']), balance0 + balance1)
 
         # Make sure we get a useful error when trying to send to both sprout and sapling
         node4_sproutaddr = self.nodes[3].z_getnewaddress('sprout')
         node4_saplingaddr = self.nodes[3].z_getnewaddress('sapling')
+        fee = conventional_fee(5)
         myopid = self.nodes[1].z_sendmany(
             taddr1,
             [{'address': node4_sproutaddr, 'amount': Decimal('2.5')},
-             {'address': node4_saplingaddr, 'amount': Decimal('2.5') - LEGACY_DEFAULT_FEE}],
-            1, LEGACY_DEFAULT_FEE, 'AllowRevealedSenders'
+             {'address': node4_saplingaddr, 'amount': Decimal('2.5') - fee}],
+            1, fee, 'AllowRevealedSenders'
         )
         wait_and_assert_operationid_status(self.nodes[1], myopid, "failed", "Sending funds into the Sprout pool is no longer supported.")
 

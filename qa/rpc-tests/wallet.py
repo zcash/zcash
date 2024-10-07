@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 # Copyright (c) 2014-2016 The Bitcoin Core developers
-# Copyright (c) 2016-2022 The Zcash developers
+# Copyright (c) 2016-2024 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
+from test_framework.mininode import COIN
 from test_framework.util import assert_equal, start_nodes, start_node, \
     connect_nodes_bi, sync_blocks, sync_mempools
 from test_framework.zip317 import conventional_fee
@@ -21,7 +22,6 @@ class WalletTest (BitcoinTestFramework):
 
     def setup_network(self, split=False):
         self.nodes = start_nodes(3, self.options.tmpdir, extra_args=[[
-            '-minrelaytxfee=0',
             '-allowdeprecated=getnewaddress',
             '-allowdeprecated=z_getbalance',
         ]] * 3)
@@ -31,15 +31,15 @@ class WalletTest (BitcoinTestFramework):
         self.is_network_split=False
         self.sync_all()
 
-    def run_test (self):
+    def run_test(self):
         print("Mining blocks...")
 
         self.nodes[0].generate(4)
         self.sync_all()
 
         walletinfo = self.nodes[0].getwalletinfo()
-        assert_equal(walletinfo['immature_balance'], 40)
-        assert_equal(walletinfo['balance'], 0)
+        assert_equal(Decimal(walletinfo['immature_balance']), Decimal('40'))
+        assert_equal(Decimal(walletinfo['balance']), Decimal('0'))
 
         blockchaininfo = self.nodes[0].getblockchaininfo()
         assert_equal(blockchaininfo['estimatedheight'], 4)
@@ -48,20 +48,20 @@ class WalletTest (BitcoinTestFramework):
         self.nodes[1].generate(101)
         self.sync_all()
 
-        assert_equal(self.nodes[0].getbalance(), 40)
-        assert_equal(self.nodes[1].getbalance(), 10)
-        assert_equal(self.nodes[2].getbalance(), 0)
-        assert_equal(self.nodes[0].getbalance("*"), 40)
-        assert_equal(self.nodes[1].getbalance("*"), 10)
-        assert_equal(self.nodes[2].getbalance("*"), 0)
+        assert_equal(Decimal(self.nodes[0].getbalance()), Decimal('40'))
+        assert_equal(Decimal(self.nodes[1].getbalance()), Decimal('10'))
+        assert_equal(Decimal(self.nodes[2].getbalance()), Decimal('0'))
+        assert_equal(Decimal(self.nodes[0].getbalance("*")), Decimal('40'))
+        assert_equal(Decimal(self.nodes[1].getbalance("*")), Decimal('10'))
+        assert_equal(Decimal(self.nodes[2].getbalance("*")), Decimal('0'))
 
         # Send 21 ZEC from 0 to 2 using sendtoaddress call.
         # Second transaction will be child of first, and will require a fee
-        self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 11)
-        self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 10)
+        self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), Decimal('11'))
+        self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), Decimal('10'))
 
         walletinfo = self.nodes[0].getwalletinfo()
-        assert_equal(walletinfo['immature_balance'], 0)
+        assert_equal(Decimal(walletinfo['immature_balance']), Decimal('0'))
 
         blockchaininfo = self.nodes[0].getblockchaininfo()
         assert_equal(blockchaininfo['estimatedheight'], 105)
@@ -77,10 +77,10 @@ class WalletTest (BitcoinTestFramework):
 
         # node0 should end up with 50 ZEC in block rewards plus fees, but
         # minus the 21 ZEC plus fees sent to node2
-        assert_equal(self.nodes[0].getbalance(), 50-21)
-        assert_equal(self.nodes[2].getbalance(), 21)
-        assert_equal(self.nodes[0].getbalance("*"), 50-21)
-        assert_equal(self.nodes[2].getbalance("*"), 21)
+        assert_equal(Decimal(self.nodes[0].getbalance()), Decimal('50') - Decimal('21'))
+        assert_equal(Decimal(self.nodes[2].getbalance()), Decimal('21'))
+        assert_equal(Decimal(self.nodes[0].getbalance("*")), Decimal('50') - Decimal('21'))
+        assert_equal(Decimal(self.nodes[2].getbalance("*")), Decimal('21'))
 
         # Node0 should have three unspent outputs.
         # Create a couple of transactions to send them to node2, submit them through
@@ -102,16 +102,14 @@ class WalletTest (BitcoinTestFramework):
 
         # Catch an attempt to send a transaction with an absurdly high fee.
         # Send 1.0 ZEC from an utxo of value 10.0 ZEC but don't specify a change output, so then
-        # the change of 9.0 ZEC becomes the fee, which is considered to be absurdly high because
-        # the fee is more than 4 times the conventional fee.
-        assert(Decimal("9.0") > 4*conventional_fee(1))
+        # the change of 9.0 ZEC becomes the fee, which is considered to be absurdly high.
         inputs = []
         outputs = {}
         for utxo in node2utxos:
             if utxo["amount"] == Decimal("10.0"):
                 break
         assert_equal(utxo["amount"], Decimal("10.0"))
-        inputs.append({ "txid" : utxo["txid"], "vout" : utxo["vout"]})
+        inputs.append({"txid": utxo["txid"], "vout": utxo["vout"]})
         outputs[self.nodes[2].getnewaddress("")] = Decimal("1.0")
         raw_tx = self.nodes[2].createrawtransaction(inputs, outputs)
         signed_tx = self.nodes[2].signrawtransaction(raw_tx)
@@ -123,11 +121,12 @@ class WalletTest (BitcoinTestFramework):
 
         # create both transactions
         txns_to_send = []
+        fee = conventional_fee(2)
         for utxo in node0utxos:
             inputs = []
             outputs = {}
-            inputs.append({ "txid" : utxo["txid"], "vout" : utxo["vout"]})
-            outputs[self.nodes[2].getnewaddress("")] = utxo["amount"]
+            inputs.append({"txid": utxo["txid"], "vout": utxo["vout"]})
+            outputs[self.nodes[2].getnewaddress("")] = utxo["amount"] - fee
             raw_tx = self.nodes[0].createrawtransaction(inputs, outputs)
             txns_to_send.append(self.nodes[0].signrawtransaction(raw_tx))
 
@@ -141,52 +140,52 @@ class WalletTest (BitcoinTestFramework):
         self.nodes[1].generate(1)
         self.sync_all()
 
-        assert_equal(self.nodes[0].getbalance(), 0)
-        assert_equal(self.nodes[2].getbalance(), 50)
-        assert_equal(self.nodes[0].getbalance("*"), 0)
-        assert_equal(self.nodes[2].getbalance("*"), 50)
+        assert_equal(Decimal(self.nodes[0].getbalance()), Decimal('0'))
+        assert_equal(Decimal(self.nodes[2].getbalance()), Decimal('50') - 3*fee)
+        assert_equal(Decimal(self.nodes[0].getbalance("*")), Decimal('0'))
+        assert_equal(Decimal(self.nodes[2].getbalance("*")), Decimal('50') - 3*fee)
 
         # Send 10 ZEC normally
         address = self.nodes[0].getnewaddress("")
         self.nodes[2].settxfee(Decimal('0.001'))  # not the default
-        self.nodes[2].sendtoaddress(address, 10, "", "", False)
+        self.nodes[2].sendtoaddress(address, Decimal('10'), "", "", False)
         self.sync_all()
         self.nodes[2].generate(1)
         self.sync_all()
-        assert_equal(self.nodes[2].getbalance(), Decimal('39.99900000'))
-        assert_equal(self.nodes[0].getbalance(), Decimal('10.00000000'))
-        assert_equal(self.nodes[2].getbalance("*"), Decimal('39.99900000'))
-        assert_equal(self.nodes[0].getbalance("*"), Decimal('10.00000000'))
+        assert_equal(Decimal(self.nodes[2].getbalance()), Decimal('39.99900000') - 3*fee)
+        assert_equal(Decimal(self.nodes[0].getbalance()), Decimal('10.00000000'))
+        assert_equal(Decimal(self.nodes[2].getbalance("*")), Decimal('39.99900000') - 3*fee)
+        assert_equal(Decimal(self.nodes[0].getbalance("*")), Decimal('10.00000000'))
 
         # Send 10 ZEC with subtract fee from amount
-        self.nodes[2].sendtoaddress(address, 10, "", "", True)
+        self.nodes[2].sendtoaddress(address, Decimal('10'), "", "", True)
         self.sync_all()
         self.nodes[2].generate(1)
         self.sync_all()
-        assert_equal(self.nodes[2].getbalance(), Decimal('29.99900000'))
-        assert_equal(self.nodes[0].getbalance(), Decimal('19.99900000'))
-        assert_equal(self.nodes[2].getbalance("*"), Decimal('29.99900000'))
-        assert_equal(self.nodes[0].getbalance("*"), Decimal('19.99900000'))
+        assert_equal(Decimal(self.nodes[2].getbalance()), Decimal('29.99900000') - 3*fee)
+        assert_equal(Decimal(self.nodes[0].getbalance()), Decimal('19.99900000'))
+        assert_equal(Decimal(self.nodes[2].getbalance("*")), Decimal('29.99900000') - 3*fee)
+        assert_equal(Decimal(self.nodes[0].getbalance("*")), Decimal('19.99900000'))
 
         # Sendmany 10 ZEC
-        self.nodes[2].sendmany("", {address: 10}, 0, "", [])
+        self.nodes[2].sendmany("", {address: Decimal('10')}, 0, "", [])
         self.sync_all()
         self.nodes[2].generate(1)
         self.sync_all()
-        assert_equal(self.nodes[2].getbalance(), Decimal('19.99800000'))
-        assert_equal(self.nodes[0].getbalance(), Decimal('29.99900000'))
-        assert_equal(self.nodes[2].getbalance("*"), Decimal('19.99800000'))
-        assert_equal(self.nodes[0].getbalance("*"), Decimal('29.99900000'))
+        assert_equal(Decimal(self.nodes[2].getbalance()), Decimal('19.99800000') - 3*fee)
+        assert_equal(Decimal(self.nodes[0].getbalance()), Decimal('29.99900000'))
+        assert_equal(Decimal(self.nodes[2].getbalance("*")), Decimal('19.99800000') - 3*fee)
+        assert_equal(Decimal(self.nodes[0].getbalance("*")), Decimal('29.99900000'))
 
         # Sendmany 10 ZEC with subtract fee from amount
-        self.nodes[2].sendmany("", {address: 10}, 0, "", [address])
+        self.nodes[2].sendmany("", {address: Decimal('10')}, 0, "", [address])
         self.sync_all()
         self.nodes[2].generate(1)
         self.sync_all()
-        assert_equal(self.nodes[2].getbalance(), Decimal('9.99800000'))
-        assert_equal(self.nodes[0].getbalance(), Decimal('39.99800000'))
-        assert_equal(self.nodes[2].getbalance("*"), Decimal('9.99800000'))
-        assert_equal(self.nodes[0].getbalance("*"), Decimal('39.99800000'))
+        assert_equal(Decimal(self.nodes[2].getbalance()), Decimal('9.99800000') - 3*fee)
+        assert_equal(Decimal(self.nodes[0].getbalance()), Decimal('39.99800000'))
+        assert_equal(Decimal(self.nodes[2].getbalance("*")), Decimal('9.99800000') - 3*fee)
+        assert_equal(Decimal(self.nodes[0].getbalance("*")), Decimal('39.99800000'))
 
         # Test ResendWalletTransactions:
         # Create a couple of transactions, then start up a fourth
@@ -207,16 +206,16 @@ class WalletTest (BitcoinTestFramework):
         assert(txid1 in self.nodes[3].getrawmempool())
 
         # check integer balances from getbalance
-        assert_equal(self.nodes[2].getbalance("*", 1, False, True), 999800000)
+        assert_equal(Decimal(self.nodes[2].getbalance("*", 1, False, True)), 999800000 - 3*fee*COIN)
 
         # send from node 0 to node 2 taddr
         mytaddr = self.nodes[2].getnewaddress()
-        mytxid = self.nodes[0].sendtoaddress(mytaddr, 10.0)
+        mytxid = self.nodes[0].sendtoaddress(mytaddr, Decimal('10.0'))
         self.sync_all()
         self.nodes[0].generate(1)
         self.sync_all()
 
-        mybalance = self.nodes[2].z_getbalance(mytaddr)
+        mybalance = Decimal(self.nodes[2].z_getbalance(mytaddr))
         assert_equal(mybalance, Decimal('10.0'))
 
         # check integer balances from z_getbalance

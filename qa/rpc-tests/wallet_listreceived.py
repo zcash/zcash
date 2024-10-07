@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2018 The Zcash developers
+# Copyright (c) 2018-2024 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -32,7 +32,6 @@ class ListReceivedTest (BitcoinTestFramework):
 
     def setup_network(self):
         self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[
-            '-minrelaytxfee=0',
             nuparams(NU5_BRANCH_ID, 225),
             '-allowdeprecated=getnewaddress',
             '-allowdeprecated=z_getnewaddress',
@@ -304,7 +303,7 @@ class ListReceivedTest (BitcoinTestFramework):
         opid = self.nodes[1].z_sendmany(taddr, [
             {'address': uao, 'amount': 1, 'memo': my_memo},
             {'address': uaso, 'amount': 2},
-        ], 1, 0, 'AllowFullyTransparent')
+        ], 1, ZIP_317_FEE, 'AllowFullyTransparent')
         txid0 = wait_and_assert_operationid_status(self.nodes[1], opid)
         self.sync_all()
 

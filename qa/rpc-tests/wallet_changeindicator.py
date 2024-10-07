@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2018 The Zcash developers
+# Copyright (c) 2018-2024 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -11,6 +11,7 @@ from test_framework.util import (
     start_nodes,
     wait_and_assert_operationid_status,
 )
+from test_framework.zip317 import conventional_fee
 
 from decimal import Decimal
 
@@ -23,7 +24,6 @@ class WalletChangeIndicatorTest (BitcoinTestFramework):
 
     def setup_nodes(self):
         return start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[
-            '-minrelaytxfee=0',
             '-allowdeprecated=getnewaddress',
             '-allowdeprecated=z_getnewaddress',
         ]] * self.num_nodes)
@@ -34,16 +34,16 @@ class WalletChangeIndicatorTest (BitcoinTestFramework):
         zaddr1 = self.nodes[1].z_getnewaddress()
         zaddr2 = self.nodes[1].z_getnewaddress()
 
-        self.nodes[0].sendtoaddress(taddr, Decimal('1.0'))
+        fee = conventional_fee(3)
+        self.nodes[0].sendtoaddress(taddr, Decimal('1.0') + fee)
         self.generate_and_sync()
 
         # Send 1 ZEC to a zaddr
-        wait_and_assert_operationid_status(
-            self.nodes[1],
-            self.nodes[1].z_sendmany(
-                taddr,
-                [{'address': zaddr1, 'amount': 1.0, 'memo': 'c0ffee01'}],
-                1, 0, 'AllowRevealedSenders'))
+        opid = self.nodes[1].z_sendmany(taddr,
+                [{'address': zaddr1, 'amount': Decimal('1.0'), 'memo': 'c0ffee01'}],
+                1, fee, 'AllowRevealedSenders')
+        wait_and_assert_operationid_status(self.nodes[1], opid)
+
         self.generate_and_sync()
 
         # Check that we have received 1 note which is not change
@@ -55,14 +55,17 @@ class WalletChangeIndicatorTest (BitcoinTestFramework):
         assert_false(listunspent[0]['change'], "Unspent note should not be change")
 
         # Generate some change
-        wait_and_assert_operationid_status(self.nodes[1], self.nodes[1].z_sendmany(zaddr1, [{'address': zaddr2, 'amount': 0.6, 'memo': 'c0ffee02'}], 1, 0))
+        fee = conventional_fee(2)
+        recipients = [{'address': zaddr2, 'amount': Decimal('0.6'), 'memo': 'c0ffee02'}]
+        opid = self.nodes[1].z_sendmany(zaddr1, recipients, 1, fee)
+        wait_and_assert_operationid_status(self.nodes[1], opid)
         self.generate_and_sync()
 
         # Check zaddr1 received
         sortedreceived1 = sorted(self.nodes[1].z_listreceivedbyaddress(zaddr1, 0), key = lambda received: received['amount'])
         assert_equal(2, len(sortedreceived1), "zaddr1 Should have received 2 notes")
-        assert_equal(Decimal('0.4'), sortedreceived1[0]['amount'])
-        assert_true(sortedreceived1[0]['change'], "Note valued at 0.4 should be change")
+        assert_equal(Decimal('0.4') - fee, sortedreceived1[0]['amount'])
+        assert_true(sortedreceived1[0]['change'], "Note valued at 0.4 - fee should be change")
         assert_equal(Decimal('1.0'), sortedreceived1[1]['amount'])
         assert_false(sortedreceived1[1]['change'], "Note valued at 1.0 should not be change")
         # Check zaddr2 received
@@ -73,8 +76,8 @@ class WalletChangeIndicatorTest (BitcoinTestFramework):
         # Check unspent
         sortedunspent = sorted(self.nodes[1].z_listunspent(), key = lambda received: received['amount'])
         assert_equal(2, len(sortedunspent), "Should have 2 unspent notes")
-        assert_equal(Decimal('0.4'), sortedunspent[0]['amount'])
-        assert_true(sortedunspent[0]['change'], "Unspent note valued at 0.4 should be change")
+        assert_equal(Decimal('0.4') - fee, sortedunspent[0]['amount'])
+        assert_true(sortedunspent[0]['change'], "Unspent note valued at 0.4 - fee should be change")
         assert_equal(Decimal('0.6'), sortedunspent[1]['amount'])
         assert_false(sortedunspent[1]['change'], "Unspent note valued at 0.6 should not be change")
 

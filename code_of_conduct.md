@@ -47,13 +47,14 @@ is deemed necessary and appropriate to the circumstances. Maintainers are
 obligated to maintain confidentiality with regard to the reporter of an
 incident.
 
-You may send reports to [our Conduct email](mailto:conduct@z.cash).
+You may send reports to [our Conduct email](mailto:conduct@electriccoin.co).
 
 If you wish to contact specific maintainers directly, the following have made
 themselves available for conduct issues:
 
-- Daira Hopwood (daira at z.cash)
-- Sean Bowe (sean at z.cash)
+- Daira-Emma Hopwood (daira-emma at electriccoin.co)
+- Kris Nuttycombe (kris at electriccoin.co)
+- Jack Grigg (jack at electriccoin.co)
 
 
 This Code of Conduct is adapted from the [Contributor Covenant][homepage],

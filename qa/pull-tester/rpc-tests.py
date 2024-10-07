@@ -37,12 +37,11 @@ SERIAL_SCRIPTS = [
 
 FLAKY_SCRIPTS = [
     # These tests have intermittent failures that we haven't diagnosed yet.
-    'mempool_nu_activation.py',
+    'mempool_nu_activation.py', # this *may* be fixed
     'mempool_packages.py',
 ]
 
 BASE_SCRIPTS= [
-    # Scripts that are run by the travis build process
     # Longest test should go first, to favor running tests in parallel
     # vv Tests less than 5m vv
     'wallet.py',
@@ -94,6 +93,7 @@ BASE_SCRIPTS= [
     'wallet_sendmany_any_taddr.py',
     'wallet_treestate.py',
     'wallet_unified_change.py',
+    'wallet_zip317_default.py',
     'listtransactions.py',
     'mempool_resurrect_test.py',
     'txn_doublespend.py',

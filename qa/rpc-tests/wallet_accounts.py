@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2022 The Zcash developers
+# Copyright (c) 2022-2024 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -16,6 +16,7 @@ from test_framework.util import (
     start_nodes,
     wait_and_assert_operationid_status,
 )
+from test_framework.zip317 import conventional_fee
 
 from decimal import Decimal
 
@@ -23,7 +24,6 @@ from decimal import Decimal
 class WalletAccountsTest(BitcoinTestFramework):
     def setup_nodes(self):
         return start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[
-            '-minrelaytxfee=0',
             nuparams(NU5_BRANCH_ID, 210),
             '-allowdeprecated=z_getnewaddress',
             '-allowdeprecated=z_getbalance',
@@ -141,9 +141,11 @@ class WalletAccountsTest(BitcoinTestFramework):
 
         # Send coinbase funds to the UA.
         print('Sending coinbase funds to account')
-        recipients = [{'address': ua0, 'amount': Decimal('10')}]
-        opid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, 0, 'AllowRevealedSenders')
+        coinbase_fee = conventional_fee(3)
+        recipients = [{'address': ua0, 'amount': Decimal('10') - coinbase_fee}]
+        opid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, coinbase_fee, 'AllowRevealedSenders')
         txid = wait_and_assert_operationid_status(self.nodes[0], opid)
+        ua0sapling_balance = Decimal('10') - coinbase_fee
 
         # The wallet should detect the new note as belonging to the UA.
         tx_details = self.nodes[0].z_viewtransaction(txid)
@@ -155,21 +157,23 @@ class WalletAccountsTest(BitcoinTestFramework):
         # visible with minconf=0.
         self.sync_all()
         self.check_balance(0, 0, ua0, {})
-        self.check_balance(0, 0, ua0, {'sapling': 10}, 0)
+        self.check_balance(0, 0, ua0, {'sapling': ua0sapling_balance}, 0)
 
         self.nodes[2].generate(1)
         self.sync_all()
 
         # The default minconf should now detect the balance.
-        self.check_balance(0, 0, ua0, {'sapling': 10})
+        self.check_balance(0, 0, ua0, {'sapling': ua0sapling_balance})
 
         # Send Sapling funds from the UA.
         print('Sending account funds to Sapling address')
         node1sapling = self.nodes[1].z_getnewaddress('sapling')
 
+        fee = conventional_fee(2)
         recipients = [{'address': node1sapling, 'amount': Decimal('1')}]
-        opid = self.nodes[0].z_sendmany(ua0, recipients, 1, 0)
+        opid = self.nodes[0].z_sendmany(ua0, recipients, 1, fee)
         txid = wait_and_assert_operationid_status(self.nodes[0], opid)
+        ua0sapling_balance -= Decimal('1') + fee
 
         # The wallet should detect the spent note as belonging to the UA.
         tx_details = self.nodes[0].z_viewtransaction(txid)
@@ -183,7 +187,7 @@ class WalletAccountsTest(BitcoinTestFramework):
         # up until the transaction expires), or 9 (if we include the unmined transaction).
         self.sync_all()
         self.check_balance(0, 0, ua0, {})
-        self.check_balance(0, 0, ua0, {'sapling': 9}, 0)
+        self.check_balance(0, 0, ua0, {'sapling': ua0sapling_balance}, 0)
 
         # Activate NU5
         print('Activating NU5')
@@ -193,9 +197,11 @@ class WalletAccountsTest(BitcoinTestFramework):
 
         # Send more coinbase funds to the UA.
         print('Sending coinbase funds to account')
-        recipients = [{'address': ua0, 'amount': Decimal('10')}]
-        opid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, 0, 'AllowRevealedSenders')
+        fee = conventional_fee(3)
+        recipients = [{'address': ua0, 'amount': Decimal('10') - fee}]
+        opid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, fee, 'AllowRevealedSenders')
         txid = wait_and_assert_operationid_status(self.nodes[0], opid)
+        ua0orchard_balance = Decimal('10') - fee
 
         # The wallet should detect the new note as belonging to the UA.
         tx_details = self.nodes[0].z_viewtransaction(txid)
@@ -206,12 +212,12 @@ class WalletAccountsTest(BitcoinTestFramework):
         # The new balance should not be visible with the default minconf, but should be
         # visible with minconf=0.
         self.sync_all()
-        self.check_balance(0, 0, ua0, {'sapling': 9})
-        self.check_balance(0, 0, ua0, {'sapling': 9, 'orchard': 10}, 0)
+        self.check_balance(0, 0, ua0, {'sapling': ua0sapling_balance})
+        self.check_balance(0, 0, ua0, {'sapling': ua0sapling_balance, 'orchard': ua0orchard_balance}, 0)
 
         # The total balance with the default minconf should be just the Sapling balance
-        assert_equal('9.00', self.nodes[0].z_gettotalbalance()['private'])
-        assert_equal('19.00', self.nodes[0].z_gettotalbalance(0)['private'])
+        assert_equal(Decimal(self.nodes[0].z_gettotalbalance()['private']), ua0sapling_balance)
+        assert_equal(Decimal(self.nodes[0].z_gettotalbalance(0)['private']), ua0sapling_balance + ua0orchard_balance)
 
         self.nodes[2].generate(1)
         self.sync_all()
@@ -223,9 +229,11 @@ class WalletAccountsTest(BitcoinTestFramework):
         self.check_z_listaccounts(1, 0, 0, node1orchard)
         node1orchard = node1orchard['address']
 
+        fee = conventional_fee(2)
         recipients = [{'address': node1orchard, 'amount': Decimal('1')}]
-        opid = self.nodes[0].z_sendmany(ua0, recipients, 1, 0)
+        opid = self.nodes[0].z_sendmany(ua0, recipients, 1, fee)
         txid = wait_and_assert_operationid_status(self.nodes[0], opid)
+        ua0orchard_balance -= Decimal('1') + fee
 
         # The wallet should detect the spent note as belonging to the UA.
         tx_details = self.nodes[0].z_viewtransaction(txid)
@@ -248,8 +256,8 @@ class WalletAccountsTest(BitcoinTestFramework):
         # that transaction has been created and broadcast, and _might_ get mined up until
         # the transaction expires), or 9 (if we include the unmined transaction).
         self.sync_all()
-        self.check_balance(0, 0, ua0, {'sapling': 9})
-        self.check_balance(0, 0, ua0, {'sapling': 9, 'orchard': 9}, 0)
+        self.check_balance(0, 0, ua0, {'sapling': ua0sapling_balance})
+        self.check_balance(0, 0, ua0, {'sapling': ua0sapling_balance, 'orchard': ua0orchard_balance}, 0)
 
 
 if __name__ == '__main__':

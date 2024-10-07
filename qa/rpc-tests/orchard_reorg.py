@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2022 The Zcash developers
+# Copyright (c) 2022-2024 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -19,10 +19,9 @@ from test_framework.util import (
     start_nodes,
     wait_and_assert_operationid_status,
 )
+from test_framework.zip317 import ZIP_317_FEE
 
 from finalsaplingroot import ORCHARD_TREE_EMPTY_ROOT
-
-from decimal import Decimal
 
 class OrchardReorgTest(BitcoinTestFramework):
     def __init__(self):
@@ -32,7 +31,6 @@ class OrchardReorgTest(BitcoinTestFramework):
 
     def setup_nodes(self):
         return start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[
-            '-minrelaytxfee=0',
             nuparams(BLOSSOM_BRANCH_ID, 1),
             nuparams(HEARTWOOD_BRANCH_ID, 5),
             nuparams(CANOPY_BRANCH_ID, 5),
@@ -67,9 +65,8 @@ class OrchardReorgTest(BitcoinTestFramework):
         )
 
         # Create an Orchard note.
-        recipients = [{'address': ua, 'amount': Decimal('12.5')}]
-        opid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, 0, 'AllowRevealedSenders')
-        wait_and_assert_operationid_status(self.nodes[0], opid)
+        res = self.nodes[0].z_shieldcoinbase(get_coinbase_address(self.nodes[0]), ua, ZIP_317_FEE, None, None, 'AllowRevealedSenders')
+        wait_and_assert_operationid_status(self.nodes[0], res['opid'])
 
         # After mining a block, finalorchardroot should have changed.
         self.sync_all()
@@ -92,9 +89,8 @@ class OrchardReorgTest(BitcoinTestFramework):
         self.split_network()
 
         # Create another Orchard note on node 0.
-        recipients = [{'address': ua, 'amount': Decimal('12.5')}]
-        opid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, 0, 'AllowRevealedSenders')
-        wait_and_assert_operationid_status(self.nodes[0], opid)
+        res = self.nodes[0].z_shieldcoinbase(get_coinbase_address(self.nodes[0]), ua, ZIP_317_FEE, None, None, 'AllowRevealedSenders')
+        wait_and_assert_operationid_status(self.nodes[0], res['opid'])
 
         # Mine two blocks on node 0.
         print("Mining 2 blocks on node 0")

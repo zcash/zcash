@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-# Copyright (c) 2022 The Zcash developers
+# Copyright (c) 2022-2024 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.test_framework import BitcoinTestFramework
+from test_framework.mininode import COIN
 from test_framework.util import (
     NU5_BRANCH_ID,
     assert_equal,
@@ -14,6 +15,7 @@ from test_framework.util import (
     wait_bitcoinds,
     wait_and_assert_operationid_status,
 )
+from test_framework.zip317 import conventional_fee, ZIP_317_FEE
 
 from decimal import Decimal
 
@@ -25,7 +27,6 @@ class WalletOrchardPersistenceTest(BitcoinTestFramework):
 
     def setup_nodes(self):
         return start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[
-            '-minrelaytxfee=0',
             nuparams(NU5_BRANCH_ID, 201),
         ]] * self.num_nodes)
 
@@ -41,8 +42,10 @@ class WalletOrchardPersistenceTest(BitcoinTestFramework):
         acct0 = self.nodes[0].z_getnewaccount()['account']
         ua0 = self.nodes[0].z_getaddressforaccount(acct0, ['sapling', 'orchard'])['address']
 
-        recipients = [{"address": ua0, "amount": 10}]
-        myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, 0, 'AllowRevealedSenders')
+        coinbase_fee = conventional_fee(3)
+        balance0 = Decimal('10') - coinbase_fee
+        recipients = [{"address": ua0, "amount": balance0}]
+        myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, coinbase_fee, 'AllowRevealedSenders')
         wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         # Mine the tx 
@@ -51,7 +54,7 @@ class WalletOrchardPersistenceTest(BitcoinTestFramework):
         self.sync_all()
 
         assert_equal(
-                {'pools': {'orchard': {'valueZat': 10_0000_0000}}, 'minimum_confirmations': 1},
+                {'pools': {'orchard': {'valueZat': balance0 * COIN}}, 'minimum_confirmations': 1},
                 self.nodes[0].z_getbalanceforaccount(acct0))
 
         # Send to a new orchard-only unified address
@@ -59,15 +62,16 @@ class WalletOrchardPersistenceTest(BitcoinTestFramework):
         ua1 = self.nodes[1].z_getaddressforaccount(acct1, ['orchard'])['address']
 
         recipients = [{"address": ua1, "amount": 1}]
-        myopid = self.nodes[0].z_sendmany(ua0, recipients, 1, 0)
+        myopid = self.nodes[0].z_sendmany(ua0, recipients, 1, ZIP_317_FEE)
         wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         self.sync_all()
         self.nodes[0].generate(1)
         self.sync_all()
 
+        balance0 -= Decimal('1') + conventional_fee(2)
         assert_equal(
-                {'pools': {'orchard': {'valueZat': 9_0000_0000}}, 'minimum_confirmations': 1},
+                {'pools': {'orchard': {'valueZat': balance0 * COIN}}, 'minimum_confirmations': 1},
                 self.nodes[0].z_getbalanceforaccount(acct0))
         assert_equal(
                 {'pools': {'orchard': {'valueZat': 1_0000_0000}}, 'minimum_confirmations': 1},
@@ -76,7 +80,7 @@ class WalletOrchardPersistenceTest(BitcoinTestFramework):
         # Send another Orchard transaction from node 0 back to itself, so that the
         # note commitment tree gets advanced.
         recipients = [{"address": ua0, "amount": 1}]
-        myopid = self.nodes[0].z_sendmany(ua0, recipients, 1, 0)
+        myopid = self.nodes[0].z_sendmany(ua0, recipients, 1, ZIP_317_FEE)
         wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         self.sync_all()
@@ -88,20 +92,22 @@ class WalletOrchardPersistenceTest(BitcoinTestFramework):
         wait_bitcoinds()
         self.setup_network()
 
+        balance0 -= conventional_fee(2)
         assert_equal(
-                {'pools': {'orchard': {'valueZat': 9_0000_0000}}, 'minimum_confirmations': 1},
+                {'pools': {'orchard': {'valueZat': balance0 * COIN}}, 'minimum_confirmations': 1},
                 self.nodes[0].z_getbalanceforaccount(acct0))
 
         recipients = [{"address": ua0, "amount": Decimal('0.5')}]
-        myopid = self.nodes[1].z_sendmany(ua1, recipients, 1, 0)
+        myopid = self.nodes[1].z_sendmany(ua1, recipients, 1, ZIP_317_FEE)
         wait_and_assert_operationid_status(self.nodes[1], myopid)
 
         self.sync_all()
         self.nodes[0].generate(1)
         self.sync_all()
 
+        balance0 += Decimal('0.5')
         assert_equal(
-                {'pools': {'orchard': {'valueZat': 9_5000_0000}}, 'minimum_confirmations': 1},
+                {'pools': {'orchard': {'valueZat': balance0 * COIN}}, 'minimum_confirmations': 1},
                 self.nodes[0].z_getbalanceforaccount(acct0))
 
 if __name__ == '__main__':

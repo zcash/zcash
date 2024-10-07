@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2014-2016 The Bitcoin Core developers
-# Copyright (c) 2016-2022 The Zcash developers
+# Copyright (c) 2016-2024 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -14,10 +14,13 @@
 # but less mature coinbase spends are NOT.
 #
 
+from decimal import Decimal
+
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, assert_greater_than, assert_raises, \
     start_node
+from test_framework.zip317 import conventional_fee
 
 
 # Create one-input, one-output, no-fee transaction:
@@ -30,7 +33,6 @@ class MempoolSpendCoinbaseTest(BitcoinTestFramework):
     def setup_network(self):
         # Just need one node for this test
         args = [
-            '-minrelaytxfee=0',
             '-checkmempool',
             '-debug=mempool',
             '-allowdeprecated=getnewaddress',
@@ -57,7 +59,8 @@ class MempoolSpendCoinbaseTest(BitcoinTestFramework):
         # is too immature to spend.
         b = [ self.nodes[0].getblockhash(n) for n in range(101, 103) ]
         coinbase_txids = [ self.nodes[0].getblock(h)['tx'][0] for h in b ]
-        spends_raw = [ self.create_tx(txid, node0_address, 10) for txid in coinbase_txids ]
+        fee = conventional_fee(1)
+        spends_raw = [ self.create_tx(txid, node0_address, Decimal('10') - fee) for txid in coinbase_txids ]
 
         spend_101_id = self.nodes[0].sendrawtransaction(spends_raw[0])
 

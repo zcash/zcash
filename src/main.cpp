@@ -1921,7 +1921,8 @@ bool AcceptToMemoryPool(
                     ", which is over the limit of %d. The conventional fee for this transaction is %d " + MINOR_CURRENCY_UNIT,
                     tx.GetHash().ToString(), nSize, nModifiedFees, nModifiedFees - nFees, nUnpaidActionCount,
                     nTxUnpaidActionLimit, tx.GetConventionalFee());
-            return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "tx unpaid action limit exceeded");
+            return state.DoS(0, false, REJECT_INSUFFICIENTFEE,
+                             strprintf("tx unpaid action limit exceeded: %d action(s) exceeds limit of %d", nUnpaidActionCount, nTxUnpaidActionLimit));
         }
 
         if (fRejectAbsurdFee && nFees > maxTxFee) {

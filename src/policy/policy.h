@@ -71,7 +71,7 @@ static const unsigned int STANDARD_NOT_MANDATORY_VERIFY_FLAGS = STANDARD_SCRIPT_
  * set to 1000 zats, per ZIP 313.
  *
  * #6542 changed relaying policy to be more strict about enforcing minRelayTxFee.
- * It also allowed `-minrelaytxfee=0`, which we are using to avoid some test
+ * It also allowed `-minrelaytxfee=0`, which we were using to avoid some test
  * breakage. But if the dust threshold rate were still set to three times the
  * minRelayTxFee rate, then setting `-minrelaytxfee=0` would have the side effect
  * of setting the dust threshold to zero, which is not intended.

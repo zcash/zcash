@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-# Copyright (c) 2022 The Zcash developers
+# Copyright (c) 2022-2024 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 import shutil
 import os.path
+from decimal import Decimal
 
 from test_framework.mininode import COIN
 from test_framework.test_framework import BitcoinTestFramework
@@ -18,6 +19,7 @@ from test_framework.util import (
     wait_bitcoinds,
     wait_and_assert_operationid_status,
 )
+from test_framework.zip317 import conventional_fee
 
 # Test wallet behaviour with the Orchard protocol
 class WalletDoubleSpendTest(BitcoinTestFramework):
@@ -27,7 +29,6 @@ class WalletDoubleSpendTest(BitcoinTestFramework):
 
     def setup_nodes(self):
         return start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[
-            '-minrelaytxfee=0',
             nuparams(NU5_BRANCH_ID, 201),
         ]] * self.num_nodes)
 
@@ -45,11 +46,12 @@ class WalletDoubleSpendTest(BitcoinTestFramework):
         ua1 = addrRes1['address']
 
         # Create a note matching recipient_type on node 1
-        original_zec_amount = 10
-        recipients = [{"address": ua1, "amount": original_zec_amount}]
-        original_amount = original_zec_amount * COIN
-        myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, 0, 'AllowRevealedSenders')
+        coinbase_fee = conventional_fee(3)
+        original_amount = Decimal('10') - coinbase_fee
+        recipients = [{"address": ua1, "amount": original_amount}]
+        myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, coinbase_fee, 'AllowRevealedSenders')
         wait_and_assert_operationid_status(self.nodes[0], myopid)
+        acct1_balance = original_amount
 
         self.sync_all()
         self.nodes[0].generate(1)
@@ -57,7 +59,7 @@ class WalletDoubleSpendTest(BitcoinTestFramework):
 
         # Check the value sent to ua1 was received
         assert_equal(
-                {'pools': {recipient_type: {'valueZat': original_amount}}, 'minimum_confirmations': 1},
+                {'pools': {recipient_type: {'valueZat': acct1_balance * COIN}}, 'minimum_confirmations': 1},
                 self.nodes[1].z_getbalanceforaccount(acct1))
 
         # Shut down the nodes
@@ -75,29 +77,30 @@ class WalletDoubleSpendTest(BitcoinTestFramework):
 
         # Verify the balance on node 1
         assert_equal(
-                {'pools': {recipient_type: {'valueZat': original_amount}},
+                {'pools': {recipient_type: {'valueZat': acct1_balance * COIN}},
                  'minimum_confirmations': 1},
                 self.nodes[1].z_getbalanceforaccount(acct1))
 
         # Verify the balance on node 2, on the other side of the split
         assert_equal(
-                {'pools': {recipient_type: {'valueZat': original_amount}},
+                {'pools': {recipient_type: {'valueZat': acct1_balance * COIN}},
                  'minimum_confirmations': 1},
                 self.nodes[2].z_getbalanceforaccount(acct1))
 
         # Spend the note from node 1
-        node1_zec_spend_amount = 1
-        recipients = [{"address": ua0a, "amount": node1_zec_spend_amount}]
-        node1_spend_amount = node1_zec_spend_amount * COIN
-        myopid = self.nodes[1].z_sendmany(ua1, recipients, 1, 0)
+        fee = conventional_fee(2)
+        node1_spend_amount = Decimal('1')
+        recipients = [{"address": ua0a, "amount": node1_spend_amount}]
+        myopid = self.nodes[1].z_sendmany(ua1, recipients, 1, fee)
         txa_id = wait_and_assert_operationid_status(self.nodes[1], myopid)
+        acct1_balance_1 = acct1_balance - node1_spend_amount - fee
 
         # Spend the note from node 2
-        node2_zec_spend_amount = 2
-        recipients = [{"address": ua0b, "amount": node2_zec_spend_amount}]
-        node2_spend_amount = node2_zec_spend_amount * COIN
-        myopid = self.nodes[2].z_sendmany(ua1, recipients, 1, 0)
+        node2_spend_amount = Decimal('2')
+        recipients = [{"address": ua0b, "amount": node2_spend_amount}]
+        myopid = self.nodes[2].z_sendmany(ua1, recipients, 1, fee)
         txb_id = wait_and_assert_operationid_status(self.nodes[2], myopid)
+        acct1_balance_2 = acct1_balance - node2_spend_amount - fee
 
         # Mine the conflicting notes in the split
         self.sync_all()
@@ -105,14 +108,14 @@ class WalletDoubleSpendTest(BitcoinTestFramework):
         self.nodes[3].generate(10)
         self.sync_all()
 
-        # the remaining balance is visible on both sides of the split
+        # the remaining balance is visible on each side of the split
         assert_equal(
-                {'pools': {recipient_type: {'valueZat': original_amount - node1_spend_amount}},
+                {'pools': {recipient_type: {'valueZat': acct1_balance_1 * COIN}},
                  'minimum_confirmations': 1},
                 self.nodes[1].z_getbalanceforaccount(acct1))
 
         assert_equal(
-                {'pools': {recipient_type: {'valueZat': original_amount - node2_spend_amount}},
+                {'pools': {recipient_type: {'valueZat': acct1_balance_2 * COIN}},
                  'minimum_confirmations': 1},
                 self.nodes[2].z_getbalanceforaccount(acct1))
 
@@ -126,7 +129,7 @@ class WalletDoubleSpendTest(BitcoinTestFramework):
 
         # acct0a will have received the transaction; it can't see node 2's send
         assert_equal(
-                {'pools': {recipient_type: {'valueZat': node1_spend_amount}}, 'minimum_confirmations': 1},
+                {'pools': {recipient_type: {'valueZat': node1_spend_amount * COIN}}, 'minimum_confirmations': 1},
                 self.nodes[0].z_getbalanceforaccount(acct0a))
 
         self.join_network()
@@ -141,19 +144,20 @@ class WalletDoubleSpendTest(BitcoinTestFramework):
 
         # After the reorg, node 2 wins, so its balance is the consensus for
         # both wallets
+        acct1_balance = acct1_balance_2
         assert_equal(
-                {'pools': {recipient_type: {'valueZat': original_amount - node2_spend_amount}},
+                {'pools': {recipient_type: {'valueZat': acct1_balance * COIN}},
                  'minimum_confirmations': 1},
                 self.nodes[1].z_getbalanceforaccount(acct1))
 
         assert_equal(
-                {'pools': {recipient_type: {'valueZat': original_amount - node2_spend_amount}},
+                {'pools': {recipient_type: {'valueZat': acct1_balance * COIN}},
                  'minimum_confirmations': 1},
                 self.nodes[2].z_getbalanceforaccount(acct1))
 
         # acct0b will have received the transaction
         assert_equal(
-                {'pools': {recipient_type: {'valueZat': node2_spend_amount}},
+                {'pools': {recipient_type: {'valueZat': node2_spend_amount * COIN}},
                  'minimum_confirmations': 1},
                 self.nodes[0].z_getbalanceforaccount(acct0b))
 

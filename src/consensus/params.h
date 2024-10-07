@@ -347,7 +347,7 @@ struct Params {
     /**
      * Returns the vector of active funding streams as of the given height.
      */
-    std::vector<FSInfo> GetActiveFundingStreams(int nHeight) const;
+    std::vector<std::pair<FSInfo, FundingStream>> GetActiveFundingStreams(int nHeight) const;
 
     /**
      * Returns the vector of active funding stream elements as of the given height.
