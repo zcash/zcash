@@ -29,6 +29,7 @@
 #include "mempool_limit.h"
 #include "metrics.h"
 #include "miner.h"
+#include "netbase.h"
 #include "net.h"
 #include "policy/policy.h"
 #include "rpc/server.h"
@@ -964,6 +965,16 @@ void InitParameterInteraction()
     }
 }
 
+static std::string ResolveErrMsg(const char * const optname, const std::string& strBind)
+{
+    return strprintf(_("Cannot resolve -%s address: '%s'"), optname, strBind);
+}
+
+static std::string AmountErrMsg(const char * const optname, const std::string& strValue)
+{
+    return strprintf(_("Invalid amount for -%s=<amount>: '%s'"), optname, strValue);
+}
+
 void InitLogging()
 {
     fPrintToConsole = GetBoolArg("-printtoconsole", false);
@@ -1202,7 +1213,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         if (ParseMoney(mapArgs["-minrelaytxfee"], n))
             ::minRelayTxFee = CFeeRate(n);
         else
-            return InitError(strprintf(_("Invalid amount for -minrelaytxfee=<amount>: '%s'"), mapArgs["-minrelaytxfee"]));
+            return InitError(AmountErrMsg("minrelaytxfee", mapArgs["-minrelaytxfee"]));
     }
 
 #ifdef ENABLE_WALLET
@@ -1245,7 +1256,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     }
 
     if (GetBoolArg("-peerbloomfilters", DEFAULT_PEERBLOOMFILTERS))
-        nLocalServices |= NODE_BLOOM;
+        nLocalServices = ServiceFlags(nLocalServices | NODE_BLOOM);
 
     nMaxTipAge = GetArg("-maxtipage", DEFAULT_MAX_TIP_AGE);
 
@@ -1560,7 +1571,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     if (mapArgs.count("-whitelist")) {
         for (const std::string& net : mapMultiArgs["-whitelist"]) {
-            CSubNet subnet(net);
+            CSubNet subnet;
+            LookupSubNet(net.c_str(), subnet);
             if (!subnet.IsValid())
                 return InitError(strprintf(_("Invalid netmask specified in -whitelist: '%s'"), net));
             CNode::AddWhitelistedRange(subnet);
@@ -1573,7 +1585,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     std::string proxyArg = GetArg("-proxy", "");
     SetLimited(NET_TOR);
     if (proxyArg != "" && proxyArg != "0") {
-        proxyType addrProxy = proxyType(CService(proxyArg, 9050), proxyRandomize);
+        CService resolved(LookupNumeric(proxyArg.c_str(), 9050));
+        proxyType addrProxy = proxyType(resolved, proxyRandomize);
         if (!addrProxy.IsValid())
             return InitError(strprintf(_("Invalid -proxy address: '%s'"), proxyArg));
 
@@ -1592,7 +1605,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         if (onionArg == "0") { // Handle -noonion/-onion=0
             SetLimited(NET_TOR); // set onions as unreachable
         } else {
-            proxyType addrOnion = proxyType(CService(onionArg, 9050), proxyRandomize);
+            CService resolved(LookupNumeric(onionArg.c_str(), 9050));
+            proxyType addrOnion = proxyType(resolved, proxyRandomize);
             if (!addrOnion.IsValid())
                 return InitError(strprintf(_("Invalid -onion address: '%s'"), onionArg));
             SetProxy(NET_TOR, addrOnion);
@@ -1604,6 +1618,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     fListen = GetBoolArg("-listen", DEFAULT_LISTEN);
     fDiscover = GetBoolArg("-discover", true);
     fNameLookup = GetBoolArg("-dns", DEFAULT_NAME_LOOKUP);
+    fRelayTxes = !GetBoolArg("-blocksonly", DEFAULT_BLOCKSONLY);
 
     bool fBound = false;
     if (fListen) {
@@ -1611,13 +1626,13 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             for (const std::string& strBind : mapMultiArgs["-bind"]) {
                 CService addrBind;
                 if (!Lookup(strBind.c_str(), addrBind, GetListenPort(), false))
-                    return InitError(strprintf(_("Cannot resolve -bind address: '%s'"), strBind));
+                    return InitError(ResolveErrMsg("bind", strBind));
                 fBound |= Bind(addrBind, (BF_EXPLICIT | BF_REPORT_ERROR));
             }
             for (const std::string& strBind : mapMultiArgs["-whitebind"]) {
                 CService addrBind;
                 if (!Lookup(strBind.c_str(), addrBind, 0, false))
-                    return InitError(strprintf(_("Cannot resolve -whitebind address: '%s'"), strBind));
+                    return InitError(ResolveErrMsg("whitebind", strBind));
                 if (addrBind.GetPort() == 0)
                     return InitError(strprintf(_("Need to specify a port with -whitebind: '%s'"), strBind));
                 fBound |= Bind(addrBind, (BF_EXPLICIT | BF_REPORT_ERROR | BF_WHITELIST));
@@ -1635,10 +1650,11 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     if (mapArgs.count("-externalip")) {
         for (const std::string& strAddr : mapMultiArgs["-externalip"]) {
-            CService addrLocal(strAddr, GetListenPort(), fNameLookup);
-            if (!addrLocal.IsValid())
-                return InitError(strprintf(_("Cannot resolve -externalip address: '%s'"), strAddr));
-            AddLocal(CService(strAddr, GetListenPort(), fNameLookup), LOCAL_MANUAL);
+            CService addrLocal;
+            if (Lookup(strAddr.c_str(), addrLocal, GetListenPort(), fNameLookup) && addrLocal.IsValid())
+                AddLocal(addrLocal, LOCAL_MANUAL);
+            else
+                return InitError(ResolveErrMsg("externalip", strAddr));
         }
     }
 
@@ -1953,7 +1969,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     // after any wallet rescanning has taken place.
     if (fPruneMode) {
         LogPrintf("Unsetting NODE_NETWORK on prune mode\n");
-        nLocalServices &= ~NODE_NETWORK;
+        nLocalServices = ServiceFlags(nLocalServices & ~NODE_NETWORK);
         if (!fReindex) {
             uiInterface.InitMessage(_("Pruning blockstore..."));
             PruneAndFlush();
