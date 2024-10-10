@@ -468,6 +468,11 @@ std::string JSONRPCExecBatch(const UniValue& vReq)
 
 UniValue CRPCTable::execute(const std::string &strMethod, const UniValue &params) const
 {
+    auto span = TracingSpan("info", "rpc", "Execute", "method", strMethod.c_str());
+    auto spanGuard = span.Enter();
+
+    int64_t nExecutionStartTime = GetTimeMicros();
+
     // Return immediately if in warmup
     {
         LOCK(cs_rpcWarmup);
@@ -511,7 +516,10 @@ UniValue CRPCTable::execute(const std::string &strMethod, const UniValue &params
                             params.size(),
                             helpMsg));
             } else {
-                return pcmd->actor(params, false);
+                auto result = pcmd->actor(params, false);
+                int64_t nElapsedExecutionTime = (GetTimeMicros() - nExecutionStartTime);
+                LogPrint("rpc", "ThreadRPCServer completed method=%s in %.2fms", SanitizeString(strMethod), nElapsedExecutionTime * 0.001);
+                return result;
             }
         } else {
             throw JSONRPCError(
