@@ -5486,7 +5486,7 @@ bool CWallet::FundTransaction(CMutableTransaction& tx, CAmount &nFeeRet, int& nC
     CReserveKey reservekey(this);
     CWalletTx wtx;
 
-    if (!CreateTransaction(vecSend, wtx, reservekey, nFeeRet, nChangePosRet, strFailReason, &coinControl, false))
+    if (!CreateTransaction(vecSend, wtx, reservekey, nFeeRet, tx.nBurnAmount, nChangePosRet, strFailReason, &coinControl, false))
         return false;
 
     if (nChangePosRet != -1)
@@ -5511,10 +5511,18 @@ bool CWallet::FundTransaction(CMutableTransaction& tx, CAmount &nFeeRet, int& nC
     return true;
 }
 
-bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wtxNew, CReserveKey& reservekey, CAmount& nFeeRet,
-                                int& nChangePosRet, std::string& strFailReason, const CCoinControl* coinControl, bool sign)
+bool CWallet::CreateTransaction(
+    const vector<CRecipient>& vecSend,
+    CWalletTx& wtxNew,
+    CReserveKey& reservekey,
+    CAmount& nFeeRet,
+    const CAmount nBurnAmount,
+    int& nChangePosRet,
+    std::string& strFailReason,
+    const CCoinControl* coinControl,
+    bool sign)
 {
-    CAmount nValue = 0;
+    CAmount nValue{nBurnAmount};
     unsigned int nSubtractFeeFromAmount = 0;
     for (const CRecipient& recipient : vecSend)
     {
@@ -5528,7 +5536,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
         if (recipient.fSubtractFeeFromAmount)
             nSubtractFeeFromAmount++;
     }
-    if (vecSend.empty() || nValue < 0)
+    if (nValue < 0 || (vecSend.empty() && nValue == 0))
     {
         strFailReason = _("Transaction amounts must be positive");
         return false;
@@ -5538,8 +5546,12 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
     wtxNew.BindWallet(this);
     LOCK(cs_main);
     int nextBlockHeight = chainActive.Height() + 1;
-    CMutableTransaction txNew = CreateNewContextualCMutableTransaction(
-        Params().GetConsensus(), nextBlockHeight, nPreferredTxVersion < ZIP225_MIN_TX_VERSION);
+    const bool requireV4{
+        (nPreferredTxVersion < ZIP225_MIN_TX_VERSION) &&
+        nBurnAmount <= 0};
+    CMutableTransaction txNew =
+        CreateNewContextualCMutableTransaction(
+            Params().GetConsensus(), nextBlockHeight, requireV4);
 
     // Activates after Overwinter network upgrade
     if (Params().GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_OVERWINTER)) {
@@ -5552,6 +5564,13 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
     unsigned int max_tx_size = MAX_TX_SIZE_AFTER_SAPLING;
     if (!Params().GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_SAPLING)) {
         max_tx_size = MAX_TX_SIZE_BEFORE_SAPLING;
+    }
+
+    if (Params().GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_ZFUTURE)) {
+        txNew.nBurnAmount = nBurnAmount;
+    } else if (nBurnAmount > 0) {
+        strFailReason = _("Burning is not supported at this block height.");
+        return false;
     }
 
     // Discourage fee sniping.

@@ -388,6 +388,17 @@ int GetHeight()
     return chainActive.Height();
 }
 
+CAmount GetMoneyReserve()
+{
+    LOCK(cs_main);
+    const CBlockIndex* chainTip{chainActive.Tip()};
+    if (chainTip == nullptr) {
+        return MAX_MONEY;
+    } else {
+        return chainTip->GetMoneyReserve();
+    }
+}
+
 void UpdatePreferredDownload(CNode* node, CNodeState* state)
 {
     nPreferredDownload -= state->fPreferredDownload;
@@ -1007,7 +1018,8 @@ bool ContextualCheckTransaction(
     // ZIP 207 consensus funding streams active at the current block height. To avoid
     // double-decrypting, we detect any shielded funding streams during the Heartwood
     // consensus check. If Canopy is not yet active, fundingStreamElements will be empty.
-    auto fundingStreamElements = consensus.GetActiveFundingStreamElements(nHeight);
+    const CAmount nBlockSubsidy{consensus.GetBlockSubsidy(nHeight, GetMoneyReserve())};
+    auto fundingStreamElements{consensus.GetActiveFundingStreamElements(nHeight, nBlockSubsidy)};
 
     // Rules that apply to Heartwood and later:
     if (heartwoodActive) {
@@ -1260,7 +1272,7 @@ bool ContextualCheckTransaction(
                 }
 
                 // Reject transactions with invalid version
-                if (tx.nVersion > ZIP225_MAX_TX_VERSION + 1) {
+                if (tx.nVersion > ZFUTURE_TX_VERSION) {
                     return state.DoS(
                         dosLevelPotentiallyRelaxing,
                         error("ContextualCheckTransaction(): Future version too high"),
@@ -1484,7 +1496,8 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     if (tx.vout.empty() &&
         tx.vJoinSplit.empty() &&
         tx.GetSaplingOutputsCount() == 0 &&
-        !orchard_bundle.OutputsEnabled())
+        !orchard_bundle.OutputsEnabled() &&
+        tx.nBurnAmount == 0)
     {
         return state.DoS(10, false, REJECT_INVALID, "bad-txns-no-sink-of-funds");
     }
@@ -3321,7 +3334,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             // Add the output value of the coinbase transaction to the chain supply
             // delta. This includes fees, which are then canceled out by the fee
             // subtractions in the other branch of this conditional.
-            chainSupplyDelta += tx.GetValueOut();
+            chainSupplyDelta += tx.GetValueOut() - tx.nBurnAmount;
         } else {
             const auto txFee = view.GetValueIn(tx) - tx.GetValueOut();
             nFees += txFee;
@@ -3329,7 +3342,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             // Fees from a transaction do not go into an output of the transaction,
             // and therefore decrease the chain supply. If the miner claims them,
             // they will be re-added in the other branch of this conditional.
-            chainSupplyDelta -= txFee;
+            chainSupplyDelta -= txFee + tx.nBurnAmount;
 
             std::vector<CScriptCheck> vChecks;
             if (!ContextualCheckInputs(tx, state, view, fExpensiveChecks, flags, fCacheResults, txdata.back(), consensusParams, consensusBranchId, nScriptCheckThreads ? &vChecks : NULL))
@@ -3594,8 +3607,20 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     int64_t nTime1 = GetTimeMicros(); nTimeConnect += nTime1 - nTimeStart;
     LogPrint("bench", "      - Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs]\n", (unsigned)block.vtx.size(), 0.001 * (nTime1 - nTimeStart), 0.001 * (nTime1 - nTimeStart) / block.vtx.size(), nInputs <= 1 ? 0 : 0.001 * (nTime1 - nTimeStart) / (nInputs-1), nTimeConnect * 0.000001);
 
+    if (consensusParams.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_ZFUTURE)) {
+        const CAmount cbBurnAmount{block.vtx[0].nBurnAmount};
+        const CAmount minBurnAmount{nFees * 6 / 10};
+        if (cbBurnAmount < minBurnAmount) {
+            return state.DoS(100,
+                error("%s: coinbase burn is insufficient (actual=%d vs expected=%d)", __func__, cbBurnAmount, minBurnAmount),
+                REJECT_INVALID,
+                "bad-cb-insufficient-burn");
+        }
+    }
+
+    const CAmount nMoneyReserve{(pindex->pprev == nullptr) ? MAX_MONEY : pindex->pprev->GetMoneyReserve()};
     CAmount cbTotalOutputValue = block.vtx[0].GetValueOut() + pindex->nLockboxValue;
-    CAmount cbTotalInputValue = consensusParams.GetBlockSubsidy(pindex->nHeight) + nFees;
+    CAmount cbTotalInputValue = consensusParams.GetBlockSubsidy(pindex->nHeight, nMoneyReserve) + nFees;
     if (cbTotalOutputValue > cbTotalInputValue) {
         return state.DoS(100,
             error("%s: coinbase pays too much (actual=%d vs limit=%d)", __func__,
@@ -4658,6 +4683,10 @@ void SetChainPoolValues(
     const CBlock &block,
     CBlockIndex *pindex)
 {
+    const auto& consensus{chainparams.GetConsensus()};
+    const CAmount nMoneyReserve{(pindex->pprev == nullptr) ? MAX_MONEY : pindex->pprev->GetMoneyReserve()};
+    const CAmount nBlockSubsidy{consensus.GetBlockSubsidy(pindex->nHeight, nMoneyReserve)};
+
     // the following values are computed here only for the genesis block
     CAmount chainSupplyDelta = 0;
     CAmount transparentValueDelta = 0;
@@ -4668,7 +4697,7 @@ void SetChainPoolValues(
 
     // Each lockbox funding stream produces a positive change to the lockbox value.
     CAmount lockboxValue = 0;
-    for (auto elem : chainparams.GetConsensus().GetActiveFundingStreamElements(pindex->nHeight)) {
+    for (const auto& elem : consensus.GetActiveFundingStreamElements(pindex->nHeight, nBlockSubsidy)) {
         if (std::holds_alternative<Consensus::Lockbox>(elem.first)) {
             lockboxValue += elem.second;
         }
@@ -5149,7 +5178,11 @@ bool ContextualCheckBlock(
 
         for (const CTxOut& output : block.vtx[0].vout) {
             if (output.scriptPubKey == chainparams.GetFoundersRewardScriptAtHeight(nHeight)) {
-                if (output.nValue == (consensusParams.GetBlockSubsidy(nHeight) / 5)) {
+                // Since the money reserve becomes relevant to block
+                // subsidies only _after_ the founders' rewards end, there is no
+                // need to fetch the real value.
+                const CAmount& nMoneyReserve{0};
+                if (output.nValue == (consensusParams.GetBlockSubsidy(nHeight, nMoneyReserve) / 5)) {
                     found = true;
                     break;
                 }

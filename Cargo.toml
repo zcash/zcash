@@ -111,3 +111,12 @@ features = ["ansi", "env-filter", "fmt", "time"]
 lto = 'thin'
 panic = 'abort'
 codegen-units = 1
+
+[patch.crates-io]
+equihash = { git = "https://github.com/ShieldedLabs/librustzcash.git", branch = "nsm-zcashd" }
+zcash_address = { git = "https://github.com/ShieldedLabs/librustzcash.git", branch = "nsm-zcashd" }
+zcash_encoding = { git = "https://github.com/ShieldedLabs/librustzcash.git", branch = "nsm-zcashd" }
+zcash_history = { git = "https://github.com/ShieldedLabs/librustzcash.git", branch = "nsm-zcashd" }
+zcash_primitives = { git = "https://github.com/ShieldedLabs/librustzcash.git", branch = "nsm-zcashd"}
+zcash_proofs = { git = "https://github.com/ShieldedLabs/librustzcash.git", branch = "nsm-zcashd" }
+zcash_protocol = { git = "https://github.com/ShieldedLabs/librustzcash.git", branch = "nsm-zcashd" }

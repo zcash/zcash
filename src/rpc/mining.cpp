@@ -168,13 +168,14 @@ UniValue getgenerate(const UniValue& params, bool fHelp)
 
 UniValue generate(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() < 1 || params.size() > 1)
+    if (fHelp || params.size() < 1 || params.size() > 2)
         throw runtime_error(
             "generate numblocks\n"
             "\nMine blocks immediately (before the RPC call returns)\n"
             "\nNote: this function can only be used on the regtest network\n"
             "\nArguments:\n"
             "1. numblocks    (numeric, required) How many blocks are generated immediately.\n"
+            "2. burn-amount  (numeric, optional, default=minimum) The amount in " + CURRENCY_UNIT + " to burn.\n"
             "\nResult\n"
             "[ blockhashes ]     (array) hashes of blocks generated\n"
             "\nExamples:\n"
@@ -189,6 +190,11 @@ UniValue generate(const UniValue& params, bool fHelp)
     int nHeightEnd = 0;
     int nHeight = 0;
     int nGenerate = params[0].get_int();
+
+    const auto nBurnAmount{
+        params.size() >= 2 && !params[1].isNull() ?
+            std::optional<CAmount>(AmountFromValue(params[1])) :
+            nullopt};
 
     std::optional<MinerAddress> maybeMinerAddress;
     GetMainSignals().AddressForMining(maybeMinerAddress);
@@ -222,7 +228,7 @@ UniValue generate(const UniValue& params, bool fHelp)
     unsigned int k = Params().GetConsensus().nEquihashK;
     while (nHeight < nHeightEnd)
     {
-        std::unique_ptr<CBlockTemplate> pblocktemplate(BlockAssembler(Params()).CreateNewBlock(minerAddress));
+        std::unique_ptr<CBlockTemplate> pblocktemplate(BlockAssembler(Params()).CreateNewBlock(minerAddress, nullopt, nBurnAmount));
         if (!pblocktemplate.get())
             throw JSONRPCError(RPC_INTERNAL_ERROR, "Couldn't create new block");
         CBlock *pblock = &pblocktemplate->block;
@@ -599,6 +605,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
         cached_next_cb_mtx = nullopt;
     }
 
+    const CAmount nMoneyReserve{chainActive.Tip()->GetMoneyReserve()};
     std::optional<CMutableTransaction> next_cb_mtx(cached_next_cb_mtx);
 
     if (!lpval.isNull())
@@ -641,7 +648,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
                 if (!cached_next_cb_mtx && IsShieldedMinerAddress(minerAddress)) {
                     cached_next_cb_height = nHeight + 2;
                     cached_next_cb_mtx = CreateCoinbaseTransaction(
-                        Params(), CAmount{0}, minerAddress, cached_next_cb_height);
+                        Params(), CAmount{0}, minerAddress, cached_next_cb_height, nullopt, nMoneyReserve);
                     next_cb_mtx = cached_next_cb_mtx;
                 }
                 bool timedout = g_best_block_cv.wait_until(lock, checktxtime) == std::cv_status::timeout;
@@ -758,7 +765,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
             auto nextHeight = pindexPrev->nHeight+1;
             bool canopyActive = consensus.NetworkUpgradeActive(nextHeight, Consensus::UPGRADE_CANOPY);
             if (!canopyActive && nextHeight > 0 && nextHeight <= consensus.GetLastFoundersRewardBlockHeight(nextHeight)) {
-                CAmount nBlockSubsidy = consensus.GetBlockSubsidy(nextHeight);
+                CAmount nBlockSubsidy = consensus.GetBlockSubsidy(nextHeight, nMoneyReserve);
                 entry.pushKV("foundersreward", nBlockSubsidy / 5);
             }
             entry.pushKV("required", true);
@@ -955,7 +962,9 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
 
     const Consensus::Params& consensus = Params().GetConsensus();
-    CAmount nBlockSubsidy = consensus.GetBlockSubsidy(nHeight);
+    const CBlockIndex* blockIndex{chainActive[nHeight]};
+    const CAmount nMoneyReserve{(blockIndex == nullptr) ? MAX_MONEY : blockIndex->GetMoneyReserve()};
+    CAmount nBlockSubsidy = consensus.GetBlockSubsidy(nHeight, nMoneyReserve);
     CAmount nFoundersReward = 0;
     CAmount nFundingStreamsTotal = 0;
     CAmount nLockboxTotal = 0;

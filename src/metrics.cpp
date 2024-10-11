@@ -492,8 +492,10 @@ int printMetrics(size_t cols, bool mining)
                 auto hash = *it;
                 if (mapBlockIndex.count(hash) > 0 &&
                         chainActive.Contains(mapBlockIndex[hash])) {
-                    int height = mapBlockIndex[hash]->nHeight;
-                    CAmount subsidy = consensusParams.GetBlockSubsidy(height);
+                    const CBlockIndex* blockIndex{mapBlockIndex[hash]};
+                    const int height{blockIndex->nHeight};
+                    const CAmount moneyReserve{(blockIndex->pprev == nullptr) ? MAX_MONEY : blockIndex->pprev->GetMoneyReserve()};
+                    CAmount subsidy = consensusParams.GetBlockSubsidy(height, moneyReserve);
                     if ((height > 0) && (height <= consensusParams.GetLastFoundersRewardBlockHeight(height))) {
                         subsidy -= subsidy/5;
                     }

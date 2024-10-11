@@ -519,6 +519,7 @@ public:
     const std::vector<CTxOut> vout;
     const uint32_t nLockTime{0};
     const uint32_t nExpiryHeight{0};
+    const CAmount nBurnAmount{0};
     const std::vector<JSDescription> vJoinSplit;
     const ed25519::VerificationKey joinSplitPubKey;
     const ed25519::Signature joinSplitSig;
@@ -579,7 +580,7 @@ public:
             throw std::ios_base::failure("Unknown transaction format");
         }
 
-        if (isZip225V5) {
+        if (isZip225V5 || isFuture) {
             // Common Transaction Fields (plus version bytes above)
             if (ser_action.ForRead()) {
                 uint32_t consensusBranchId;
@@ -601,21 +602,25 @@ public:
 
             // Orchard Transaction Fields
             READWRITE(orchardBundle);
+
+            if (isFuture) {
+                READWRITE(*const_cast<CAmount*>(&nBurnAmount));
+            }
         } else {
             // Legacy transaction formats
             READWRITE(*const_cast<std::vector<CTxIn>*>(&vin));
             READWRITE(*const_cast<std::vector<CTxOut>*>(&vout));
             READWRITE(*const_cast<uint32_t*>(&nLockTime));
-            if (isOverwinterV3 || isSaplingV4 || isFuture) {
+            if (isOverwinterV3 || isSaplingV4) {
                 READWRITE(*const_cast<uint32_t*>(&nExpiryHeight));
             }
-            SaplingV4Reader saplingReader(isSaplingV4 || isFuture);
+            SaplingV4Reader saplingReader(isSaplingV4);
             bool haveSaplingActions;
             if (ser_action.ForRead()) {
                 READWRITE(saplingReader);
                 haveSaplingActions = saplingReader.HaveActions();
             } else {
-                SaplingV4Writer saplingWriter(saplingBundle, isSaplingV4 || isFuture);
+                SaplingV4Writer saplingWriter(saplingBundle, isSaplingV4);
                 READWRITE(saplingWriter);
                 haveSaplingActions = saplingBundle.IsPresent();
             }
@@ -628,7 +633,7 @@ public:
                     READWRITE(*const_cast<ed25519::Signature*>(&joinSplitSig));
                 }
             }
-            if ((isSaplingV4 || isFuture) && haveSaplingActions) {
+            if (isSaplingV4 && haveSaplingActions) {
                 std::array<unsigned char, 64> bindingSig;
                 if (!ser_action.ForRead()) {
                     bindingSig = saplingBundle.GetDetails().binding_sig();
@@ -729,7 +734,7 @@ public:
      * shielded output values - is positive or negative.
      */
 
-    // Return sum of txouts, (negative valueBalanceSapling or zero) and JoinSplit vpub_old.
+    // Return sum of txouts, (negative valueBalanceSapling or zero), JoinSplit vpub_old, and burned value.
     CAmount GetValueOut() const;
     // GetValueIn() is a method on CCoinsViewCache, because
     // inputs must be known to compute value in.
@@ -776,6 +781,7 @@ struct CMutableTransaction
     std::vector<CTxOut> vout;
     uint32_t nLockTime{0};
     uint32_t nExpiryHeight{0};
+    CAmount nBurnAmount{0};
     SaplingBundle saplingBundle;
     OrchardBundle orchardBundle;
     std::vector<JSDescription> vJoinSplit;
@@ -828,7 +834,7 @@ struct CMutableTransaction
             throw std::ios_base::failure("Unknown transaction format");
         }
 
-        if (isZip225V5) {
+        if (isZip225V5 || isFuture) {
             // Common Transaction Fields (plus version bytes above)
             if (ser_action.ForRead()) {
                 uint32_t consensusBranchId;
@@ -850,21 +856,25 @@ struct CMutableTransaction
 
             // Orchard Transaction Fields
             READWRITE(orchardBundle);
+
+            if (isFuture) {
+                READWRITE(*const_cast<CAmount*>(&nBurnAmount));
+            }
         } else {
             // Legacy transaction formats
             READWRITE(vin);
             READWRITE(vout);
             READWRITE(nLockTime);
-            if (isOverwinterV3 || isSaplingV4 || isFuture) {
+            if (isOverwinterV3 || isSaplingV4) {
                 READWRITE(nExpiryHeight);
             }
-            SaplingV4Reader saplingReader(isSaplingV4 || isFuture);
+            SaplingV4Reader saplingReader(isSaplingV4);
             bool haveSaplingActions;
             if (ser_action.ForRead()) {
                 READWRITE(saplingReader);
                 haveSaplingActions = saplingReader.HaveActions();
             } else {
-                SaplingV4Writer saplingWriter(saplingBundle, isSaplingV4 || isFuture);
+                SaplingV4Writer saplingWriter(saplingBundle, isSaplingV4);
                 READWRITE(saplingWriter);
                 haveSaplingActions = saplingBundle.IsPresent();
             }
@@ -876,7 +886,7 @@ struct CMutableTransaction
                     READWRITE(joinSplitSig);
                 }
             }
-            if ((isSaplingV4 || isFuture) && haveSaplingActions) {
+            if (isSaplingV4 && haveSaplingActions) {
                 std::array<unsigned char, 64> bindingSig;
                 if (!ser_action.ForRead()) {
                     bindingSig = saplingBundle.GetDetails().binding_sig();

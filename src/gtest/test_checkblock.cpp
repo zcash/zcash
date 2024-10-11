@@ -63,7 +63,7 @@ TEST(CheckBlock, BlockSproutRejectsBadVersion) {
     mtx.vout[0].scriptPubKey = CScript() << OP_TRUE;
     mtx.vout[0].nValue = 0;
     mtx.vout.push_back(CTxOut(
-        Params().GetConsensus().GetBlockSubsidy(1)/5,
+        Params().GetConsensus().GetBlockSubsidy(1, 0)/5,
         Params().GetFoundersRewardScriptAtHeight(1)));
     mtx.fOverwintered = false;
     mtx.nVersion = -1;
@@ -114,7 +114,7 @@ protected:
         // Give it a Founder's Reward vout for height 1.
         auto rewardScript = Params().GetFoundersRewardScriptAtHeight(1);
         mtx.vout.push_back(CTxOut(
-                    Params().GetConsensus().GetBlockSubsidy(1)/5,
+                    Params().GetConsensus().GetBlockSubsidy(1, 0)/5,
                     rewardScript));
 
         return mtx;
@@ -173,7 +173,7 @@ TEST_F(ContextualCheckBlockTest, BadCoinbaseHeight) {
 
     // Give the transaction a Founder's Reward vout
     mtx.vout.push_back(CTxOut(
-                Params().GetConsensus().GetBlockSubsidy(1)/5,
+                Params().GetConsensus().GetBlockSubsidy(1, 0)/5,
                 Params().GetFoundersRewardScriptAtHeight(1)));
 
     // Treating block as non-genesis should fail

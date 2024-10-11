@@ -25,6 +25,8 @@ static const int32_t SAPLING_MAX_TX_VERSION = 4;
 static const int32_t ZIP225_MIN_TX_VERSION = 5;
 /** The maximum allowed ZIP225 transaction version (network rule) */
 static const int32_t ZIP225_MAX_TX_VERSION = 5;
+/** The minimum allowed transaction version for burning (network rule) */
+static const int32_t ZIP233_BURN_MIN_TX_VERSION = 6;
 /** The maximum allowed size for a serialized block, in bytes (network rule) */
 static const unsigned int MAX_BLOCK_SIZE = 2000000;
 /** The maximum allowed number of signature check operations in a block (network rule) */

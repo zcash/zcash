@@ -478,6 +478,14 @@ public:
         return pbegin[(pend - pbegin)/2];
     }
 
+    [[nodiscard]] CAmount GetMoneyReserve() const
+    {
+        if (!nChainTotalSupply.has_value()) {
+            return 0;
+        }
+        return MAX_MONEY - nChainTotalSupply.value();
+    }
+
     std::string ToString() const
     {
         return strprintf("CBlockIndex(pprev=%p, nHeight=%d, merkle=%s, hashBlock=%s, HasSolution=%s)",

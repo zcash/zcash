@@ -295,15 +295,21 @@ UniValue getrawchangeaddress(const UniValue& params, bool fHelp)
     return keyIO.EncodeDestination(keyID);
 }
 
-static void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew)
+static void SendMoney(
+    const CTxDestination& address,
+    CAmount nValue,
+    bool fSubtractFeeFromAmount,
+    CAmount nBurnAmount,
+    CWalletTx& wtxNew)
 {
+    CAmount nTotalValue { nValue + nBurnAmount };
     CAmount curBalance = pwalletMain->GetBalance(std::nullopt);
 
     // Check amount
     if (nValue <= 0)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid amount");
 
-    if (nValue > curBalance)
+    if (nTotalValue > curBalance)
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Insufficient funds");
 
     // Parse Zcash address
@@ -319,7 +325,7 @@ static void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtr
     bool fCreated;
     {
         int nChangePosRet = -1; // never used
-        fCreated = pwalletMain->CreateTransaction(vecSend, wtxNew, reservekey, nFeeRequired, nChangePosRet, strError);
+        fCreated = pwalletMain->CreateTransaction(vecSend, wtxNew, reservekey, nFeeRequired, nBurnAmount, nChangePosRet, strError);
     }
     if (!fCreated) {
         if (!fSubtractFeeFromAmount && nFeeRequired >= 0 && nValue + nFeeRequired > curBalance) {
@@ -418,9 +424,9 @@ UniValue sendtoaddress(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() < 2 || params.size() > 5)
+    if (fHelp || params.size() < 2 || params.size() > 6)
         throw runtime_error(
-            "sendtoaddress \"zcashaddress\" amount ( \"comment\" \"comment-to\" subtractfeefromamount )\n"
+            "sendtoaddress \"zcashaddress\" amount ( \"comment\" \"comment-to\" subtractfeefromamount \"burn-amount\" )\n"
             "\nSend an amount to a given transparent address. The amount is interpreted as a real number\n"
             "and is rounded to the nearest 0.00000001. This API will only select funds from the transparent\n"
             "pool, and all the details of the transaction, including sender, recipient, and amount will be\n"
@@ -437,6 +443,7 @@ UniValue sendtoaddress(const UniValue& params, bool fHelp)
             "                             transaction, just kept in your wallet.\n"
             "5. subtractfeefromamount  (boolean, optional, default=false) The fee will be deducted from the amount being sent.\n"
             "                             The recipient will receive less Zcash than you enter in the amount field.\n"
+            "6. \"burn-amount\" (numeric, optional, default=0) The amount in " + CURRENCY_UNIT + " to burn.\n"
             "\nResult:\n"
             "\"transactionid\"  (string) The transaction id.\n"
             "\nExamples:\n"
@@ -444,6 +451,7 @@ UniValue sendtoaddress(const UniValue& params, bool fHelp)
             + HelpExampleCli("sendtoaddress", "\"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" 0.1 \"donation\" \"seans outpost\"")
             + HelpExampleCli("sendtoaddress", "\"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" 0.1 \"\" \"\" true")
             + HelpExampleRpc("sendtoaddress", "\"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\", 0.1, \"donation\", \"seans outpost\"")
+            + HelpExampleRpc("sendtoaddress", "\"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\", 0.1, \"\", \"\" false, 0.1")
         );
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -471,9 +479,15 @@ UniValue sendtoaddress(const UniValue& params, bool fHelp)
     if (params.size() > 4)
         fSubtractFeeFromAmount = params[4].get_bool();
 
+    // ZSF Deposit
+    CAmount nBurnAmount{
+        params.size() > 5 ?
+            AmountFromValue(params[5]) :
+            0};
+
     EnsureWalletIsUnlocked();
 
-    SendMoney(dest, nAmount, fSubtractFeeFromAmount, wtx);
+    SendMoney(dest, nAmount, fSubtractFeeFromAmount, nBurnAmount, wtx);
 
     return wtx.GetHash().GetHex();
 }
@@ -1357,7 +1371,7 @@ UniValue sendmany(const UniValue& params, bool fHelp)
     {
         CAmount nFeeRequired = -1; // never used
         int nChangePosRet = -1;    // never used
-        fCreated = pwalletMain->CreateTransaction(vecSend, wtx, keyChange, nFeeRequired, nChangePosRet, strFailReason);
+        fCreated = pwalletMain->CreateTransaction(vecSend, wtx, keyChange, nFeeRequired, 0, nChangePosRet, strFailReason);
     }
     if (!fCreated)
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, strFailReason);

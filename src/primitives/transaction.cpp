@@ -95,6 +95,7 @@ CMutableTransaction::CMutableTransaction() : nVersion(CTransaction::SPROUT_MIN_C
 CMutableTransaction::CMutableTransaction(const CTransaction& tx) : nVersion(tx.nVersion), fOverwintered(tx.fOverwintered), nVersionGroupId(tx.nVersionGroupId), nExpiryHeight(tx.nExpiryHeight),
                                                                    nConsensusBranchId(tx.GetConsensusBranchId()),
                                                                    vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime),
+                                                                   nBurnAmount(tx.nBurnAmount),
                                                                    saplingBundle(tx.GetSaplingBundle()),
                                                                    orchardBundle(tx.GetOrchardBundle()),
                                                                    vJoinSplit(tx.vJoinSplit), joinSplitPubKey(tx.joinSplitPubKey), joinSplitSig(tx.joinSplitSig)
@@ -158,6 +159,7 @@ CTransaction::CTransaction() : nVersion(CTransaction::SPROUT_MIN_CURRENT_VERSION
 CTransaction::CTransaction(const CMutableTransaction &tx) : nVersion(tx.nVersion), fOverwintered(tx.fOverwintered), nVersionGroupId(tx.nVersionGroupId), nExpiryHeight(tx.nExpiryHeight),
                                                             nConsensusBranchId(tx.nConsensusBranchId),
                                                             vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime),
+                                                            nBurnAmount(tx.nBurnAmount),
                                                             saplingBundle(tx.saplingBundle),
                                                             orchardBundle(tx.orchardBundle),
                                                             vJoinSplit(tx.vJoinSplit), joinSplitPubKey(tx.joinSplitPubKey), joinSplitSig(tx.joinSplitSig)
@@ -172,6 +174,7 @@ CTransaction::CTransaction(
     bool evilDeveloperFlag) : nVersion(tx.nVersion), fOverwintered(tx.fOverwintered), nVersionGroupId(tx.nVersionGroupId), nExpiryHeight(tx.nExpiryHeight),
                               nConsensusBranchId(tx.nConsensusBranchId),
                               vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime),
+                              nBurnAmount(tx.nBurnAmount),
                               saplingBundle(tx.saplingBundle),
                               orchardBundle(tx.orchardBundle),
                               vJoinSplit(tx.vJoinSplit), joinSplitPubKey(tx.joinSplitPubKey), joinSplitSig(tx.joinSplitSig)
@@ -184,6 +187,7 @@ CTransaction::CTransaction(CMutableTransaction &&tx) : nVersion(tx.nVersion),
                                                        nConsensusBranchId(tx.nConsensusBranchId),
                                                        vin(std::move(tx.vin)), vout(std::move(tx.vout)),
                                                        nLockTime(tx.nLockTime), nExpiryHeight(tx.nExpiryHeight),
+                                                       nBurnAmount(tx.nBurnAmount),
                                                        saplingBundle(std::move(tx.saplingBundle)),
                                                        orchardBundle(std::move(tx.orchardBundle)),
                                                        vJoinSplit(std::move(tx.vJoinSplit)),
@@ -201,6 +205,7 @@ CTransaction& CTransaction::operator=(const CTransaction &tx) {
     *const_cast<std::vector<CTxOut>*>(&vout) = tx.vout;
     *const_cast<unsigned int*>(&nLockTime) = tx.nLockTime;
     *const_cast<uint32_t*>(&nExpiryHeight) = tx.nExpiryHeight;
+    *const_cast<CAmount*>(&nBurnAmount) = tx.nBurnAmount;
     saplingBundle = tx.saplingBundle;
     orchardBundle = tx.orchardBundle;
     *const_cast<std::vector<JSDescription>*>(&vJoinSplit) = tx.vJoinSplit;
@@ -213,7 +218,7 @@ CTransaction& CTransaction::operator=(const CTransaction &tx) {
 
 CAmount CTransaction::GetValueOut() const
 {
-    CAmount nValueOut = 0;
+    CAmount nValueOut{nBurnAmount};
     for (const auto& out : vout) {
         if (!MoneyRange(out.nValue)) {
             throw std::runtime_error("CTransaction::GetValueOut(): nValue out of range");
@@ -352,6 +357,9 @@ std::string CTransaction::ToString() const
                 nConsensusBranchId.value_or(0),
                 orchardBundle.GetValueBalance(),
                 orchardBundle.GetNumActions());
+            if (nVersion >= ZIP233_BURN_MIN_TX_VERSION) {
+                str += strprintf(", nBurnAmount=%u", nBurnAmount);
+            }
         }
         str += ")\n";
     } else if (nVersion >= 3) {

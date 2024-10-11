@@ -51,12 +51,12 @@ struct NetworkUpgrade {
     /**
      * The first protocol version which will understand the new consensus rules
      */
-    int nProtocolVersion;
+    int nProtocolVersion = -1;
 
     /**
      * Height of the first block for which the new consensus rules will be active
      */
-    int nActivationHeight;
+    int nActivationHeight = -1;
 
     /**
      * Special value for nActivationHeight indicating that the upgrade is always active.
@@ -342,17 +342,12 @@ struct Params {
     /**
      * Returns the total block subsidy as of the given block height
      */
-    CAmount GetBlockSubsidy(int nHeight) const;
+    CAmount GetBlockSubsidy(int nHeight, const CAmount& nMoneyReserve) const;
 
     /**
      * Returns the vector of active funding streams as of the given height.
      */
     std::vector<std::pair<FSInfo, FundingStream>> GetActiveFundingStreams(int nHeight) const;
-
-    /**
-     * Returns the vector of active funding stream elements as of the given height.
-     */
-    std::set<FundingStreamElement> GetActiveFundingStreamElements(int nHeight) const;
 
     /**
      * Returns the active funding stream elements at the given height, with

@@ -138,6 +138,7 @@ BASE_SCRIPTS= [
     'coinbase_funding_streams.py',
     'framework.py',
     'sapling_rewind_check.py',
+    'feature_nsm.py',
     'feature_zip221.py',
     'feature_zip239.py',
     'feature_zip244_blockcommitments.py',
