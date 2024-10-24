@@ -194,7 +194,7 @@ namespace Consensus {
 
         const auto expectedRecipients = params.FundingPeriodIndex(startHeight, endHeight - 1) + 1;
         if (expectedRecipients > recipients.size()) {
-            return FundingStreamError::INSUFFICIENT_ADDRESSES;
+            return FundingStreamError::INSUFFICIENT_RECIPIENTS;
         }
 
         // Lockbox output periods must not start before NU6
@@ -221,8 +221,8 @@ namespace Consensus {
                     throw std::runtime_error("Canopy network upgrade not active at funding stream start height.");
                 case FundingStreamError::ILLEGAL_RANGE:
                     throw std::runtime_error("Illegal start/end height combination for funding stream.");
-                case FundingStreamError::INSUFFICIENT_ADDRESSES:
-                    throw std::runtime_error("Insufficient payment addresses to fully exhaust funding stream.");
+                case FundingStreamError::INSUFFICIENT_RECIPIENTS:
+                    throw std::runtime_error("Insufficient recipient identifiers to fully exhaust funding stream.");
                 case FundingStreamError::NU6_NOT_ACTIVE:
                     throw std::runtime_error("NU6 network upgrade not active at lockbox period start height.");
                 default:
@@ -349,7 +349,11 @@ namespace Consensus {
         // Funding streams are disabled if Canopy is not active.
         if (NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY)) {
             for (uint32_t idx = Consensus::FIRST_FUNDING_STREAM; idx < Consensus::MAX_FUNDING_STREAMS; idx++) {
+                // The following indexed access is safe as Consensus::MAX_FUNDING_STREAMS is used
+                // in the definition of vFundingStreams.
                 auto fs = vFundingStreams[idx];
+
+                // Funding period is [startHeight, endHeight).
                 if (fs && nHeight >= fs.value().GetStartHeight() && nHeight < fs.value().GetEndHeight()) {
                     activeStreams.push_back(std::make_pair(FundingStreamInfo[idx], fs.value()));
                 }
@@ -372,16 +376,10 @@ namespace Consensus {
 
         // Funding streams are disabled if Canopy is not active.
         if (NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY)) {
-            for (uint32_t idx = Consensus::FIRST_FUNDING_STREAM; idx < Consensus::MAX_FUNDING_STREAMS; idx++) {
-                // The following indexed access is safe as Consensus::MAX_FUNDING_STREAMS is used
-                // in the definition of vFundingStreams.
-                auto fs = vFundingStreams[idx];
-                // Funding period is [startHeight, endHeight)
-                if (fs && nHeight >= fs.value().GetStartHeight() && nHeight < fs.value().GetEndHeight()) {
-                    requiredElements.insert(std::make_pair(
-                        fs.value().Recipient(*this, nHeight),
-                        FundingStreamInfo[idx].Value(blockSubsidy)));
-                }
+            for (const auto& [fsinfo, fs] : GetActiveFundingStreams(nHeight)) {
+                requiredElements.insert(std::make_pair(
+                    fs.Recipient(*this, nHeight),
+                    fsinfo.Value(blockSubsidy)));
             }
         }
 
