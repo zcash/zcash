@@ -10,7 +10,7 @@
 class MockCValidationState : public CValidationState {
 public:
     MOCK_METHOD6(DoS, bool(int level, bool ret,
-             unsigned int chRejectCodeIn, const std::string strRejectReasonIn,
+             unsigned int chRejectCodeIn, const std::string &strRejectReasonIn,
              bool corruptionIn,
              const std::string &strDebugMessageIn));
     MOCK_METHOD4(Invalid, bool(bool ret,
