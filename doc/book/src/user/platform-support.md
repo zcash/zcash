@@ -1,6 +1,6 @@
 # Platform Support
 
-Support for different platforms (build "targets" and operating systems) are organised into
+Support for different platforms (build "targets" and operating systems) are organized into
 three tiers, each with a different set of guarantees. For more information on the policies
 for targets at each tier, see the [Platform Tier Policy](../dev/platform-tier-policy.md).
 
