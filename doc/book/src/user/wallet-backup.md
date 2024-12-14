@@ -60,7 +60,7 @@ copy to `wallet.dat`.
 
 ### Using `z_exportwallet` & `z_importwallet`
 
-If you prefer to have an export of your private keys in human readable format,
+If you prefer to have an export of your private keys in human-readable format,
 you can use:
 
 ```bash
