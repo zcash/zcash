@@ -104,4 +104,4 @@ This is an experimental feature so there are no guarantees that the protocol, da
 
 ### Notes
 
-Currently there is no user friendly way to help senders identify which joinsplit output index maps to a given payment they made.  It is possible to construct this from `debug.log`.  Ideas and feedback are most welcome on how to improve the user experience.
+Currently there is no user-friendly way to help senders identify which joinsplit output index maps to a given payment they made.  It is possible to construct this from `debug.log`.  Ideas and feedback are most welcome on how to improve the user experience.
