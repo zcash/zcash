@@ -71,7 +71,7 @@ Jonas Schnelli (24):
       fix rpc-tests.sh
       extend conversion to UniValue
       expicit set UniValue type to avoid empty values
-      special threatment for null,true,false because they are non valid json
+      special threatment for null,true,false because they are non-valid json
       univalue: add support for real, fix percision and make it json_spirit compatible
       univalue: correct bool support
       fix rpc unit test, plain numbers are not JSON compatible object
