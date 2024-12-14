@@ -90,7 +90,7 @@ Simon (91):
       Update find_unspent_notes() as mapNoteAddrs_t has been replaced by mapNoteData_t.
       z_sendmany from a taddr now routes change to a new address instead of back to the sender's taddr,
       Successful result of z_sendmany returns txid so it doesn't need to return raw hex.
-      Add public method to get state as a human readable string from an AsyncRPCOperation.
+      Add public method to get state as a human-readable string from an AsyncRPCOperation.
       Add public method to AsycnRPCQueue to retrieve all the known operation ids.
       Implement RPC call z_listoperationids and update z_getoperationstatus to take a list parameter.
       Refactoring and small improvements to async rpc operations.
