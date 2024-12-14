@@ -42,7 +42,7 @@ the script [`gen-sdk`](./gen-sdk) with the path to `Xcode.app` (extracted in the
 previous stage) as the first argument.
 
 ```bash
-# Generate a Xcode-11.3.1-11C505-extracted-SDK-with-libcxx-headers.tar.gz from
+# Generate an Xcode-11.3.1-11C505-extracted-SDK-with-libcxx-headers.tar.gz from
 # the supplied Xcode.app
 ./contrib/macdeploy/gen-sdk '/path/to/Xcode.app'
 ```
