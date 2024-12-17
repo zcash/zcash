@@ -430,7 +430,7 @@ Debugging/Testing options:
        all debugging information. <category> can be: addrman, alert, bench,
        coindb, db, http, libevent, lock, mempool, mempoolrej, net,
        partitioncheck, pow, proxy, prune, rand, receiveunsafe, reindex, rpc,
-       selectcoins, tor, zmq, zrpc, zrpcunsafe (implies zrpc). For multiple
+       selectcoins, tor, valuepool, zmq, zrpc, zrpcunsafe (implies zrpc). For multiple
        specific categories use -debug=<category> multiple times.
 
   -experimentalfeatures
