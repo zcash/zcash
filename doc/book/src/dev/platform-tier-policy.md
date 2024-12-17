@@ -3,7 +3,7 @@
 ## General
 
 ECC provides three tiers of platform support, modeled after the
-[Rust Target Tier Policy](https://doc.rust-lang.org/stable/rustc/platform-tier-policy.html):
+[Rust Target Tier Policy](https://doc.rust-lang.org/nightly/rustc/platform-support.html):
 
 - The Zcash developers provide no guarantees about tier 3 platforms; they exist in the
   codebase, but may or may not build.
