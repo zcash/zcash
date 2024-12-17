@@ -2,7 +2,7 @@ Tor Support in Zcash
 ====================
 
 Tor can be used to provide a layer of network anonymity for Zcash users.
-Additionally, Zcash users may chose to connect only to Tor hidden services, and
+Additionally, Zcash users may choose to connect only to Tor hidden services, and
 also to expose their own Tor hidden service to allow users to connect to them
 over the Tor network.
 
