@@ -964,7 +964,7 @@ delta = "1.0.207 -> 1.0.209"
 notes = '''
 There are no code changes in this delta - see https://crrev.com/c/5812194/2..5
 
-I've neverthless also grepped for `-i cipher`, `-i crypto`, `\bfs\b`,
+I've nevertheless also grepped for `-i cipher`, `-i crypto`, `\bfs\b`,
 `\bnet\b`, and `\bunsafe\b`.  There were no hits.
 '''
 aggregated-from = "https://chromium.googlesource.com/chromium/src/+/main/third_party/rust/chromium_crates_io/supply-chain/audits.toml?format=TEXT"
