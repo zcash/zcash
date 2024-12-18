@@ -5,7 +5,7 @@ Incoming viewing keys
 ---------------------
 
 Support for incoming viewing keys, as described in
-[the Zcash protocol spec](https://github.com/zcash/zips/blob/master/protocol/protocol.pdf),
+[the Zcash protocol spec](https://github.com/zcash/zips/blob/main/rendered/protocol/protocol.pdf),
 has been added to the wallet.
 
 Use the `z_exportviewingkey` RPC method to obtain the incoming viewing key for a
