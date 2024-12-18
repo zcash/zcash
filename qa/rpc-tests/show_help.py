@@ -9,18 +9,19 @@
 #
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal, zcashd_binary
+from test_framework.util import assert_equal, zcashd_binary, \
+    DAEMON_NAME, PACKAGE_NAME, WALLET_TOOL_NAME
 
 from difflib import SequenceMatcher, unified_diff
 import subprocess
 import tempfile
 
-help_message = """
-In order to ensure you are adequately protecting your privacy when using Zcash,
+help_message = f"""
+In order to ensure you are adequately protecting your privacy when using {PACKAGE_NAME},
 please see <https://z.cash/support/security/>.
 
 Usage:
-  zcashd [options]                     Start Zcash Daemon
+  {DAEMON_NAME} [options]                     Start {PACKAGE_NAME} Daemon
 
 Options:
 
@@ -73,7 +74,7 @@ Options:
        Specify data directory (this path cannot use '~')
 
   -paramsdir=<dir>
-       Specify Zcash network parameters directory
+       Specify {PACKAGE_NAME} network parameters directory
 
   -dbcache=<n>
        Set database cache size in megabytes (4 to 16384, default: 450)
@@ -316,7 +317,7 @@ Wallet options:
   -walletrequirebackup=<bool>
        By default, the wallet will not allow generation of new spending keys &
        addresses from the mnemonic seed until the backup of that seed has been
-       confirmed with the `zcashd-wallet-tool` utility. A user may start zcashd
+       confirmed with the `{WALLET_TOOL_NAME}` utility. A user may start {DAEMON_NAME}
        with `-walletrequirebackup=false` to allow generation of spending keys
        even if the backup has not yet been confirmed.
 

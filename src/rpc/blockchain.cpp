@@ -509,7 +509,7 @@ UniValue getblockdeltas(const UniValue& params, bool fHelp)
 
     if (!(fExperimentalInsightExplorer || fExperimentalLightWalletd)) {
         throw JSONRPCError(RPC_MISC_ERROR, "Error: getblockdeltas is disabled. "
-            "Run './zcash-cli help getblockdeltas' for instructions on how to enable this feature.");
+            "Run './" CLI_NAME " help getblockdeltas' for instructions on how to enable this feature.");
     }
 
     std::string strHash = params[0].get_str();
@@ -572,7 +572,7 @@ UniValue getblockhashes(const UniValue& params, bool fHelp)
 
     if (!(fExperimentalInsightExplorer || fExperimentalLightWalletd)) {
         throw JSONRPCError(RPC_MISC_ERROR, "Error: getblockhashes is disabled. "
-            "Run './zcash-cli help getblockhashes' for instructions on how to enable this feature.");
+            "Run './" CLI_NAME " help getblockhashes' for instructions on how to enable this feature.");
     }
 
     unsigned int high = params[0].get_int();
@@ -911,8 +911,8 @@ UniValue gettxout(const UniValue& params, bool fHelp)
             "     \"hex\" : \"hex\",        (string) \n"
             "     \"reqSigs\" : n,          (numeric) Number of required signatures\n"
             "     \"type\" : \"pubkeyhash\", (string) The type, eg pubkeyhash\n"
-            "     \"addresses\" : [          (array of string) array of Zcash addresses\n"
-            "        \"zcashaddress\"        (string) Zcash address\n"
+            "     \"addresses\" : [          (array of string) array of " PACKAGE_NAME " addresses\n"
+            "        \"zcashaddress\"        (string) " PACKAGE_NAME " address\n"
             "        ,...\n"
             "     ]\n"
             "  },\n"
@@ -1490,7 +1490,7 @@ UniValue z_getsubtreesbyindex(const UniValue& params, bool fHelp)
 
     if (!fExperimentalLightWalletd) {
         throw JSONRPCError(RPC_MISC_ERROR, "Error: z_getsubtreesbyindex is disabled. "
-            "Run './zcash-cli help z_getsubtreesbyindex' for instructions on how to enable this feature.");
+            "Run './" CLI_NAME " help z_getsubtreesbyindex' for instructions on how to enable this feature.");
     }
 
     auto strPool = params[0].get_str();

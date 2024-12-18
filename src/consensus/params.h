@@ -235,7 +235,7 @@ public:
 };
 
 /**
- * The set of features supported by Zcashd.
+ * The set of features supported by zcashd.
  */
 const FeatureSet<ConsensusFeature, Params> Features({});
 

@@ -29,7 +29,13 @@ import errno
 from . import coverage
 from .authproxy import AuthServiceProxy, JSONRPCException
 
-ZCASHD_BINARY = os.path.join('src', 'zcashd')
+PACKAGE_NAME = 'Zcash'
+DAEMON_NAME = 'zcashd'
+WALLET_TOOL_NAME = 'zcashd-wallet-tool'
+CLI_NAME = 'zcash-cli'
+TX_UTILITY_NAME = 'zcash-tx'
+
+ZCASHD_BINARY = os.path.join('src', DAEMON_NAME)
 
 COVERAGE_DIR = None
 PRE_BLOSSOM_BLOCK_TARGET_SPACING = 150
