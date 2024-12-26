@@ -41,7 +41,7 @@ Sean Bowe (4):
 Simon Liu (13):
       Fixes #1964 to catch general exception in z_sendmany and catch exceptions as reference-to-const.
       Fixes #1967 by adding age of note to z_sendmany logging.
-      Fixes a bug where the unsigned transaction was logged by z_sendmany after a successful sign and send, meaning that the logged hash fragment would be different from the txid logged by "AddToWallet".  This issue occured when sending from transparent addresses, as utxo inputs must be signed.  It did not occur when sending from shielded addresses.
+      Fixes a bug where the unsigned transaction was logged by z_sendmany after a successful sign and send, meaning that the logged hash fragment would be different from the txid logged by "AddToWallet".  This issue occurred when sending from transparent addresses, as utxo inputs must be signed.  It did not occur when sending from shielded addresses.
       Bump COPYRIGHT_YEAR from 2016 to 2017.
       Closes #1780. Result of z_getoperationstatus now sorted by creation time of operation
       Remove UTF-8 BOM efbbbf from zcash.conf to avoid problems with command line tools
