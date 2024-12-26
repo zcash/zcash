@@ -350,7 +350,7 @@ Kris Nuttycombe (26):
       Refactor RPC privacyPolicy handling
       Update to use the `ff 0.13` dependency stack.
       Add `AllowRevealedSenders` to fix `mempool_nu_activation.py`
-      Calculate convential fee in `CreateTransaction` before stripping sigs.
+      Calculate conventional fee in `CreateTransaction` before stripping sigs.
       Fix formating of money strings.
       Use the conventional fee for prioritisation in prioritisetransactions.py
 
