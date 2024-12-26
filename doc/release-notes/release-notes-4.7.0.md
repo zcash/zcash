@@ -674,7 +674,7 @@ Kris Nuttycombe (303):
       Correctly report change outputs in z_viewtransaction.
       Return the default unified address if we have the UFVK but no address metadata.
       Fix missing AllowRevealedSenders flag in test.
-      Uncomment addtional tests that depend on z_viewtransaction.
+      Uncomment additional tests that depend on z_viewtransaction.
       Minor rename & documentation improvement.
       Add RecipientType to GetPaymentAddressForRecipient result.
       Make CWallet::DefaultReceiverTypes height-dependent.

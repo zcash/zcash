@@ -202,7 +202,7 @@ Kris Nuttycombe (46):
       Ensure that the Orchard note commitment tree does not exceed its maximum size.
       Update Orchard commitment tree hashes to use total MerkleCRH^Orchard.
       Apply suggestions from code review
-      Make Sapling Spend and Ouput count, and Orchard Action count checks be noncontextual.
+      Make Sapling Spend and Output count, and Orchard Action count checks be noncontextual.
       Use DOS level 100 for noncontextual checks.
       Fix error strings to correctly reflect context.
       Remove unused account-related wallet methods.

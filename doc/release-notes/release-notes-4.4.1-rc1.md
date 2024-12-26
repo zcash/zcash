@@ -12,7 +12,7 @@ Changelog
 =========
 
 251 (1):
-      Removes unsed `CBloomFilter` constructor.
+      Removes used `CBloomFilter` constructor.
 
 Akio Nakamura (1):
       Prevent mutex lock fail even if --enable-debug
