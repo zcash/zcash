@@ -549,7 +549,7 @@ Marshall Gaucher (74):
       update to py3 conventions, preserve ipv6 patch
       update str cast to prevent address assert issues
       clean up binascii call
-      Add keyerror execption
+      Add keyerror exception
       update to py3 env path
       update to py3 conventions, update functions to be upstream consistent
       update to py3 conventions, clean up code to be upstream consistent

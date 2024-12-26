@@ -68,7 +68,7 @@ Alfredo Garcia (19):
       readd create_directories
 
 Ben Woosley (1):
-      Assert CPubKey::ValidLength to the pubkey's header-relevent size
+      Assert CPubKey::ValidLength to the pubkey's header-relevant size
 
 Carl Dong (1):
       depends: tar: Always extract as yourself
