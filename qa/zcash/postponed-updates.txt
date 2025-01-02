@@ -53,7 +53,6 @@ native_cxxbridge 1.0.133 2025-02-01
 native_cxxbridge 1.0.134 2025-02-01
 native_cxxbridge 1.0.135 2025-02-01
 native_cxxbridge 1.0.136 2025-02-01
-native_xxhash 0.8.3 2025-02-01
 rustcxx 1.0.129 2025-02-01
 rustcxx 1.0.130 2025-02-01
 rustcxx 1.0.131 2025-02-01
