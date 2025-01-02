@@ -5,21 +5,63 @@
 #
 
 # Boost 1.84.0 causes gtests to fail on macOS.
-boost 1.84.0 2024-12-15
-boost 1.85.0 2024-12-15
-boost 1.86.0 2024-12-15
-native_b2 1.84.0 2024-12-15
-native_b2 1.85.0 2024-12-15
-native_b2 1.86.0 2024-12-15
+boost 1.84.0 2025-04-15
+boost 1.85.0 2025-04-15
+boost 1.86.0 2025-04-15
+boost 1.87.0 2025-04-15
+native_b2 1.84.0 2025-04-15
+native_b2 1.85.0 2025-04-15
+native_b2 1.86.0 2025-04-15
+native_b2 1.87.0 2025-04-15
 
 # Clang and Rust are currently pinned to LLVM 18
-libcxx 19.1.0 2024-12-15
-libcxx 19.1.1 2024-12-15
-native_clang 19.1.0 2024-12-15
-native_clang 19.1.1 2024-12-15
+libcxx 19.1.0 2025-04-15
+libcxx 19.1.1 2025-04-15
+libcxx 19.1.2 2025-04-15
+libcxx 19.1.3 2025-04-15
+libcxx 19.1.4 2025-04-15
+libcxx 19.1.5 2025-04-15
+libcxx 19.1.6 2025-04-15
+native_clang 19.1.0 2025-04-15
+native_clang 19.1.1 2025-04-15
+native_clang 19.1.2 2025-04-15
+native_clang 19.1.3 2025-04-15
+native_clang 19.1.4 2025-04-15
+native_clang 19.1.5 2025-04-15
+native_clang 19.1.6 2025-04-15
+native_rust 1.82.0 2025-04-15
+native_rust 1.83.0 2025-04-15
 
 # We follow upstream Bitcoin Core's LevelDB updates
-leveldb 1.23 2024-12-15
+leveldb 1.23 2025-04-15
 
 # We're never updating to this version
-bdb 18.1.40 2025-03-01
+bdb 18.1.40 2026-03-01
+
+# Postponed until 6.2.0
+native_cmake 3.30.5 2025-02-01
+native_cmake 3.30.6 2025-02-01
+native_cmake 3.31.0 2025-02-01
+native_cmake 3.31.1 2025-02-01
+native_cmake 3.31.2 2025-02-01
+native_cmake 3.31.3 2025-02-01
+native_cxxbridge 1.0.129 2025-02-01
+native_cxxbridge 1.0.130 2025-02-01
+native_cxxbridge 1.0.131 2025-02-01
+native_cxxbridge 1.0.132 2025-02-01
+native_cxxbridge 1.0.133 2025-02-01
+native_cxxbridge 1.0.134 2025-02-01
+native_cxxbridge 1.0.135 2025-02-01
+native_cxxbridge 1.0.136 2025-02-01
+native_fmt 11.1.0 2025-02-01
+native_fmt 11.1.1 2025-02-01
+native_xxhash 0.8.3 2025-02-01
+rustcxx 1.0.129 2025-02-01
+rustcxx 1.0.130 2025-02-01
+rustcxx 1.0.131 2025-02-01
+rustcxx 1.0.132 2025-02-01
+rustcxx 1.0.133 2025-02-01
+rustcxx 1.0.134 2025-02-01
+rustcxx 1.0.135 2025-02-01
+rustcxx 1.0.136 2025-02-01
+utfcpp 4.0.6 2025-02-01
