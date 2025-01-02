@@ -2,7 +2,7 @@
 # cargo-vet config file
 
 [cargo-vet]
-version = "0.9"
+version = "0.10"
 
 [imports.bytecode-alliance]
 url = "https://raw.githubusercontent.com/bytecodealliance/wasmtime/main/supply-chain/audits.toml"
@@ -104,10 +104,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.chacha20poly1305]]
 version = "0.9.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.cipher]]
-version = "0.3.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.clearscreen]]
@@ -474,10 +470,6 @@ criteria = "safe-to-deploy"
 version = "0.8.0"
 criteria = "safe-to-deploy"
 
-[[exemptions.sha2]]
-version = "0.10.8"
-criteria = "safe-to-deploy"
-
 [[exemptions.shlex]]
 version = "1.3.0"
 criteria = "safe-to-deploy"
@@ -632,12 +624,4 @@ criteria = "safe-to-deploy"
 
 [[exemptions.zerocopy-derive]]
 version = "0.7.35"
-criteria = "safe-to-deploy"
-
-[[exemptions.zeroize]]
-version = "1.8.1"
-criteria = "safe-to-deploy"
-
-[[exemptions.zeroize_derive]]
-version = "1.3.2"
 criteria = "safe-to-deploy"
