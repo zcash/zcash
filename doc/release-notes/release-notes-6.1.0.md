@@ -1,3 +1,6 @@
+This is a maintenance release that sets a new end-of-service height to help
+ensure continuity of services.
+
 Changelog
 =========
 
