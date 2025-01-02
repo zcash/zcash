@@ -39,12 +39,6 @@ leveldb 1.23 2025-04-15
 bdb 18.1.40 2026-03-01
 
 # Postponed until 6.2.0
-native_cmake 3.30.5 2025-02-01
-native_cmake 3.30.6 2025-02-01
-native_cmake 3.31.0 2025-02-01
-native_cmake 3.31.1 2025-02-01
-native_cmake 3.31.2 2025-02-01
-native_cmake 3.31.3 2025-02-01
 native_cxxbridge 1.0.129 2025-02-01
 native_cxxbridge 1.0.130 2025-02-01
 native_cxxbridge 1.0.131 2025-02-01
