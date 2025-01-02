@@ -4673,7 +4673,7 @@ void SetChainPoolValues(
             lockboxValue += elem.second;
         }
     }
-    LogPrintf("%s: Lockbox value is %d at height %d", __func__, lockboxValue, pindex->nHeight);
+    LogPrint("valuepool", "%s: Lockbox value is %d at height %d", __func__, lockboxValue, pindex->nHeight);
 
     for (auto tx : block.vtx) {
         // For the genesis block only, compute the chain supply delta and the transparent
