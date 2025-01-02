@@ -712,6 +712,18 @@ notes = """
 used as the ZST `SyncUnsafeCell<PhantomData<()>>` to fix an LLVM miscompilation.
 """
 
+[[audits.cxx]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.128 -> 1.0.136"
+notes = """
+- Change to build script is to raise MSRV.
+- Changes to `unsafe` blocks are a refactor to expose pointers from `UniquePtr`.
+  The existing usages are effectively unaltered.
+- The hasher is changed from SipHash-1-3 to foldhash-q. This means the hasher is
+  faster, but no longer resistant to HashDoS.
+"""
+
 [[audits.cxxbridge-flags]]
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
@@ -777,6 +789,11 @@ delta = "1.0.111 -> 1.0.113"
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.121 -> 1.0.122"
+
+[[audits.cxxbridge-flags]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.135 -> 1.0.136"
 
 [[audits.cxxbridge-macro]]
 who = "Daira Hopwood <daira@jacaranda.org>"
@@ -872,6 +889,15 @@ notes = "Only changes to lints."
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.126 -> 1.0.128"
+
+[[audits.cxxbridge-macro]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.128 -> 1.0.136"
+notes = """
+Changes to generated `unsafe` code are to add the new `unsafe` annotations added
+in Rust 1.82 to the `extern` blocks.
+"""
 
 [[audits.der]]
 who = "Daira-Emma Hopwood <daira@jacaranda.org>"
@@ -2171,6 +2197,11 @@ who = "Daira-Emma Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
 delta = "0.38.28 -> 0.38.32"
 notes = "Cursory review."
+
+[[audits.rustversion]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.18 -> 1.0.19"
 
 [[audits.ryu]]
 who = "Jack Grigg <jack@electriccoin.co>"
