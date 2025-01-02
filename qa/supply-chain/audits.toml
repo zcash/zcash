@@ -579,6 +579,11 @@ via its methods (one of which is now usable with the new MSRV) instead of via
 casting.
 """
 
+[[audits.crossbeam-utils]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.8.20 -> 0.8.21"
+
 [[audits.crypto-common]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = ["crypto-reviewed", "safe-to-deploy"]
@@ -1088,6 +1093,15 @@ criteria = "safe-to-deploy"
 delta = "0.3.29 -> 0.3.30"
 notes = "Removes `build.rs` now that it can rely on the `target_has_atomic` attribute."
 
+[[audits.futures-channel]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.3.30 -> 0.3.31"
+notes = """
+Changes to `unsafe` code are only to wrap the internals of some `unsafe fn`s int
+`unsafe` blocks for added clarity.
+"""
+
 [[audits.futures-core]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -1395,6 +1409,11 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "2.9.0 -> 2.10.0"
 
+[[audits.ipnet]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "2.10.0 -> 2.10.1"
+
 [[audits.itoa]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -1585,6 +1604,12 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "0.2.0 -> 0.2.1"
 notes = "Exposes an existing macro. Note that I am the author of the crate."
+
+[[audits.memuse]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.2.1 -> 0.2.2"
+notes = "Adds no-std support; no other changes. Note that I am the author of the crate."
 
 [[audits.metrics]]
 who = "Jack Grigg <jack@z.cash>"
@@ -2296,6 +2321,11 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.193 -> 1.0.194"
 
+[[audits.serde]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.216 -> 1.0.217"
+
 [[audits.serde_derive]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -2336,6 +2366,11 @@ delta = "1.0.188 -> 1.0.193"
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.193 -> 1.0.194"
+
+[[audits.serde_derive]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.216 -> 1.0.217"
 
 [[audits.serde_json]]
 who = "Jack Grigg <jack@electriccoin.co>"
@@ -3087,7 +3122,7 @@ end = "2024-09-21"
 criteria = ["safe-to-deploy", "crypto-reviewed"]
 user-id = 6289 # Jack Grigg (str4d)
 start = "2021-09-22"
-end = "2024-09-21"
+end = "2026-01-02"
 
 [[trusted.halo2_gadgets]]
 criteria = ["safe-to-deploy", "crypto-reviewed"]
@@ -3095,11 +3130,23 @@ user-id = 1244 # ebfull
 start = "2022-05-10"
 end = "2024-09-21"
 
+[[trusted.halo2_gadgets]]
+criteria = ["safe-to-deploy", "crypto-reviewed"]
+user-id = 6289 # Jack Grigg (str4d)
+start = "2022-02-15"
+end = "2026-01-02"
+
 [[trusted.halo2_legacy_pdqsort]]
 criteria = ["safe-to-deploy", "crypto-reviewed"]
 user-id = 199950 # Daira Emma Hopwood (daira)
 start = "2023-02-24"
 end = "2024-09-21"
+
+[[trusted.halo2_poseidon]]
+criteria = ["safe-to-deploy", "crypto-reviewed"]
+user-id = 6289 # Jack Grigg (str4d)
+start = "2024-12-13"
+end = "2026-01-02"
 
 [[trusted.halo2_proofs]]
 criteria = ["safe-to-deploy", "crypto-reviewed"]
@@ -3160,6 +3207,12 @@ criteria = ["safe-to-deploy", "crypto-reviewed", "license-reviewed"]
 user-id = 6289 # Jack Grigg (str4d)
 start = "2024-01-26"
 end = "2025-03-18"
+
+[[trusted.sinsemilla]]
+criteria = ["safe-to-deploy", "crypto-reviewed"]
+user-id = 6289 # Jack Grigg (str4d)
+start = "2024-12-13"
+end = "2026-01-02"
 
 [[trusted.windows-sys]]
 criteria = "safe-to-deploy"
@@ -3244,6 +3297,12 @@ criteria = "safe-to-deploy"
 user-id = 1244 # ebfull
 start = "2022-10-19"
 end = "2024-09-21"
+
+[[trusted.zcash_encoding]]
+criteria = "safe-to-deploy"
+user-id = 6289 # Jack Grigg (str4d)
+start = "2021-08-31"
+end = "2026-01-02"
 
 [[trusted.zcash_history]]
 criteria = "safe-to-deploy"

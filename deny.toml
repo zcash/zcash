@@ -30,5 +30,5 @@ exceptions = [
     { name = "secp256k1-sys", allow = ["CC0-1.0"] },
     { name = "subtle", allow = ["BSD-3-Clause"] },
     { name = "terminfo", allow = ["WTFPL"] },
-    { name = "unicode-ident", allow = ["Unicode-DFS-2016"] },
+    { name = "unicode-ident", allow = ["Unicode-3.0"] },
 ]

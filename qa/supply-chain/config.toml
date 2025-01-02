@@ -55,7 +55,7 @@ version = "1.0.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.bech32]]
-version = "0.8.1"
+version = "0.11.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.bellman]]
@@ -114,6 +114,10 @@ criteria = "safe-to-deploy"
 version = "0.9.6"
 criteria = "safe-to-deploy"
 
+[[exemptions.core2]]
+version = "0.3.3"
+criteria = "safe-to-deploy"
+
 [[exemptions.cpufeatures]]
 version = "0.2.13"
 criteria = "safe-to-deploy"
@@ -123,7 +127,7 @@ version = "0.5.6"
 criteria = "safe-to-deploy"
 
 [[exemptions.crossbeam-deque]]
-version = "0.8.2"
+version = "0.8.6"
 criteria = "safe-to-deploy"
 
 [[exemptions.crossbeam-epoch]]
@@ -395,7 +399,7 @@ version = "0.12.2"
 criteria = "safe-to-deploy"
 
 [[exemptions.proptest]]
-version = "1.5.0"
+version = "1.6.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.quanta]]
@@ -503,7 +507,7 @@ version = "1.0.102"
 criteria = "safe-to-deploy"
 
 [[exemptions.syn]]
-version = "2.0.75"
+version = "2.0.94"
 criteria = "safe-to-deploy"
 
 [[exemptions.tempfile]]
