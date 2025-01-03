@@ -80,6 +80,7 @@ pub(crate) mod ffi {
             canopy: i32,
             nu5: i32,
             nu6: i32,
+            z_future: i32,
         ) -> Result<Box<Network>>;
     }
 

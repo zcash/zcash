@@ -158,7 +158,13 @@ public:
         }
         LogPrint("pow", "%s: Miner reward at height %d is %d", __func__, nHeight, miner_reward);
 
-        return miner_reward + nFees;
+        miner_reward += nFees;
+
+        if (mtx.nBurnAmount > miner_reward) {
+            throw std::runtime_error(strprintf("Burned value in coinbase transaction must not exceed miner reward: %d > %d", mtx.nBurnAmount, miner_reward));
+        }
+
+        return miner_reward - mtx.nBurnAmount;
     }
 
     void ComputeBindingSig(rust::Box<sapling::Builder> saplingBuilder, std::optional<orchard::UnauthorizedBundle> orchardBundle) const {
@@ -272,7 +278,7 @@ public:
     }
 };
 
-CMutableTransaction CreateCoinbaseTransaction(const CChainParams& chainparams, CAmount nFees, const MinerAddress& minerAddress, int nHeight)
+CMutableTransaction CreateCoinbaseTransaction(const CChainParams& chainparams, CAmount nFees, const MinerAddress& minerAddress, int nHeight, const CAmount nBurnAmount)
 {
         CMutableTransaction mtx = CreateNewContextualCMutableTransaction(
                 chainparams.GetConsensus(), nHeight,
@@ -289,6 +295,7 @@ CMutableTransaction CreateCoinbaseTransaction(const CChainParams& chainparams, C
         }
 
         // Add outputs and sign
+        mtx.nBurnAmount = nBurnAmount;
         std::visit(
             AddOutputsToCoinbaseTxAndSign(mtx, chainparams, nHeight, nFees),
             minerAddress);
@@ -337,7 +344,8 @@ void BlockAssembler::resetBlock(const MinerAddress& minerAddress)
 
 CBlockTemplate* BlockAssembler::CreateNewBlock(
     const MinerAddress& minerAddress,
-    const std::optional<CMutableTransaction>& next_cb_mtx)
+    const std::optional<CMutableTransaction>& next_cb_mtx,
+    const CAmount nBurnAmount)
 {
     resetBlock(minerAddress);
 
@@ -415,7 +423,7 @@ CBlockTemplate* BlockAssembler::CreateNewBlock(
     if (next_cb_mtx) {
         pblock->vtx[0] = *next_cb_mtx;
     } else {
-        pblock->vtx[0] = CreateCoinbaseTransaction(chainparams, nFees, minerAddress, nHeight);
+        pblock->vtx[0] = CreateCoinbaseTransaction(chainparams, nFees, minerAddress, nHeight, nBurnAmount);
     }
     pblocktemplate->vTxFees[0] = -nFees;
 

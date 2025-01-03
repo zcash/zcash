@@ -1260,7 +1260,7 @@ bool ContextualCheckTransaction(
                 }
 
                 // Reject transactions with invalid version
-                if (tx.nVersion > ZIP225_MAX_TX_VERSION + 1) {
+                if (tx.nVersion > ZFUTURE_TX_VERSION) {
                     return state.DoS(
                         dosLevelPotentiallyRelaxing,
                         error("ContextualCheckTransaction(): Future version too high"),
@@ -1484,7 +1484,8 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     if (tx.vout.empty() &&
         tx.vJoinSplit.empty() &&
         tx.GetSaplingOutputsCount() == 0 &&
-        !orchard_bundle.OutputsEnabled())
+        !orchard_bundle.OutputsEnabled() &&
+        tx.nBurnAmount == 0)
     {
         return state.DoS(10, false, REJECT_INVALID, "bad-txns-no-sink-of-funds");
     }
@@ -3321,7 +3322,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             // Add the output value of the coinbase transaction to the chain supply
             // delta. This includes fees, which are then canceled out by the fee
             // subtractions in the other branch of this conditional.
-            chainSupplyDelta += tx.GetValueOut();
+            chainSupplyDelta += tx.GetValueOut() - tx.nBurnAmount;
         } else {
             const auto txFee = view.GetValueIn(tx) - tx.GetValueOut();
             nFees += txFee;
@@ -3329,7 +3330,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             // Fees from a transaction do not go into an output of the transaction,
             // and therefore decrease the chain supply. If the miner claims them,
             // they will be re-added in the other branch of this conditional.
-            chainSupplyDelta -= txFee;
+            chainSupplyDelta -= txFee + tx.nBurnAmount;
 
             std::vector<CScriptCheck> vChecks;
             if (!ContextualCheckInputs(tx, state, view, fExpensiveChecks, flags, fCacheResults, txdata.back(), consensusParams, consensusBranchId, nScriptCheckThreads ? &vChecks : NULL))

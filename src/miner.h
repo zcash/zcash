@@ -96,7 +96,7 @@ struct CBlockTemplate
     std::vector<int64_t> vTxSigOps;
 };
 
-CMutableTransaction CreateCoinbaseTransaction(const CChainParams& chainparams, CAmount nFees, const MinerAddress& minerAddress, int nHeight);
+CMutableTransaction CreateCoinbaseTransaction(const CChainParams& chainparams, CAmount nFees, const MinerAddress& minerAddress, int nHeight, const CAmount nBurnAmount);
 
 /** Generate a new block, without valid proof-of-work */
 class BlockAssembler
@@ -138,7 +138,8 @@ public:
     /** Construct a new block template with coinbase to minerAddress */
     CBlockTemplate* CreateNewBlock(
         const MinerAddress& minerAddress,
-        const std::optional<CMutableTransaction>& next_coinbase_mtx = std::nullopt);
+        const std::optional<CMutableTransaction>& next_coinbase_mtx = std::nullopt,
+        const CAmount nBurnAmount = 0);
 
 private:
     void constructZIP317BlockTemplate();
