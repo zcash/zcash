@@ -2,7 +2,7 @@
 # cargo-vet config file
 
 [cargo-vet]
-version = "0.9"
+version = "0.10"
 
 [imports.bytecode-alliance]
 url = "https://raw.githubusercontent.com/bytecodealliance/wasmtime/main/supply-chain/audits.toml"
@@ -55,7 +55,7 @@ version = "1.0.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.bech32]]
-version = "0.8.1"
+version = "0.11.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.bellman]]
@@ -106,16 +106,16 @@ criteria = "safe-to-deploy"
 version = "0.9.0"
 criteria = "safe-to-deploy"
 
-[[exemptions.cipher]]
-version = "0.3.0"
-criteria = "safe-to-deploy"
-
 [[exemptions.clearscreen]]
 version = "1.0.9"
 criteria = "safe-to-deploy"
 
 [[exemptions.const-oid]]
 version = "0.9.6"
+criteria = "safe-to-deploy"
+
+[[exemptions.core2]]
+version = "0.3.3"
 criteria = "safe-to-deploy"
 
 [[exemptions.cpufeatures]]
@@ -127,7 +127,7 @@ version = "0.5.6"
 criteria = "safe-to-deploy"
 
 [[exemptions.crossbeam-deque]]
-version = "0.8.2"
+version = "0.8.6"
 criteria = "safe-to-deploy"
 
 [[exemptions.crossbeam-epoch]]
@@ -399,7 +399,7 @@ version = "0.12.2"
 criteria = "safe-to-deploy"
 
 [[exemptions.proptest]]
-version = "1.5.0"
+version = "1.6.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.quanta]]
@@ -474,10 +474,6 @@ criteria = "safe-to-deploy"
 version = "0.8.0"
 criteria = "safe-to-deploy"
 
-[[exemptions.sha2]]
-version = "0.10.8"
-criteria = "safe-to-deploy"
-
 [[exemptions.shlex]]
 version = "1.3.0"
 criteria = "safe-to-deploy"
@@ -511,7 +507,7 @@ version = "1.0.102"
 criteria = "safe-to-deploy"
 
 [[exemptions.syn]]
-version = "2.0.75"
+version = "2.0.94"
 criteria = "safe-to-deploy"
 
 [[exemptions.tempfile]]
@@ -632,12 +628,4 @@ criteria = "safe-to-deploy"
 
 [[exemptions.zerocopy-derive]]
 version = "0.7.35"
-criteria = "safe-to-deploy"
-
-[[exemptions.zeroize]]
-version = "1.8.1"
-criteria = "safe-to-deploy"
-
-[[exemptions.zeroize_derive]]
-version = "1.3.2"
 criteria = "safe-to-deploy"

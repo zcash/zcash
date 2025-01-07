@@ -1,9 +1,9 @@
 package=native_fmt
-$(package)_version=11.0.2
+$(package)_version=11.1.1
 $(package)_download_path=https://github.com/fmtlib/fmt/archive/refs/tags
 $(package)_download_file=$($(package)_version).tar.gz
 $(package)_file_name=fmt-$($(package)_version).tar.gz
-$(package)_sha256_hash=6cb1e6d37bdcb756dbbe59be438790db409cdb4868c66e888d5df9f13f7c027f
+$(package)_sha256_hash=482eed9efbc98388dbaee5cb5f368be5eca4893456bb358c18b7ff71f835ae43
 $(package)_build_subdir=build
 $(package)_dependencies=native_cmake
 
