@@ -1,9 +1,9 @@
 Zcash Contributors
 ==================
 
-* Jack Grigg (2181)
+* Jack Grigg (2185)
 * Kris Nuttycombe (751)
-* Daira-Emma Hopwood (492)
+* Daira-Emma Hopwood (498)
 * Simon Liu (464)
 * Sean Bowe (413)
 * Eirik Ogilvie-Wigley (273)
@@ -15,8 +15,8 @@ Zcash Contributors
 * Taylor Hornby (118)
 * Ying Tong Lai (99)
 * Marco Falke (91)
+* Larry Ruane (90)
 * Jonas Schnelli (90)
-* Larry Ruane (89)
 * Jay Graber (89)
 * sasha (80)
 * Cory Fields (78)
