@@ -243,7 +243,7 @@ ACK -  A loose ACK can be confusing. It's best to avoid them unless it's a docum
 
 NACK - Disagree with the code changes/concept. Should be accompanied by an explanation.
 
-See the [Development Guidelines](https://zcash.readthedocs.io/en/latest/rtd_pages/development_guidelines.html) documentation for preferred workflows, information on continuous integration and release versioning.
+See the [Development Documentation](book/src/dev.md) documentation for preferred workflows, information on continuous integration and release versioning.
 
 Strings and formatting
 ------------------------

@@ -44,6 +44,10 @@ is an automatic deprecation shutdown feature which will halt the node some
 time after this 16-week period. The automatic feature is based on block
 height.
 
+#### Installation
+
+See [Debian / Ubuntu installation](user/installation.md#debian-ubuntu).
+
 ## Other Zcash Implementations
 
 The [Zebra](https://github.com/ZcashFoundation/zebra) project offers a
@@ -52,14 +56,12 @@ ground up.
 
 ## Getting Started
 
-Please see our [user
-guide](https://zcash.readthedocs.io/en/latest/rtd_pages/rtd_docs/user_guide.html)
-for instructions on joining the main Zcash network.
+Please see our [user documentation](user.md) for instructions on joining the main Zcash network.
+
+<!-- Relative link destinations like `user.md` live under `./doc/book/src`. -->
 
 ### Need Help?
 
-* :blue_book: See the documentation at the [ReadTheDocs](https://zcash.readthedocs.io)
-  for help and more information.
 * :incoming_envelope: Ask for help on the [Zcash](https://forum.z.cash/) forum.
 * :speech_balloon: Join our community on [Discord](https://discord.com/invite/zcash) 
 * 🧑‍🎓: Learn at [ZecHub](https://zechub.wiki/)
@@ -75,9 +77,9 @@ Build Zcash along with most dependencies from source by running the following co
 ./zcutil/build.sh -j$(nproc)
 ```
 
-Currently, Zcash is only officially supported on Debian and Ubuntu. See the
-[Debian / Ubuntu build](https://zcash.readthedocs.io/en/latest/rtd_pages/Debian-Ubuntu-build.html)
-for detailed instructions.
+### Development
+
+See [Developer Documentation](dev.md).
 
 License
 -------
