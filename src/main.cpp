@@ -5548,6 +5548,7 @@ bool static LoadBlockIndexDB(const CChainParams& chainparams)
 {
     if (!pblocktree->LoadBlockIndexGuts(InsertBlockIndex, chainparams))
         return false;
+    if (ShutdownRequested()) return true;
 
     // Calculate nChainWork
     vector<pair<int, CBlockIndex*> > vSortedByHeight;
