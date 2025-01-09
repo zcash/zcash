@@ -86,12 +86,12 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
 
     if (fHelp || params.size() < 1 || params.size() > 3)
         throw runtime_error(
-            "importprivkey \"zcashprivkey\" ( \"label\" rescan )\n"
+            "importprivkey \"zcashprivkey\" ( \"label\" rescan|indexStart )\n"
             "\nAdds a private key (as returned by dumpprivkey) to your wallet.\n"
             "\nArguments:\n"
             "1. \"zcashprivkey\"   (string, required) The private key (see dumpprivkey)\n"
             "2. \"label\"            (string, optional, default=\"\") An optional label\n"
-            "3. rescan               (boolean, optional, default=true) Rescan the wallet for transactions\n"
+            "3. rescan|indexStart     (boolean|numeric , optional, default=true, [from genesis]) Rescan the wallet for transactions, if passed an integer, start scan since that block index\n"
             "\nNote: This call can take a long time to complete if rescan is true.\n"
             "\nExamples:\n"
             "\nDump a private key\n"
@@ -100,6 +100,8 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
             + HelpExampleCli("importprivkey", "\"mykey\"") +
             "\nImport using a label and without rescan\n"
             + HelpExampleCli("importprivkey", "\"mykey\" \"testing\" false") +
+            "\nImport using a label and with scan from block 123456\n"
+            + HelpExampleCli("importprivkey", "\"mykey\" \"testing\" 123456") +
             "\nAs a JSON-RPC call\n"
             + HelpExampleRpc("importprivkey", "\"mykey\", \"testing\", false")
         );
@@ -118,8 +120,15 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
 
     // Whether to perform rescan after import
     bool fRescan = true;
-    if (params.size() > 2)
-        fRescan = params[2].get_bool();
+    CBlockIndex *indexStart = chainActive.Genesis();
+
+    if (params.size() > 2) {
+        if (params[2].isNum()) {
+            indexStart = chainActive[params[2].get_int()];
+        } else {
+            fRescan = params[2].get_bool();
+        }
+    }
 
     const auto& chainparams = Params();
     KeyIO keyIO(chainparams);
@@ -148,7 +157,7 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
         pwalletMain->nTimeFirstKey = 1; // 0 would be considered 'no value'
 
         if (fRescan) {
-            pwalletMain->ScanForWalletTransactions(chainActive.Genesis(), true, false);
+            pwalletMain->ScanForWalletTransactions(indexStart, true, false);
         }
     }
 
