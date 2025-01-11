@@ -547,7 +547,7 @@ SECP256K1_API int secp256k1_ecdsa_signature_serialize_compact(
 /** Verify an ECDSA signature.
  *
  *  Returns: 1: correct signature
- *           0: incorrect or unparseable signature
+ *           0: incorrect or unparsable signature
  *  Args:    ctx:       a secp256k1 context object.
  *  In:      sig:       the signature being verified.
  *           msghash32: the 32-byte message hash being verified.

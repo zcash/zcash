@@ -50,7 +50,7 @@ Jay Graber (4):
       Add 1.0.7 release notes and update authors.md
 
 Jonas Schnelli (23):
-      [net] extend core functionallity for ban/unban/listban
+      [net] extend core functionality for ban/unban/listban
       [RPC] add setban/listbanned/clearbanned RPC commands
       [QA] add setban/listbanned/clearbanned tests
       [net] remove unused return type bool from CNode::Ban()

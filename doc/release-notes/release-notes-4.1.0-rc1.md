@@ -357,7 +357,7 @@ Jack Grigg (9):
       httpserver: Code style cleanups
       depends: Update packages documentation for Zcash
       depends: Add untested note to FreeBSD host
-      Update example scripted-diff comit in doc/developer-notes.md
+      Update example scripted-diff commit in doc/developer-notes.md
       Use HTTPS in script license headers
 
 syd (1):
