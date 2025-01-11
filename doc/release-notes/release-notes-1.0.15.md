@@ -148,7 +148,7 @@ Jonas Nick (1):
 Jorge Timón (3):
       Chainparams: Introduce CreateGenesisBlock() static function
       Chainparams: CTestNetParams and CRegTestParams extend directly from CChainParams
-      Mempool: Use Consensus::CheckTxInputs direclty over main::CheckInputs
+      Mempool: Use Consensus::CheckTxInputs directly over main::CheckInputs
 
 Marius Kjærstad (1):
       Changed http:// to https:// on some links
