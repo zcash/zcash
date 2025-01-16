@@ -4,6 +4,10 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
+#if defined(HAVE_CONFIG_H)
+#include "config/bitcoin-config.h"
+#endif
+
 #include "chainparamsbase.h"
 #include "clientversion.h"
 #include "fs.h"
@@ -88,12 +92,12 @@ static int AppInitRPC(int argc, char* argv[])
     //
     ParseParameters(argc, argv);
     if (argc<2 || mapArgs.count("-?") || mapArgs.count("-h") || mapArgs.count("-help") || mapArgs.count("-version")) {
-        std::string strUsage = _("Zcash RPC client version") + " " + FormatFullVersion() + "\n" + PrivacyInfo();
+        std::string strUsage = strprintf(_("%s RPC client version"), _(PACKAGE_NAME)) + " " + FormatFullVersion() + "\n" + PrivacyInfo();
         if (!mapArgs.count("-version")) {
             strUsage += "\n" + _("Usage:") + "\n" +
-                  "  zcash-cli [options] <command> [params]  " + _("Send command to Zcash") + "\n" +
-                  "  zcash-cli [options] help                " + _("List commands") + "\n" +
-                  "  zcash-cli [options] help <command>      " + _("Get help for a command") + "\n";
+                  "  " + CLI_NAME + " [options] <command> [params]  " + strprintf(_("Send RPC command to %s"), DAEMON_NAME) + "\n" +
+                  "  " + CLI_NAME + " [options] help                " + _("List commands") + "\n" +
+                  "  " + CLI_NAME + " [options] help <command>      " + _("Get help for a command") + "\n";
 
             strUsage += "\n" + HelpMessageCli();
         } else {

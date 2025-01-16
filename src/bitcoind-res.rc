@@ -16,14 +16,14 @@ BEGIN
     BEGIN
         BLOCK "040904E4" // U.S. English - multilingual (hex)
         BEGIN
-            VALUE "CompanyName",        "Zcash"
-            VALUE "FileDescription",    "zcashd (Zcash node with a JSON-RPC server)"
+            VALUE "CompanyName",        PACKAGE_NAME
+            VALUE "FileDescription",    DAEMON_NAME " (" PACKAGE_NAME " node with a JSON-RPC server)"
             VALUE "FileVersion",        VER_FILEVERSION_STR
-            VALUE "InternalName",       "zcashd"
+            VALUE "InternalName",       DAEMON_NAME
             VALUE "LegalCopyright",     COPYRIGHT_STR
             VALUE "LegalTrademarks1",   "Distributed under the MIT software license, see the accompanying file COPYING or https://www.opensource.org/licenses/mit-license.php ."
-            VALUE "OriginalFilename",   "zcashd.exe"
-            VALUE "ProductName",        "zcashd"
+            VALUE "OriginalFilename",   DAEMON_NAME ".exe"
+            VALUE "ProductName",        DAEMON_NAME
             VALUE "ProductVersion",     VER_PRODUCTVERSION_STR
         END
     END

@@ -935,7 +935,7 @@ bool ContextualCheckTransaction(
             int expiredDosLevel = IsExpiredTx(tx, nHeight - 1) ? dosLevelConstricting : 0;
             return state.DoS(
                     expiredDosLevel,
-                    error("ContextualCheckTransaction(): transaction is expired. Resending when caught up with the blockchain, or manually setting the zcashd txexpirydelta parameter may help."),
+                    error("ContextualCheckTransaction(): transaction is expired. Resending when caught up with the blockchain, or manually setting the " DAEMON_NAME " txexpirydelta parameter may help."),
                     REJECT_INVALID, "tx-overwinter-expired");
         }
 

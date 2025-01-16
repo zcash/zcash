@@ -660,19 +660,29 @@ std::string PrivacyInfo()
 
 std::string LicenseInfo()
 {
-    return "\n" +
-           FormatParagraph(strprintf(_("Copyright (C) 2009-%i The Bitcoin Core Developers"), COPYRIGHT_YEAR)) + "\n" +
-           FormatParagraph(strprintf(_("Copyright (C) 2015-%i The Zcash Developers"), COPYRIGHT_YEAR)) + "\n" +
+    return CopyrightHolders(strprintf(_("Copyright (C) %i-%i"), 2009, COPYRIGHT_YEAR) + " ") + "\n" +
            "\n" +
-           FormatParagraph(_("This is experimental software.")) + "\n" +
+           _("This is experimental software.") + "\n" +
            "\n" +
-           FormatParagraph(_("Distributed under the MIT software license, see the accompanying file COPYING or <https://www.opensource.org/licenses/mit-license.php>.")) +
+           _("Distributed under the MIT software license, see the accompanying file COPYING or <https://www.opensource.org/licenses/mit-license.php>.") +
            "\n";
 }
 
 int GetNumCores()
 {
     return boost::thread::physical_concurrency();
+}
+
+std::string CopyrightHolders(const std::string& strPrefix)
+{
+    std::string strCopyrightHolders = strPrefix + _(COPYRIGHT_HOLDERS);
+    if (strCopyrightHolders.find("%s") != strCopyrightHolders.npos) {
+        strCopyrightHolders = strprintf(strCopyrightHolders, _(COPYRIGHT_HOLDERS_SUBSTITUTION));
+    }
+    if (strCopyrightHolders.find("Bitcoin Core developers") == strCopyrightHolders.npos) {
+        strCopyrightHolders += "\n" + strPrefix + "The Bitcoin Core developers";
+    }
+    return strCopyrightHolders;
 }
 
 fs::path AbsPathForConfigVal(const fs::path& path, bool net_specific)

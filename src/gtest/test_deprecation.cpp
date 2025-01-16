@@ -136,8 +136,8 @@ TEST_F(DeprecationTest, AlertNotify) {
 
     // -alertnotify restricts the message to safe characters.
     auto expectedMsg = strprintf(
-        "This version will be deprecated at block height %d, and will automatically shut down. You should upgrade to the latest version of Zcash.",
-        DEPRECATION_HEIGHT);
+        "This version will be deprecated at block height %d, and will automatically shut down. You should upgrade to the latest version of %s.",
+        DEPRECATION_HEIGHT, DAEMON_NAME);
 
     // Windows built-in echo semantics are different than posixy shells. Quotes and
     // whitespace are printed literally.

@@ -16,6 +16,7 @@ import traceback
 
 from .authproxy import JSONRPCException
 from .util import (
+    DAEMON_NAME,
     ZCASHD_BINARY,
     initialize_chain,
     start_nodes,
@@ -195,10 +196,10 @@ class ComparisonTestFramework(BitcoinTestFramework):
     def add_options(self, parser):
         parser.add_option("--testbinary", dest="testbinary",
                           default=os.getenv("ZCASHD", ZCASHD_BINARY),
-                          help="zcashd binary to test")
+                          help=f"{DAEMON_NAME} binary to test")
         parser.add_option("--refbinary", dest="refbinary",
                           default=os.getenv("ZCASHD", ZCASHD_BINARY),
-                          help="zcashd binary to use for reference nodes (if any)")
+                          help=f"{DAEMON_NAME} binary to use for reference nodes (if any)")
 
     def setup_network(self):
         self.nodes = start_nodes(

@@ -86,7 +86,7 @@ def authors_in_release_notes(filename):
                 authors[name] = authors.get(name, 0) + commits
         return authors
 
-## Sums commits made by contributors in each Zcash release note in ./doc/release-notes and writes to authors.md
+## Sums commits made by contributors in each zcashd release note in ./doc/release-notes and writes to authors.md
 def document_authors():
     print("Writing contributors documented in release-notes directory to authors.md.")
     authors_file = os.path.join(doc_dir, 'authors.md')
