@@ -64,7 +64,6 @@ case $key in
     ;;
     -h|--help)
     usage
-    shift
     ;;
     *)
     POSITIONAL+=("$1")
