@@ -3003,7 +3003,7 @@ UniValue fundrawtransaction(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_INTERNAL_ERROR, strFailReason);
 
     UniValue result(UniValue::VOBJ);
-    result.pushKV("hex", EncodeHexTx(tx));
+    result.pushKV("hex", EncodeHexTx(CTransaction(tx)));
     result.pushKV("changepos", nChangePos);
     result.pushKV("fee", ValueFromAmount(nFee));
 
