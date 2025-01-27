@@ -17,7 +17,7 @@ BEGIN
         BLOCK "040904E4" // U.S. English - multilingual (hex)
         BEGIN
             VALUE "CompanyName",        "Zcash"
-            VALUE "FileDescription",    "zcash-cli (JSON-RPC client for Zcash)"
+            VALUE "FileDescription",    "zcash-cli (JSON-RPC client for " PACKAGE_NAME ")"
             VALUE "FileVersion",        VER_FILEVERSION_STR
             VALUE "InternalName",       "zcash-cli"
             VALUE "LegalCopyright",     COPYRIGHT_STR
