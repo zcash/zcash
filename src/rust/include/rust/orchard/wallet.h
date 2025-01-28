@@ -8,6 +8,8 @@
 #include "rust/orchard/keys.h"
 #include "rust/builder.h"
 
+#include <rust/bridge.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -133,6 +135,7 @@ bool orchard_wallet_add_notes_from_bundle(
         OrchardWalletPtr* wallet,
         const unsigned char txid[32],
         const OrchardBundlePtr* bundle,
+        const wallet::OrchardDecryptedOutputs* decryptedOutputs,
         void* callbackReceiver,
         push_action_ivk_callback_t push_cb,
         push_spend_action_idx_callback_t spend_cb
@@ -244,6 +247,12 @@ OrchardIncomingViewingKeyPtr* orchard_wallet_get_ivk_for_address(
         const OrchardWalletPtr* wallet,
         const OrchardRawAddressPtr* addr);
 
+/**
+ * Returns a pointer to a vector of Orchard incoming viewing keys prepared for use by the
+ * batch scanner, or `nullptr` if the wallet has no Orchard IVKs.
+ */
+wallet::OrchardPreparedIncomingViewingKeys* orchard_wallet_prepare_ivks(
+        const OrchardWalletPtr* wallet);
 /**
  * A C struct used to transfer note metadata information across the Rust FFI boundary.
  * This must have the same in-memory representation as the `FFINoteMetadata` type in
