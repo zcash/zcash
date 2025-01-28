@@ -15,6 +15,8 @@ SUBDIRS += doc/man
 endif
 .PHONY: deploy FORCE rpc-tests
 
+export PYTHONPATH
+
 if BUILD_BITCOIN_LIBS
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libzcash_script.pc
