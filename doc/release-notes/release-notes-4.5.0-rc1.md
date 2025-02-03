@@ -180,7 +180,7 @@ Kris Nuttycombe (46):
       Fix header guards for incremental_sinsemilla_tree.h
       Apply style suggestions.
       Consistently panic on null commitment tree pointers.
-      Fix implmentation of OrchardMerkleTree.DynamicMemoryUsage
+      Fix implementation of OrchardMerkleTree.DynamicMemoryUsage
       Document source of Orchard merkle tree test data.
       Apply suggestions from code review
       Add consensus check for duplicate Orchard nullifiers within a single transaction.
