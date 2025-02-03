@@ -235,7 +235,7 @@ Zcash Contributors
 * Gregory Sanders (1)
 * Greg Griffith (1)
 * Gaurav Rana (1)
-* Forrest Voight (1)
+* Forrest Voigt (1)
 * Florian Schmaus (1)
 * Fabian Jahr (1)
 * Eran Tromer (1)
