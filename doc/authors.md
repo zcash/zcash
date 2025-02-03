@@ -135,7 +135,7 @@ Zcash Contributors
 * Mary Moore-Simmons (2)
 * Mark Friedenbach (2)
 * Marek (2)
-* Jon Atack (2)
+* Jon Attack (2)
 * Joe Turgeon (2)
 * Jesse Cohen (2)
 * Jeffrey Czyz (2)
