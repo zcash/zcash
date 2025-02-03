@@ -5,7 +5,7 @@ Alex Morcos (1):
       Output line to debug.log when IsInitialBlockDownload latches to false
 
 Ariel Gabizon (1):
-      Extend Joinsplit tests to Groth
+      Extend Joinsplit tests to Growth
 
 Charlie OKeefe (1):
       Remove extra slash from lockfile path
