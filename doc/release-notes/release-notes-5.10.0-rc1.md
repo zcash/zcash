@@ -103,7 +103,7 @@ Kris Nuttycombe (25):
       Add `lockbox` to value pool balance reporting.
       Add tests for lockbox funding streams.
       Add NU6 funding streams to the consensus parameters.
-      Add const modifer to the `blockIndex` argument to `GetTransaction`
+      Add const modifier to the `blockIndex` argument to `GetTransaction`
       Use __func__ for substitution in `ConnectBlock` error messages.
       Improve logging of miner block construction.
       Compute chain value earlier in block processing.
