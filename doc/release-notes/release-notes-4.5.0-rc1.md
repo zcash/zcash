@@ -180,7 +180,7 @@ Kris Nuttycombe (46):
       Fix header guards for incremental_sinsemilla_tree.h
       Apply style suggestions.
       Consistently panic on null commitment tree pointers.
-      Fix implmentation of OrchardMerkleTree.DynamicMemoryUsage
+      Fix implementation of OrchardMerkleTree.DynamicMemoryUsage
       Document source of Orchard merkle tree test data.
       Apply suggestions from code review
       Add consensus check for duplicate Orchard nullifiers within a single transaction.
@@ -202,7 +202,7 @@ Kris Nuttycombe (46):
       Ensure that the Orchard note commitment tree does not exceed its maximum size.
       Update Orchard commitment tree hashes to use total MerkleCRH^Orchard.
       Apply suggestions from code review
-      Make Sapling Spend and Ouput count, and Orchard Action count checks be noncontextual.
+      Make Sapling Spend and Output count, and Orchard Action count checks be noncontextual.
       Use DOS level 100 for noncontextual checks.
       Fix error strings to correctly reflect context.
       Remove unused account-related wallet methods.
