@@ -89,7 +89,7 @@ Simon (17):
       Fixes CID 1352687 uninitialized scalar field.
       Fixes CID 1352715 uninitialized scalar field.
       Fixes CID 1352686 uninitialized scalar variable.
-      Fixes CID 1352599 unitialized scalar variable
+      Fixes CID 1352599 uninitialized scalar variable
       Fixes CID 1352727 uninitialized scalar variable.
       Fixes CID 1352714 uninitialized scalar variable.
       Add security warning about logging of z_* calls.
