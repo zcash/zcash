@@ -5,7 +5,7 @@ Alex Morcos (1):
       Output line to debug.log when IsInitialBlockDownload latches to false
 
 Ariel Gabizon (1):
-      Extend Joinsplit tests to Groth
+      Extend Joinsplit tests to Growth
 
 Charlie OKeefe (1):
       Remove extra slash from lockfile path
@@ -84,7 +84,7 @@ Jack Grigg (38):
       Rename DecryptSpendingKey -> DecryptSproutSpendingKey
       Rename CryptedSpendingKeyMap -> CryptedSproutSpendingKeyMap
       Add Sapling decryption check to CCryptoKeyStore::Unlock()
-      Check for unencrypted Sapling keys in CCryptoKeyStore::SetCrypted()
+      Check for unenencrypted Sapling keys in CCryptoKeyStore::SetCrypted()
       Remove outdated comment
       Add CWallet::AddCryptedSaplingSpendingKey() hook
       Pass SaplingPaymentAddress to store through the CKeyStore
@@ -103,7 +103,7 @@ Jay Graber (13):
       Add SaplingIncomingViewingKeys map, SaplingFullViewingKey methods
       Add StoreAndRetrieveSaplingSpendingKey test
       Change default_address to return SaplingPaymentAddr and not boost::optional
-      Add crypted keystore sapling add key
+      Add encrypted keystore sapling add key
       Discard sk if ivk == 0
       Add Sapling support to z_exportkey
       Add Sapling support to z_importkey
