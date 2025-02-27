@@ -1,6 +1,5 @@
 # ZSide - A drivechain based on Zcash 6.1.0
 <img align="right" width="120" height="80" src="doc/imgs/logo.png">
-===========
 
 # Read more about ZSide:
 https://www.truthcoin.info/blog/zside-meltcast/
