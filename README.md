@@ -5,6 +5,13 @@ ZSide - A drivechain based on Zcash 6.1.0
 Read more about ZSide:
 https://www.truthcoin.info/blog/zside-meltcast/
 
+Default data directories changed to:
+// Windows < Vista: C:\Documents and Settings\Username\Application Data\zcash-drivechain
+// Windows >= Vista: C:\Users\Username\AppData\Roaming\zcash-drivechain
+// Mac: ~/Library/Application Support/zcash-drivechain
+// Unix: ~/.zcash-drivechain
+
+
 What is Zcash?
 --------------
 

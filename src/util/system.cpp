@@ -226,13 +226,13 @@ void PrintExceptionContinue(const std::exception* pex, const char* pszThread)
 
 fs::path GetDefaultDataDir()
 {
-    // Windows < Vista: C:\Documents and Settings\Username\Application Data\Zcash
-    // Windows >= Vista: C:\Users\Username\AppData\Roaming\Zcash
-    // Mac: ~/Library/Application Support/Zcash
-    // Unix: ~/.zcash
+    // Windows < Vista: C:\Documents and Settings\Username\Application Data\zcash-drivechain
+    // Windows >= Vista: C:\Users\Username\AppData\Roaming\zcash-drivechain
+    // Mac: ~/Library/Application Support/zcash-drivechain
+    // Unix: ~/.zcash-drivechain
 #ifdef WIN32
     // Windows
-    return GetSpecialFolderPath(CSIDL_APPDATA) / "Zcash";
+    return GetSpecialFolderPath(CSIDL_APPDATA) / "zcash-drivechain";
 #else
     fs::path pathRet;
     char* pszHome = getenv("HOME");
@@ -244,10 +244,10 @@ fs::path GetDefaultDataDir()
     // Mac
     pathRet /= "Library/Application Support";
     TryCreateDirectory(pathRet);
-    return pathRet / "Zcash";
+    return pathRet / "zcash-drivechain";
 #else
     // Unix
-    return pathRet / ".zcash";
+    return pathRet / ".zcash-drivechain";
 #endif
 #endif
 }
