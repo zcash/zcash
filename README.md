@@ -6,16 +6,13 @@
 https://www.truthcoin.info/blog/zside-meltcast/
 
 ## Drivechain modifications:
-```
-Network port number changed to 14567
-Message start string changed to 24e9fdfc
-```
+- Network port number changed to `14567`
+- Message start chars changed to `24e9fdfc`
 
 - Disabled PoW retarget 
 - Allow Min PoW blocks
 - Reset minimum chain work
-
-### Default data directories changed to:
+- Default data directories changed to:
 ```
 // Windows < Vista: C:\Documents and Settings\Username\Application Data\zcash-drivechain
 // Windows >= Vista: C:\Users\Username\AppData\Roaming\zcash-drivechain
