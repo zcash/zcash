@@ -100,15 +100,15 @@ public:
         static_assert(equihash_parameters_acceptable(N, K));
         consensus.nEquihashN = N;
         consensus.nEquihashK = K;
-        consensus.powLimit = uint256S("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+        consensus.powLimit = uint256S("0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f"); // if this is any larger, the for loop in GetNextWorkRequired can overflow bnTot
         consensus.nPowAveragingWindow = 17;
         assert(maxUint/UintToArith256(consensus.powLimit) >= consensus.nPowAveragingWindow);
-        consensus.nPowMaxAdjustDown = 32; // 32% adjustment down
-        consensus.nPowMaxAdjustUp = 16; // 16% adjustment up
+        consensus.nPowMaxAdjustDown = 0;
+        consensus.nPowMaxAdjustUp = 0;
+        consensus.nPowAllowMinDifficultyBlocksAfterHeight = 0;
         consensus.nPreBlossomPowTargetSpacing = Consensus::PRE_BLOSSOM_POW_TARGET_SPACING;
         consensus.nPostBlossomPowTargetSpacing = Consensus::POST_BLOSSOM_POW_TARGET_SPACING;
-        consensus.nPowAllowMinDifficultyBlocksAfterHeight = std::nullopt;
-        consensus.fPowNoRetargeting = false;
+        consensus.fPowNoRetargeting = true;
         consensus.vUpgrades[Consensus::BASE_SPROUT].nProtocolVersion = 170002;
         consensus.vUpgrades[Consensus::BASE_SPROUT].nActivationHeight =
             Consensus::NetworkUpgrade::ALWAYS_ACTIVE;
@@ -268,17 +268,17 @@ public:
         }
 
         // The best chain should have at least this much work.
-        consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000000011be8336c45e2dd4");
+        consensus.nMinimumChainWork = uint256S("0x00");
 
         /**
          * The message start string should be awesome! ⓩ❤
          */
         pchMessageStart[0] = 0x24;
         pchMessageStart[1] = 0xe9;
-        pchMessageStart[2] = 0x27;
-        pchMessageStart[3] = 0x64;
+        pchMessageStart[2] = 0xfd;
+        pchMessageStart[3] = 0xfc;
         vAlertPubKey = ParseHex("04b7ecf0baa90495ceb4e4090f6b2fd37eec1e9c85fac68a487f3ce11589692e4a317479316ee814e066638e1db54e37a10689b70286e6315b1087b6615d179264");
-        nDefaultPort = 8233;
+        nDefaultPort = 14567;
         nPruneAfterHeight = 100000;
 
         genesis = CreateGenesisBlock(
@@ -292,10 +292,6 @@ public:
 
         vFixedSeeds.clear();
         vSeeds.clear();
-        vSeeds.push_back(CDNSSeedData("z.cash", "dnsseed.z.cash")); // Zcash
-        vSeeds.push_back(CDNSSeedData("str4d.xyz", "dnsseed.str4d.xyz")); // @str4d
-        vSeeds.push_back(CDNSSeedData("zfnd.org", "mainnet.seeder.zfnd.org")); // Zcash Foundation
-        vSeeds.push_back(CDNSSeedData("yolo.money", "mainnet.is.yolo.money")); // gtank
 
         vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_main, pnSeed6_main + ARRAYLEN(pnSeed6_main));
 
@@ -307,34 +303,11 @@ public:
 
         checkpointData = (CCheckpointData) {
             boost::assign::map_list_of
-            (      0, consensus.hashGenesisBlock)
-            (   2500, uint256S("0x00000006dc968f600be11a86cbfbf7feb61c7577f45caced2e82b6d261d19744"))
-            (  15000, uint256S("0x00000000b6bc56656812a5b8dcad69d6ad4446dec23b5ec456c18641fb5381ba"))
-            (  67500, uint256S("0x000000006b366d2c1649a6ebb4787ac2b39c422f451880bc922e3a6fbd723616"))
-            ( 100000, uint256S("0x000000001c5c82cd6baccfc0879e3830fd50d5ede17fa2c37a9a253c610eb285"))
-            ( 133337, uint256S("0x0000000002776ccfaf06cc19857accf3e20c01965282f916b8a886e3e4a05be9"))
-            ( 180000, uint256S("0x000000001205b742eac4a1b3959635bdf8aeada078d6a996df89740f7b54351d"))
-            ( 222222, uint256S("0x000000000cafb9e56445a6cabc8057b57ee6fcc709e7adbfa195e5c7fac61343"))
-            ( 270000, uint256S("0x00000000025c1cfa0258e33ab050aaa9338a3d4aaa3eb41defefc887779a9729"))
-            ( 304600, uint256S("0x00000000028324e022a45014c4a4dc51e95d41e6bceb6ad554c5b65d5cea3ea5"))
-            ( 410100, uint256S("0x0000000002c565958f783a24a4ac17cde898ff525e75ed9baf66861b0b9fcada"))
-            ( 497000, uint256S("0x0000000000abd333f0acca6ffdf78a167699686d6a7d25c33fca5f295061ffff"))
-            ( 525000, uint256S("0x0000000001a36c500378be8862d9bf1bea8f1616da6e155971b608139cc7e39b"))
-            ( 650000, uint256S("0x0000000000a0a3fbbd739fb4fcbbfefff44efffc2064ca69a59d5284a2da26e2"))
-            ( 800000, uint256S("0x00000000013f1f4e5634e896ebdbe63dec115547c1480de0d83c64426f913c27"))
-            (1000000, uint256S("0x000000000062eff9ae053020017bfef24e521a2704c5ec9ead2a4608ac70fc7a"))
-            (1200000, uint256S("0x0000000000347d5011108fdcf667c93e622e8635c94e586556898e41db18d192"))
-            (1400000, uint256S("0x0000000001155ecec0ad3924d47ad476c0a5ed7527b8776f53cbda1a780b9f76"))
-            (1600000, uint256S("0x0000000000aae69fb228f90e77f34c24b7920667eaca726c3a3939536f03dcfc"))
-            (1860000, uint256S("0x000000000043a968c78af5fb8133e00e6fe340051c19dd969e53ab62bf3dc22a"))
-            (2000000, uint256S("0x00000000010accaf2f87934765dc2e0bf4823a2b1ae2c1395b334acfce52ad68"))
-            (2200000, uint256S("0x0000000001a0139c4c4d0e8f68cc562227c6003f4b1b640a3d921aeb8c3d2e3d"))
-            (2400000, uint256S("0x0000000000294d1c8d87a1b6566d302aa983691bc3cab0583a245389bbb9d285"))
-            (2600000, uint256S("0x0000000000b5ad92fcec0069d590f674d05ec7d96b1ff727863ea390950c4e49")),
-            1722834204,     // * UNIX timestamp of last checkpoint block
-            14608885,       // * total number of transactions between genesis and last checkpoint
-            6473            // * estimated number of transactions per day after checkpoint
-                            //   (total number of tx * 48 * 24) / checkpoint block height
+            ( 0, consensus.hashGenesisBlock),
+            0,	// * UNIX timestamp of last checkpoint block
+            0,  // * total number of transactions between genesis and last checkpoint
+            0   // * estimated number of transactions per day after checkpoint
+                //   (total number of tx * 48 * 24) / checkpoint block height
         };
 
         // Hardcoded fallback value for the Sprout shielded value pool balance

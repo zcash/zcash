@@ -1,16 +1,27 @@
-ZSide - A drivechain based on Zcash 6.1.0
+# ZSide - A drivechain based on Zcash 6.1.0
 <img align="right" width="120" height="80" src="doc/imgs/logo.png">
 ===========
 
-Read more about ZSide:
+# Read more about ZSide:
 https://www.truthcoin.info/blog/zside-meltcast/
 
-Default data directories changed to:
+## Drivechain modifications:
+```
+Network port number changed to 14567
+Message start string changed to 24e9fdfc
+```
+
+- Disabled PoW retarget 
+- Allow Min PoW blocks
+- Reset minimum chain work
+
+### Default data directories changed to:
+```
 // Windows < Vista: C:\Documents and Settings\Username\Application Data\zcash-drivechain
 // Windows >= Vista: C:\Users\Username\AppData\Roaming\zcash-drivechain
 // Mac: ~/Library/Application Support/zcash-drivechain
 // Unix: ~/.zcash-drivechain
-
+```
 
 What is Zcash?
 --------------
