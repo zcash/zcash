@@ -11,7 +11,6 @@ https://www.truthcoin.info/blog/zside-meltcast/
 - Disabled PoW retarget 
 - Allow Min PoW blocks
 - Reset minimum chain work
-- Default data directories changed to:
 - Remove mining subsidy
 - Default data directories changed to:
 ```
