@@ -305,41 +305,7 @@ namespace Consensus {
 
     CAmount Params::GetBlockSubsidy(int nHeight) const
     {
-        CAmount nSubsidy = 12.5 * COIN;
-
-        // Mining slow start
-        // The subsidy is ramped up linearly, skipping the middle payout of
-        // MAX_SUBSIDY/2 to keep the monetary curve consistent with no slow start.
-        if (nHeight < this->SubsidySlowStartShift()) {
-            nSubsidy /= this->nSubsidySlowStartInterval;
-            nSubsidy *= nHeight;
-            return nSubsidy;
-        } else if (nHeight < this->nSubsidySlowStartInterval) {
-            nSubsidy /= this->nSubsidySlowStartInterval;
-            nSubsidy *= (nHeight+1);
-            return nSubsidy;
-        }
-
-        assert(nHeight >= this->SubsidySlowStartShift());
-
-        int halvings = this->Halving(nHeight);
-
-        // Force block reward to zero when right shift is undefined.
-        if (halvings >= 64)
-            return 0;
-
-        // zip208
-        // BlockSubsidy(height) :=
-        // SlowStartRate · height, if height < SlowStartInterval / 2
-        // SlowStartRate · (height + 1), if SlowStartInterval / 2 ≤ height and height < SlowStartInterval
-        // floor(MaxBlockSubsidy / 2^Halving(height)), if SlowStartInterval ≤ height and not IsBlossomActivated(height)
-        // floor(MaxBlockSubsidy / (BlossomPoWTargetSpacingRatio · 2^Halving(height))), otherwise
-        if (this->NetworkUpgradeActive(nHeight, Consensus::UPGRADE_BLOSSOM)) {
-            return (nSubsidy / Consensus::BLOSSOM_POW_TARGET_SPACING_RATIO) >> halvings;
-        } else {
-            // Subsidy is cut in half every 840,000 blocks which will occur approximately every 4 years.
-            return nSubsidy >> halvings;
-        }
+        return 0;
     }
 
     std::vector<std::pair<FSInfo, FundingStream>> Params::GetActiveFundingStreams(int nHeight) const

@@ -12,6 +12,9 @@ https://www.truthcoin.info/blog/zside-meltcast/
 - Allow Min PoW blocks
 - Reset minimum chain work
 - Default data directories changed to:
+- Remove mining subsidy
+
+### Default data directories changed to:
 ```
 // Windows < Vista: C:\Documents and Settings\Username\Application Data\zcash-drivechain
 // Windows >= Vista: C:\Users\Username\AppData\Roaming\zcash-drivechain
