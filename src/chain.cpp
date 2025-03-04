@@ -7,6 +7,7 @@
 #include "chain.h"
 
 #include "main.h"
+#include "primitives/block.h"
 #include "txdb.h"
 
 #include <rust/metrics.h>
@@ -93,17 +94,7 @@ CBlockHeader CBlockIndex::GetBlockHeader() const
     header.nTime                = nTime;
     header.nBits                = nBits;
     header.nNonce               = nNonce;
-    if (HasSolution()) {
-        header.nSolution        = nSolution;
-    } else {
-        MetricsIncrementCounter("zcashd.debug.blocktree.trimmed_equihash_read_dbindex");
-        CDiskBlockIndex dbindex;
-        if (!pblocktree->ReadDiskBlockIndex(GetBlockHash(), dbindex)) {
-            LogPrintf("%s: Failed to read index entry", __func__);
-            throw std::runtime_error("Failed to read index entry");
-        }
-        header.nSolution        = dbindex.GetSolution();
-    }
+    header.nSolution            = DRIVECHAIN_EH_SOLUTION;
     return header;
 }
 

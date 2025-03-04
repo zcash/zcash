@@ -11,6 +11,8 @@
 #include "serialize.h"
 #include "uint256.h"
 
+const std::vector<unsigned char> DRIVECHAIN_EH_SOLUTION = {0xFD};
+
 // Derives the ZIP 244 block commitments hash.
 uint256 DeriveBlockCommitmentsHash(
     uint256 hashChainHistoryRoot,
@@ -36,7 +38,7 @@ public:
     uint32_t nTime;
     uint32_t nBits;
     uint256 nNonce;
-    std::vector<unsigned char> nSolution;
+    std::vector<unsigned char> nSolution = DRIVECHAIN_EH_SOLUTION;
 
     CBlockHeader()
     {
@@ -66,7 +68,6 @@ public:
         nTime = 0;
         nBits = 0;
         nNonce = uint256();
-        nSolution.clear();
     }
 
     bool IsNull() const

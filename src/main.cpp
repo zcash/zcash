@@ -3821,7 +3821,7 @@ bool static FlushStateToDisk(
                 it = setDirtyBlockIndex.erase(it);
             }
             if (!pblocktree->WriteBatchSync(vFiles, nLastBlockFile, vBlocks)) {
-                return AbortNode(state, "Files to write to block index database");
+                return AbortNode(state, "Failed to write to block index database");
             }
             // Now that we have written the block indices to the database, we do not
             // need to store solutions for these CBlockIndex objects in memory.

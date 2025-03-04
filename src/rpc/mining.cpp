@@ -183,12 +183,18 @@ UniValue generate(const UniValue& params, bool fHelp)
         );
 
     if (!Params().MineBlocksOnDemand())
-        throw JSONRPCError(RPC_METHOD_NOT_FOUND, "This method can only be used on regtest");
+        throw JSONRPCError(RPC_METHOD_NOT_FOUND, "This method cannot be used on this chain!");
 
     int nHeightStart = 0;
     int nHeightEnd = 0;
     int nHeight = 0;
     int nGenerate = params[0].get_int();
+
+    // Use this for extra log printing
+    bool DEBUG_RPC_MINING = true;
+
+    if (DEBUG_RPC_MINING)
+    	LogPrintf("%s: Started mining RPC!", __func__);
 
     std::optional<MinerAddress> maybeMinerAddress;
     GetMainSignals().AddressForMining(maybeMinerAddress);
@@ -222,6 +228,11 @@ UniValue generate(const UniValue& params, bool fHelp)
     unsigned int k = Params().GetConsensus().nEquihashK;
     while (nHeight < nHeightEnd)
     {
+    	unsigned int nAttempts = 100; // Limit the PoW grind while loop
+		
+    	if (DEBUG_RPC_MINING)
+    	    LogPrintf("%s: Working on new block", __func__);
+
         std::unique_ptr<CBlockTemplate> pblocktemplate(BlockAssembler(Params()).CreateNewBlock(minerAddress));
         if (!pblocktemplate.get())
             throw JSONRPCError(RPC_INTERNAL_ERROR, "Couldn't create new block");
@@ -231,43 +242,26 @@ UniValue generate(const UniValue& params, bool fHelp)
             IncrementExtraNonce(pblocktemplate.get(), chainActive.Tip(), nExtraNonce, Params().GetConsensus());
         }
 
-        // Hash state
-        eh_HashState eh_state = EhInitialiseState(n, k);
-
-        // I = the block header minus nonce and solution.
-        CEquihashInput I{*pblock};
-        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-        ss << I;
-
-        // H(I||...
-        eh_state.Update((unsigned char*)&ss[0], ss.size());
-
         while (true) {
-            // Yes, there is a chance every nonce could fail to satisfy the -regtest
-            // target -- 1 in 2^(2^256). That ain't gonna happen
             pblock->nNonce = ArithToUint256(UintToArith256(pblock->nNonce) + 1);
+            if (CheckProofOfWork(pblock->GetHash(), pblock->nBits, Params().GetConsensus()))
+                break;
+	    
+	    if (nAttempts == 0) {
+    	    	if (DEBUG_RPC_MINING)
+    	            LogPrintf("%s: Failed to find PoW", __func__);
+                break;
+	    }
+	    nAttempts--;
+	}
 
-            // H(I||V||...
-            eh_HashState curr_state(eh_state);
-            curr_state.Update(pblock->nNonce.begin(), pblock->nNonce.size());
+    	if (DEBUG_RPC_MINING)
+    	    LogPrintf("%s: Found block!", __func__);
 
-            // (x_1, x_2, ...) = A(I, V, n, k)
-            std::function<bool(std::vector<unsigned char>)> validBlock =
-                    [&pblock](std::vector<unsigned char> soln) {
-                pblock->nSolution = soln;
-                solutionTargetChecks.increment();
-                return CheckProofOfWork(pblock->GetHash(), pblock->nBits, Params().GetConsensus());
-            };
-            bool found = EhBasicSolveUncancellable(n, k, curr_state, validBlock);
-            ehSolverRuns.increment();
-            if (found) {
-                goto endloop;
-            }
-        }
-endloop:
         CValidationState state;
         if (!ProcessNewBlock(state, Params(), NULL, pblock, true, NULL))
             throw JSONRPCError(RPC_INTERNAL_ERROR, "ProcessNewBlock, block not accepted");
+
         ++nHeight;
         blockHashes.push_back(pblock->GetHash().GetHex());
 

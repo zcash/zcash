@@ -19,107 +19,21 @@
 
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
 {
-    unsigned int nProofOfWorkLimit = UintToArith256(params.powLimit).GetCompact();
-
-    // Genesis block
-    if (pindexLast == NULL)
-        return nProofOfWorkLimit;
-
-    // Regtest
-    if (params.fPowNoRetargeting)
-        return pindexLast->nBits;
-
-    {
-        // Comparing to pindexLast->nHeight with >= because this function
-        // returns the work required for the block after pindexLast.
-        if (params.nPowAllowMinDifficultyBlocksAfterHeight != std::nullopt &&
-            pindexLast->nHeight >= params.nPowAllowMinDifficultyBlocksAfterHeight.value())
-        {
-            // Special difficulty rule for testnet:
-            // If the new block's timestamp is more than 6 * block interval minutes
-            // then allow mining of a min-difficulty block.
-            if (pblock && pblock->GetBlockTime() > pindexLast->GetBlockTime() + params.PoWTargetSpacing(pindexLast->nHeight + 1) * 6)
-                return nProofOfWorkLimit;
-        }
-    }
-
-    // Find the first block in the averaging interval
-    const CBlockIndex* pindexFirst = pindexLast;
-    arith_uint256 bnTot {0};
-    for (int i = 0; pindexFirst && i < params.nPowAveragingWindow; i++) {
-        arith_uint256 bnTmp;
-        bnTmp.SetCompact(pindexFirst->nBits);
-        bnTot += bnTmp;
-        pindexFirst = pindexFirst->pprev;
-    }
-
-    // Check we have enough blocks
-    if (pindexFirst == NULL)
-        return nProofOfWorkLimit;
-
-    // The protocol specification leaves MeanTarget(height) as a rational, and takes the floor
-    // only after dividing by AveragingWindowTimespan in the computation of Threshold(height):
-    // <https://zips.z.cash/protocol/protocol.pdf#diffadjustment>
-    //
-    // Here we take the floor of MeanTarget(height) immediately, but that is equivalent to doing
-    // so only after a further division, as proven in <https://math.stackexchange.com/a/147832/185422>.
-    arith_uint256 bnAvg {bnTot / params.nPowAveragingWindow};
-
-    return CalculateNextWorkRequired(bnAvg,
-                                     pindexLast->GetMedianTimePast(), pindexFirst->GetMedianTimePast(),
-                                     params,
-                                     pindexLast->nHeight + 1);
+    return UintToArith256(params.powLimit).GetCompact();
 }
 
+// Not using this function anymore, but keeping it so tests compile.
 unsigned int CalculateNextWorkRequired(arith_uint256 bnAvg,
                                        int64_t nLastBlockTime, int64_t nFirstBlockTime,
                                        const Consensus::Params& params,
                                        int nextHeight)
 {
-    int64_t averagingWindowTimespan = params.AveragingWindowTimespan(nextHeight);
-    int64_t minActualTimespan = params.MinActualTimespan(nextHeight);
-    int64_t maxActualTimespan = params.MaxActualTimespan(nextHeight);
-    // Limit adjustment step
-    // Use medians to prevent time-warp attacks
-    int64_t nActualTimespan = nLastBlockTime - nFirstBlockTime;
-    nActualTimespan = averagingWindowTimespan + (nActualTimespan - averagingWindowTimespan)/4;
-
-    if (nActualTimespan < minActualTimespan) {
-        nActualTimespan = minActualTimespan;
-    }
-    if (nActualTimespan > maxActualTimespan) {
-        nActualTimespan = maxActualTimespan;
-    }
-
-    // Retarget
-    const arith_uint256 bnPowLimit = UintToArith256(params.powLimit);
-    arith_uint256 bnNew {bnAvg};
-    bnNew /= averagingWindowTimespan;
-    bnNew *= nActualTimespan;
-
-    if (bnNew > bnPowLimit) {
-        bnNew = bnPowLimit;
-    }
-
-    return bnNew.GetCompact();
+    return UintToArith256(params.powLimit).GetCompact();
 }
 
 bool CheckEquihashSolution(const CBlockHeader *pblock, const Consensus::Params& params)
 {
-    unsigned int n = params.nEquihashN;
-    unsigned int k = params.nEquihashK;
-
-    // I = the block header minus nonce and solution.
-    CEquihashInput I{*pblock};
-    // I||V
-    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-    ss << I;
-
-    return equihash::is_valid(
-        n, k,
-        {(const unsigned char*)ss.data(), ss.size()},
-        {pblock->nNonce.begin(), pblock->nNonce.size()},
-        {pblock->nSolution.data(), pblock->nSolution.size()});
+    return true;
 }
 
 bool CheckProofOfWork(uint256 hash, unsigned int nBits, const Consensus::Params& params)

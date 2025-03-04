@@ -357,7 +357,7 @@ protected:
     // The Equihash solution, if it is stored. Once we know that the block index
     // entry is present in leveldb, this field can be cleared via the TrimSolution
     // method to save memory.
-    std::vector<unsigned char> nSolution;
+    std::vector<unsigned char> nSolution = DRIVECHAIN_EH_SOLUTION;
 
 public:
     //! (memory only) Sequential id assigned to distinguish order in which blocks are received.
@@ -405,7 +405,6 @@ public:
         nTime          = 0;
         nBits          = 0;
         nNonce         = uint256();
-        nSolution.clear();
     }
 
     CBlockIndex()
@@ -499,7 +498,7 @@ public:
     //! Is the Equihash solution stored?
     bool HasSolution() const
     {
-        return !nSolution.empty();
+        return true;
     }
 
     //! Raise the validity level of this block index entry.
