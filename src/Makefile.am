@@ -271,6 +271,7 @@ BITCOIN_CORE_H = \
   dbwrapper.h \
   limitedmap.h \
   logging.h \
+  drivechain.h \
   main.h \
   memusage.h \
   merkleblock.h \
@@ -374,6 +375,7 @@ libbitcoin_server_a_SOURCES = \
   httpserver.cpp \
   init.cpp \
   dbwrapper.cpp \
+  drivechain.cpp \
   main.cpp \
   merkleblock.cpp \
   metrics.cpp \
