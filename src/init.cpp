@@ -17,6 +17,7 @@
 #include "consensus/upgrades.h"
 #include "consensus/validation.h"
 #include "deprecation.h"
+#include "drivechain.h"
 #include "experimental_features.h"
 #include "fs.h"
 #include "httpserver.h"
@@ -2055,6 +2056,17 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     // SENDALERT
     threadGroup.create_thread(boost::bind(ThreadSendAlert));
+
+	// Test connection to bitcoin-patched
+	int nHeight = -1;
+	bool fRes = GetBTCBlockCount(nHeight);
+	if (fRes) {
+    	uiInterface.InitMessage(_("Connected to bitcoin-patched!..."));
+    	LogPrintf("Connected to bitcoin-patched! Height = %u\n", nHeight);
+	} else {
+    	uiInterface.InitMessage(_("Failed to connect to bitcoin-patched!..."));
+    	LogPrintf("Failed to connect to bitcoin-patched!");
+	}
 
     return !fRequestShutdown;
 }
