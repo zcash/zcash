@@ -5,10 +5,10 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 //
-// Whenever possible any modifications to support Drivechain should be 
+// Whenever possible any modifications to support Drivechain should be
 // in this file to make rebasing as simple as possible. Some modifications
 // (chainparams, mining etc) must modify existing functions but that should
-// be avoided. Maybe it would be nice to seperate things into more additional 
+// be avoided. Maybe it would be nice to seperate things into more additional
 // files but the goal is maximizing rebase simplicity.
 //
 // This file should include:
@@ -21,8 +21,11 @@
 
 #include <drivechain.h>
 
+#include <chainparams.h>
+#include <primitives/block.h>
 #include <util/strencodings.h>
 #include <util/system.h>
+#include <uint256.h>
 
 #include <iostream>
 #include <sstream>
@@ -125,7 +128,7 @@ bool RPCBitcoinPatched(const std::string& json, boost::property_tree::ptree &ptr
     return true;
 }
 
-bool GetBTCBlockCount(int& nBlocks)
+bool DrivechainRPCGetBTCBlockCount(int& nBlocks)
 {
     // JSON for 'getblockcount' bitcoin HTTP-RPC
     std::string json;
@@ -146,5 +149,47 @@ bool GetBTCBlockCount(int& nBlocks)
     return nBlocks >= 0;
 }
 
+bool DrivechainRPCVerifyBMM(const uint256& hashMainBlock, const uint256& hashHStar, uint256& txid, int nTime)
+{
+    // TODO We cannot use http rpc to ask enforcer to verify BMM,
+    // so this will return true until we have grpc support here or
+    // the enforcer adds http rpc support.
+    return true;
+}
+
 
 // BMM validation & cache:
+
+
+bool VerifyBMM(const CBlock& block)
+{
+    // Skip genesis block
+    if (block.GetHash() == Params().GetConsensus().hashGenesisBlock)
+        return true;
+
+    // TODO
+    // Have we already verified BMM for this block?
+    //if (bmmCache.HaveVerifiedBMM(block.GetHash()))
+    //    return true;
+
+    // h*
+    const uint256 hashMerkleRoot = block.hashMerkleRoot;
+
+    // Mainchain block hash
+    const uint256 hashMainBlock = uint256(); // TODO block.hashMerkleRoot;
+
+    // Verify BMM with local mainchain node
+    uint256 txid;
+    uint32_t nTime;
+    if (!DrivechainRPCVerifyBMM(hashMainBlock, hashMerkleRoot, txid, nTime)) {
+        LogPrintf("%s: Did not find BMM h*: %s in mainchain block: %s!\n", __func__, hashMerkleRoot.ToString(), hashMainBlock.ToString());
+        return false;
+    }
+
+    // TODO
+    // Cache that we have verified BMM for this block
+    // bmmCache.CacheVerifiedBMM(block.GetHash());
+
+    return true;
+}
+

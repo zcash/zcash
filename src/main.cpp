@@ -18,6 +18,7 @@
 #include "consensus/upgrades.h"
 #include "consensus/validation.h"
 #include "deprecation.h"
+#include "drivechain.h"
 #include "experimental_features.h"
 #include "init.h"
 #include "key_io.h"
@@ -4935,6 +4936,11 @@ bool CheckBlockHeader(
     if (fCheckPOW && !CheckProofOfWork(block.GetHash(), block.nBits, chainparams.GetConsensus()))
         return state.DoS(50, error("CheckBlockHeader(): proof of work failed"),
                          REJECT_INVALID, "high-hash");
+
+	// Verify BMM
+	if (!VerifyBMM(block))
+            return state.DoS(100, error("CheckBlockHeader(): Invalid BMM"),
+                         REJECT_INVALID, "bad-bmm");
 
     return true;
 }

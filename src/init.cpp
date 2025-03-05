@@ -2059,7 +2059,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
 	// Test connection to bitcoin-patched
 	int nHeight = -1;
-	bool fRes = GetBTCBlockCount(nHeight);
+	bool fRes = DrivechainRPCGetBTCBlockCount(nHeight);
 	if (fRes) {
     	uiInterface.InitMessage(_("Connected to bitcoin-patched!..."));
     	LogPrintf("Connected to bitcoin-patched! Height = %u\n", nHeight);
