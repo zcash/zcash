@@ -8,6 +8,8 @@ https://www.truthcoin.info/blog/zside-meltcast/
 - Network port number changed to `14567`
 - Message start chars changed to `24e9fdfc`
 
+- Disabled equihash, all blocks use the same solution `DRIVECHAIN_EH_SOLUTION`
+- Disabled upgrades besides sprout
 - Disabled PoW retarget 
 - Allow Min PoW blocks
 - Reset minimum chain work
