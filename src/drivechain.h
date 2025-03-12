@@ -32,6 +32,16 @@ bool DrivechainRPCGetBTCBlockCount(int& nBlocks);
 
 // BMM validation & cache
 
+// DAT files to save BMM info
+bool ReadBMMCache();
+bool WriteBMMCache();
+
+// Check if we already verified BMM for this sidechain block
+bool HaveVerifiedBMM(const uint256& hashBlock);
+
+// Cache that we verified BMM for this sidechain block
+void CacheVerifiedBMM(const uint256& hashBlock);
+
 bool VerifyBMM(const CBlock& block);
 
 

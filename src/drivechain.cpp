@@ -23,19 +23,31 @@
 
 #include <amount.h>
 #include <chainparams.h>
+#include <clientversion.h>
+#include <fs.h>
 #include <hash.h>
 #include <primitives/block.h>
+#include <serialize.h>
+#include <streams.h>
+#include <util/system.h>
 #include <util/strencodings.h>
 #include <util/system.h>
+#include <univalue.h>
 
+#include <deque>
 #include <iostream>
+#include <map>
+#include <mutex>
+#include <set>
 #include <sstream>
 #include <stdlib.h>
 #include <string>
+#include <vector>
 
 #include <boost/array.hpp>
 #include <boost/asio.hpp>
 #include <boost/asio/ip/tcp.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/foreach.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
@@ -48,6 +60,10 @@ const std::string BITCOIN_RPC_HOST = "127.0.0.1";
 const int BITCOIN_RPC_PORT = 38332;
 
 const unsigned int THIS_SIDECHAIN = 255;
+
+
+// Sidechain block hashes we already verified with the enforcer
+std::set<uint256 /* hashBlock */> setBMMVerified;
 
 
 // Bitcoin-patched RPC client:
@@ -198,6 +214,87 @@ bool DrivechainRPCGetDeposits(std::vector<DrivechainDeposit>& vDeposit)
 
 // BMM validation & cache:
 
+bool ReadBMMCache()
+{
+    fs::path path = GetDataDir() / "bmm.dat";
+    CAutoFile filein(fsbridge::fopen(path, "rb"), SER_DISK, CLIENT_VERSION);
+    if (filein.IsNull()) {
+        return false;
+    }
+
+    try {
+        int nVersionRequired, nVersionThatWrote;
+        filein >> nVersionRequired;
+        filein >> nVersionThatWrote;
+        if (nVersionRequired > CLIENT_VERSION) {
+            return false;
+        }
+
+        int nBMM = 0;
+        filein >> nBMM;
+        for (int i = 0; i < nBMM; i++) {
+            uint256 hash;
+            filein >> hash;
+            CacheVerifiedBMM(hash);
+        }
+    }
+    catch (const std::exception& e) {
+        LogPrintf("%s: Error reading BMM cache: %s", __func__, e.what());
+        return false;
+    }
+
+    return true;
+}
+
+bool WriteBMMCache()
+{
+    int nBMM = setBMMVerified.size();
+
+    fs::path path = GetDataDir() / "bmm.dat.new";
+    CAutoFile fileout(fsbridge::fopen(path, "wb"), SER_DISK, CLIENT_VERSION);
+    if (fileout.IsNull()) {
+        return;
+    }
+
+    try {
+        fileout << 160000; // version required to read: 0.16.00 or later
+        fileout << CLIENT_VERSION; // version that wrote the file
+
+        // Verified BMM hash cache
+        fileout << nBMM; // Number of Withdrawal Bundle hashes in file
+        for (const uint256& u : setBMMVerified) {
+            fileout << u;
+        }
+    }
+    catch (const std::exception& e) {
+        LogPrintf("%s: Error writing BMM cache: %s", __func__, e.what());
+        return false;
+    }
+
+    FileCommit(fileout.Get());
+    fileout.fclose();
+    RenameOver(GetDataDir() / "bmm.dat.new", GetDataDir() / "bmm.dat");
+
+    LogPrintf("%s: Wrote BMM cache.\n", __func__);
+
+    return true;
+}
+
+bool HaveVerifiedBMM(const uint256& hashBlock)
+{
+    if (hashBlock.IsNull())
+        return false;
+
+    return (setBMMVerified.count(hashBlock));
+}
+
+void CacheVerifiedBMM(const uint256& hashBlock)
+{
+    if (hashBlock.IsNull())
+        return;
+
+    setBMMVerified.insert(hashBlock);
+}
 
 bool VerifyBMM(const CBlock& block)
 {
@@ -205,10 +302,9 @@ bool VerifyBMM(const CBlock& block)
     if (block.GetHash() == Params().GetConsensus().hashGenesisBlock)
         return true;
 
-    // TODO
     // Have we already verified BMM for this block?
-    //if (bmmCache.HaveVerifiedBMM(block.GetHash()))
-    //    return true;
+    if (HaveVerifiedBMM(block.GetHash()))
+        return true;
 
     // h*
     const uint256 hashMerkleRoot = block.hashMerkleRoot;
@@ -224,9 +320,8 @@ bool VerifyBMM(const CBlock& block)
         return false;
     }
 
-    // TODO
     // Cache that we have verified BMM for this block
-    // bmmCache.CacheVerifiedBMM(block.GetHash());
+    CacheVerifiedBMM(block.GetHash());
 
     return true;
 }
