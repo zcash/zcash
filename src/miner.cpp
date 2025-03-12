@@ -19,6 +19,7 @@
 #ifdef ENABLE_MINING
 #include "crypto/equihash.h"
 #endif
+#include "drivechain.h"
 #include "hash.h"
 #include "key_io.h"
 #include "main.h"
@@ -268,6 +269,24 @@ public:
         // Now fill in the miner's output.
         mtx.vout[0] = CTxOut(value, coinbaseScript->reserveScript);
 
+        // TODO collect deposit fees for miner
+    
+        // Add drivechain deposit payout outputs
+        std::vector<DrivechainDeposit> vDeposit;
+        if (!GetUnpaidDrivechainDeposits(vDeposit)) 
+            LogPrint("%s: Failed to collect drivechain deposits for new block!", __func__);
+
+        for (const DrivechainDeposit& d : vDeposit) {
+            // Testing deposit payout script
+            CScript scriptPubKey;
+            scriptPubKey.resize(1);
+            scriptPubKey[0] = 0xDC;
+            mtx.vout.push_back(CTxOut(d.amount, scriptPubKey));
+        }
+
+        // Add drivechain withdrawal refund outputs
+        // TODO
+
         ComputeBindingSig(std::move(saplingBuilder), std::nullopt);
     }
 };
@@ -405,6 +424,7 @@ CBlockTemplate* BlockAssembler::CreateNewBlock(
         }
     }
 
+    // This is where transactions from the mempool get added to the block
     constructZIP317BlockTemplate();
 
     last_block_num_txs = nBlockTx;
@@ -413,9 +433,11 @@ CBlockTemplate* BlockAssembler::CreateNewBlock(
 
     // Create coinbase tx
     if (next_cb_mtx) {
+        // TODO for drivechain maybe disable pre-computed coinbase
         pblock->vtx[0] = *next_cb_mtx;
     } else {
         pblock->vtx[0] = CreateCoinbaseTransaction(chainparams, nFees, minerAddress, nHeight);
+        // TODO for drivechain maybe disable pre-computed coinbase
     }
     pblocktemplate->vTxFees[0] = -nFees;
 

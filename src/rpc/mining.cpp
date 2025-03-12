@@ -697,6 +697,10 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INTERNAL_ERROR, "No miner address available (mining requires a wallet or -mineraddress)");
         }
 
+        // TODO 
+        // For drivechain pre-computed coinbases might need to be disabled.
+        // Or figure out how to add drivechain outputs to the pre-computed 
+        // coinbase next_cb_mtx
         pblocktemplate = BlockAssembler(Params()).CreateNewBlock(minerAddress, next_cb_mtx);
         if (!pblocktemplate)
             throw JSONRPCError(RPC_OUT_OF_MEMORY, "Out of memory");

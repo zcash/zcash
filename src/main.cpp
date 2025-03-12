@@ -3160,6 +3160,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     int64_t nTimeStart = GetTimeMicros();
     std::vector<uint256> vOrphanErase;
     CAmount nFees = 0;
+    CAmount nDrivechainDepositPayout = 0;
     int nInputs = 0;
     unsigned int nSigOps = 0;
     CDiskTxPos pos(pindex->GetBlockPos(), GetSizeOfCompactSize(block.vtx.size()));
@@ -3249,6 +3250,23 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         // Are the shielded spends' requirements met?
         if (!Consensus::CheckTxShieldedInputs(tx, state, view, 100)) {
             return false;
+        }
+
+        // Count drivechain deposit output amounts and verify deposits
+        if (tx.IsCoinBase()) {
+            for (const CTxOut& out : tx.vout) {
+                const CScript& scriptPubKey = out.scriptPubKey;
+
+                // TODO handle paying miner fees subtracted from payout
+                if (!IsDrivechainDepositScript(scriptPubKey))
+                    continue;
+
+                nDrivechainDepositPayout += out.nValue;
+
+                // TODO verify deposit with enforcer
+                if (!VerifyDrivechainDeposit(out))
+                    return state.DoS(100, error("%s: invalid drivechain deposit!\n", __func__), REJECT_INVALID, "invalid-drivechain-deposit");
+            }
         }
 
         if (!tx.IsCoinBase())
@@ -3596,7 +3614,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     LogPrint("bench", "      - Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs]\n", (unsigned)block.vtx.size(), 0.001 * (nTime1 - nTimeStart), 0.001 * (nTime1 - nTimeStart) / block.vtx.size(), nInputs <= 1 ? 0 : 0.001 * (nTime1 - nTimeStart) / (nInputs-1), nTimeConnect * 0.000001);
 
     CAmount cbTotalOutputValue = block.vtx[0].GetValueOut() + pindex->nLockboxValue;
-    CAmount cbTotalInputValue = consensusParams.GetBlockSubsidy(pindex->nHeight) + nFees;
+    CAmount cbTotalInputValue = consensusParams.GetBlockSubsidy(pindex->nHeight) + nFees + nDrivechainDepositPayout;
     if (cbTotalOutputValue > cbTotalInputValue) {
         return state.DoS(100,
             error("%s: coinbase pays too much (actual=%d vs limit=%d)", __func__,
