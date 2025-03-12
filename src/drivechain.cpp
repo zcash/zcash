@@ -61,10 +61,24 @@ const int BITCOIN_RPC_PORT = 38332;
 
 const unsigned int THIS_SIDECHAIN = 255;
 
+struct MainBlockCacheIndex
+{
+    size_t index;
+    uint256 hash;
+};
+
+// Index of mainchain block hash in vMainBlockHash
+std::map<uint256 /* hashMainchainBlock */, MainBlockCacheIndex> mapMainBlock;
+
+// List of all known mainchain block hashes in order
+std::vector<uint256> vMainBlockHash;
 
 // Sidechain block hashes we already verified with the enforcer
 std::set<uint256 /* hashBlock */> setBMMVerified;
 
+// TODO maybe unused
+std::mutex mainBlockCacheMutex;
+std::mutex mainBlockCacheReorgMutex;
 
 // Bitcoin-patched RPC client:
 
@@ -166,6 +180,29 @@ bool DrivechainRPCGetBTCBlockCount(int& nBlocks)
     nBlocks = ptree.get("result", 0);
 
     return nBlocks >= 0;
+}
+
+bool DrivechainRPCGetBTCBlockHash(const int& nHeight, uint256& hash)
+{
+    // JSON for 'getblockhash' mainchain HTTP-RPC
+    std::string json;
+    json.append("{\"jsonrpc\": \"1.0\", \"id\":\"Drivechain\", ");
+    json.append("\"method\": \"getblockhash\", \"params\": ");
+    json.append("[");
+    json.append(UniValue(nHeight).write());
+    json.append("] }");
+
+    // Try to request mainchain block hash
+    boost::property_tree::ptree ptree;
+    if (!RPCBitcoinPatched(json, ptree)) {
+        LogPrintf("ERROR Sidechain client failed to request block hash!\n");
+        return false;
+    }
+
+    std::string strHash = ptree.get("result", "");
+    hash = uint256S(strHash);
+
+    return (!hash.IsNull());
 }
 
 bool DrivechainRPCVerifyBMM(const uint256& hashMainBlock, const uint256& hashHStar, uint256& txid, int nTime)
@@ -451,5 +488,326 @@ bool IsDrivechainDepositScript(const CScript& script)
 bool VerifyDrivechainDeposit(const CTxOut& out)
 {
     return true;
+}
+
+bool ReadMainBlockCache()
+{
+    fs::path path = GetDataDir() / "mainblockhash.dat";
+    CAutoFile filein(fsbridge::fopen(path, "rb"), SER_DISK, CLIENT_VERSION);
+    if (filein.IsNull()) {
+        return false;
+    }
+
+    std::vector<uint256> vHash;
+    try {
+        int nVersionRequired, nVersionThatWrote;
+        filein >> nVersionRequired;
+        filein >> nVersionThatWrote;
+        if (nVersionRequired > CLIENT_VERSION) {
+            return false;
+        }
+
+        int count = 0;
+        filein >> count;
+        for (int i = 0; i < count; i++) {
+            uint256 hash;
+            filein >> hash;
+            vHash.push_back(hash);
+        }
+    }
+    catch (const std::exception& e) {
+        LogPrintf("%s: Error reading main block cache: %s", __func__, e.what());
+        return false;
+    }
+
+    for (const uint256& u : vHash)
+        CacheMainBlockHash(u);
+
+    return true;
+}
+
+bool WriteMainBlockCache()
+{
+    if (vMainBlockHash.empty())
+        return false;
+
+    int count = vMainBlockHash.size();
+
+    fs::path path = GetDataDir() / "mainblockhash.dat.new";
+    CAutoFile fileout(fsbridge::fopen(path, "wb"), SER_DISK, CLIENT_VERSION);
+    if (fileout.IsNull()) {
+        return false;
+    }
+
+    try {
+        fileout << 160000; // version required to read: 0.16.00 or later
+        fileout << CLIENT_VERSION; // version that wrote the file
+        fileout << count; // Number of Withdrawal Bundle hashes in file
+
+        for (const uint256& u : vMainBlockHash) {
+            fileout << u;
+        }
+    }
+    catch (const std::exception& e) {
+        LogPrintf("%s: Error writing main block cache: %s", __func__, e.what());
+        return false;
+    }
+
+    FileCommit(fileout.Get());
+    fileout.fclose();
+    RenameOver(GetDataDir() / "mainblockhash.dat.new", GetDataDir() / "mainblockhash.dat");
+
+    LogPrintf("%s: Wrote %u\n", __func__, count);
+
+    return true;
+}
+
+void CacheMainBlockHash(const uint256& hash)
+{
+    // Don't re-cache the genesis block
+    if (vMainBlockHash.size() == 1 && hash == vMainBlockHash.front())
+        return;
+
+    // Add to ordered vector of main block hashes
+    vMainBlockHash.push_back(hash);
+
+    // Add to index of hashes
+    MainBlockCacheIndex index;
+    index.hash = hash;
+    index.index = vMainBlockHash.size() - 1;
+
+    mapMainBlock[hash] = index;
+}
+
+bool HaveMainBlock(const uint256& hash)
+{
+    return mapMainBlock.count(hash);
+}
+
+bool UpdateMainBlockHashCache(bool& fReorg, std::vector<uint256>& vDisconnected)
+{
+    // TODO Might not need mutex
+    std::lock_guard<std::mutex> lock(mainBlockCacheMutex);
+
+    //
+    // Note: bitcoin core does not count genesis block towards block count but
+    // we will cache it.
+    //
+
+    // Get the current mainchain block height
+    int nMainBlocks = 0;
+    if (DrivechainRPCGetBTCBlockCount(nMainBlocks)) {
+        LogPrintf("%s: Failed to update - cannot get block count from mainchain. (connection issue?)\n", __func__);
+        return false;
+    }
+
+    uint256 hashMainTip;
+    if (DrivechainRPCGetBTCBlockHash(nMainBlocks, hashMainTip)) {
+        LogPrintf("%s: Failed to get to mainchain tip block hash!\n", __func__);
+        return false;
+    }
+
+    // If the block height hasn't changed, check that if cached chain tip is the
+    // same as the current mainchain tip. If it is we don't need to do anything
+    // else. If it isn't we will continue to update / reorg handling.
+    int nCachedBlocks = vMainBlockHash.size();
+    if (nMainBlocks + 1 == nCachedBlocks && vMainBlockHash.size() && vMainBlockHash.back() == hashMainTip) {
+        return true;
+    }
+
+    // Otherwise;
+    // From the new mainchain tip, start looping back through mainchain blocks
+    // while keeping track of them in order until we find one that connects to
+    // one of our cached blocks by prevblock.
+    uint256 hashPrevBlock;
+    std::deque<uint256> deqHashNew;
+    for (int i = nMainBlocks; i > 0; i--) {
+        // Get the prevblockhash
+        if (!DrivechainRPCGetBTCBlockHash(i - 1, hashPrevBlock)) {
+            LogPrintf("%s: Failed to get to mainchain block: %u\n", __func__, i - 1);
+            return false;
+        }
+
+        // Check if the prevblock is in our cache. Once we find a prevblock in
+        // our cache we can update our cache from that block up to the new
+        // mainchain tip.
+        if (HaveMainBlock(hashPrevBlock)) {
+            deqHashNew.push_front(hashPrevBlock);
+            break;
+        }
+
+        deqHashNew.push_front(hashPrevBlock);
+    }
+    // Also add the new mainchain tip
+    deqHashNew.push_back(hashMainTip);
+
+    if (deqHashNew.empty()) {
+        LogPrintf("%s: Error - called with empty list of new block hashes!\n", __func__);
+        return false;
+    }
+
+    // If the main block cache doesn't have the genesis block yet, add it first
+    if (vMainBlockHash.empty())
+        CacheMainBlockHash(deqHashNew.front());
+
+    // Figure out the block in our cache that we will append the new blocks to
+    MainBlockCacheIndex index;
+    if (mapMainBlock.count(deqHashNew.front())) {
+        index = mapMainBlock[deqHashNew.front()];
+    } else {
+        LogPrintf("%s: Error - New blocks do not connect to cached chain!\n", __func__);
+        return false;
+    }
+
+    // If there were any blocks in our cache after the block we will be building
+    // on, remove them, add them to vOrphan as they were disconnected, set
+    // fReorg true.
+    if (index.index != vMainBlockHash.size() - 1) {
+        LogPrintf("%s: Mainchain reorg detected!\n", __func__);
+        fReorg = true;
+    }
+
+    std::vector<uint256> vOrphan;
+
+    for (size_t i = vMainBlockHash.size() - 1; i > index.index; i--) {
+        vOrphan.push_back(vMainBlockHash[i]);
+        vMainBlockHash.pop_back();
+    }
+
+    // Remove disconnected blocks from index map
+    for (const uint256& u : vOrphan)
+        mapMainBlock.erase(u);
+
+    // Check if we already know the first block in the deque and remove it if
+    // we do.
+    if (HaveMainBlock(deqHashNew.front()))
+        deqHashNew.pop_front();
+
+    // Append new blocks
+    for (const uint256& u : deqHashNew)
+        CacheMainBlockHash(u);
+
+    LogPrintf("%s: Updated cached mainchain tip to: %s.\n", __func__, deqHashNew.back().ToString());
+
+    return true;
+}
+
+bool VerifyMainBlockCache(std::string& strError)
+{
+    if (!vMainBlockHash.size()) {
+        strError = "No mainchain blocks in cache!";
+        return false;
+    }
+
+    // Compare cached hash at height with mainchain block hash at height
+    for (size_t i = 0; i < vMainBlockHash.size(); i++) {
+        uint256 hashBlock;
+
+        if (!DrivechainRPCGetBTCBlockHash(i, hashBlock)) {
+            strError = "Failed to request mainchain block hash!";
+            return false;
+        }
+
+        if (hashBlock != vMainBlockHash[i]) {
+            strError = "Invalid hash cached: ";
+            strError += vMainBlockHash[i].ToString();
+            strError += " height: ";
+            strError += std::to_string(i);
+
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void HandleMainchainReorg(const std::vector<uint256>& vOrphan)
+{
+    // TODO Might not need mutex
+    std::lock_guard<std::mutex> lock(mainBlockCacheReorgMutex);
+
+    /* This might need to move to main so that we can handle best
+     * chain activation... ???
+     *
+     * Also not sure how enforcer handles reorgs yet, so will re-write
+     * this as needed.
+
+    // For mainchain blocks that were orphaned - invalidate bmm blocks with
+    // commitments from them.
+    //
+    // vOrphan contains a list of mainchain block hashes that were orphaned
+
+    // Before invalidating any blocks, check the sanity of the mainchain block
+    // cache and then verify that the blocks to be orphaned actually are missing
+    // from the mainchain.
+
+    // Check the mainchain block cache
+    std::string strError = "";
+    if (!VerifyMainBlockCache(strError)) {
+        LogPrintf("%s: Main block cache invalid: %s. Resyncing...\n",
+                __func__, strError);
+        // Reset the mainchain block cache and then re-sync it
+        bmmCache.ResetMainBlockCache();
+
+        // TODO
+        // If during this call a reorg is detected and we have more orphans then
+        // something bad happened and needs to be handled. Since we just reset
+        // the mainchain block cache, have a mutex lock, and are updating the
+        // cache from scratch now, it should be impossible.
+        bool fReorg = false;
+        std::vector<uint256> vOrphanIgnore;
+        if (!UpdateMainBlockHashCache(fReorg, vOrphanIgnore)) {
+            // TODO
+            // If we make it to this point there might be a connection issue or
+            // something going on. Maybe the mainchain node went down during the
+            // function? There might be something better to do than just logging
+            // the error here.
+            LogPrintf("%s: Failed to re-update main block cache after reset!",
+                    __func__);
+            return;
+        }
+    }
+
+    // Check that the alleged orphans actually don't exist on the mainchain
+    std::vector<uint256> vOrphanFinal;
+    for (const uint256& u : vOrphan) {
+        if (!bmmCache.HaveMainBlock(u))
+            vOrphanFinal.push_back(u);
+    }
+
+    // Check if any BMM blocks were created from commitments in this
+    // orphaned mainchain block
+    for (const uint256& u : vOrphanFinal) {
+        CValidationState state;
+        {
+            LOCK(cs_main);
+            // Check our map of blocks based on their mainchain BMM commit block
+            if (!mapBlockMainHashIndex.count(u))
+                continue;
+
+            CBlockIndex* pindex = mapBlockMainHashIndex[u];
+            if (!chainActive.Contains(pindex))
+                continue;
+
+            InvalidateBlock(state, Params(), pindex);
+
+            LogPrintf("%s: Invalidated block: %s because mainchain block: %s was orphaned!\n",
+                    __func__, pindex->GetBlockHash().ToString(), u.ToString());
+
+            if (!state.IsValid()) {
+                LogPrintf("%s: Error while invalidating blocks: %s\n",
+                        __func__, FormatStateMessage(state));
+                return;
+            }
+        }
+
+        ActivateBestChain(state, Params());
+        if (!state.IsValid()) {
+            LogPrintf("%s: Error activating best chain: %s\n",
+                    __func__, FormatStateMessage(state));
+            return;
+        }
+    }
+*/
 }
 

@@ -57,4 +57,27 @@ bool IsDrivechainDepositScript(const CScript& script);
 
 bool VerifyDrivechainDeposit(const CTxOut& out);
 
+
+// Mainchain block hash cache
+
+// DAT files to save mainchain hash info
+bool ReadMainBlockCache();
+bool WriteMainBlockCache();
+
+void CacheMainBlockHash(const uint256& hash);
+
+// TODO figure out how reorg detection works with enforcer and update
+
+/**
+ * Update the cache of mainchain blocks. Detect mainchain reorg & return
+ * list of disconnected mainchain blocks if a reorg was detected.
+ */
+bool UpdateMainBlockHashCache(bool& fReorg, std::vector<uint256>& vDisconnected);
+
+/* Verify the contents of the mainchain block cache with the mainchain */
+bool VerifyMainBlockCache(std::string& strError);
+
+/** Disconnect blocks with a BMM commit from an orphan mainchain block */
+void HandleMainchainReorg(const std::vector<uint256>& vOrphan);
+
 #endif // L2L_DRIVECHAIN_H
