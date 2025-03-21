@@ -161,7 +161,7 @@ namespace Consensus {
     }
 
     int Params::GetLastFoundersRewardBlockHeight(int nHeight) const {
-        return HalvingHeight(nHeight, 1) - 1;
+        return 0; // Disable founders reward
     }
 
     int Params::FundingPeriodIndex(int fundingStreamStartHeight, int nHeight) const {
