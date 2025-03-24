@@ -37,7 +37,6 @@
 #include <deque>
 #include <iostream>
 #include <map>
-#include <mutex>
 #include <set>
 #include <sstream>
 #include <stdlib.h>
@@ -76,12 +75,7 @@ std::vector<uint256> vMainBlockHash;
 // Sidechain block hashes we already verified with the enforcer
 std::set<uint256 /* hashBlock */> setBMMVerified;
 
-// TODO maybe unused
-std::mutex mainBlockCacheMutex;
-std::mutex mainBlockCacheReorgMutex;
-
 // Bitcoin-patched RPC client:
-
 
 bool RPCBitcoinPatched(const std::string& json, boost::property_tree::ptree &ptree)
 {
@@ -215,10 +209,19 @@ bool DrivechainRPCVerifyBMM(const uint256& hashMainBlock, const uint256& hashHSt
 
 bool DrivechainRPCGetDeposits(std::vector<DrivechainDeposit>& vDeposit)
 {
-    // TODO how do we ask the enforcer only for new deposits we didn't 
-    // receive yet?
+    // TODO
+    // The enforcer doesn't give a list of sidechain deposits like the
+    // deprecated L1. Instead we will use GetTwoWayPegData or GetBlockInfo
+    // for every L1 block to collect valid deposits and store them.
     //
-    // TODO how do we verify deposits with the enforcer?
+    // Then we will need a function that the miner can use to include 
+    // any unpaid deposits when creating new blocks
+    //
+    // TODO how are they ordered? 
+    //
+    // TODO can we verify a specific deposit with the enforcer?
+    //
+    // TODO 
     //
     // TODO We cannot use http rpc to ask enforcer for a list of deposits,
     // so this will return true and a vector of test deposits  until we 
@@ -378,13 +381,14 @@ bool GetUnpaidDrivechainDeposits(std::vector<DrivechainDeposit>& vDeposit)
     }
 
     // TODO filter / sort deposits ?
-    vDeposit= vDepositNew; 
+    vDeposit = vDepositNew; 
 
     return true;
 }
 
 std::string GenerateDepositAddress(const std::string& strDestIn)
 {
+    // TODO this needs to be updated to match current enforcer version
     std::string strDepositAddress = "";
 
     // Append sidechain number
@@ -586,9 +590,10 @@ bool HaveMainBlock(const uint256& hash)
 
 bool UpdateMainBlockHashCache(bool& fReorg, std::vector<uint256>& vDisconnected)
 {
-    // TODO Might not need mutex
-    std::lock_guard<std::mutex> lock(mainBlockCacheMutex);
-
+    // TODO 
+    // This function will detect mainchain reorgs based on the mainchain block
+    // hash cache, but we shouldn't do anything if we detect a reorg until the
+    // enforcer is updated to handle them.
     //
     // Note: bitcoin core does not count genesis block towards block count but
     // we will cache it.
@@ -723,14 +728,10 @@ bool VerifyMainBlockCache(std::string& strError)
 
 void HandleMainchainReorg(const std::vector<uint256>& vOrphan)
 {
-    // TODO Might not need mutex
-    std::lock_guard<std::mutex> lock(mainBlockCacheReorgMutex);
-
+    // TODO unused, waiting for enforcer to handle reorgs 
     /* This might need to move to main so that we can handle best
      * chain activation... ???
      *
-     * Also not sure how enforcer handles reorgs yet, so will re-write
-     * this as needed.
 
     // For mainchain blocks that were orphaned - invalidate bmm blocks with
     // commitments from them.

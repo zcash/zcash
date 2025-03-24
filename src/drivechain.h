@@ -17,6 +17,7 @@
 class CBlock;
 
 struct DrivechainDeposit {
+    // TODO Update to match enforcer response deposit info
     std::string strDest;
     CAmount amount;
     CMutableTransaction mtx; // Mainchain deposit transaction
@@ -66,8 +67,6 @@ bool WriteMainBlockCache();
 
 void CacheMainBlockHash(const uint256& hash);
 
-// TODO figure out how reorg detection works with enforcer and update
-
 /**
  * Update the cache of mainchain blocks. Detect mainchain reorg & return
  * list of disconnected mainchain blocks if a reorg was detected.
@@ -77,6 +76,9 @@ bool UpdateMainBlockHashCache(bool& fReorg, std::vector<uint256>& vDisconnected)
 /* Verify the contents of the mainchain block cache with the mainchain */
 bool VerifyMainBlockCache(std::string& strError);
 
+// TODO 
+// Enforcer does not do anything for reorgs / disconnected blocks yet,
+// so this is unused for now
 /** Disconnect blocks with a BMM commit from an orphan mainchain block */
 void HandleMainchainReorg(const std::vector<uint256>& vOrphan);
 
