@@ -60,7 +60,7 @@ for instructions on joining the main Zcash network.
 
 * :blue_book: See the documentation at the [ReadTheDocs](https://zcash.readthedocs.io)
   for help and more information.
-* :incoming_envelope: Ask for help on the [Zcash](https://forum.z.cash/) forum.
+* :incoming_envelope: Ask for help on the [Zcash](https://forum.zcashcommunity.com/) forum.
 * :speech_balloon: Join our community on [Discord](https://discord.com/invite/zcash) 
 * 🧑‍🎓: Learn at [ZecHub](https://zechub.wiki/)
 
