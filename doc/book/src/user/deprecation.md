@@ -51,6 +51,9 @@ the node, or if an `allowdeprecated=none` line is added to `zcash.conf`.
 The `createrawtransaction`, `fundrawtransaction`, and `signrawtransaction` RPC methods are intended to be replaced
 by PCZT-based functionality implemented in Zallet [zcash/wallet#99](https://github.com/zcash/wallet/issues/99).
 
+The experimental RPC methods `z_getpaymentdisclosure` and `z_validatepaymentdisclosure` (which only supported
+Sprout) are also deprecated.
+
 
 Stage 2
 -------
