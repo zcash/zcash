@@ -44,6 +44,7 @@ class GetBlockTemplateTest(BitcoinTestFramework):
             nuparams(NU5_BRANCH_ID, 230),
             "-allowdeprecated=getnewaddress",
             "-allowdeprecated=z_getbalance",
+            "-allowdeprecated=gbt_oldhashes",
         ]
         self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, [args] * self.num_nodes)
         self.is_network_split = False
