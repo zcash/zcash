@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # linearize-hashes.py:  List blocks in a linear, no-fork version of the chain.
 #
@@ -7,7 +7,6 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 #
 
-from __future__ import print_function
 import json
 import struct
 import re

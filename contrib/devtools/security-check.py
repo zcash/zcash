@@ -1,11 +1,14 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+# Copyright (c) 2015-2017 The Bitcoin Core developers
+# Copyright (c) 2022 The Zcash developers
+# Distributed under the MIT software license, see the accompanying
+# file COPYING or https://www.opensource.org/licenses/mit-license.php .
 '''
 Perform basic ELF security checks on a series of executables.
 Exit status will be 0 if successful, and the program will be silent.
 Otherwise the exit status will be 1 and it will log which executables failed which checks.
 Needs `readelf` (for ELF) and `objdump` (for PE).
 '''
-from __future__ import division,print_function,unicode_literals
 import struct
 import subprocess
 import sys
