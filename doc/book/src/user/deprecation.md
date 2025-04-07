@@ -49,12 +49,12 @@ Each feature in the table below may be enabled by adding `-allowdeprecated=<feat
 to the CLI arguments when starting the node, or by adding an `allowdeprecated=<feature>`
 line to `zcash.conf`.
 
-| `feature`             | Deprecated | Feature details
-|-----------------------|------------|----------------
-| `legacy_privacy`      | 5.0.0      | The default "legacy" privacy policy for `z_sendmany` has been replaced by the `FullPrivacy` directive.
-| `getnewaddress`       | 5.0.0      | The `getnewaddress` RPC method.
-| `getrawchangeaddress` | 5.0.0      | The `getrawchangeaddress` RPC method.
-| `z_getnewaddress`     | 5.0.0      | The `z_getnewaddress` RPC method.
-| `z_listaddresses`     | 5.0.0      | The `z_listaddresses` RPC method.
-| `addrtype`            | 5.0.0      | The `type` attribute is deprecated in the results of RPC methods that return address metadata. It is recommended that applications using this metadata be updated to use the `pool` or `address_type` attributes, which have replaced the `type` attribute, as appropriate.
-| `wallettxvjoinsplit`  | 5.1.0      | The `vjoinsplit` attribute returned by the `gettransaction` RPC method.
+| `feature`                           | Deprecated | Default-disabled | Feature details
+|-------------------------------------|------------|------------------|----------------
+| `legacy_privacy`                    | 5.0.0      | 5.4.0            | The default "legacy" privacy policy for `z_sendmany` has been replaced by the `FullPrivacy` directive.
+| `getnewaddress`                     | 5.0.0      | 5.4.0            | The `getnewaddress` RPC method.
+| `getrawchangeaddress`               | 5.0.0      | 5.4.0            | The `getrawchangeaddress` RPC method.
+| `z_getnewaddress`                   | 5.0.0      | 5.4.0            | The `z_getnewaddress` RPC method.
+| `z_listaddresses`                   | 5.0.0      | 5.4.0            | The `z_listaddresses` RPC method.
+| `addrtype`                          | 5.0.0      | 5.4.0            | The `type` attribute is deprecated in the results of RPC methods that return address metadata. It is recommended that applications using this metadata be updated to use the `pool` or `address_type` attributes, which have replaced the `type` attribute, as appropriate.
+| `wallettxvjoinsplit`                | 5.1.0      | 5.4.0            | The `vjoinsplit` attribute returned by the `gettransaction` RPC method.
