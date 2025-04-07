@@ -260,6 +260,7 @@ def initialize_chain(test_dir, num_nodes, cachedir, cache_behavior='current'):
             datadir = initialize_datadir(cachedir, i)
             args = [ zcashd_binary(), "-keypool=1", "-datadir="+datadir, "-discover=0" ]
             args.extend([
+                '-i-am-aware-zcashd-will-be-replaced-by-zebrad-and-zallet-in-2025',
                 '-nuparams=5ba81b19:1', # Overwinter
                 '-nuparams=76b809bb:1', # Sapling
                 '-mocktime=%d' % block_time
@@ -482,6 +483,7 @@ def start_node(i, dirname, extra_args=None, rpchost=None, timewait=None, binary=
         binary = zcashd_binary()
     args = [ binary, "-datadir="+datadir, "-keypool=1", "-discover=0", "-rest" ]
     args.extend([
+        '-i-am-aware-zcashd-will-be-replaced-by-zebrad-and-zallet-in-2025',
         '-nuparams=5ba81b19:1', # Overwinter
         '-nuparams=76b809bb:1', # Sapling
     ])
