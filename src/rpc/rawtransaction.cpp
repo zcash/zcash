@@ -675,10 +675,10 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
     if (!fEnableCreateRawTransaction) {
         throw runtime_error(
             "createrawtransaction is DEPRECATED and will be removed in a future release.\n"
-            "\nZallet will instead have new RPC methods that work on PCZTs:\n"
+            "\nZallet will instead provide new RPC methods that work on PCZTs:\n"
             "https://github.com/zcash/wallet/issues/99\n"
-            "Restart with `-allowdeprecated=createrawtransaction` if you require backward\n"
-            "compatibility.\n"
+            "Restart with `-allowdeprecated=createrawtransaction` to re-enable this method\n"
+            "during its deprecation period.\n"
             "See https://zcash.github.io/zcash/user/deprecation.html for more information.");
     }
 
@@ -963,8 +963,8 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
             "signrawtransaction is DEPRECATED and will be removed in a future release.\n"
             "\nZallet will instead have new RPC methods that work on PCZTs:\n"
             "https://github.com/zcash/wallet/issues/99\n"
-            "Restart with `-allowdeprecated=createrawtransaction` if you require backward\n"
-            "compatibility.\n"
+            "Restart with `-allowdeprecated=createrawtransaction` to re-enable this method\n"
+            "during its deprecation period.\n"
             "See https://zcash.github.io/zcash/user/deprecation.html for more information.");
     }
 

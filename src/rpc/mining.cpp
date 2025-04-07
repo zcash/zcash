@@ -129,7 +129,7 @@ UniValue getnetworkhashps(const UniValue& params, bool fHelp)
         throw runtime_error(
             "getnetworkhashps is DEPRECATED and will be removed in a future release.\n"
             "\nUse getnetworksolps or restart with `-allowdeprecated=getnetworkhashps`\n"
-            "if you require backward compatibility.\n"
+            "to re-enable this method during its deprecation period.\n"
             "See https://zcash.github.io/zcash/user/deprecation.html for more information.");
     }
 

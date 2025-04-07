@@ -169,7 +169,8 @@ UniValue getnewaddress(const UniValue& params, bool fHelp)
         throw runtime_error(
             "getnewaddress is DEPRECATED and will be removed in a future release.\n"
             "\nUse z_getnewaccount and z_getaddressforaccount instead, or restart\n"
-            "with `-allowdeprecated=getnewaddress` if you require backward compatibility.\n"
+            "with `-allowdeprecated=getnewaddress` to re-enable this method during\n"
+            "its deprecation period.\n"
             "See https://zcash.github.io/zcash/user/deprecation.html for more information.");
     }
 
@@ -255,8 +256,8 @@ UniValue getrawchangeaddress(const UniValue& params, bool fHelp)
         throw runtime_error(
             "getrawchangeaddress is DEPRECATED and will be removed in a future release.\n"
             "\nChange addresses are a wallet-internal feature. Use a unified address for\n"
-            "a dedicated change account instead, or restart with `-allowdeprecated=getrawchangeaddress` \n"
-            "if you require backward compatibility.\n"
+            "a dedicated change account instead, or restart with `-allowdeprecated=getrawchangeaddress`\n"
+            "to re-enable this method during its deprecation period.\n"
             "See https://zcash.github.io/zcash/user/deprecation.html for more information.");
     }
 
@@ -2063,7 +2064,7 @@ UniValue keypoolrefill(const UniValue& params, bool fHelp)
         throw runtime_error(
             "keypoolrefill is DEPRECATED and will be removed in a future release.\n"
             "\nIt will not be needed for Zallet. Restart with `-allowdeprecated=keypoolrefill`\n"
-            "if you require backward compatibility.\n"
+            "to re-enable this method during its deprecation period.\n"
             "See https://zcash.github.io/zcash/user/deprecation.html for more information.");
     }
 
@@ -2506,8 +2507,8 @@ UniValue settxfee(const UniValue& params, bool fHelp)
         throw runtime_error(
             "settxfee is DEPRECATED and will be removed in a future release.\n"
             "\nIt is strongly recommended to use the default ZIP 317 fee, which is not\n"
-            "expressible using settxfee. Restart with `-allowdeprecated=settxfee` if you\n"
-            "require backward compatibility.\n"
+            "expressible using settxfee. Restart with `-allowdeprecated=settxfee` to\n"
+            "re-enable this method during its deprecation period.\n"
             "See https://zcash.github.io/zcash/user/deprecation.html for more information.");
     }
 
@@ -2974,10 +2975,10 @@ UniValue fundrawtransaction(const UniValue& params, bool fHelp)
     if (!fEnableFundRawTransaction) {
         throw runtime_error(
             "fundrawtransaction is DEPRECATED and will be removed in a future release.\n"
-            "\nZallet will instead have new RPC methods that work on PCZTs:\n"
+            "\nZallet will instead provide new RPC methods that work on PCZTs:\n"
             "https://github.com/zcash/wallet/issues/99\n"
-            "Restart with `-allowdeprecated=createrawtransaction` if you require backward\n"
-            "compatibility.\n"
+            "Restart with `-allowdeprecated=createrawtransaction` to re-enable this method\n"
+            "during its deprecation period.\n"
             "See https://zcash.github.io/zcash/user/deprecation.html for more information.");
     }
 
@@ -3220,7 +3221,8 @@ UniValue z_getnewaddress(const UniValue& params, bool fHelp)
         throw runtime_error(
             "z_getnewaddress is DEPRECATED and will be removed in a future release.\n"
             "\nUse z_getnewaccount and z_getaddressforaccount instead, or restart\n"
-            "with `-allowdeprecated=z_getnewaddress` if you require backward compatibility.\n"
+            "with `-allowdeprecated=z_getnewaddress` to re-enable this method during\n"
+            "its deprecation period.\n"
             "See https://zcash.github.io/zcash/user/deprecation.html for more information.");
     }
 
@@ -3543,7 +3545,7 @@ UniValue z_listaddresses(const UniValue& params, bool fHelp)
         throw runtime_error(
             "z_listaddresses is DEPRECATED and will be removed in a future release.\n"
             "\nUse listaddresses or restart with `-allowdeprecated=z_listaddresses`\n"
-            "if you require backward compatibility.\n"
+            "to re-enable this method during its deprecation period.\n"
             "See https://zcash.github.io/zcash/user/deprecation.html for more information.");
     }
 
@@ -3987,7 +3989,7 @@ UniValue z_getbalance(const UniValue& params, bool fHelp)
             "z_getbalance is DEPRECATED and will be removed in a future release.\n"
             "\nUse z_getbalanceforaccount, z_getbalanceforviewingkey, or getbalance (for\n"
             "legacy transparent balance) instead, or restart with `-allowdeprecated=z_getbalance`\n"
-            "if you require backward compatibility.\n"
+            "to re-enable this method during its deprecation period.\n"
             "See https://zcash.github.io/zcash/user/deprecation.html for more information.");
     }
 
@@ -4289,8 +4291,9 @@ UniValue z_gettotalbalance(const UniValue& params, bool fHelp)
     if (!fEnableZGetTotalBalance) {
         throw runtime_error(
             "z_gettotalbalance is DEPRECATED and will be removed in a future release.\n"
-            "\nUse z_getbalanceforaccount, or getbalance (for legacy transparent balance) instead, or\n"
-            "restart with `-allowdeprecated=z_gettotalbalance if you require backward compatibility.\n"
+            "\nUse z_getbalanceforaccount, or getbalance (for legacy transparent balance) instead,\n"
+            "or restart with `-allowdeprecated=z_gettotalbalance` to re-enable this method during\n"
+            "its deprecation period.\n"
             "See https://zcash.github.io/zcash/user/deprecation.html for more information.");
     }
 
