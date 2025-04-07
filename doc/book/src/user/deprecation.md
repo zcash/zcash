@@ -41,6 +41,16 @@ the node, or if an `allowdeprecated=none` line is added to `zcash.conf`.
 | `z_gettotalbalance`                 | 5.0.0      | The `z_gettotalbalance` RPC method.
 | `gbt_oldhashes`                     | 5.4.0      | The `finalsaplingroothash`, `lightclientroothash`, and `blockcommitmentshash` fields in the output of `getblocktemplate`, which are replaced by the `defaultroots` field.
 | `deprecationinfo_deprecationheight` | 5.5.0      | The `deprecationheight` field returned by the `getdeprecationinfo` RPC method has been replaced by the `end_of_service` object.
+| `createrawtransaction`              | 6.2.0      | The `createrawtransaction` RPC method.
+| `fundrawtransaction`                | 6.2.0      | The `fundrawtransaction` RPC method.
+| `signrawtransaction`                | 6.2.0      | The `signrawtransactions` RPC method.
+| `keypoolrefill`                     | 6.2.0      | The `keypoolrefill` RPC method.
+| `settxfee`                          | 6.2.0      | The `settxfee` RPC method.
+| `getnetworkhashps`                  | 6.2.0      | The `getnetworkhashps` RPC method (use `getnetworksolps` instead).
+
+The `createrawtransaction`, `fundrawtransaction`, and `signrawtransaction` RPC methods are intended to be replaced
+by PCZT-based functionality implemented in Zallet [zcash/wallet#99](https://github.com/zcash/wallet/issues/99).
+
 
 Stage 2
 -------

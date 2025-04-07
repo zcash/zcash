@@ -27,11 +27,17 @@ static const int DEPRECATION_WARN_LIMIT = 14 * 24 * EXPECTED_BLOCKS_PER_HOUR;
 //! Defaults for -allowdeprecated
 static const std::set<std::string> DEFAULT_ALLOW_DEPRECATED{{
     // Node-level features
+    "createrawtransaction",
+    "signrawtransaction",
+    "getnetworkhashps",
     "gbt_oldhashes",
     "deprecationinfo_deprecationheight",
 
     // Wallet-level features
 #ifdef ENABLE_WALLET
+    "fundrawtransaction",
+    "keypoolrefill",
+    "settxfee",
     "z_getbalance",
     "z_gettotalbalance",
 #endif
@@ -55,6 +61,9 @@ static const std::set<std::string> DEFAULT_DENY_DEPRECATED{{
 extern bool fEnableGbtOldHashes;
 extern bool fEnableDeprecationInfoDeprecationHeight;
 extern bool fEnableAddrTypeField;
+extern bool fEnableGetNetworkHashPS;
+extern bool fEnableCreateRawTransaction;
+extern bool fEnableSignRawTransaction;
 #ifdef ENABLE_WALLET
 extern bool fEnableGetNewAddress;
 extern bool fEnableGetRawChangeAddress;
@@ -64,6 +73,9 @@ extern bool fEnableZGetTotalBalance;
 extern bool fEnableZListAddresses;
 extern bool fEnableLegacyPrivacyStrategy;
 extern bool fEnableWalletTxVJoinSplit;
+extern bool fEnableFundRawTransaction;
+extern bool fEnableKeyPoolRefill;
+extern bool fEnableSetTxFee;
 #endif
 
 /**

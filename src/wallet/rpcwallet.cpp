@@ -2057,6 +2057,14 @@ UniValue keypoolrefill(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
+    if (!fEnableKeyPoolRefill) {
+        throw runtime_error(
+            "keypoolrefill is DEPRECATED and will be removed in a future release.\n"
+            "\nIt will not be needed for Zallet. Restart with `-allowdeprecated=keypoolrefill`\n"
+            "if you require backward compatibility.\n"
+            "See https://zcash.github.io/zcash/user/deprecation.html for more information.");
+    }
+
     if (fHelp || params.size() > 1)
         throw runtime_error(
             "keypoolrefill ( newsize )\n"
@@ -2491,6 +2499,15 @@ UniValue settxfee(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
+
+    if (!fEnableSetTxFee) {
+        throw runtime_error(
+            "settxfee is DEPRECATED and will be removed in a future release.\n"
+            "\nIt is strongly recommended to use the default ZIP 317 fee, which is not\n"
+            "expressible using settxfee. Restart with `-allowdeprecated=settxfee` if you\n"
+            "require backward compatibility.\n"
+            "See https://zcash.github.io/zcash/user/deprecation.html for more information.");
+    }
 
     if (fHelp || params.size() < 1 || params.size() > 1)
         throw runtime_error(
@@ -2951,6 +2968,16 @@ UniValue fundrawtransaction(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
+
+    if (!fEnableFundRawTransaction) {
+        throw runtime_error(
+            "fundrawtransaction is DEPRECATED and will be removed in a future release.\n"
+            "\nZallet will instead have new RPC methods that work on PCZTs:\n"
+            "https://github.com/zcash/wallet/issues/99\n"
+            "Restart with `-allowdeprecated=createrawtransaction` if you require backward\n"
+            "compatibility.\n"
+            "See https://zcash.github.io/zcash/user/deprecation.html for more information.");
+    }
 
     if (fHelp || params.size() < 1 || params.size() > 2)
         throw runtime_error(

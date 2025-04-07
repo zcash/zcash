@@ -8,6 +8,7 @@
 
 extern UniValue signrawtransaction(const UniValue& params, bool fHelp);
 
+// This is only a helper for tests.
 std::pair<CTransaction, UniValue> SignSendRawTransaction(UniValue obj, std::optional<std::reference_wrapper<CReserveKey>> reservekey, bool testmode) {
     // Sign the raw transaction
     UniValue rawtxnValue = find_value(obj, "rawtxn");

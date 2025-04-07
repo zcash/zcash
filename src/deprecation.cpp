@@ -14,6 +14,9 @@
 bool fEnableGbtOldHashes = true;
 bool fEnableDeprecationInfoDeprecationHeight = true;
 bool fEnableAddrTypeField = true;
+bool fEnableGetNetworkHashPS = true;
+bool fEnableCreateRawTransaction = true;
+bool fEnableSignRawTransaction = true;
 #ifdef ENABLE_WALLET
 bool fEnableGetNewAddress = true;
 bool fEnableGetRawChangeAddress = true;
@@ -23,6 +26,9 @@ bool fEnableZGetTotalBalance = true;
 bool fEnableZListAddresses = true;
 bool fEnableLegacyPrivacyStrategy = true;
 bool fEnableWalletTxVJoinSplit = true;
+bool fEnableFundRawTransaction = true;
+bool fEnableKeyPoolRefill = true;
+bool fEnableSetTxFee = true;
 #endif
 
 static const std::string CLIENT_VERSION_STR = FormatVersion(CLIENT_VERSION);

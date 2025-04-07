@@ -125,6 +125,14 @@ UniValue getnetworksolps(const UniValue& params, bool fHelp)
 
 UniValue getnetworkhashps(const UniValue& params, bool fHelp)
 {
+    if (!fEnableGetNetworkHashPS) {
+        throw runtime_error(
+            "getnetworkhashps is DEPRECATED and will be removed in a future release.\n"
+            "\nUse getnetworksolps or restart with `-allowdeprecated=getnetworkhashps`\n"
+            "if you require backward compatibility.\n"
+            "See https://zcash.github.io/zcash/user/deprecation.html for more information.");
+    }
+
     if (fHelp || params.size() > 2)
         throw runtime_error(
             "getnetworkhashps ( blocks height )\n"

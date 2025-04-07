@@ -672,6 +672,16 @@ UniValue verifytxoutproof(const UniValue& params, bool fHelp)
 
 UniValue createrawtransaction(const UniValue& params, bool fHelp)
 {
+    if (!fEnableCreateRawTransaction) {
+        throw runtime_error(
+            "createrawtransaction is DEPRECATED and will be removed in a future release.\n"
+            "\nZallet will instead have new RPC methods that work on PCZTs:\n"
+            "https://github.com/zcash/wallet/issues/99\n"
+            "Restart with `-allowdeprecated=createrawtransaction` if you require backward\n"
+            "compatibility.\n"
+            "See https://zcash.github.io/zcash/user/deprecation.html for more information.");
+    }
+
     if (fHelp || params.size() < 2 || params.size() > 4)
         throw runtime_error(
             "createrawtransaction [{\"txid\":\"id\",\"vout\":n},...] {\"address\":amount,...} ( locktime ) ( expiryheight )\n"
@@ -948,6 +958,16 @@ static void TxInErrorToJSON(const CTxIn& txin, UniValue& vErrorsRet, const std::
 
 UniValue signrawtransaction(const UniValue& params, bool fHelp)
 {
+    if (!fEnableSignRawTransaction) {
+        throw runtime_error(
+            "signrawtransaction is DEPRECATED and will be removed in a future release.\n"
+            "\nZallet will instead have new RPC methods that work on PCZTs:\n"
+            "https://github.com/zcash/wallet/issues/99\n"
+            "Restart with `-allowdeprecated=createrawtransaction` if you require backward\n"
+            "compatibility.\n"
+            "See https://zcash.github.io/zcash/user/deprecation.html for more information.");
+    }
+
     if (fHelp || params.size() < 1 || params.size() > 5)
         throw runtime_error(
             "signrawtransaction \"hexstring\" ( [{\"txid\":\"id\",\"vout\":n,\"scriptPubKey\":\"hex\",\"redeemScript\":\"hex\"},...] [\"privatekey1\",...] sighashtype )\n"
