@@ -30,29 +30,29 @@ static const std::set<std::string> DEFAULT_ALLOW_DEPRECATED{{
     "createrawtransaction",
     "signrawtransaction",
     "getnetworkhashps",
-    "gbt_oldhashes",
-    "deprecationinfo_deprecationheight",
 
     // Wallet-level features
 #ifdef ENABLE_WALLET
+    "z_gettotalbalance",
     "fundrawtransaction",
     "keypoolrefill",
     "settxfee",
-    "z_getbalance",
-    "z_gettotalbalance",
 #endif
 }};
 static const std::set<std::string> DEFAULT_DENY_DEPRECATED{{
     // Node-level features
+    "gbt_oldhashes",
+    "deprecationinfo_deprecationheight",
+    "addrtype",
 
     // Wallet-level features
 #ifdef ENABLE_WALLET
-    "legacy_privacy",
     "getnewaddress",
     "getrawchangeaddress",
     "z_getnewaddress",
+    "z_getbalance",
     "z_listaddresses",
-    "addrtype",
+    "legacy_privacy",
     "wallettxvjoinsplit",
 #endif
 }};
