@@ -131,3 +131,16 @@ std::string GetAllowableDeprecatedFeatures() {
     return result;
 }
 
+std::string Deprecated(bool enabled, std::string method, std::string instead) {
+    auto status = enabled ? "DEPRECATED" : "DISABLED";
+    auto reenable = enabled
+            ? std::string("")
+            : (std::string("You can restart the node with `-allowdeprecated=") + method + "`\n"
+               "to re-enable this method during its deprecation period.\n");
+
+    return std::string("\n")
+           + method + " is " + status + " and will be removed in a future release.\n"
+           + instead + "\n"
+           + reenable
+           + "See https://zcash.github.io/zcash/user/deprecation.html for more information.\n";
+}

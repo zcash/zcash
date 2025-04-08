@@ -125,18 +125,12 @@ UniValue getnetworksolps(const UniValue& params, bool fHelp)
 
 UniValue getnetworkhashps(const UniValue& params, bool fHelp)
 {
-    if (!fEnableGetNetworkHashPS) {
-        throw runtime_error(
-            "getnetworkhashps is DEPRECATED and will be removed in a future release.\n"
-            "\nUse getnetworksolps or restart with `-allowdeprecated=getnetworkhashps`\n"
-            "to re-enable this method during its deprecation period.\n"
-            "See https://zcash.github.io/zcash/user/deprecation.html for more information.");
-    }
-
-    if (fHelp || params.size() > 2)
+    if (!fEnableGetNetworkHashPS || fHelp || params.size() > 2)
         throw runtime_error(
             "getnetworkhashps ( blocks height )\n"
-            "\nDEPRECATED - left for backwards-compatibility. Use getnetworksolps instead.\n"
+            + Deprecated(fEnableGetNetworkHashPS,
+                         "getnetworkhashps",
+                         "Please use getnetworksolps instead.") +
             "\nReturns the estimated network solutions per second based on the last n blocks.\n"
             "Pass in [blocks] to override # of blocks, -1 specifies over difficulty averaging window.\n"
             "Pass in [height] to estimate the network speed at the time when a certain block was found.\n"
@@ -148,7 +142,7 @@ UniValue getnetworkhashps(const UniValue& params, bool fHelp)
             "\nExamples:\n"
             + HelpExampleCli("getnetworkhashps", "")
             + HelpExampleRpc("getnetworkhashps", "")
-       );
+        );
 
     LOCK(cs_main);
     return GetNetworkHashPS(params.size() > 0 ? params[0].get_int() : 120, params.size() > 1 ? params[1].get_int() : -1);

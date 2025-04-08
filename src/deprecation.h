@@ -109,4 +109,9 @@ std::optional<std::string> LoadAllowedDeprecatedFeatures();
  */
 std::string GetAllowableDeprecatedFeatures();
 
+/**
+ * Returns a string to be included in the help text of a deprecated RPC method.
+ */
+std::string Deprecated(bool enabled, std::string method, std::string instead);
+
 #endif // ZCASH_DEPRECATION_H

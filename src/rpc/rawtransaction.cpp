@@ -672,19 +672,13 @@ UniValue verifytxoutproof(const UniValue& params, bool fHelp)
 
 UniValue createrawtransaction(const UniValue& params, bool fHelp)
 {
-    if (!fEnableCreateRawTransaction) {
-        throw runtime_error(
-            "createrawtransaction is DEPRECATED and will be removed in a future release.\n"
-            "\nZallet will instead provide new RPC methods that work on PCZTs:\n"
-            "https://github.com/zcash/wallet/issues/99\n"
-            "Restart with `-allowdeprecated=createrawtransaction` to re-enable this method\n"
-            "during its deprecation period.\n"
-            "See https://zcash.github.io/zcash/user/deprecation.html for more information.");
-    }
-
-    if (fHelp || params.size() < 2 || params.size() > 4)
+    if (!fEnableCreateRawTransaction || fHelp || params.size() < 2 || params.size() > 4)
         throw runtime_error(
             "createrawtransaction [{\"txid\":\"id\",\"vout\":n},...] {\"address\":amount,...} ( locktime ) ( expiryheight )\n"
+            + Deprecated(fEnableCreateRawTransaction,
+                         "createrawtransaction",
+                         "Zallet will instead provide new RPC methods that operate on PCZTs:\n"
+                         "https://github.com/zcash/wallet/issues/99") +
             "\nCreate a transaction spending the given inputs and sending to the given addresses.\n"
             "Returns hex-encoded raw transaction.\n"
             "Note that the transaction's inputs are not signed, and\n"
@@ -958,19 +952,13 @@ static void TxInErrorToJSON(const CTxIn& txin, UniValue& vErrorsRet, const std::
 
 UniValue signrawtransaction(const UniValue& params, bool fHelp)
 {
-    if (!fEnableSignRawTransaction) {
-        throw runtime_error(
-            "signrawtransaction is DEPRECATED and will be removed in a future release.\n"
-            "\nZallet will instead have new RPC methods that work on PCZTs:\n"
-            "https://github.com/zcash/wallet/issues/99\n"
-            "Restart with `-allowdeprecated=createrawtransaction` to re-enable this method\n"
-            "during its deprecation period.\n"
-            "See https://zcash.github.io/zcash/user/deprecation.html for more information.");
-    }
-
-    if (fHelp || params.size() < 1 || params.size() > 5)
+    if (!fEnableSignRawTransaction || fHelp || params.size() < 1 || params.size() > 5)
         throw runtime_error(
             "signrawtransaction \"hexstring\" ( [{\"txid\":\"id\",\"vout\":n,\"scriptPubKey\":\"hex\",\"redeemScript\":\"hex\"},...] [\"privatekey1\",...] sighashtype )\n"
+            + Deprecated(fEnableSignRawTransaction,
+                         "signrawtransaction",
+                         "Zallet will instead provide new RPC methods that operate on PCZTs:\n"
+                         "https://github.com/zcash/wallet/issues/99") +
             "\nSign inputs for raw transaction (serialized, hex-encoded).\n"
             "The second optional argument (may be null) is an array of previous transaction outputs that\n"
             "this transaction depends on but may not yet be in the block chain.\n"
