@@ -74,7 +74,7 @@ class WalletDeprecationTest(BitcoinTestFramework):
         except JSONRPCException as e:
             errorString = e.error['message']
         assert_true(
-            "DEPRECATED" in errorString,
+            "DISABLED" in errorString,
             "'%s' not disabled (%s)" % (
                 function,
                 "failed with '%s'" % errorString if len(errorString) > 0 else "succeeded",

@@ -14,6 +14,9 @@
 bool fEnableGbtOldHashes = true;
 bool fEnableDeprecationInfoDeprecationHeight = true;
 bool fEnableAddrTypeField = true;
+bool fEnableGetNetworkHashPS = true;
+bool fEnableCreateRawTransaction = true;
+bool fEnableSignRawTransaction = true;
 #ifdef ENABLE_WALLET
 bool fEnableGetNewAddress = true;
 bool fEnableGetRawChangeAddress = true;
@@ -23,6 +26,9 @@ bool fEnableZGetTotalBalance = true;
 bool fEnableZListAddresses = true;
 bool fEnableLegacyPrivacyStrategy = true;
 bool fEnableWalletTxVJoinSplit = true;
+bool fEnableFundRawTransaction = true;
+bool fEnableKeyPoolRefill = true;
+bool fEnableSetTxFee = true;
 #endif
 
 static const std::string CLIENT_VERSION_STR = FormatVersion(CLIENT_VERSION);
@@ -125,3 +131,16 @@ std::string GetAllowableDeprecatedFeatures() {
     return result;
 }
 
+std::string Deprecated(bool enabled, std::string method, std::string instead) {
+    auto status = enabled ? "DEPRECATED" : "DISABLED";
+    auto reenable = enabled
+            ? std::string("")
+            : (std::string("You can restart the node with `-allowdeprecated=") + method + "`\n"
+               "to re-enable this method during its deprecation period.\n");
+
+    return std::string("\n")
+           + method + " is " + status + " and will be removed in a future release.\n"
+           + instead + "\n"
+           + reenable
+           + "See https://zcash.github.io/zcash/user/deprecation.html for more information.\n";
+}

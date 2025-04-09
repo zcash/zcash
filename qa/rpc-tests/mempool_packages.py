@@ -32,6 +32,8 @@ class MempoolPackagesTest(BitcoinTestFramework):
             '-maxorphantx=%d' % (self.limitdescendantcount,),
             '-debug',
             '-allowdeprecated=getnewaddress',
+            '-allowdeprecated=createrawtransaction',
+            '-allowdeprecated=signrawtransaction',
         ]
         self.nodes = []
         self.nodes.append(start_node(0, self.options.tmpdir, base_args))
@@ -195,6 +197,7 @@ class MempoolPackagesTest(BitcoinTestFramework):
         value = utxo[0]['amount']
         vout = utxo[0]['vout']
 
+        fee = conventional_fee(8)
         send_value = satoshi_round((value - fee)/2)
         inputs = [ {'txid' : txid, 'vout' : vout} ]
         outputs = {}

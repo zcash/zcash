@@ -52,8 +52,8 @@ UniValue z_getpaymentdisclosure(const UniValue& params, bool fHelp)
     if (fHelp || params.size() < 3 || params.size() > 4 )
         throw runtime_error(
             "z_getpaymentdisclosure \"txid\" js_index output_index (\"message\") \n"
-            "\nGenerate a payment disclosure for a given joinsplit output.\n"
-            "\nEXPERIMENTAL FEATURE\n"
+            "\nGenerate a payment disclosure for a given joinsplit output. This only supports Sprout.\n"
+            "\nEXPERIMENTAL, DEPRECATED FEATURE\n"
             + disabledMsg +
             "\nArguments:\n"
             "1. \"txid\"            (string, required) \n"
@@ -157,8 +157,8 @@ UniValue z_validatepaymentdisclosure(const UniValue& params, bool fHelp)
     if (fHelp || params.size() != 1)
         throw runtime_error(
             "z_validatepaymentdisclosure \"paymentdisclosure\"\n"
-            "\nValidates a payment disclosure.\n"
-            "\nEXPERIMENTAL FEATURE\n"
+            "\nValidates a payment disclosure. This only supports Sprout.\n"
+            "\nEXPERIMENTAL, DEPRECATED FEATURE\n"
             + disabledMsg +
             "\nArguments:\n"
             "1. \"paymentdisclosure\"     (string, required) Hex data string, with \"zpd:\" prefix.\n"
