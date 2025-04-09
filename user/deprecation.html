@@ -185,26 +185,38 @@ be extended beyond this on a case-by-case basis to satisfy user requirements.</p
 will be disabled if <code>-allowdeprecated=none</code> is added to the CLI arguments when starting
 the node, or if an <code>allowdeprecated=none</code> line is added to <code>zcash.conf</code>.</p>
 <div class="table-wrapper"><table><thead><tr><th><code>feature</code></th><th>Deprecated</th><th>Feature details</th></tr></thead><tbody>
-<tr><td><code>z_getbalance</code></td><td>5.0.0</td><td>The <code>z_getbalance</code> RPC method.</td></tr>
 <tr><td><code>z_gettotalbalance</code></td><td>5.0.0</td><td>The <code>z_gettotalbalance</code> RPC method.</td></tr>
-<tr><td><code>gbt_oldhashes</code></td><td>5.4.0</td><td>The <code>finalsaplingroothash</code>, <code>lightclientroothash</code>, and <code>blockcommitmentshash</code> fields in the output of <code>getblocktemplate</code>, which are replaced by the <code>defaultroots</code> field.</td></tr>
-<tr><td><code>deprecationinfo_deprecationheight</code></td><td>5.5.0</td><td>The <code>deprecationheight</code> field returned by the <code>getdeprecationinfo</code> RPC method has been replaced by the <code>end_of_service</code> object.</td></tr>
+<tr><td><code>createrawtransaction</code></td><td>6.2.0</td><td>The <code>createrawtransaction</code> RPC method.</td></tr>
+<tr><td><code>fundrawtransaction</code></td><td>6.2.0</td><td>The <code>fundrawtransaction</code> RPC method.</td></tr>
+<tr><td><code>signrawtransaction</code></td><td>6.2.0</td><td>The <code>signrawtransactions</code> RPC method.</td></tr>
+<tr><td><code>keypoolrefill</code></td><td>6.2.0</td><td>The <code>keypoolrefill</code> RPC method.</td></tr>
+<tr><td><code>settxfee</code></td><td>6.2.0</td><td>The <code>settxfee</code> RPC method.</td></tr>
 </tbody></table>
 </div>
+<p>The <code>createrawtransaction</code>, <code>fundrawtransaction</code>, and <code>signrawtransaction</code> RPC methods are intended to be replaced
+by PCZT-based functionality implemented in Zallet <a href="https://github.com/zcash/wallet/issues/99">zcash/wallet#99</a>.</p>
+<p>The experimental RPC methods <code>z_getpaymentdisclosure</code> and <code>z_validatepaymentdisclosure</code> (which only supported
+Sprout) are also deprecated.</p>
 <h2 id="stage-2"><a class="header" href="#stage-2">Stage 2</a></h2>
 <p>Each feature in the table below may be enabled by adding <code>-allowdeprecated=&lt;feature&gt;</code>
 to the CLI arguments when starting the node, or by adding an <code>allowdeprecated=&lt;feature&gt;</code>
 line to <code>zcash.conf</code>.</p>
-<div class="table-wrapper"><table><thead><tr><th><code>feature</code></th><th>Deprecated</th><th>Feature details</th></tr></thead><tbody>
-<tr><td><code>legacy_privacy</code></td><td>5.0.0</td><td>The default "legacy" privacy policy for <code>z_sendmany</code> has been replaced by the <code>FullPrivacy</code> directive.</td></tr>
-<tr><td><code>getnewaddress</code></td><td>5.0.0</td><td>The <code>getnewaddress</code> RPC method.</td></tr>
-<tr><td><code>getrawchangeaddress</code></td><td>5.0.0</td><td>The <code>getrawchangeaddress</code> RPC method.</td></tr>
-<tr><td><code>z_getnewaddress</code></td><td>5.0.0</td><td>The <code>z_getnewaddress</code> RPC method.</td></tr>
-<tr><td><code>z_listaddresses</code></td><td>5.0.0</td><td>The <code>z_listaddresses</code> RPC method.</td></tr>
-<tr><td><code>addrtype</code></td><td>5.0.0</td><td>The <code>type</code> attribute is deprecated in the results of RPC methods that return address metadata. It is recommended that applications using this metadata be updated to use the <code>pool</code> or <code>address_type</code> attributes, which have replaced the <code>type</code> attribute, as appropriate.</td></tr>
-<tr><td><code>wallettxvjoinsplit</code></td><td>5.1.0</td><td>The <code>vjoinsplit</code> attribute returned by the <code>gettransaction</code> RPC method.</td></tr>
+<div class="table-wrapper"><table><thead><tr><th><code>feature</code></th><th>Deprecated</th><th>Default-disabled</th><th>Feature details</th></tr></thead><tbody>
+<tr><td><code>legacy_privacy</code></td><td>5.0.0</td><td>5.4.0</td><td>The default "legacy" privacy policy for <code>z_sendmany</code> has been replaced by the <code>FullPrivacy</code> directive.</td></tr>
+<tr><td><code>getnewaddress</code></td><td>5.0.0</td><td>5.4.0</td><td>The <code>getnewaddress</code> RPC method.</td></tr>
+<tr><td><code>getrawchangeaddress</code></td><td>5.0.0</td><td>5.4.0</td><td>The <code>getrawchangeaddress</code> RPC method.</td></tr>
+<tr><td><code>z_getnewaddress</code></td><td>5.0.0</td><td>5.4.0</td><td>The <code>z_getnewaddress</code> RPC method.</td></tr>
+<tr><td><code>z_listaddresses</code></td><td>5.0.0</td><td>5.4.0</td><td>The <code>z_listaddresses</code> RPC method.</td></tr>
+<tr><td><code>addrtype</code></td><td>5.0.0</td><td>5.4.0 <code>*</code></td><td>The <code>type</code> attribute is deprecated in the results of RPC methods that return address metadata. It is recommended that applications using this metadata be updated to use the <code>pool</code> or <code>address_type</code> attributes, which have replaced the <code>type</code> attribute, as appropriate.</td></tr>
+<tr><td><code>wallettxvjoinsplit</code></td><td>5.1.0</td><td>5.4.0</td><td>The <code>vjoinsplit</code> attribute returned by the <code>gettransaction</code> RPC method.</td></tr>
+<tr><td><code>z_getbalance</code></td><td>5.0.0</td><td>6.2.0</td><td>The <code>z_getbalance</code> RPC method.</td></tr>
+<tr><td><code>gbt_oldhashes</code></td><td>5.4.0</td><td>6.2.0</td><td>The <code>finalsaplingroothash</code>, <code>lightclientroothash</code>, and <code>blockcommitmentshash</code> fields in the output of <code>getblocktemplate</code>, which are replaced by the <code>defaultroots</code> field.</td></tr>
+<tr><td><code>deprecationinfo_deprecationheight</code></td><td>5.5.0</td><td>6.2.0</td><td>The <code>deprecationheight</code> field returned by the <code>getdeprecationinfo</code> RPC method has been replaced by the <code>end_of_service</code> object.</td></tr>
+<tr><td><code>getnetworkhashps</code></td><td>6.2.0</td><td>6.2.0</td><td>The <code>getnetworkhashps</code> RPC method (use <code>getnetworksolps</code> instead).</td></tr>
 </tbody></table>
 </div>
+<p><code>*</code> As of version 6.2.0, <code>addrtype</code> is default-disabled even when zcashd is compiled without the <code>ENABLE_WALLET</code> flag.</p>
+
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
