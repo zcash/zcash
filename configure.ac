@@ -98,6 +98,7 @@ dnl Required tools and programs:
 ZC_REQUIRE_TOOL(AR, ar)
 ZC_REQUIRE_TOOL(RANLIB, ranlib)
 ZC_REQUIRE_TOOL(STRIP, strip)
+AC_PATH_PROGS([PYTHON], [python3 python])
 ZC_REQUIRE_PROG([GIT], [git])
 ZC_REQUIRE_PROG(RUSTC, rustc)
 ZC_REQUIRE_PROG(CARGO, cargo)

@@ -1,3 +1,8 @@
+#!/usr/bin/env python3
+# Copyright (c) 2020-2022 The Zcash developers
+# Distributed under the MIT software license, see the accompanying
+# file COPYING or https://www.opensource.org/licenses/mit-license.php .
+
 from hashlib import blake2b
 import struct
 from typing import (List, Optional)
