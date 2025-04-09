@@ -13,24 +13,20 @@ use zeroize::Zeroize;
 #[derive(Copy, Clone)]
 pub struct Language(pub u32);
 
-impl TryFrom<Language> for bip0039::Language {
-    type Error = ();
-
-    fn try_from(language: Language) -> Result<Self, ()> {
-        // These must match `src/rust/include/zip339.h`.
-        match language {
-            Language(0) => Ok(bip0039::Language::English),
-            Language(1) => Ok(bip0039::Language::SimplifiedChinese),
-            Language(2) => Ok(bip0039::Language::TraditionalChinese),
-            Language(3) => Ok(bip0039::Language::Czech),
-            Language(4) => Ok(bip0039::Language::French),
-            Language(5) => Ok(bip0039::Language::Italian),
-            Language(6) => Ok(bip0039::Language::Japanese),
-            Language(7) => Ok(bip0039::Language::Korean),
-            Language(8) => Ok(bip0039::Language::Portuguese),
-            Language(9) => Ok(bip0039::Language::Spanish),
-            Language(_) => Err(()),
-        }
+pub fn try_from_bip0039_language(language: Language) -> Result<Language, ()> {
+    // These must match `src/rust/include/zip339.h`.
+    match language {
+        Language(0) => Ok(bip0039::Language::English),
+        Language(1) => Ok(bip0039::Language::SimplifiedChinese),
+        Language(2) => Ok(bip0039::Language::TraditionalChinese),
+        Language(3) => Ok(bip0039::Language::Czech),
+        Language(4) => Ok(bip0039::Language::French),
+        Language(5) => Ok(bip0039::Language::Italian),
+        Language(6) => Ok(bip0039::Language::Japanese),
+        Language(7) => Ok(bip0039::Language::Korean),
+        Language(8) => Ok(bip0039::Language::Portuguese),
+        Language(9) => Ok(bip0039::Language::Spanish),
+        Language(_) => Err(()),
     }
 }
 
@@ -74,7 +70,7 @@ pub extern "C" fn zip339_free_phrase(phrase: *const c_char) {
 pub extern "C" fn zip339_validate_phrase(language: Language, phrase: *const c_char) -> bool {
     assert!(!phrase.is_null());
 
-    if let Ok(language) = language.try_into() {
+    if let Ok(language) = try_from_bip0039_language(language) {
         if let Ok(phrase) = unsafe { CStr::from_ptr(phrase) }.to_str() {
             return bip0039::Mnemonic::validate_in(language, phrase).is_ok();
         }
