@@ -1,4 +1,4 @@
-Zcash 6.1.0
+Zcash 6.2.0-rc1
 <img align="right" width="120" height="80" src="doc/imgs/logo.png">
 ===========
 
@@ -60,8 +60,8 @@ for instructions on joining the main Zcash network.
 
 * :blue_book: See the documentation at the [ReadTheDocs](https://zcash.readthedocs.io)
   for help and more information.
-* :incoming_envelope: Ask for help on the [Zcash](https://forum.z.cash/) forum.
-* :speech_balloon: Join our community on [Discord](https://discord.com/invite/zcash) 
+* :incoming_envelope: Ask for help on the [Zcash forum](https://forum.zcashcommunity.com/).
+* :speech_balloon: Join our community on the [Zcash Global Discord](https://discord.com/invite/zcash).
 * 🧑‍🎓: Learn at [ZecHub](https://zechub.wiki/)
 
 Participation in the Zcash project is subject to a
@@ -76,7 +76,7 @@ Build Zcash along with most dependencies from source by running the following co
 ```
 
 Currently, Zcash is only officially supported on Debian and Ubuntu. See the
-[Debian / Ubuntu build](https://zcash.readthedocs.io/en/latest/rtd_pages/Debian-Ubuntu-build.html)
+[Debian / Ubuntu build page](https://zcash.readthedocs.io/en/latest/rtd_pages/Debian-Ubuntu-build.html)
 for detailed instructions.
 
 License
