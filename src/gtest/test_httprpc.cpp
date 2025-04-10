@@ -3,6 +3,7 @@
 
 #include "httprpc.cpp"
 #include "httpserver.h"
+#include "netbase.h"
 
 using ::testing::Return;
 
@@ -45,6 +46,16 @@ TEST(HTTPRPC, FailsWithoutAuthHeader) {
     req.CleanUp();
 }
 
+// Unlike addrman_tests' ResolveService, we do not care that Lookup
+// may evaluate as false. We are only mirroring the behaviour of
+// CService::CService(const std::string&), which did not complain
+// if Lookup failed.
+static CService ResolveService(std::string ip, int port = 0) {
+    CService serv;
+    Lookup(ip.c_str(), serv, port, false);
+    return serv;
+}
+
 TEST(HTTPRPC, FailsWithBadAuth) {
     MockHTTPRequest req;
     EXPECT_CALL(req, GetRequestMethod())
@@ -52,7 +63,7 @@ TEST(HTTPRPC, FailsWithBadAuth) {
     EXPECT_CALL(req, GetHeader("authorization"))
         .WillRepeatedly(Return(std::make_pair(true, "Basic spam:eggs")));
     EXPECT_CALL(req, GetPeer())
-        .WillRepeatedly(Return(CService("127.0.0.1:1337")));
+        .WillRepeatedly(Return(ResolveService("127.0.0.1:1337")));
     EXPECT_CALL(req, WriteHeader("WWW-Authenticate", "Basic realm=\"jsonrpc\""))
         .Times(1);
     EXPECT_CALL(req, WriteReply(HTTP_UNAUTHORIZED, ""))
