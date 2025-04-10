@@ -210,10 +210,6 @@ criteria = "safe-to-deploy"
 version = "0.2.6"
 criteria = "safe-to-deploy"
 
-[[exemptions.gimli]]
-version = "0.29.0"
-criteria = "safe-to-deploy"
-
 [[exemptions.group]]
 version = "0.12.0"
 criteria = "safe-to-deploy"
@@ -268,10 +264,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.jubjub]]
 version = "0.9.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.known-folders]]
-version = "1.2.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.libc]]
@@ -414,10 +406,6 @@ criteria = "safe-to-deploy"
 version = "0.7.0"
 criteria = "safe-to-deploy"
 
-[[exemptions.rand]]
-version = "0.8.5"
-criteria = "safe-to-deploy"
-
 [[exemptions.raw-cpuid]]
 version = "10.6.0"
 criteria = "safe-to-deploy"
@@ -472,10 +460,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.secrecy]]
 version = "0.8.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.shlex]]
-version = "1.3.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.siphasher]]
