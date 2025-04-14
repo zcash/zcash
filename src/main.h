@@ -122,6 +122,8 @@ static const unsigned int MAX_HEADERS_RESULTS = 160;
 static const unsigned int BLOCK_DOWNLOAD_WINDOW = 1024;
 /** Time to wait (in seconds) between writing blocks/block index to disk. */
 static const unsigned int DATABASE_WRITE_INTERVAL = 60 * 60;
+/** Maximum number of calls to FlushStateToDisk with mode == FLUSH_STATE_PERIODIC between database writes. */
+static const unsigned int DATABASE_WRITE_CALL_COUNT = 100;
 /** Time to wait (in seconds) between flushing chainstate to disk. */
 static const unsigned int DATABASE_FLUSH_INTERVAL = 24 * 60 * 60;
 /** Time to wait (in seconds) between writing wallet witness data to disk. */
