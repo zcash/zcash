@@ -31,10 +31,11 @@ i-am-aware-zcashd-will-be-replaced-by-zebrad-and-zallet-in-2025=1
 RPC Changes
 -----------
 
-* The RPC methods `getnetworkhashps`, `keypoolrefill`, `settxfee`,
-  `createrawtransaction`, `fundrawtransaction`, and `signrawtransaction`
-  have been deprecated, but are still enabled by default.
-* The previously deprecated RPC methods `z_getbalance` and `getnetworkhashps`,
-  and the features `gbt_oldhashes` and `deprecationinfo_deprecationheight`
-  have been disabled by default. The `addrtype` feature is now disabled by
-  default even when zcashd is compiled without the `ENABLE_WALLET` flag.
+* The RPC methods `keypoolrefill`, `settxfee`, `createrawtransaction`,
+  `fundrawtransaction`, and `signrawtransaction` have been deprecated, but
+  are still enabled by default.
+* The RPC methods `z_getbalance` (which was previously deprecated), and
+  `getnetworkhashps`, and the features `deprecationinfo_deprecationheight`
+  and `gbt_oldhashes`, have been disabled by default. The `addrtype` feature
+  is now disabled by default even when zcashd is compiled without the
+  `ENABLE_WALLET` flag.
