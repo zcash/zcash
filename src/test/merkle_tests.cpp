@@ -203,7 +203,7 @@ BOOST_AUTO_TEST_CASE(merkle_test)
             for (int j = 0; j < ntx; j++) {
                 CMutableTransaction mtx;
                 mtx.nLockTime = j;
-                block.vtx[j] = mtx;
+                block.vtx[j] = CTransaction(mtx);
             }
             // Compute the root of the block before mutating it.
             bool unmutatedMutated = false;

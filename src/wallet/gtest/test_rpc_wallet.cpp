@@ -29,7 +29,7 @@ CWalletTx FakeWalletTx() {
     CMutableTransaction mtx;
     mtx.vout.resize(1);
     mtx.vout[0].nValue = 1;
-    return CWalletTx(nullptr, mtx);
+    return CWalletTx(nullptr, CTransaction(mtx));
 }
 
 /// Expects that the fee calculated during transaction construction matches the fee used by block
@@ -81,7 +81,7 @@ TEST(WalletRPCTests, PrepareTransaction)
         CScript scriptPubKey = CScript() << OP_DUP << OP_HASH160 << ToByteVector(taddr) << OP_EQUALVERIFY << OP_CHECKSIG;
         mtx.vout.push_back(CTxOut(5 * COIN, scriptPubKey));
 
-        CWalletTx wtx(pwalletMain, mtx);
+        CWalletTx wtx(pwalletMain, CTransaction(mtx));
         pwalletMain->LoadWalletTx(wtx);
 
         // Fake-mine the transaction
@@ -279,7 +279,7 @@ TEST(WalletRPCTests, RPCZsendmanyTaddrToSapling)
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(consensusParams, nextBlockHeight, false);
     CScript scriptPubKey = CScript() << OP_DUP << OP_HASH160 << ToByteVector(taddr) << OP_EQUALVERIFY << OP_CHECKSIG;
     mtx.vout.push_back(CTxOut(5 * COIN, scriptPubKey));
-    CWalletTx wtx(pwalletMain, mtx);
+    CWalletTx wtx(pwalletMain, CTransaction(mtx));
     pwalletMain->LoadWalletTx(wtx);
 
     // Fake-mine the transaction
@@ -443,7 +443,7 @@ TEST(WalletRPCTests, ZIP317Fee)
         for (size_t i = 0; i < utxoCount; i++) {
             mtx.vout.push_back(CTxOut(5 * COIN, scriptPubKey));
         }
-        CWalletTx wtx(pwalletMain, mtx);
+        CWalletTx wtx(pwalletMain, CTransaction(mtx));
         pwalletMain->LoadWalletTx(wtx);
 
         // Fake-mine the transaction
