@@ -71,6 +71,13 @@ jobs:
               test_os: ubuntu-22.04
               host: x86_64-pc-linux-gnu
 
+            - name: ubuntu-24.04
+              tier: 3
+              platform: Ubuntu 24.04
+              build_os: ubuntu-24.04
+              test_os: ubuntu-24.04
+              host: x86_64-pc-linux-gnu
+
             # - name: macos-12
             #   tier: 3
             #   platform: macOS 12 Monterey
