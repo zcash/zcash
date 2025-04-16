@@ -1,9 +1,9 @@
 Zcash Contributors
 ==================
 
-* Jack Grigg (2185)
+* Jack Grigg (2194)
 * Kris Nuttycombe (751)
-* Daira-Emma Hopwood (498)
+* Daira-Emma Hopwood (521)
 * Simon Liu (464)
 * Sean Bowe (413)
 * Eirik Ogilvie-Wigley (273)
@@ -15,7 +15,7 @@ Zcash Contributors
 * Taylor Hornby (118)
 * Ying Tong Lai (99)
 * Marco Falke (91)
-* Larry Ruane (90)
+* Larry Ruane (91)
 * Jonas Schnelli (90)
 * Jay Graber (89)
 * sasha (80)
@@ -34,8 +34,8 @@ Zcash Contributors
 * Jorge Timón (25)
 * John Newbery (24)
 * Yasser Isa (21)
+* Marius Kjærstad (21)
 * Suhas Daftuar (20)
-* Marius Kjærstad (20)
 * Jonathan "Duke" Leto (19)
 * furszy (18)
 * syd (16)
@@ -210,6 +210,7 @@ Zcash Contributors
 * Maxwell Gubler (1)
 * Matt Quinn (1)
 * Marko Bencun (1)
+* Maciej S. Szmigiero (1)
 * Luv Khemani (1)
 * Louis Nyffenegger (1)
 * LongShao007 (1)
