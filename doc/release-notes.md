@@ -28,6 +28,14 @@ option to your config file:
 
 i-am-aware-zcashd-will-be-replaced-by-zebrad-and-zallet-in-2025=1
 
+Platform Support
+----------------
+
+- Ubuntu 20.04 LTS has been removed from the list of supported platforms. It
+  will reach End of Support on May 31st 2025, but it no longer satisfies our
+  Tier 2 policy requirements because GitHub no longer supports Ubuntu 20.04
+  runners.
+
 RPC Changes
 -----------
 
