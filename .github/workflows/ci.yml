@@ -65,7 +65,7 @@ jobs:
               host: x86_64-pc-linux-gnu
 
             - name: ubuntu-22.04
-              tier: 3
+              tier: 1
               platform: Ubuntu 22.04
               build_os: ubuntu-22.04-8cores
               test_os: ubuntu-22.04
