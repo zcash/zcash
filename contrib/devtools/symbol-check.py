@@ -18,50 +18,50 @@ import re
 import sys
 import os
 
-# Ubuntu 20.04 LTS (Focal Fossa; End of Support April 2025) has:
+# Ubuntu 22.04 LTS (Jammy Jellyfish; End of Support April 2027) has:
 #
-# - g++ version 9.3.0 (https://packages.ubuntu.com/search?suite=all&searchon=names&keywords=g%2B%2B)
-# - libc6 version 2.31 (https://packages.ubuntu.com/search?suite=all&searchon=names&keywords=libc6)
+# - g++ version 11.2.0 (https://packages.ubuntu.com/search?suite=all&searchon=names&keywords=g%2B%2B)
+# - libc6 version 2.35 (https://packages.ubuntu.com/search?suite=all&searchon=names&keywords=libc6)
 #
-# Debian 10 (Buster; LTS EOL June 2024) has:
+# Debian 11 (Bullseye; LTS EOL August 2026) has:
 #
-# - g++ version 8.3.0 (https://packages.debian.org/search?suite=default&section=all&arch=any&searchon=names&keywords=g%2B%2B)
-# - libc6 version 2.28 (https://packages.debian.org/search?suite=default&section=all&arch=any&searchon=names&keywords=libc6)
+# - g++ version 10.2.1 (https://packages.debian.org/search?suite=default&section=all&arch=any&searchon=names&keywords=g%2B%2B)
+# - libc6 version 2.31 (https://packages.debian.org/search?suite=default&section=all&arch=any&searchon=names&keywords=libc6)
 #
-# RedHat Enterprise Linux 8 (EOL: long and complicated) is based on Fedora 28 (EOL 2019-05-28) and uses the same base packages:
+# RedHat Enterprise Linux 9 (EOL some time in 2032) is based on Fedora 34 (EOL 2022-06-07) and uses the same base packages:
 #
-# - g++ version 8.0.1 (https://archives.fedoraproject.org/pub/archive/fedora/linux/releases/28/Everything/x86_64/os/Packages/g/ search for gcc-)
-# - libc6 version 2.27 (https://archives.fedoraproject.org/pub/archive/fedora/linux/releases/28/Everything/x86_64/os/Packages/g/ search for glibc)
+# - g++ version 11.0.1 (https://archives.fedoraproject.org/pub/archive/fedora/linux/releases/34/Everything/x86_64/os/Packages/g/ search for gcc-)
+# - libc6 version 2.33 (https://archives.fedoraproject.org/pub/archive/fedora/linux/releases/34/Everything/x86_64/os/Packages/g/ search for glibc)
 #
-# Fedora 31 (EOL ~November 2020) has:
+# Fedora 40 (EOL ~May 2025) has:
 #
-# - g++ version 9.2.1 (https://dl.fedoraproject.org/pub/fedora/linux/releases/31/Everything/x86_64/os/Packages/g/ search for gcc-)
-# - libc6 version 2.30 (https://dl.fedoraproject.org/pub/fedora/linux/releases/31/Everything/x86_64/os/Packages/g/ search for glibc)
+# - g++ version 14.0.1 (https://dl.fedoraproject.org/pub/fedora/linux/releases/40/Everything/x86_64/os/Packages/g/ search for gcc-)
+# - libc6 version 2.39 (https://dl.fedoraproject.org/pub/fedora/linux/releases/40/Everything/x86_64/os/Packages/g/ search for glibc)
 #
-# Arch is a rolling release, and as of October 2020 has packages for:
+# Arch is a rolling release, and as of April 2025 has packages for:
 #
-# - g++ version 8.4.0 / 9.3.0 / 10.2.0 (https://www.archlinux.org/packages/?q=gcc)
-# - libc6 version 2.32 (https://www.archlinux.org/packages/?q=glibc)
+# - g++ version 13.3.1 / 14.2.1 (https://www.archlinux.org/packages/?q=gcc)
+# - libc6 version 2.41 (https://www.archlinux.org/packages/?q=glibc)
 #
-# We take the minimum of these as our target. In practice, if we build on Buster without
+# We take the minimum of these as our target. In practice, if we build on Bullseye without
 # upgrading GCC or libc, then we should get a binary that works for all these systems, and
 # later ones.
 #
-# According to the GNU ABI document (https://gcc.gnu.org/onlinedocs/libstdc++/manual/abi.html) this corresponds to:
-#   GCC 8.0.0: GCC_8.0.0, GLIBCXX_3.4.24, CXXABI_1.3.11
-#   libc6:     GLIBC_2_27
+# According to the GNU ABI document (https://gcc.gnu.org/onlinedocs/libstdc++/manual/abi.html) this corresponds to libstdc++.so.6.0.28:
+#   GCC 10.1.0: GCC_9.0.0, GLIBCXX_3.4.28, CXXABI_1.3.12
+#   libc6:      GLIBC_2_31
 
 # We statically link libc++ and libc++abi in our builds. Set this to allow dynamic linking to libstdc++.
 ALLOW_DYNAMIC_LIBSTDCXX = False
 
 MAX_VERSIONS = {
-    'GCC':   (8,0,0),
-    'GLIBC': (2,27),
+    'GCC':   (10,2,1),
+    'GLIBC': (2,31),
 }
 if ALLOW_DYNAMIC_LIBSTDCXX:
     MAX_VERSIONS.update({
-        'GLIBCXX': (3,4,14),
-        'CXXABI':  (1,3,4),
+        'GLIBCXX': (3,4,28),
+        'CXXABI':  (1,3,12),
     })
 
 # See here for a description of _IO_stdin_used:

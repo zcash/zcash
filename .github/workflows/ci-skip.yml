@@ -45,9 +45,9 @@ jobs:
           fetch-depth: 0
 
       - name: Fetch the commits for the PR branch
-        run: git fetch $HEAD_REPO $HEAD_SHA
+        run: git fetch "${HEAD_REPO}" "${HEAD_SHA}"
         env:
-          HEAD_REPO: ${{ github.event.pull_request.head.repo }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.clone_url }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
 
       - name: Check whether the changes are only to the set of filtered paths
@@ -74,7 +74,11 @@ jobs:
           ]
           paths_regex = '(?:%s)' % '|'.join(paths)
 
-          changed_files = shlex.split(os.environ["CHANGED_FILES"])
+          lex = shlex.shlex(posix = True)
+          lex.whitespace = '\n\r'
+          lex.whitespace_split = True
+          lex.commenters = ''
+          changed_files = list(lex)
           if len(changed_files) == 0:
               sys.exit(1)
 
@@ -85,9 +89,8 @@ jobs:
 
           print('result=verified' if verified else 'result=skipped')
           EOF
-          CHANGED_FILES=$(git diff --name-only ${{ github.sha }}...$HEAD_SHA --)
-          echo $CHANGED_FILES
-          CHANGED_FILES=$CHANGED_FILES python3 ./subclass.py >> $GITHUB_OUTPUT
+
+          git diff --name-only ${{ github.sha }}...$HEAD_SHA -- | python3 ./subclass.py >> $GITHUB_OUTPUT
         env:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
 

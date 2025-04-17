@@ -2804,6 +2804,22 @@ criteria = "safe-to-deploy"
 delta = "1.35.1 -> 1.37.0"
 notes = "Cursory review, but new and changed uses of `unsafe` code look fine, as far as I can see."
 
+[[audits.tokio]]
+who = "Daira-Emma Hopwood <daira@jacaranda.org>"
+criteria = "safe-to-deploy"
+delta = "1.40.0 -> 1.42.0"
+notes = """
+Changes to unsafe code look reasonable. There are new unsafe APIs but their safety requirements are documented.
+This release has a vulnerability (https://rustsec.org/advisories/RUSTSEC-2025-0023) but it is not a regression relative
+to 1.40.0. Update to 1.42.1 to fix that.
+"""
+
+[[audits.tokio]]
+who = "Daira-Emma Hopwood <daira@jacaranda.org>"
+criteria = "safe-to-deploy"
+delta = "1.42.0 -> 1.42.1"
+notes = "Plausible fix to https://rustsec.org/advisories/RUSTSEC-2025-0023 ."
+
 [[audits.toml_datetime]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -3138,7 +3154,7 @@ end = "2026-01-02"
 
 [[trusted.halo2_legacy_pdqsort]]
 criteria = ["safe-to-deploy", "crypto-reviewed"]
-user-id = 199950 # Daira Emma Hopwood (daira)
+user-id = 199950 # Daira-Emma Hopwood (daira)
 start = "2023-02-24"
 end = "2024-09-21"
 
