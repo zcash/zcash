@@ -64,13 +64,6 @@ jobs:
               container: electriccoinco/debian-helper:bullseye
               host: x86_64-pc-linux-gnu
 
-            - name: ubuntu-20.04
-              tier: 1
-              platform: Ubuntu 20.04
-              build_os: ubuntu-20.04-8cores
-              test_os: ubuntu-20.04
-              host: x86_64-pc-linux-gnu
-
             - name: ubuntu-22.04
               tier: 3
               platform: Ubuntu 22.04
