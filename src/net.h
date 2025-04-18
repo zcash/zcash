@@ -12,7 +12,7 @@
 #include "compat.h"
 #include "fs.h"
 #include "limitedmap.h"
-#include "netbase.h"
+#include "netaddress.h"
 #include "protocol.h"
 #include "random.h"
 #include "streams.h"
@@ -83,6 +83,8 @@ static const bool DEFAULT_FORCEDNSSEED = false;
 static const size_t DEFAULT_MAXRECEIVEBUFFER = 5 * 1000;
 static const size_t DEFAULT_MAXSENDBUFFER    = 1 * 1000;
 
+static const ServiceFlags REQUIRED_SERVICES = NODE_NETWORK;
+
 // NOTE: When adjusting this, update rpcnet:setban's help ("24h")
 static const unsigned int DEFAULT_MISBEHAVING_BANTIME = 60 * 60 * 24;  // Default 24-hour ban
 
@@ -96,7 +98,7 @@ CNode* FindNode(const CSubNet& subNet);
 CNode* FindNode(const std::string& addrName);
 CNode* FindNode(const CService& ip);
 CNode* ConnectNode(CAddress addrConnect, const char *pszDest = NULL);
-bool OpenNetworkConnection(const CAddress& addrConnect, CSemaphoreGrant *grantOutbound = NULL, const char *strDest = NULL, bool fOneShot = false);
+bool OpenNetworkConnection(const CAddress& addrConnect, bool fCountFailure, CSemaphoreGrant *grantOutbound = NULL, const char *strDest = NULL, bool fOneShot = false);
 unsigned short GetListenPort();
 bool BindListenPort(const CService &bindAddr, std::string& strError, bool fWhitelisted = false);
 void StartNode(boost::thread_group& threadGroup, CScheduler& scheduler);
@@ -163,7 +165,8 @@ CAddress GetLocalAddress(const CNetAddr *paddrPeer = NULL);
 
 extern bool fDiscover;
 extern bool fListen;
-extern uint64_t nLocalServices;
+extern ServiceFlags nLocalServices;
+extern bool fRelayTxes;
 extern uint64_t nLocalHostNonce;
 extern CAddrMan addrman;
 
@@ -190,12 +193,13 @@ struct LocalServiceInfo {
 
 extern CCriticalSection cs_mapLocalHost;
 extern std::map<CNetAddr, LocalServiceInfo> mapLocalHost;
+typedef std::map<std::string, uint64_t> mapMsgCmdSize; //command, total bytes
 
 class CNodeStats
 {
 public:
     NodeId nodeid;
-    uint64_t nServices;
+    ServiceFlags nServices;
     bool fRelayTxes;
     int64_t nLastSend;
     int64_t nLastRecv;
@@ -207,7 +211,9 @@ public:
     bool fInbound;
     int nStartingHeight;
     uint64_t nSendBytes;
+    mapMsgCmdSize mapSendBytesPerMsgCmd;
     uint64_t nRecvBytes;
+    mapMsgCmdSize mapRecvBytesPerMsgCmd;
     bool fWhitelisted;
     double dPingTime;
     double dPingWait;
@@ -263,7 +269,8 @@ class CNode
 {
 public:
     // socket
-    std::atomic<uint64_t> nServices;
+    std::atomic<ServiceFlags> nServices;
+    ServiceFlags nServicesExpected;
     SOCKET hSocket;
     CDataStream ssSend;
     std::string strSendCommand; // Current command being assembled in ssSend
@@ -338,6 +345,9 @@ protected:
     // whitelisted (as well as those connecting to whitelisted binds).
     static std::vector<CSubNet> vWhitelistedRange;
     static CCriticalSection cs_vWhitelistedRange;
+
+    mapMsgCmdSize mapSendBytesPerMsgCmd;
+    mapMsgCmdSize mapRecvBytesPerMsgCmd;
 
     // Basic fuzz-testing
     void Fuzz(int nChance); // modifies ssSend
@@ -555,7 +565,7 @@ public:
     void AbortMessage() UNLOCK_FUNCTION(cs_vSend);
 
     // TODO: Document the precondition of this function.  Is cs_vSend locked?
-    void EndMessage() UNLOCK_FUNCTION(cs_vSend);
+    void EndMessage(const char* pszCommand) UNLOCK_FUNCTION(cs_vSend);
 
     void PushVersion();
 
@@ -565,7 +575,7 @@ public:
         try
         {
             BeginMessage(pszCommand);
-            EndMessage();
+            EndMessage(pszCommand);
         }
         catch (...)
         {
@@ -581,7 +591,7 @@ public:
         {
             BeginMessage(pszCommand);
             ssSend << a1;
-            EndMessage();
+            EndMessage(pszCommand);
         }
         catch (...)
         {
@@ -597,7 +607,7 @@ public:
         {
             BeginMessage(pszCommand);
             ssSend << a1 << a2;
-            EndMessage();
+            EndMessage(pszCommand);
         }
         catch (...)
         {
@@ -613,7 +623,7 @@ public:
         {
             BeginMessage(pszCommand);
             ssSend << a1 << a2 << a3;
-            EndMessage();
+            EndMessage(pszCommand);
         }
         catch (...)
         {
@@ -629,7 +639,7 @@ public:
         {
             BeginMessage(pszCommand);
             ssSend << a1 << a2 << a3 << a4;
-            EndMessage();
+            EndMessage(pszCommand);
         }
         catch (...)
         {
@@ -645,7 +655,7 @@ public:
         {
             BeginMessage(pszCommand);
             ssSend << a1 << a2 << a3 << a4 << a5;
-            EndMessage();
+            EndMessage(pszCommand);
         }
         catch (...)
         {
@@ -661,7 +671,7 @@ public:
         {
             BeginMessage(pszCommand);
             ssSend << a1 << a2 << a3 << a4 << a5 << a6;
-            EndMessage();
+            EndMessage(pszCommand);
         }
         catch (...)
         {
@@ -677,7 +687,7 @@ public:
         {
             BeginMessage(pszCommand);
             ssSend << a1 << a2 << a3 << a4 << a5 << a6 << a7;
-            EndMessage();
+            EndMessage(pszCommand);
         }
         catch (...)
         {
@@ -693,7 +703,7 @@ public:
         {
             BeginMessage(pszCommand);
             ssSend << a1 << a2 << a3 << a4 << a5 << a6 << a7 << a8;
-            EndMessage();
+            EndMessage(pszCommand);
         }
         catch (...)
         {
@@ -709,7 +719,7 @@ public:
         {
             BeginMessage(pszCommand);
             ssSend << a1 << a2 << a3 << a4 << a5 << a6 << a7 << a8 << a9;
-            EndMessage();
+            EndMessage(pszCommand);
         }
         catch (...)
         {
@@ -796,5 +806,15 @@ void RelayTransaction(const CTransaction& tx);
 
 /** Return a timestamp in the future (in microseconds) for exponentially distributed events. */
 int64_t PoissonNextSend(int64_t nNow, int average_interval_seconds);
+
+struct AddedNodeInfo
+{
+    std::string strAddedNode;
+    CService resolvedAddress;
+    bool fConnected;
+    bool fInbound;
+};
+
+std::vector<AddedNodeInfo> GetAddedNodeInfo();
 
 #endif // BITCOIN_NET_H
