@@ -18,6 +18,8 @@ is a common reason.)
 
 Check that dependencies are properly hosted.
 
+Check that `./doc/book/src/user/installation.md` has the latest apt signing key fingerprint.
+
 Check that there are no surprising performance regressions.
 
 Update `src/chainparams.cpp` nMinimumChainWork with information from the getblockchaininfo rpc.
@@ -262,9 +264,6 @@ some variables in the company's automation code and then run an Ansible playbook
   restarting DNS seeder.
 
 Verify that nodes can connect to the mainnet and testnet servers.
-
-Update the [Zcashd Full Node and CLI](https://zcash.readthedocs.io/en/latest/rtd_pages/zcashd.html)
-documentation on ReadTheDocs to give the new version number.
 
 ### Publish the release announcement (blog, github, zcash-dev, slack)
 
