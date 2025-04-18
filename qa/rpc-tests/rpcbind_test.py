@@ -67,7 +67,8 @@ class RPCBindTest(BitcoinTestFramework):
         try:
             # connect to node through non-loopback interface
             node = get_rpc_proxy(rpc_url(0, "%s:%d" % (rpchost, rpcport)), 0)
-            node.getinfo()
+            result = node.getinfo()
+            assert result['lightwalletddisabled'] == True
         finally:
             node = None # make sure connection will be garbage collected and closed
             stop_nodes(self.nodes)

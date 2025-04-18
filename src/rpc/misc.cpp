@@ -71,6 +71,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
             "  \"relayfee\": x.xxxx,         (numeric) minimum relay fee rate for transactions in " + CURRENCY_UNIT + " per 1000 bytes\n"
             "  \"errors\": \"...\"           (string) message describing the latest or highest-priority error\n"
             "  \"errorstimestamp\": \"...\"  (string) timestamp associated with the latest or highest-priority error\n"
+            "  \"lightwalletddisabled\": true|false  (boolean) true if the configuration does not include the lightwalletd extensions\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("getinfo", "")
@@ -103,6 +104,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
     obj.pushKV("proxy",         (proxy.IsValid() ? proxy.proxy.ToStringIPPort() : string()));
     obj.pushKV("difficulty",    (double)GetDifficulty());
     obj.pushKV("testnet",       Params().TestnetToBeDeprecatedFieldRPC());
+    obj.pushKV("lightwalletddisabled", !fExperimentalLightWalletd);
 #ifdef ENABLE_WALLET
     if (pwalletMain) {
         obj.pushKV("keypoololdest", pwalletMain->GetOldestKeyPoolTime());
