@@ -156,7 +156,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1>Zcash 6.1.0
+                        <h1>Zcash 6.2.0
 <img align="right" width="120" height="80" src="doc/imgs/logo.png"></h1>
 <h2 id="what-is-zcash"><a class="header" href="#what-is-zcash">What is Zcash?</a></h2>
 <p><a href="https://z.cash/">Zcash</a> is HTTPS for money.</p>
@@ -199,8 +199,8 @@ for instructions on joining the main Zcash network.</p>
 <ul>
 <li>:blue_book: See the documentation at the <a href="https://zcash.readthedocs.io">ReadTheDocs</a>
 for help and more information.</li>
-<li>:incoming_envelope: Ask for help on the <a href="https://forum.z.cash/">Zcash</a> forum.</li>
-<li>:speech_balloon: Join our community on <a href="https://discord.com/invite/zcash">Discord</a></li>
+<li>:incoming_envelope: Ask for help on the <a href="https://forum.zcashcommunity.com/">Zcash forum</a>.</li>
+<li>:speech_balloon: Join our community on the <a href="https://discord.com/invite/zcash">Zcash Global Discord</a>.</li>
 <li>🧑‍🎓: Learn at <a href="https://zechub.wiki/">ZecHub</a></li>
 </ul>
 <p>Participation in the Zcash project is subject to a
@@ -210,7 +210,7 @@ for help and more information.</li>
 <pre><code>./zcutil/build.sh -j$(nproc)
 </code></pre>
 <p>Currently, Zcash is only officially supported on Debian and Ubuntu. See the
-<a href="https://zcash.readthedocs.io/en/latest/rtd_pages/Debian-Ubuntu-build.html">Debian / Ubuntu build</a>
+<a href="https://zcash.readthedocs.io/en/latest/rtd_pages/Debian-Ubuntu-build.html">Debian / Ubuntu build page</a>
 for detailed instructions.</p>
 <h2 id="license"><a class="header" href="#license">License</a></h2>
 <p>For license information see the file <a href="COPYING">COPYING</a>.</p>
@@ -252,8 +252,9 @@ automatically updated during each release. "End of Support" dates are estimated 
 time, and may shift due to changes in network solution power.</p>
 <!-- RELEASE_SCRIPT_START_MARKER - If you make changes here, check make-release.py -->
 <div class="table-wrapper"><table><thead><tr><th><code>zcashd</code> version</th><th>Release date</th><th>Halt height</th><th>End of Support</th></tr></thead><tbody>
-<tr><td>6.0.0</td><td>2024-10-02</td><td>2796400</td><td>2025-01-22</td></tr>
 <tr><td>6.1.0</td><td>2025-01-02</td><td>2901800</td><td>2025-04-24</td></tr>
+<tr><td>6.2.0-rc1</td><td>2025-04-10</td><td>3013824</td><td>2025-07-31</td></tr>
+<tr><td>6.2.0</td><td>2025-04-16</td><td>3021100</td><td>2025-08-06</td></tr>
 </tbody></table>
 </div><!-- RELEASE_SCRIPT_END_MARKER -->
 <div style="break-before: page; page-break-before: always;"></div><h1 id="platform-support"><a class="header" href="#platform-support">Platform Support</a></h1>
@@ -269,7 +270,7 @@ be removed from tier 1. These dates are subject to change.</p>
 <div class="table-wrapper"><table><thead><tr><th>target</th><th>OS</th><th>End of Support</th></tr></thead><tbody>
 <tr><td><code>x86_64-pc-linux-gnu</code></td><td>Debian 11</td><td>June 2026</td></tr>
 <tr><td></td><td>Debian 12</td><td>June 2028</td></tr>
-<tr><td></td><td>Ubuntu 20.04</td><td>April 2025</td></tr>
+<tr><td></td><td>Ubuntu 22.04</td><td>April 2027</td></tr>
 </tbody></table>
 </div>
 <h2 id="tier-2"><a class="header" href="#tier-2">Tier 2</a></h2>
@@ -290,7 +291,7 @@ require builds or tests to pass, so these may or may not work. Official builds a
 available.</p>
 <div class="table-wrapper"><table><thead><tr><th>target</th><th>OS</th><th>notes</th></tr></thead><tbody>
 <tr><td><code>x86_64-pc-linux-gnu</code></td><td>Arch</td><td></td></tr>
-<tr><td></td><td>Ubuntu 22.04</td><td></td></tr>
+<tr><td></td><td>Ubuntu 24.04</td><td></td></tr>
 <tr><td><code>x86_64-unknown-freebsd</code></td><td>FreeBSD</td><td></td></tr>
 <tr><td><code>x86_64-w64-mingw32</code></td><td>Windows</td><td>64-bit MinGW</td></tr>
 <tr><td><code>x86_64-apple-darwin16</code></td><td>macOS 10.14+</td><td></td></tr>
@@ -1355,7 +1356,7 @@ $
 <div style="break-before: page; page-break-before: always;"></div><h1 id="platform-tier-policy"><a class="header" href="#platform-tier-policy">Platform Tier Policy</a></h1>
 <h2 id="general"><a class="header" href="#general">General</a></h2>
 <p>ECC provides three tiers of platform support, modeled after the
-<a href="https://doc.rust-lang.org/stable/rustc/platform-tier-policy.html">Rust Target Tier Policy</a>:</p>
+<a href="https://doc.rust-lang.org/stable/rustc/target-tier-policy.html">Rust Target Tier Policy</a>:</p>
 <ul>
 <li>The Zcash developers provide no guarantees about tier 3 platforms; they exist in the
 codebase, but may or may not build.</li>
