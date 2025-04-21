@@ -51,24 +51,31 @@ jobs:
             - name: Debian-bookworm
               tier: 1
               platform: Debian Bookworm
-              build_os: ubuntu-20.04-8cores
-              test_os: ubuntu-20.04
+              build_os: ubuntu-22.04-8cores
+              test_os: ubuntu-22.04
               container: electriccoinco/debian-helper:bookworm
               host: x86_64-pc-linux-gnu
 
             - name: Debian-bullseye
               tier: 1
               platform: Debian bullseye
-              build_os: ubuntu-20.04-8cores
-              test_os: ubuntu-20.04
+              build_os: ubuntu-22.04-8cores
+              test_os: ubuntu-22.04
               container: electriccoinco/debian-helper:bullseye
               host: x86_64-pc-linux-gnu
 
             - name: ubuntu-22.04
-              tier: 3
+              tier: 1
               platform: Ubuntu 22.04
               build_os: ubuntu-22.04-8cores
               test_os: ubuntu-22.04
+              host: x86_64-pc-linux-gnu
+
+            - name: ubuntu-24.04
+              tier: 3
+              platform: Ubuntu 24.04
+              build_os: ubuntu-24.04
+              test_os: ubuntu-24.04
               host: x86_64-pc-linux-gnu
 
             # - name: macos-12
