@@ -1,13 +1,27 @@
 import requests, json, logging, time
 
-# Configure logging to console and file
-logging.basicConfig(level=logging.INFO,
-                    format="%(asctime)s %(levelname)s: %(message)s",
-                    handlers=[logging.StreamHandler(),
-                              logging.FileHandler("rpc.log", mode='w')])
+# Create a logger
 logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)  # Capture all levels of logs
 
-# RPC Configuration
+# Define a formatter
+formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
+
+# Console handler (INFO level and above)
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.INFO)
+console_handler.setFormatter(formatter)
+
+# File handler (DEBUG level and above)
+file_handler = logging.FileHandler('rpc.log', mode='w')
+file_handler.setLevel(logging.DEBUG)
+file_handler.setFormatter(formatter)
+
+# Add handlers to the logger
+logger.addHandler(console_handler)
+logger.addHandler(file_handler)
+
+# RPC Configurationx
 RPC_USER = "admin"
 RPC_PASS = "admin"
 RPC_PORT = 18232
@@ -15,11 +29,37 @@ RPC_URL = f"http://127.0.0.1:{RPC_PORT}/"
 
 # Basic RPC call function
 def rpc_call(method, params=None):
-    payload = json.dumps({"jsonrpc": "1.0", "id": "python", "method": method, "params": params or []})
-    response = requests.post(RPC_URL, data=payload, auth=(RPC_USER, RPC_PASS))
-    result = response.json()
+    payload = json.dumps({
+        "jsonrpc": "1.0",
+        "id": "python",
+        "method": method,
+        "params": params or []
+    })
+
+    # Log the request details
+    logger.debug(f"Request Method: {method}")
+    logger.debug(f"Request Payload: {payload}")
+
+    try:
+        response = requests.post(RPC_URL, data=payload, auth=(RPC_USER, RPC_PASS))
+    except requests.RequestException as e:
+        logger.error(f"HTTP Request failed: {e}")
+        raise
+
+    # Log the response details
+    logger.debug(f"Response Status Code: {response.status_code}")
+    logger.debug(f"Response Headers: {response.headers}")
+
+    try:
+        result = response.json()
+        logger.debug(f"Response JSON: {json.dumps(result, indent=2)}")
+    except ValueError:
+        logger.warning(f"Response is not valid JSON. Raw text: {response.text}")
+        raise Exception(f"Invalid JSON response from method '{method}': {response.text}")
+
     if response.status_code != 200 or result.get('error'):
         raise Exception(f"RPC error ({method}): {result.get('error')}")
+
     return result['result']
 
 # PASS/FAIL counters
@@ -64,7 +104,6 @@ sapling_recv = receivers.get("sapling")
 if not sapling_recv:
     raise Exception("No Sapling receiver found in the unified address!")
 
-
 # 3. getbalance
 run_test("getbalance", lambda: rpc_call("getbalance", ["*", 1]))
 
@@ -95,7 +134,7 @@ first_taddr = taddrs[0] if taddrs else None
 run_test("z_getbalanceforaccount", lambda: rpc_call("z_getbalanceforaccount", [acct, 1]))
 
 # 6. Send funds TADDR -> UA
-#TODO
+# TODO
 
 # 7. Send funds UA -> UA
 if first_taddr and ua_address:
@@ -172,10 +211,7 @@ run_test("getblocktemplate", lambda: rpc_call("getblocktemplate", [{"rules": ["s
 # 25. Mining | Get mining info
 run_test("getmininginfo", lambda: rpc_call("getmininginfo"))
 
-# 26. Mining | Get network hash rate
-run_test("getnetworkhashps", lambda: rpc_call("getnetworkhashps"))
-
-# 27. Mining | Get network solution rate
+# 26. Mining | Get network solution rate
 run_test("getnetworksolps", lambda: rpc_call("getnetworksolps"))
 
 # --- End ---
