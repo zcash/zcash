@@ -1504,6 +1504,43 @@ BOOST_AUTO_TEST_CASE(rpc_z_listunspent_parameters)
     BOOST_CHECK_THROW(CallRPC("z_listunspent 1 999 false [\"" + myzaddr + "\", \"" + myzaddr + "\"]"), runtime_error);
 }
 
+BOOST_AUTO_TEST_CASE(rpc_z_listutxos_parameters)
+{
+    SelectParams(CBaseChainParams::TESTNET);
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    UniValue retValue;
+
+    // create a zeroth account.
+    BOOST_CHECK_NO_THROW(CallRPC("z_getnewaccount"));
+
+    // too many args
+    BOOST_CHECK_THROW(CallRPC("z_listutxos 1 2 3 4 true 6"), runtime_error);
+
+    // account not provided
+    BOOST_CHECK_THROW(CallRPC("z_listutxos"), runtime_error);
+
+    // account number must be >= 0
+    BOOST_CHECK_THROW(CallRPC("z_listutxos -1"), runtime_error);
+
+    // minconf must be >= 0
+    BOOST_CHECK_THROW(CallRPC("z_listutxos 0 -1"), runtime_error);
+
+    // maxconf must be >= minconf
+    BOOST_CHECK_THROW(CallRPC("z_listutxos 0 5 3"), runtime_error);
+
+    // asOfHeight can't be negative, except special value -1
+    BOOST_CHECK_THROW(CallRPC("z_listutxos 0 1 2 -2"), runtime_error);
+
+    // wrong type for includeWatchonly
+    BOOST_CHECK_THROW(CallRPC("z_listutxos 0 1 2 3 \"\""), runtime_error);
+
+    // ok
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("z_listutxos 0 1 2 3 true"));
+    BOOST_CHECK(retValue.get_array().empty());
+}
+
 
 BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_parameters)
 {
