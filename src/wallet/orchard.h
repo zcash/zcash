@@ -281,12 +281,16 @@ public:
      * metadata describing the wallet's involvement with this action,
      * or std::nullopt if the transaction does not involve the wallet.
      */
-    std::optional<OrchardWalletTxMeta> AddNotesIfInvolvingMe(const CTransaction& tx) {
+    std::optional<OrchardWalletTxMeta> AddNotesIfInvolvingMe(
+        const CTransaction& tx,
+        const wallet::OrchardDecryptedOutputs* decryptedOutputs
+    ) {
         OrchardWalletTxMeta txMeta;
         if (orchard_wallet_add_notes_from_bundle(
                 inner.get(),
                 tx.GetHash().begin(),
                 tx.GetOrchardBundle().inner->as_ptr(),
+                decryptedOutputs,
                 &txMeta,
                 PushOrchardActionIVK,
                 PushSpendActionIdx
@@ -389,6 +393,10 @@ public:
         auto ivkPtr = orchard_wallet_get_ivk_for_address(inner.get(), addr.inner.get());
         if (ivkPtr == nullptr) return std::nullopt;
         return libzcash::OrchardIncomingViewingKey(ivkPtr);
+    }
+
+    wallet::OrchardPreparedIncomingViewingKeys* PrepareIvks() const {
+        return orchard_wallet_prepare_ivks(inner.get());
     }
 
     /**
