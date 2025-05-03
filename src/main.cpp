@@ -3933,31 +3933,32 @@ struct PoolMetrics {
     }
 };
 
+// This has to be a macro so that each use creates separate callsites in MetricsStaticGauge.
 #define RenderPoolMetrics(poolName, poolMetrics) \
     do {                                         \
-        if (poolMetrics.created) {               \
+        if ((poolMetrics).created) {             \
             MetricsStaticGauge(                  \
                 "zcash.pool.notes.created",      \
-                poolMetrics.created.value(),     \
-                "name", poolName);               \
+                (poolMetrics).created.value(),   \
+                "name", (poolName));             \
         }                                        \
-        if (poolMetrics.spent) {                 \
+        if ((poolMetrics).spent) {               \
             MetricsStaticGauge(                  \
                 "zcash.pool.notes.spent",        \
-                poolMetrics.spent.value(),       \
-                "name", poolName);               \
+                (poolMetrics).spent.value(),     \
+                "name", (poolName));             \
         }                                        \
-        if (poolMetrics.unspent) {               \
+        if ((poolMetrics).unspent) {             \
             MetricsStaticGauge(                  \
                 "zcash.pool.notes.unspent",      \
-                poolMetrics.unspent.value(),     \
-                "name", poolName);               \
+                (poolMetrics).unspent.value(),   \
+                "name", (poolName));             \
         }                                        \
-        if (poolMetrics.value) {                 \
+        if ((poolMetrics).value) {               \
             MetricsStaticGauge(                  \
                 "zcash.pool.value.zatoshis",     \
-                poolMetrics.value.value(),       \
-                "name", poolName);               \
+                (poolMetrics).value.value(),     \
+                "name", (poolName));             \
         }                                        \
     } while (0)
 
