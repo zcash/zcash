@@ -10,15 +10,15 @@ use std::sync::{
 
 use crossbeam_channel as channel;
 use memuse::DynamicUsage;
-use sapling::{bundle::GrothProofBytes, note_encryption::SaplingDomain};
+use sapling::{
+    bundle::{GrothProofBytes, OutputDescription},
+    note_encryption::SaplingDomain,
+};
 use zcash_note_encryption::{batch, BatchDomain, Domain, ShieldedOutput, ENC_CIPHERTEXT_SIZE};
 use zcash_primitives::{
     block::BlockHash,
     consensus,
-    transaction::{
-        components::{sapling as sapling_serialization, OutputDescription},
-        Transaction, TxId,
-    },
+    transaction::{components::sapling as sapling_serialization, Transaction, TxId},
 };
 
 use crate::{bridge::ffi, note_encryption::parse_and_prepare_sapling_ivk, params::Network};
