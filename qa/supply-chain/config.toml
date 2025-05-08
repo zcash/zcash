@@ -210,6 +210,10 @@ criteria = "safe-to-deploy"
 version = "0.2.6"
 criteria = "safe-to-deploy"
 
+[[exemptions.getset]]
+version = "0.1.4"
+criteria = "safe-to-deploy"
+
 [[exemptions.group]]
 version = "0.12.0"
 criteria = "safe-to-deploy"
@@ -390,6 +394,14 @@ criteria = "safe-to-deploy"
 version = "0.12.2"
 criteria = "safe-to-deploy"
 
+[[exemptions.proc-macro-error-attr2]]
+version = "2.0.0"
+criteria = "safe-to-deploy"
+
+[[exemptions.proc-macro-error2]]
+version = "2.0.1"
+criteria = "safe-to-deploy"
+
 [[exemptions.proptest]]
 version = "1.6.0"
 criteria = "safe-to-deploy"
@@ -480,10 +492,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.spki]]
 version = "0.7.3"
-criteria = "safe-to-deploy"
-
-[[exemptions.subtle]]
-version = "2.4.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.syn]]
