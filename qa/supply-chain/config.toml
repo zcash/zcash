@@ -107,7 +107,7 @@ version = "0.9.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.clearscreen]]
-version = "1.0.9"
+version = "4.0.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.const-oid]]
@@ -162,20 +162,16 @@ criteria = "safe-to-deploy"
 version = "0.9.0"
 criteria = "safe-to-deploy"
 
-[[exemptions.dirs]]
-version = "2.0.2"
-criteria = "safe-to-deploy"
-
-[[exemptions.dirs-sys]]
-version = "0.3.7"
-criteria = "safe-to-deploy"
-
 [[exemptions.ed25519]]
 version = "2.2.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.ed25519-zebra]]
 version = "3.0.0"
+criteria = "safe-to-deploy"
+
+[[exemptions.env_home]]
+version = "0.1.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.ff]]
@@ -271,19 +267,19 @@ version = "0.9.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.libc]]
-version = "0.2.159"
+version = "0.2.172"
 criteria = "safe-to-deploy"
 
 [[exemptions.libm]]
 version = "0.2.2"
 criteria = "safe-to-deploy"
 
-[[exemptions.libredox]]
-version = "0.0.1"
+[[exemptions.linux-raw-sys]]
+version = "0.4.14"
 criteria = "safe-to-deploy"
 
 [[exemptions.linux-raw-sys]]
-version = "0.4.14"
+version = "0.9.4"
 criteria = "safe-to-deploy"
 
 [[exemptions.memchr]]
@@ -426,10 +422,6 @@ criteria = "safe-to-deploy"
 version = "0.3.0"
 criteria = "safe-to-deploy"
 
-[[exemptions.redox_users]]
-version = "0.4.6"
-criteria = "safe-to-deploy"
-
 [[exemptions.regex]]
 version = "1.10.6"
 criteria = "safe-to-deploy"
@@ -456,6 +448,10 @@ criteria = "safe-to-deploy"
 
 [[exemptions.rustix]]
 version = "0.38.34"
+criteria = "safe-to-deploy"
+
+[[exemptions.rustix]]
+version = "1.0.7"
 criteria = "safe-to-deploy"
 
 [[exemptions.rusty-fork]]
@@ -507,7 +503,15 @@ version = "3.12.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.terminfo]]
-version = "0.8.0"
+version = "0.9.0"
+criteria = "safe-to-deploy"
+
+[[exemptions.thiserror]]
+version = "2.0.12"
+criteria = "safe-to-deploy"
+
+[[exemptions.thiserror-impl]]
+version = "2.0.12"
 criteria = "safe-to-deploy"
 
 [[exemptions.time]]
@@ -583,7 +587,7 @@ version = "0.3.70"
 criteria = "safe-to-deploy"
 
 [[exemptions.which]]
-version = "6.0.3"
+version = "7.0.3"
 criteria = "safe-to-deploy"
 
 [[exemptions.winapi]]
