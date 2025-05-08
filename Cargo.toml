@@ -35,7 +35,7 @@ path = "src/rust/bin/wallet_tool.rs"
 
 [dependencies]
 bellman = "0.14"
-bip0039 = { version = "0.10.1", features = ["std", "all-languages"] }
+bip0039 = { version = "0.12", features = ["std", "all-languages"] }
 blake2b_simd = "1"
 blake2s_simd = "1"
 bls12_381 = "0.8"

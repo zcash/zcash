@@ -151,9 +151,9 @@ dependencies = [
 
 [[package]]
 name = "bip0039"
-version = "0.10.1"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bef0f0152ec5cf17f49a5866afaa3439816207fd4f0a224c0211ffaf5e278426"
+checksum = "568b6890865156d9043af490d4c4081c385dd68ea10acd6ca15733d511e6b51c"
 dependencies = [
  "hmac",
  "pbkdf2",
@@ -1487,9 +1487,9 @@ dependencies = [
 
 [[package]]
 name = "password-hash"
-version = "0.3.2"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1d791538a6dcc1e7cb7fe6f6b58aca40e7f79403c45b2bc274008b5e647af1d8"
+checksum = "346f04948ba92c43e8469c1ee6736c7563d71012b17d40745260fe106aac2166"
 dependencies = [
  "base64ct",
  "rand_core",
@@ -1513,9 +1513,9 @@ dependencies = [
 
 [[package]]
 name = "pbkdf2"
-version = "0.10.1"
+version = "0.12.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "271779f35b581956db91a3e55737327a03aa051e90b1c47aeb189508533adfd7"
+checksum = "f8ed6a7761f76e3b9f92dfb0a60a6a6477c61024b775147ff0973a02653abaf2"
 dependencies = [
  "digest",
  "password-hash",

@@ -63,7 +63,7 @@ version = "0.13.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.bip0039]]
-version = "0.9.0"
+version = "0.12.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.bip32]]
@@ -343,7 +343,7 @@ version = "0.22.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.password-hash]]
-version = "0.3.2"
+version = "0.5.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.pasta_curves]]
@@ -351,7 +351,7 @@ version = "0.4.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.pbkdf2]]
-version = "0.9.0"
+version = "0.12.2"
 criteria = "safe-to-deploy"
 
 [[exemptions.phf]]
