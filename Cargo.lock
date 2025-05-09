@@ -1153,7 +1153,7 @@ dependencies = [
  "secp256k1",
  "secrecy",
  "subtle",
- "thiserror 1.0.64",
+ "thiserror 2.0.12",
  "time",
  "tokio",
  "tracing",

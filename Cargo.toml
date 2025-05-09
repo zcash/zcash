@@ -95,7 +95,7 @@ backtrace = "0.3"
 clearscreen = "4"
 rand = "0.8"
 secrecy = "0.8"
-thiserror = "1"
+thiserror = "2"
 time = { version = "0.3", features = ["formatting", "macros"] }
 
 [dev-dependencies]
