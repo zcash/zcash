@@ -800,6 +800,11 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.135 -> 1.0.136"
 
+[[audits.cxxbridge-flags]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.146 -> 1.0.158"
+
 [[audits.cxxbridge-macro]]
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
@@ -3391,6 +3396,12 @@ criteria = ["safe-to-deploy", "crypto-reviewed", "license-reviewed"]
 user-id = 6289 # Jack Grigg (str4d)
 start = "2023-12-07"
 end = "2025-03-18"
+
+[[trusted.zcash_transparent]]
+criteria = "safe-to-deploy"
+user-id = 169181 # Kris Nuttycombe (nuttycom)
+start = "2024-12-17"
+end = "2026-05-08"
 
 [[trusted.zip32]]
 criteria = "safe-to-deploy"

@@ -11,6 +11,7 @@ use bls12_381::Bls12;
 use group::GroupEncoding;
 use memuse::DynamicUsage;
 use rand_core::{OsRng, RngCore};
+use sapling::keys::EphemeralSecretKey;
 use sapling::{
     builder::BundleType,
     circuit::{self, OutputParameters, SpendParameters},
@@ -344,7 +345,7 @@ impl OutputProver for StaticTxProver {
     type Proof = Proof<Bls12>;
 
     fn prepare_circuit(
-        esk: jubjub::Fr,
+        esk: &EphemeralSecretKey,
         payment_address: PaymentAddress,
         rcm: jubjub::Fr,
         value: NoteValue,
@@ -366,7 +367,7 @@ impl OutputProver for StaticTxProver {
 
 pub(crate) struct SaplingBuilder {
     builder: sapling::builder::Builder,
-    signing_keys: Vec<SpendAuthorizingKey>,
+    extsks: Vec<ExtendedSpendingKey>,
 }
 
 pub(crate) fn new_sapling_builder(
@@ -390,7 +391,7 @@ pub(crate) fn new_sapling_builder(
             bundle_type,
             anchor,
         ),
-        signing_keys: vec![],
+        extsks: vec![],
     }))
 }
 
@@ -425,9 +426,13 @@ impl SaplingBuilder {
             .map_err(|e| format!("Invalid Sapling Merkle path: {}", e))?;
 
         self.builder
-            .add_spend(&extsk, note, merkle_path)
+            .add_spend(
+                extsk.to_diversifiable_full_viewing_key().fvk().clone(),
+                note,
+                merkle_path,
+            )
             .map_err(|e| format!("Failed to add Sapling spend: {}", e))?;
-        self.signing_keys.push(extsk.expsk.ask);
+        self.extsks.push(extsk);
 
         Ok(())
     }
@@ -450,19 +455,16 @@ impl SaplingBuilder {
     }
 
     fn build(self) -> Result<SaplingUnauthorizedBundle, String> {
-        let Self {
-            builder,
-            signing_keys,
-        } = self;
+        let Self { builder, extsks } = self;
         let prover = crate::sapling::StaticTxProver;
         let rng = OsRng;
         let bundle = builder
-            .build::<StaticTxProver, StaticTxProver, _, Amount>(rng)
+            .build::<StaticTxProver, StaticTxProver, _, Amount>(&extsks, rng)
             .map_err(|e| format!("Failed to build Sapling bundle: {}", e))?
             .map(|(bundle, _)| bundle.create_proofs(&prover, &prover, rng, ()));
         Ok(SaplingUnauthorizedBundle {
             bundle,
-            signing_keys,
+            signing_keys: extsks.into_iter().map(|extsk| extsk.expsk.ask).collect(),
         })
     }
 }
