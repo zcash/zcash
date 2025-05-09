@@ -147,11 +147,11 @@ version = "0.1.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.cxx]]
-version = "1.0.126"
+version = "1.0.158"
 criteria = "safe-to-deploy"
 
 [[exemptions.cxxbridge-macro]]
-version = "1.0.126"
+version = "1.0.158"
 criteria = "safe-to-deploy"
 
 [[exemptions.der]]
