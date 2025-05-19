@@ -1,20 +1,10 @@
 use libc::c_char;
-use std::{
-    convert::{TryFrom, TryInto},
-    ffi::CStr,
-    ptr,
-};
+use std::{ffi::CStr, ptr};
 
 use crate::zip339_ffi::{
     zip339_entropy_to_phrase, zip339_free_phrase, zip339_phrase_to_seed, zip339_validate_phrase,
     Language,
 };
-
-#[test]
-fn test_try_from_language() {
-    assert_eq!(Language(0).try_into(), Ok(bip0039::Language::English));
-    assert!(bip0039::Language::try_from(Language(1234)).is_err());
-}
 
 #[test]
 fn test_free_null_phrase_is_noop() {

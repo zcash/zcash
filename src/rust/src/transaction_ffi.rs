@@ -1,4 +1,4 @@
-use std::convert::TryInto;
+use std::convert::{TryFrom, TryInto};
 use std::io::Cursor;
 use std::{ptr, slice};
 
@@ -11,7 +11,6 @@ use zcash_primitives::{
     consensus::BranchId,
     legacy::Script,
     transaction::{
-        components::transparent,
         sighash::{SignableInput, TransparentAuthorizingContext},
         sighash_v5::v5_signature_hash,
         txid::TxIdDigester,
@@ -62,10 +61,10 @@ pub extern "C" fn zcash_transaction_digests(
 
 #[derive(Clone, Debug)]
 pub(crate) struct TransparentAuth {
-    all_prev_outputs: Vec<transparent::TxOut>,
+    all_prev_outputs: Vec<transparent::bundle::TxOut>,
 }
 
-impl transparent::Authorization for TransparentAuth {
+impl transparent::bundle::Authorization for TransparentAuth {
     type ScriptSig = Script;
 }
 
@@ -92,7 +91,7 @@ pub(crate) struct MapTransparent {
 impl MapTransparent {
     pub(crate) fn parse(all_prev_outputs: &[u8], tx: &Transaction) -> Result<Self, String> {
         let mut cursor = Cursor::new(all_prev_outputs);
-        match Vector::read(&mut cursor, transparent::TxOut::read) {
+        match Vector::read(&mut cursor, transparent::bundle::TxOut::read) {
             Err(e) => Err(format!("Invalid all_prev_outputs field: {}", e)),
             Ok(_) if (cursor.position() as usize) != all_prev_outputs.len() => {
                 Err("all_prev_outputs had trailing data".into())
@@ -131,15 +130,17 @@ impl MapTransparent {
     }
 }
 
-impl transparent::MapAuth<transparent::Authorized, TransparentAuth> for MapTransparent {
+impl transparent::bundle::MapAuth<transparent::bundle::Authorized, TransparentAuth>
+    for MapTransparent
+{
     fn map_script_sig(
         &self,
-        s: <transparent::Authorized as transparent::Authorization>::ScriptSig,
-    ) -> <TransparentAuth as transparent::Authorization>::ScriptSig {
+        s: <transparent::bundle::Authorized as transparent::bundle::Authorization>::ScriptSig,
+    ) -> <TransparentAuth as transparent::bundle::Authorization>::ScriptSig {
         s
     }
 
-    fn map_authorization(&self, _: transparent::Authorized) -> TransparentAuth {
+    fn map_authorization(&self, _: transparent::bundle::Authorized) -> TransparentAuth {
         // TODO: This map should consume self, so we can move self.auth
         self.auth.clone()
     }
@@ -261,6 +262,21 @@ pub extern "C" fn zcash_transaction_zip244_signature_digest(
     let signable_input = if index == NOT_AN_INPUT {
         SignableInput::Shielded
     } else {
+        // This conversion to `u8` is always fine:
+        // - We only call this FFI method once we already know we are using ZIP 244.
+        // - Even if we weren't, `hash_type` is one byte tacked onto the end of a
+        //   signature, so it always fits into a `u8` (and TBH I don't know why we
+        //   ever set it to `u32`).
+        let hash_type = u8::try_from(hash_type).unwrap();
+
+        let hash_type = match transparent::sighash::SighashType::parse(hash_type) {
+            Some(hash_type) => hash_type,
+            None => {
+                error!("hash_type violates the ZIP 244 rules");
+                return false;
+            }
+        };
+
         let prevout = match precomputed_tx.tx.transparent_bundle() {
             Some(bundle) => match bundle.authorization.all_prev_outputs.get(index) {
                 Some(prevout) => prevout,
@@ -275,22 +291,17 @@ pub extern "C" fn zcash_transaction_zip244_signature_digest(
             }
         };
 
-        SignableInput::Transparent {
-            // This conversion to `u8` is always fine:
-            // - We only call this FFI method once we already know we are using ZIP 244.
-            // - Even if we weren't, `hash_type` is one byte tacked onto the end of a
-            //   signature, so it always fits into a `u8` (and TBH I don't know why we
-            //   ever set it to `u32`).
-            hash_type: hash_type.try_into().unwrap(),
+        SignableInput::Transparent(transparent::sighash::SignableInput::from_parts(
+            hash_type,
             index,
             // `script_code` is unused by `v5_signature_hash`, so instead of passing the
             // real `script_code` across the FFI (and paying the serialization and parsing
             // cost for no benefit), we set it to the prevout's `script_pubkey`. This
             // happens to be correct anyway for every output script kind except P2SH.
-            script_code: &prevout.script_pubkey,
-            script_pubkey: &prevout.script_pubkey,
-            value: prevout.value,
-        }
+            &prevout.script_pubkey,
+            &prevout.script_pubkey,
+            prevout.value,
+        ))
     };
 
     let sighash = v5_signature_hash(

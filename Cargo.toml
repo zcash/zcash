@@ -35,7 +35,7 @@ path = "src/rust/bin/wallet_tool.rs"
 
 [dependencies]
 bellman = "0.14"
-bip0039 = { version = "0.10.1", features = ["std", "all-languages"] }
+bip0039 = { version = "0.12", features = ["std", "all-languages"] }
 blake2b_simd = "1"
 blake2s_simd = "1"
 bls12_381 = "0.8"
@@ -51,7 +51,7 @@ jubjub = "0.10"
 memuse = "0.2"
 nonempty = "0.7"
 orchard = "0.10"
-sapling = { package = "sapling-crypto", version = "0.3", features = ["temporary-zcashd"] }
+sapling = { package = "sapling-crypto", version = "0.4", features = ["temporary-zcashd"] }
 secp256k1 = "0.27"
 subtle = "2.2"
 rand_core = "0.6"
@@ -59,12 +59,13 @@ redjubjub = "0.7"
 tracing = "0.1"
 tracing-core = "0.1"
 tracing-appender = "0.2"
+transparent = { package = "zcash_transparent", version = "0.1" }
 zcash_address = "0.6"
 zcash_encoding = "0.2.1"
 zcash_history = "0.4"
 zcash_note_encryption = "0.4"
-zcash_primitives = { version = "0.19", features = ["temporary-zcashd", "transparent-inputs"] }
-zcash_proofs = { version = "0.19", features = ["directories"] }
+zcash_primitives = { version = "0.21", features = ["temporary-zcashd", "transparent-inputs"] }
+zcash_proofs = { version = "0.21", features = ["directories"] }
 zcash_protocol = { version = "0.4", features = ["local-consensus"] }
 ed25519-zebra = "4"
 zeroize = "1.4.2"
@@ -72,7 +73,7 @@ wagyu-zcash-parameters = "0.2"
 
 # Rust/C++ interop
 # The version needs to match depends/packages/native_cxxbridge.mk
-cxx = { version = "=1.0.136", features = ["c++17"] }
+cxx = { version = "=1.0.158", features = ["c++17"] }
 
 # Rust threading
 rayon = "1.5"
@@ -91,16 +92,16 @@ gumdrop = "0.8"
 # (also depends on tracing, and tracing-subscriber with "env-filter" and "fmt" features)
 anyhow = "1.0"
 backtrace = "0.3"
-clearscreen = "3"
+clearscreen = "4"
 rand = "0.8"
 secrecy = "0.8"
-thiserror = "1"
+thiserror = "2"
 time = { version = "0.3", features = ["formatting", "macros"] }
 
 [dev-dependencies]
 incrementalmerkletree = { version = "0.7", features = ["test-dependencies"] }
 proptest = "1.0.0"
-zcash_primitives = { version = "0.19", features = ["temporary-zcashd", "transparent-inputs", "test-dependencies"] }
+zcash_primitives = { version = "0.21", features = ["temporary-zcashd", "transparent-inputs", "test-dependencies"] }
 
 [dependencies.tracing-subscriber]
 version = "0.3"
