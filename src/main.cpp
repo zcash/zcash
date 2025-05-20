@@ -1248,6 +1248,9 @@ bool ContextualCheckTransaction(
         }
     }
 
+    // TODO: If NU6.1 active, get the set of expected one-time lockbox disbursements,
+    // and ensure that the coinbase transaction contains them.
+
     // Rules that apply to the future epoch
     if (futureActive) {
         switch (tx.nVersionGroupId) {
@@ -3318,6 +3321,11 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
         if (tx.IsCoinBase())
         {
+            // Apply the input-side effect of lockbox disbursement:
+            // - Subtract any one-time disbursements from the chain supply (to cancel
+            //   out their re-addition by the coinbase tx outputs below).
+            // TODO: Get the set of one-time disbursements to subtract.
+
             // Add the output value of the coinbase transaction to the chain supply
             // delta. This includes fees, which are then canceled out by the fee
             // subtractions in the other branch of this conditional.
@@ -4666,8 +4674,13 @@ void SetChainPoolValues(
     CAmount saplingValue = 0;
     CAmount orchardValue = 0;
 
+    // Each lockbox disbursement produces a negative change to the lockbox value.
     // Each lockbox funding stream produces a positive change to the lockbox value.
     CAmount lockboxValue = 0;
+    // TODO: Subtract any disbursements that apply to pindex->nHeight. These are
+    // hard-coded because we need to be able to calculate lockboxValue once we have
+    // received a full block and knowing its height, but before we've received all
+    // of its ancestors.
     for (auto elem : chainparams.GetConsensus().GetActiveFundingStreamElements(pindex->nHeight)) {
         if (std::holds_alternative<Consensus::Lockbox>(elem.first)) {
             lockboxValue += elem.second;
