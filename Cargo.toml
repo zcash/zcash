@@ -98,6 +98,9 @@ secrecy = "0.8"
 thiserror = "2"
 time = { version = "0.3", features = ["formatting", "macros"] }
 
+# Macros
+macro_find_and_replace = "1"
+
 [dev-dependencies]
 incrementalmerkletree = { version = "0.7", features = ["test-dependencies"] }
 proptest = "1.0.0"

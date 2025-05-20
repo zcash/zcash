@@ -1138,6 +1138,7 @@ dependencies = [
  "ipnet",
  "jubjub",
  "libc",
+ "macro_find_and_replace",
  "memuse",
  "metrics",
  "metrics-exporter-prometheus",
@@ -1213,6 +1214,12 @@ checksum = "19b955cdeb2a02b9117f121ce63aa52d08ade45de53e48fe6a38b39c10f6f709"
 dependencies = [
  "libc",
 ]
+
+[[package]]
+name = "macro_find_and_replace"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c3c5eef824b07f20e21212f95520a9b29007258680db871e2a146d7accc0dca6"
 
 [[package]]
 name = "matchers"
