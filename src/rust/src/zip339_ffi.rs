@@ -1,4 +1,5 @@
 use libc::{c_char, size_t};
+use macro_find_and_replace::replace_token_sequence;
 use std::{
     borrow::Cow,
     ffi::{CStr, CString},
@@ -44,65 +45,37 @@ impl Language {
             Language(_) => None,
         }
     }
+}
 
+macro_rules! all_languages {
+    ($self:expr, $ctx:expr, $e:expr) => {
+        $self.handle(
+            $ctx,
+            replace_token_sequence!{[LANGUAGE], [bip0039::English], $e},
+            replace_token_sequence!{[LANGUAGE], [bip0039::ChineseSimplified], $e},
+            replace_token_sequence!{[LANGUAGE], [bip0039::ChineseTraditional], $e},
+            replace_token_sequence!{[LANGUAGE], [bip0039::Czech], $e},
+            replace_token_sequence!{[LANGUAGE], [bip0039::French], $e},
+            replace_token_sequence!{[LANGUAGE], [bip0039::Italian], $e},
+            replace_token_sequence!{[LANGUAGE], [bip0039::Japanese], $e},
+            replace_token_sequence!{[LANGUAGE], [bip0039::Korean], $e},
+            replace_token_sequence!{[LANGUAGE], [bip0039::Portuguese], $e},
+            replace_token_sequence!{[LANGUAGE], [bip0039::Spanish], $e},
+        )
+    };
+}
+
+impl Language {
     fn with_mnemonic_phrase_from_entropy<E: Into<Vec<u8>>, T>(
         self,
         entropy: E,
         f: impl FnOnce(&str) -> Option<T>,
     ) -> Option<T> {
-        self.handle(
-            (entropy, f),
-            |(entropy, f)| {
-                bip0039::Mnemonic::<bip0039::English>::from_entropy(entropy)
-                    .ok()
-                    .and_then(|mnemonic| f(mnemonic.phrase()))
-            },
-            |(entropy, f)| {
-                bip0039::Mnemonic::<bip0039::ChineseSimplified>::from_entropy(entropy)
-                    .ok()
-                    .and_then(|mnemonic| f(mnemonic.phrase()))
-            },
-            |(entropy, f)| {
-                bip0039::Mnemonic::<bip0039::ChineseTraditional>::from_entropy(entropy)
-                    .ok()
-                    .and_then(|mnemonic| f(mnemonic.phrase()))
-            },
-            |(entropy, f)| {
-                bip0039::Mnemonic::<bip0039::Czech>::from_entropy(entropy)
-                    .ok()
-                    .and_then(|mnemonic| f(mnemonic.phrase()))
-            },
-            |(entropy, f)| {
-                bip0039::Mnemonic::<bip0039::French>::from_entropy(entropy)
-                    .ok()
-                    .and_then(|mnemonic| f(mnemonic.phrase()))
-            },
-            |(entropy, f)| {
-                bip0039::Mnemonic::<bip0039::Italian>::from_entropy(entropy)
-                    .ok()
-                    .and_then(|mnemonic| f(mnemonic.phrase()))
-            },
-            |(entropy, f)| {
-                bip0039::Mnemonic::<bip0039::Japanese>::from_entropy(entropy)
-                    .ok()
-                    .and_then(|mnemonic| f(mnemonic.phrase()))
-            },
-            |(entropy, f)| {
-                bip0039::Mnemonic::<bip0039::Korean>::from_entropy(entropy)
-                    .ok()
-                    .and_then(|mnemonic| f(mnemonic.phrase()))
-            },
-            |(entropy, f)| {
-                bip0039::Mnemonic::<bip0039::Portuguese>::from_entropy(entropy)
-                    .ok()
-                    .and_then(|mnemonic| f(mnemonic.phrase()))
-            },
-            |(entropy, f)| {
-                bip0039::Mnemonic::<bip0039::Spanish>::from_entropy(entropy)
-                    .ok()
-                    .and_then(|mnemonic| f(mnemonic.phrase()))
-            },
-        )
+        all_languages!(self, (entropy, f), |(entropy, f)| {
+            bip0039::Mnemonic::<LANGUAGE>::from_entropy(entropy)
+                .ok()
+                .and_then(|mnemonic| f(mnemonic.phrase()))
+        })
     }
 
     fn with_seed_from_mnemonic_phrase<'a, P: Into<Cow<'a, str>>, T>(
@@ -111,75 +84,17 @@ impl Language {
         passphrase: &str,
         f: impl FnOnce([u8; 64]) -> Option<T>,
     ) -> Option<T> {
-        self.handle(
-            (phrase, passphrase, f),
-            |(phrase, passphrase, f)| {
-                bip0039::Mnemonic::<bip0039::English>::from_phrase(phrase)
-                    .ok()
-                    .and_then(|mnemonic| f(mnemonic.to_seed(passphrase)))
-            },
-            |(phrase, passphrase, f)| {
-                bip0039::Mnemonic::<bip0039::ChineseSimplified>::from_phrase(phrase)
-                    .ok()
-                    .and_then(|mnemonic| f(mnemonic.to_seed(passphrase)))
-            },
-            |(phrase, passphrase, f)| {
-                bip0039::Mnemonic::<bip0039::ChineseTraditional>::from_phrase(phrase)
-                    .ok()
-                    .and_then(|mnemonic| f(mnemonic.to_seed(passphrase)))
-            },
-            |(phrase, passphrase, f)| {
-                bip0039::Mnemonic::<bip0039::Czech>::from_phrase(phrase)
-                    .ok()
-                    .and_then(|mnemonic| f(mnemonic.to_seed(passphrase)))
-            },
-            |(phrase, passphrase, f)| {
-                bip0039::Mnemonic::<bip0039::French>::from_phrase(phrase)
-                    .ok()
-                    .and_then(|mnemonic| f(mnemonic.to_seed(passphrase)))
-            },
-            |(phrase, passphrase, f)| {
-                bip0039::Mnemonic::<bip0039::Italian>::from_phrase(phrase)
-                    .ok()
-                    .and_then(|mnemonic| f(mnemonic.to_seed(passphrase)))
-            },
-            |(phrase, passphrase, f)| {
-                bip0039::Mnemonic::<bip0039::Japanese>::from_phrase(phrase)
-                    .ok()
-                    .and_then(|mnemonic| f(mnemonic.to_seed(passphrase)))
-            },
-            |(phrase, passphrase, f)| {
-                bip0039::Mnemonic::<bip0039::Korean>::from_phrase(phrase)
-                    .ok()
-                    .and_then(|mnemonic| f(mnemonic.to_seed(passphrase)))
-            },
-            |(phrase, passphrase, f)| {
-                bip0039::Mnemonic::<bip0039::Portuguese>::from_phrase(phrase)
-                    .ok()
-                    .and_then(|mnemonic| f(mnemonic.to_seed(passphrase)))
-            },
-            |(phrase, passphrase, f)| {
-                bip0039::Mnemonic::<bip0039::Spanish>::from_phrase(phrase)
-                    .ok()
-                    .and_then(|mnemonic| f(mnemonic.to_seed(passphrase)))
-            },
-        )
+        all_languages!(self, (phrase, passphrase, f), |(phrase, passphrase, f)| {
+            bip0039::Mnemonic::<LANGUAGE>::from_phrase(phrase)
+                .ok()
+                .and_then(|mnemonic| f(mnemonic.to_seed(passphrase)))
+        })
     }
 
     fn validate_mnemonic<'a, P: Into<Cow<'a, str>>>(self, phrase: P) -> Option<()> {
-        self.handle(
-            phrase,
-            |phrase| bip0039::Mnemonic::<bip0039::English>::validate(phrase).ok(),
-            |phrase| bip0039::Mnemonic::<bip0039::ChineseSimplified>::validate(phrase).ok(),
-            |phrase| bip0039::Mnemonic::<bip0039::ChineseTraditional>::validate(phrase).ok(),
-            |phrase| bip0039::Mnemonic::<bip0039::Czech>::validate(phrase).ok(),
-            |phrase| bip0039::Mnemonic::<bip0039::French>::validate(phrase).ok(),
-            |phrase| bip0039::Mnemonic::<bip0039::Italian>::validate(phrase).ok(),
-            |phrase| bip0039::Mnemonic::<bip0039::Japanese>::validate(phrase).ok(),
-            |phrase| bip0039::Mnemonic::<bip0039::Korean>::validate(phrase).ok(),
-            |phrase| bip0039::Mnemonic::<bip0039::Portuguese>::validate(phrase).ok(),
-            |phrase| bip0039::Mnemonic::<bip0039::Spanish>::validate(phrase).ok(),
-        )
+        all_languages!(self, phrase, |phrase| {
+            bip0039::Mnemonic::<LANGUAGE>::validate(phrase).ok()
+        })
     }
 }
 

@@ -1569,6 +1569,12 @@ who = "Daira-Emma Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
 delta = "0.4.20 -> 0.4.21"
 
+[[audits.macro_find_and_replace]]
+who = "Daira-Emma Hopwood <daira@jacaranda.org>"
+criteria = "safe-to-deploy"
+version = "1.0.0"
+notes = "Fully reviewed. No problems found other than a few typos in documentation (filed https://github.com/lord-ne/rust-macro-find-and-replace/pull/1 )."
+
 [[audits.maybe-rayon]]
 who = "Sean Bowe <ewillbefull@gmail.com>"
 criteria = "safe-to-deploy"
