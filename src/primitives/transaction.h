@@ -468,7 +468,7 @@ protected:
     /** Developer testing only.  Set evilDeveloperFlag to true.
      * Convert a CMutableTransaction into a CTransaction without invoking UpdateHash()
      */
-    CTransaction(const CMutableTransaction &tx, bool evilDeveloperFlag);
+    explicit CTransaction(const CMutableTransaction &tx, bool evilDeveloperFlag);
 
 public:
     typedef std::array<unsigned char, 64> joinsplit_sig_t;
@@ -527,8 +527,8 @@ public:
     CTransaction();
 
     /** Convert a CMutableTransaction into a CTransaction. */
-    CTransaction(const CMutableTransaction &tx);
-    CTransaction(CMutableTransaction &&tx);
+    explicit CTransaction(const CMutableTransaction &tx);
+    explicit CTransaction(CMutableTransaction &&tx);
 
     CTransaction& operator=(const CTransaction& tx);
 

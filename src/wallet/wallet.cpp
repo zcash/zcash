@@ -5768,7 +5768,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
                     return false;
                 }
 
-                CAmount nFeeNeeded = GetMinimumFee(txNew, nBytes);
+                CAmount nFeeNeeded = GetMinimumFee(CTransaction(txNew), nBytes);
 
                 // Remove scriptSigs if we used dummy signatures for fee calculation
                 if (!sign) {
