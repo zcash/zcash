@@ -3480,14 +3480,13 @@ WalletDecryptedNotes CWallet::TryDecryptShieldedOutputs(const CTransaction& tx)
     mapSaplingNoteData_t saplingNoteData;
     SaplingIncomingViewingKeyMap saplingViewingKeysToAdd;
 
-    // Orchard
-    // TODO: Trial decryption of Orchard notes alongside Sprout and Sapling will
-    // be implemented after batching is implemented, as then we can just handle
-    // everything in Rust.
+    // Orchard is trial decrypted in Rust.
+    std::optional<OrchardWalletTxMeta> orchardTxMeta;
 
     return WalletDecryptedNotes {
         .sproutNoteData = sproutNoteData,
         .saplingNoteDataAndAddressesToAdd = std::make_pair(saplingNoteData, saplingViewingKeysToAdd),
+        .orchardTxMeta = orchardTxMeta,
     };
 }
 
@@ -3532,10 +3531,7 @@ bool CWallet::AddToWalletIfInvolvingMe(
         }
 
         // Orchard
-        std::optional<OrchardWalletTxMeta> orchardTxMeta;
-        if (consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU5)) {
-            orchardTxMeta = orchardWallet.AddNotesIfInvolvingMe(tx);
-        }
+        auto orchardTxMeta = decryptedNotes.orchardTxMeta;
 
         if (fExisted || IsMine(tx) || IsFromMe(tx) ||
             sproutNoteData.size() > 0 ||
@@ -3577,15 +3573,16 @@ rust::Box<wallet::BatchScanner> WalletBatchScanner::CreateBatchScanner(CWallet* 
     auto network = Params().RustNetwork();
 
     // TODO: Pass the map across the FFI once cxx supports it.
-    std::vector<std::array<uint8_t, 32>> ivks;
+    std::vector<std::array<uint8_t, 32>> saplingIvks;
     for (const auto& it : pwallet->mapSaplingFullViewingKeys) {
         SaplingIncomingViewingKey ivk = it.first;
-        ivks.push_back(ivk.GetRawBytes());
+        saplingIvks.push_back(ivk.GetRawBytes());
     }
 
     return wallet::init_batch_scanner(
         *network,
-        {ivks.data(), ivks.size()});
+        {saplingIvks.data(), saplingIvks.size()},
+        pwallet->orchardWallet.PrepareIvks());
 }
 
 bool WalletBatchScanner::AddToWalletIfInvolvingMe(
@@ -3625,6 +3622,10 @@ bool WalletBatchScanner::AddToWalletIfInvolvingMe(
             decryptedNotes.saplingNoteDataAndAddressesToAdd.second.insert(
                 std::make_pair(addr, ivk));
         }
+    }
+    if (consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU5)) {
+        decryptedNotes.orchardTxMeta = pwallet->orchardWallet.AddNotesIfInvolvingMe(
+            tx, &batchResults->get_orchard());
     }
 
     return pwallet->AddToWalletIfInvolvingMe(

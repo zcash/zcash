@@ -1164,6 +1164,7 @@ typedef struct WalletDecryptedNotes {
      * attempt to overwrite an existing entry and fail.
      */
     std::pair<mapSaplingNoteData_t, SaplingIncomingViewingKeyMap> saplingNoteDataAndAddressesToAdd;
+    std::optional<OrchardWalletTxMeta> orchardTxMeta;
 } WalletDecryptedNotes;
 
 class WalletBatchScanner : public BatchScanner {

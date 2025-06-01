@@ -36,7 +36,10 @@ use crate::{
         test_only_invalid_sapling_bundle, test_only_replace_sapling_nullifier,
         test_only_replace_sapling_output_parts,
     },
-    wallet_scanner::{init_batch_scanner, BatchResult, BatchScanner},
+    wallet_scanner::{
+        init_batch_scanner, BatchResult, BatchScanner, OrchardDecryptedOutputs,
+        OrchardPreparedIncomingViewingKeys,
+    },
 };
 
 #[allow(clippy::needless_lifetimes)]
@@ -394,10 +397,13 @@ pub(crate) mod ffi {
 
         type BatchScanner;
         type BatchResult;
+        type OrchardPreparedIncomingViewingKeys;
+        type OrchardDecryptedOutputs;
 
-        fn init_batch_scanner(
+        unsafe fn init_batch_scanner(
             network: &Network,
             sapling_ivks: &[[u8; 32]],
+            orchard_ivks: *mut OrchardPreparedIncomingViewingKeys,
         ) -> Result<Box<BatchScanner>>;
         fn add_transaction(
             self: &mut BatchScanner,
@@ -413,5 +419,6 @@ pub(crate) mod ffi {
         ) -> Box<BatchResult>;
 
         fn get_sapling(self: &BatchResult) -> Vec<SaplingDecryptionResult>;
+        fn get_orchard(self: &BatchResult) -> &OrchardDecryptedOutputs;
     }
 }
