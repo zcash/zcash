@@ -1143,6 +1143,9 @@ void TransactionEffects::LockSpendable(CWallet& wallet) const
     for (auto note : spendable.saplingNoteEntries) {
         wallet.LockNote(note.op);
     }
+    for (auto note : spendable.orchardNoteMetadata) {
+        pwalletMain->LockNote(note.op);
+    }
 }
 
 // TODO: Unlock Orchard notes (#6226)
@@ -1158,5 +1161,8 @@ void TransactionEffects::UnlockSpendable(CWallet& wallet) const
     }
     for (auto note : spendable.saplingNoteEntries) {
         wallet.UnlockNote(note.op);
+    }
+    for (auto note : spendable.orchardNoteMetadata) {
+        pwalletMain->UnlockNote(note.op);
     }
 }
