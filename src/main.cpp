@@ -3766,6 +3766,7 @@ bool static FlushStateToDisk(
     LOCK2(cs_main, cs_LastBlockFile);
     static int64_t nLastWrite = 0;
     static int64_t nLastFlush = 0;
+    static int64_t nCallCount = 0;
     std::set<int> setFilesToPrune;
     bool fFlushForPrune = false;
     try {
@@ -3795,6 +3796,10 @@ bool static FlushStateToDisk(
     bool fCacheCritical = mode == FLUSH_STATE_IF_NEEDED && cacheSize > nCoinCacheUsage;
     // It's been a while since we wrote the block index to disk. Do this frequently, so we don't need to redownload after a crash.
     bool fPeriodicWrite = mode == FLUSH_STATE_PERIODIC && nNow > nLastWrite + (int64_t)DATABASE_WRITE_INTERVAL * 1000000;
+    if (mode == FLUSH_STATE_PERIODIC && ++nCallCount >= DATABASE_WRITE_CALL_COUNT) {
+        fPeriodicWrite = true;
+        nCallCount = 0;
+    }
     // It's been very long since we flushed the cache. Do this infrequently, to optimize cache usage.
     bool fPeriodicFlush = mode == FLUSH_STATE_PERIODIC && nNow > nLastFlush + (int64_t)DATABASE_FLUSH_INTERVAL * 1000000;
     // Combine all conditions that result in a full cache flush.
