@@ -22,11 +22,18 @@ case ${ZCASHD_NETWORK} in
   mainnet)
     ZCASHD_CMD+=("-addnode=mainnet.z.cash")
     ;;
+  regtest)
+    ZCASHD_CMD+=("-regtest")
+    ;;
   *)
     echo "Error, unknown network: ${ZCASHD_NETWORK}"
     exit 1
     ;;
 esac
+
+if [[ -n "${ZCASHD_ACK_FLAG}" ]]; then
+    ZCASHD_CMD+=("${ZCASHD_ACK_FLAG}")
+fi
 
 if [[ -n "${ZCASHD_SHOWMETRICS}" ]];then ZCASHD_CMD+=("-showmetrics=${ZCASHD_SHOWMETRICS}");fi
 if [[ -n "${ZCASHD_LOGIPS}" ]];then ZCASHD_CMD+=("-logips=${ZCASHD_LOGIPS}");fi
