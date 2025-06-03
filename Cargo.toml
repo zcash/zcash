@@ -116,3 +116,15 @@ features = ["ansi", "env-filter", "fmt", "time"]
 lto = 'thin'
 panic = 'abort'
 codegen-units = 1
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(zcash_unstable, values("nu6.1"))'] }
+
+[patch.crates-io]
+transparent = { package = "zcash_transparent", git = "https://github.com/zcash/librustzcash.git", rev = "5a46a4a2966d0bec8fa13964b141df671fa1db5a" }
+zcash_address = { git = "https://github.com/zcash/librustzcash.git", rev = "5a46a4a2966d0bec8fa13964b141df671fa1db5a" }
+zcash_encoding = { git = "https://github.com/zcash/librustzcash.git", rev = "5a46a4a2966d0bec8fa13964b141df671fa1db5a" }
+zcash_history = { git = "https://github.com/zcash/librustzcash.git", rev = "5a46a4a2966d0bec8fa13964b141df671fa1db5a" }
+zcash_primitives = { git = "https://github.com/zcash/librustzcash.git", rev = "5a46a4a2966d0bec8fa13964b141df671fa1db5a" }
+zcash_proofs = { git = "https://github.com/zcash/librustzcash.git", rev = "5a46a4a2966d0bec8fa13964b141df671fa1db5a" }
+zcash_protocol = { git = "https://github.com/zcash/librustzcash.git", rev = "5a46a4a2966d0bec8fa13964b141df671fa1db5a" }
