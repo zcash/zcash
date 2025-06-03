@@ -35,6 +35,8 @@ if [[ -n "${ZCASHD_ACK_FLAG}" ]]; then
     ZCASHD_CMD+=("${ZCASHD_ACK_FLAG}")
 fi
 
+if [[ -n "${ZCASHD_CONFIG}" ]];then ZCASHD_CMD+=("-conf=${ZCASHD_CONFIG}");fi
+if [[ -n "${ZCASHD_DATADIR}" ]];then ZCASHD_CMD+=("-datadir=${ZCASHD_DATADIR}");fi
 if [[ -n "${ZCASHD_SHOWMETRICS}" ]];then ZCASHD_CMD+=("-showmetrics=${ZCASHD_SHOWMETRICS}");fi
 if [[ -n "${ZCASHD_LOGIPS}" ]];then ZCASHD_CMD+=("-logips=${ZCASHD_LOGIPS}");fi
 if [[ -n "${ZCASHD_EXPERIMENTALFEATURES}" ]];then ZCASHD_CMD+=("-experimentalfeatures=${ZCASHD_EXPERIMENTALFEATURES}");fi
