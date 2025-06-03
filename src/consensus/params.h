@@ -176,6 +176,45 @@ public:
     FundingStreamRecipient Recipient(const Params& params, int nHeight) const;
 };
 
+/**
+ * Index into Params.vOnetimeLockboxDisbursements.
+ *
+ * Being array indices, these MUST be numbered consecutively.
+ */
+enum OnetimeLockboxDisbursementIndex : uint32_t {
+    MAX_ONETIME_LOCKBOX_DISBURSEMENTS
+};
+const auto FIRST_ONETIME_LOCKBOX_DISBURSEMENT = MAX_ONETIME_LOCKBOX_DISBURSEMENTS;
+
+/**
+ * An amount of funds that the activation block for the given upgrade must
+ * disburse from the lockbox to the given recipient.
+ */
+class OnetimeLockboxDisbursement
+{
+private:
+    UpgradeIndex upgrade;
+    CAmount zatoshis;
+    CScript recipient;
+
+    OnetimeLockboxDisbursement(UpgradeIndex upgrade, CAmount zatoshis, CScript& recipient):
+        upgrade(upgrade), zatoshis(zatoshis), recipient(recipient) { }
+public:
+    OnetimeLockboxDisbursement(const OnetimeLockboxDisbursement& fs):
+        upgrade(fs.upgrade), zatoshis(fs.zatoshis), recipient(fs.recipient) { }
+
+    static OnetimeLockboxDisbursement Parse(
+        const Consensus::Params& params,
+        const KeyConstants& keyConstants,
+        const UpgradeIndex upgrade,
+        const CAmount zatoshis,
+        const std::string& strAddress);
+
+    UpgradeIndex GetUpgrade() const { return upgrade; };
+    CAmount GetAmount() const { return zatoshis; };
+    CScript GetRecipient() const { return recipient; };
+};
+
 enum ConsensusFeature : uint32_t {
     // Index value for the maximum consensus feature ID.
     MAX_FEATURES
@@ -340,6 +379,24 @@ struct Params {
         int startHeight,
         int endHeight);
 
+    std::optional<OnetimeLockboxDisbursement> vOnetimeLockboxDisbursements[MAX_ONETIME_LOCKBOX_DISBURSEMENTS];
+
+    /**
+     * Defines a one-time lockbox disbursement for this network.
+     *
+     * The disbursement amounts are hard-coded, instead of being calculated as the amount
+     * in the lockbox at the upgrade activation. `nChainLockboxValue` tracks the latter,
+     * but we only know it once we've received all of a block's ancestors, which would be
+     * too late in the consensus rules. We need to be able to calculate `lockboxValue` in
+     * `SetChainPoolValues`, at which point we only know the block's height and contents.
+     */
+    void AddZIPXXXLockboxDisbursement(
+        const KeyConstants& keyConstants,
+        OnetimeLockboxDisbursementIndex idx,
+        UpgradeIndex upgrade,
+        CAmount zatoshis,
+        const std::string& strAddress);
+
     /**
      * Returns the total block subsidy as of the given block height
      */
@@ -366,6 +423,12 @@ struct Params {
     std::set<FundingStreamElement> GetActiveFundingStreamElements(
         int nHeight,
         CAmount blockSubsidy) const;
+
+    /**
+     * Returns the vector of one-time lockbox disbursements occurring at the
+     * given height.
+     */
+    std::vector<OnetimeLockboxDisbursement> GetLockboxDisbursementsForHeight(int nHeight) const;
 
     /**
      * A set of features that have been explicitly force-enabled
