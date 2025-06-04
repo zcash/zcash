@@ -18,12 +18,13 @@ use tracing::error;
 use zcash_primitives::{
     consensus::BranchId,
     transaction::{
-        components::Amount,
         sighash::{signature_hash, SignableInput},
         txid::TxIdDigester,
         Authorization, Transaction, TransactionData,
     },
 };
+use zcash_protocol::memo::MemoBytes;
+use zcash_protocol::value::ZatBalance;
 
 use crate::{
     bridge::ffi::OrchardUnauthorizedBundlePtr,
@@ -104,7 +105,12 @@ pub extern "C" fn orchard_builder_add_recipient(
     let value = NoteValue::from_raw(value);
     let memo = unsafe { memo.as_ref() }.copied();
 
-    match builder.add_output(ovk, *recipient, value, memo) {
+    match builder.add_output(
+        ovk,
+        *recipient,
+        value,
+        memo.unwrap_or(MemoBytes::empty().into_bytes()),
+    ) {
         Ok(()) => true,
         Err(e) => {
             error!("Failed to add Orchard recipient: {}", e);
@@ -123,14 +129,14 @@ pub extern "C" fn orchard_builder_free(builder: *mut Builder) {
 #[no_mangle]
 pub extern "C" fn orchard_builder_build(
     builder: *mut Builder,
-) -> *mut Bundle<InProgress<Unproven, Unauthorized>, Amount> {
+) -> *mut Bundle<InProgress<Unproven, Unauthorized>, ZatBalance> {
     if builder.is_null() {
         error!("Called with null builder");
         return ptr::null_mut();
     }
     let builder = unsafe { Box::from_raw(builder) };
 
-    match builder.build::<Amount>(OsRng) {
+    match builder.build::<ZatBalance>(OsRng) {
         Ok(Some((bundle, _))) => Box::into_raw(Box::new(bundle)),
         Ok(None) => {
             // The C++ side only calls `orchard_builder_build` when it expects the
@@ -148,7 +154,7 @@ pub extern "C" fn orchard_builder_build(
 
 #[no_mangle]
 pub extern "C" fn orchard_unauthorized_bundle_free(
-    bundle: *mut Bundle<InProgress<Unproven, Unauthorized>, Amount>,
+    bundle: *mut Bundle<InProgress<Unproven, Unauthorized>, ZatBalance>,
 ) {
     if !bundle.is_null() {
         drop(unsafe { Box::from_raw(bundle) });
@@ -157,11 +163,11 @@ pub extern "C" fn orchard_unauthorized_bundle_free(
 
 #[no_mangle]
 pub extern "C" fn orchard_unauthorized_bundle_prove_and_sign(
-    bundle: *mut Bundle<InProgress<Unproven, Unauthorized>, Amount>,
+    bundle: *mut Bundle<InProgress<Unproven, Unauthorized>, ZatBalance>,
     keys: *const *const SpendingKey,
     keys_len: size_t,
     sighash: *const [u8; 32],
-) -> *mut Bundle<Authorized, Amount> {
+) -> *mut Bundle<Authorized, ZatBalance> {
     let bundle = unsafe { Box::from_raw(bundle) };
     let keys = unsafe { slice::from_raw_parts(keys, keys_len) };
     let sighash = unsafe { sighash.as_ref() }.expect("sighash pointer may not be null.");
@@ -229,7 +235,7 @@ pub(crate) fn shielded_signature_digest(
     let f_transparent = MapTransparent::parse(all_prev_outputs, &tx)?;
     let orchard_bundle = unsafe {
         orchard_bundle
-            .cast::<Bundle<InProgress<Unproven, Unauthorized>, Amount>>()
+            .cast::<Bundle<InProgress<Unproven, Unauthorized>, ZatBalance>>()
             .as_ref()
     };
 
