@@ -5,18 +5,17 @@ use std::{ptr, slice};
 use blake2b_simd::Hash;
 use libc::{c_uchar, size_t};
 use tracing::error;
+use transparent::sighash::TransparentAuthorizingContext;
 use zcash_encoding::Vector;
-use zcash_primitives::transaction::components::amount::NonNegativeAmount;
 use zcash_primitives::{
     consensus::BranchId,
     legacy::Script,
     transaction::{
-        sighash::{SignableInput, TransparentAuthorizingContext},
-        sighash_v5::v5_signature_hash,
-        txid::TxIdDigester,
-        Authorization, Transaction, TransactionData, TxDigests, TxVersion,
+        sighash::SignableInput, sighash_v5::v5_signature_hash, txid::TxIdDigester, Authorization,
+        Transaction, TransactionData, TxDigests, TxVersion,
     },
 };
+use zcash_protocol::value::Zatoshis;
 
 /// Calculates identifying and authorizing digests for the given transaction.
 ///
@@ -69,7 +68,7 @@ impl transparent::bundle::Authorization for TransparentAuth {
 }
 
 impl TransparentAuthorizingContext for TransparentAuth {
-    fn input_amounts(&self) -> Vec<NonNegativeAmount> {
+    fn input_amounts(&self) -> Vec<Zatoshis> {
         self.all_prev_outputs
             .iter()
             .map(|prevout| prevout.value)

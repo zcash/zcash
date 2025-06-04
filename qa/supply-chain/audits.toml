@@ -3131,7 +3131,7 @@ delta = "1.4.1 -> 1.4.2"
 criteria = "safe-to-deploy"
 user-id = 6289 # Jack Grigg (str4d)
 start = "2023-09-08"
-end = "2024-09-21"
+end = "2026-06-05"
 
 [[trusted.bridgetree]]
 criteria = "safe-to-deploy"
@@ -3331,6 +3331,12 @@ user-id = 6289 # Jack Grigg (str4d)
 start = "2021-08-31"
 end = "2026-01-02"
 
+[[trusted.zcash_encoding]]
+criteria = "safe-to-deploy"
+user-id = 169181 # Kris Nuttycombe (nuttycom)
+start = "2024-08-19"
+end = "2026-06-04"
+
 [[trusted.zcash_history]]
 criteria = "safe-to-deploy"
 user-id = 1244 # ebfull
@@ -3398,6 +3404,12 @@ start = "2024-01-27"
 end = "2025-04-16"
 
 [[trusted.zcash_spec]]
+criteria = "safe-to-deploy"
+user-id = 199950 # Daira-Emma Hopwood (daira)
+start = "2025-02-20"
+end = "2026-06-04"
+
+[[trusted.zcash_spec]]
 criteria = ["safe-to-deploy", "crypto-reviewed", "license-reviewed"]
 user-id = 6289 # Jack Grigg (str4d)
 start = "2023-12-07"
@@ -3414,3 +3426,9 @@ criteria = "safe-to-deploy"
 user-id = 6289 # Jack Grigg (str4d)
 start = "2023-12-06"
 end = "2025-03-18"
+
+[[trusted.zip32]]
+criteria = "safe-to-deploy"
+user-id = 169181 # Kris Nuttycombe (nuttycom)
+start = "2025-02-20"
+end = "2026-06-04"
