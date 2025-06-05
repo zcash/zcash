@@ -8,12 +8,13 @@ use std::io;
 use std::ptr;
 use std::slice;
 use tracing::error;
+use zcash_protocol::value::ZatBalance;
 
 use zcash_encoding::{Optional, Vector};
 use zcash_primitives::{
     consensus::BlockHeight,
     merkle_tree::{read_position, write_position},
-    transaction::{components::Amount, TxId},
+    transaction::TxId,
 };
 
 use orchard::{
@@ -385,7 +386,7 @@ impl Wallet {
     pub fn add_notes_from_bundle(
         &mut self,
         txid: &TxId,
-        bundle: &Bundle<Authorized, Amount>,
+        bundle: &Bundle<Authorized, ZatBalance>,
     ) -> BundleWalletInvolvement {
         let mut involvement = BundleWalletInvolvement::new();
         // If we recognize any of our notes as being consumed as inputs to actions
@@ -423,7 +424,7 @@ impl Wallet {
     pub fn load_bundle(
         &mut self,
         txid: &TxId,
-        bundle: &Bundle<Authorized, Amount>,
+        bundle: &Bundle<Authorized, ZatBalance>,
         hints: BTreeMap<usize, &IncomingViewingKey>,
         potential_spend_idxs: &[u32],
     ) -> Result<(), BundleLoadError> {
@@ -509,7 +510,7 @@ impl Wallet {
     pub fn add_potential_spends(
         &mut self,
         txid: &TxId,
-        bundle: &Bundle<Authorized, Amount>,
+        bundle: &Bundle<Authorized, ZatBalance>,
     ) -> Vec<usize> {
         // Check for spends of our notes by matching against the nullifiers
         // we're tracking, and when we detect one, associate the current
@@ -560,7 +561,7 @@ impl Wallet {
         block_height: BlockHeight,
         block_tx_idx: usize,
         txid: &TxId,
-        bundle: &Bundle<Authorized, Amount>,
+        bundle: &Bundle<Authorized, ZatBalance>,
     ) -> Result<(), WalletError> {
         // Check that the wallet is in the correct state to update the note commitment tree with
         // new outputs.
@@ -858,7 +859,7 @@ pub type SpendIndexPushCb = unsafe extern "C" fn(obj: Option<FFICallbackReceiver
 pub extern "C" fn orchard_wallet_add_notes_from_bundle(
     wallet: *mut Wallet,
     txid: *const [c_uchar; 32],
-    bundle: *const Bundle<Authorized, Amount>,
+    bundle: *const Bundle<Authorized, ZatBalance>,
     cb_receiver: Option<FFICallbackReceiver>,
     action_ivk_push_cb: Option<ActionIvkPushCb>,
     spend_idx_push_cb: Option<SpendIndexPushCb>,
@@ -889,7 +890,7 @@ pub extern "C" fn orchard_wallet_add_notes_from_bundle(
 pub extern "C" fn orchard_wallet_load_bundle(
     wallet: *mut Wallet,
     txid: *const [c_uchar; 32],
-    bundle: *const Bundle<Authorized, Amount>,
+    bundle: *const Bundle<Authorized, ZatBalance>,
     hints: *const FFIActionIvk,
     hints_len: usize,
     potential_spend_idxs: *const u32,
@@ -926,7 +927,7 @@ pub extern "C" fn orchard_wallet_append_bundle_commitments(
     block_height: u32,
     block_tx_idx: usize,
     txid: *const [c_uchar; 32],
-    bundle: *const Bundle<Authorized, Amount>,
+    bundle: *const Bundle<Authorized, ZatBalance>,
 ) -> bool {
     let wallet = unsafe { wallet.as_mut() }.expect("Wallet pointer may not be null");
     let txid = TxId::from_bytes(*unsafe { txid.as_ref() }.expect("txid may not be null."));
@@ -1111,7 +1112,7 @@ pub type OutputPushCB =
 #[no_mangle]
 pub extern "C" fn orchard_wallet_get_txdata(
     wallet: *const Wallet,
-    bundle: *const Bundle<Authorized, Amount>,
+    bundle: *const Bundle<Authorized, ZatBalance>,
     raw_ovks: *const [u8; 32],
     raw_ovks_len: usize,
     callback_receiver: Option<FFICallbackReceiver>,

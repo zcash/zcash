@@ -4,7 +4,7 @@ use group::{ff::Field, Group, GroupEncoding};
 use rand::{thread_rng, Rng};
 use sapling::value::ValueCommitment;
 use zcash_note_encryption::EphemeralKeyBytes;
-use zcash_primitives::transaction::components::Amount;
+use zcash_protocol::value::ZatBalance;
 
 pub(crate) fn test_only_invalid_sapling_bundle(
     spends: usize,
@@ -83,7 +83,7 @@ pub(crate) fn test_only_invalid_sapling_bundle(
     let bundle = sapling::Bundle::from_parts(
         spends,
         outputs,
-        Amount::from_i64(value_balance).unwrap(),
+        ZatBalance::from_i64(value_balance).unwrap(),
         sapling::bundle::Authorized { binding_sig },
     );
     Box::new(crate::sapling::Bundle(bundle))
