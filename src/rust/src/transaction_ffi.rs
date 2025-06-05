@@ -48,9 +48,7 @@ pub extern "C" fn zcash_transaction_digests(
         match tx.version() {
             // Pre-NU5 transaction formats don't have authorizing data commitments; when
             // included in the authDataCommitment tree, they use the [0xff; 32] value.
-            TxVersion::Sprout(_) | TxVersion::Overwinter | TxVersion::Sapling => {
-                *auth_digest_ret = [0xff; 32]
-            }
+            TxVersion::Sprout(_) | TxVersion::V3 | TxVersion::V4 => *auth_digest_ret = [0xff; 32],
             _ => auth_digest_ret.copy_from_slice(tx.auth_commitment().as_bytes()),
         }
     }
@@ -193,7 +191,7 @@ pub extern "C" fn zcash_transaction_precomputed_init(
     };
 
     match tx.version() {
-        TxVersion::Sprout(_) | TxVersion::Overwinter | TxVersion::Sapling => {
+        TxVersion::Sprout(_) | TxVersion::V3 | TxVersion::V4 => {
             // We don't support these legacy transaction formats in this API.
             ptr::null_mut()
         }
@@ -252,7 +250,7 @@ pub extern "C" fn zcash_transaction_zip244_signature_digest(
     };
     if matches!(
         precomputed_tx.tx.version(),
-        TxVersion::Sprout(_) | TxVersion::Overwinter | TxVersion::Sapling,
+        TxVersion::Sprout(_) | TxVersion::V3 | TxVersion::V4,
     ) {
         error!("Cannot calculate ZIP 244 digest for pre-v5 transaction");
         return false;

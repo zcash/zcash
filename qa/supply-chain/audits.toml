@@ -3401,7 +3401,7 @@ end = "2024-09-21"
 criteria = "safe-to-deploy"
 user-id = 169181 # Kris Nuttycombe (nuttycom)
 start = "2024-01-27"
-end = "2025-04-16"
+end = "2026-06-05"
 
 [[trusted.zcash_spec]]
 criteria = "safe-to-deploy"
