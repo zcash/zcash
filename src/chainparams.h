@@ -169,4 +169,11 @@ void UpdateRegtestPow(
  */
 void UpdateFundingStreamParameters(Consensus::FundingStreamIndex idx, Consensus::FundingStream fs);
 
+/**
+ * Allows modifying the regtest one-time lockbox disbursement parameters.
+ */
+void UpdateOnetimeLockboxDisbursementParameters(
+    Consensus::OnetimeLockboxDisbursementIndex idx,
+    Consensus::OnetimeLockboxDisbursement ld);
+
 #endif // BITCOIN_CHAINPARAMS_H

@@ -830,6 +830,14 @@ public:
         consensus.vFundingStreams[idx] = fs;
     }
 
+    void UpdateOnetimeLockboxDisbursementParameters(
+        Consensus::OnetimeLockboxDisbursementIndex idx,
+        Consensus::OnetimeLockboxDisbursement ld)
+    {
+        assert(idx >= Consensus::FIRST_ONETIME_LOCKBOX_DISBURSEMENT && idx < Consensus::MAX_ONETIME_LOCKBOX_DISBURSEMENTS);
+        consensus.vOnetimeLockboxDisbursements[idx] = ld;
+    }
+
     void UpdateRegtestPow(
         int64_t nPowMaxAdjustDown,
         int64_t nPowMaxAdjustUp,
@@ -930,6 +938,13 @@ void UpdateNetworkUpgradeParameters(Consensus::UpgradeIndex idx, int nActivation
 void UpdateFundingStreamParameters(Consensus::FundingStreamIndex idx, Consensus::FundingStream fs)
 {
     regTestParams.UpdateFundingStreamParameters(idx, fs);
+}
+
+void UpdateOnetimeLockboxDisbursementParameters(
+    Consensus::OnetimeLockboxDisbursementIndex idx,
+    Consensus::OnetimeLockboxDisbursement ld)
+{
+    regTestParams.UpdateOnetimeLockboxDisbursementParameters(idx, ld);
 }
 
 void UpdateRegtestPow(

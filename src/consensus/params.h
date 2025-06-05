@@ -182,9 +182,10 @@ public:
  * Being array indices, these MUST be numbered consecutively.
  */
 enum OnetimeLockboxDisbursementIndex : uint32_t {
+    LD_ZIPXXX_NU6_1,
     MAX_ONETIME_LOCKBOX_DISBURSEMENTS
 };
-const auto FIRST_ONETIME_LOCKBOX_DISBURSEMENT = MAX_ONETIME_LOCKBOX_DISBURSEMENTS;
+const auto FIRST_ONETIME_LOCKBOX_DISBURSEMENT = LD_ZIPXXX_NU6_1;
 
 /**
  * An amount of funds that the activation block for the given upgrade must
