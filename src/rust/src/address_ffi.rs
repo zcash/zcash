@@ -7,8 +7,9 @@ use std::{
 use libc::{c_char, c_void};
 use zcash_address::{
     unified::{self, Container, Encoding},
-    Network, ToAddress, TryFromAddress, ZcashAddress,
+    ToAddress, TryFromAddress, ZcashAddress,
 };
+use zcash_protocol::consensus::NetworkType;
 
 pub type UnifiedAddressObj = NonNull<c_void>;
 pub type AddOrchardReceiverCb =
@@ -27,11 +28,11 @@ pub type GetReceiverLenCb =
 pub type GetReceiverDataCb =
     unsafe extern "C" fn(ua: Option<UnifiedAddressObj>, index: usize, data: *mut u8, length: usize);
 
-pub(crate) fn network_from_cstr(network: *const c_char) -> Option<Network> {
+pub(crate) fn network_from_cstr(network: *const c_char) -> Option<NetworkType> {
     match unsafe { CStr::from_ptr(network) }.to_str().unwrap() {
-        "main" => Some(Network::Main),
-        "test" => Some(Network::Test),
-        "regtest" => Some(Network::Regtest),
+        "main" => Some(NetworkType::Main),
+        "test" => Some(NetworkType::Test),
+        "regtest" => Some(NetworkType::Regtest),
         s => {
             tracing::error!("Unsupported network type string '{}'", s);
             None
@@ -40,7 +41,7 @@ pub(crate) fn network_from_cstr(network: *const c_char) -> Option<Network> {
 }
 
 struct UnifiedAddressHelper {
-    net: Network,
+    net: NetworkType,
     ua: unified::Address,
 }
 
@@ -48,7 +49,7 @@ impl TryFromAddress for UnifiedAddressHelper {
     type Error = ();
 
     fn try_from_unified(
-        net: Network,
+        net: NetworkType,
         ua: unified::Address,
     ) -> Result<Self, zcash_address::ConversionError<Self::Error>> {
         Ok(Self { net, ua })
@@ -59,7 +60,7 @@ impl UnifiedAddressHelper {
     #[allow(clippy::too_many_arguments)]
     fn into_cpp(
         self,
-        network: Network,
+        network: NetworkType,
         ua_obj: Option<UnifiedAddressObj>,
         orchard_cb: Option<AddOrchardReceiverCb>,
         sapling_cb: Option<AddReceiverCb>,

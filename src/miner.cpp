@@ -155,6 +155,18 @@ public:
                 // Founders reward ends without replacement if Canopy is not activated by the
                 // last Founders' Reward block height + 1.
             }
+
+            if (chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU6_1)) {
+                auto disbursements = consensus.GetLockboxDisbursementsForHeight(nHeight);
+                if (!disbursements.empty()) {
+                    LogPrint("pow", "%s: Constructing one-time lockbox disbursement outputs for height %d", __func__, nHeight);
+                    for (const auto& disbursement : disbursements) {
+                        LogPrint("pow", "%s: Adding transparent lockbox disbursement output of value %d",
+                                 __func__, disbursement.GetAmount());
+                        mtx.vout.emplace_back(disbursement.GetAmount(), disbursement.GetRecipient());
+                    }
+                }
+            }
         }
         LogPrint("pow", "%s: Miner reward at height %d is %d", __func__, nHeight, miner_reward);
 
