@@ -437,6 +437,10 @@ public:
         reinterpret_cast<std::vector<uint256>*>(txidsRet)->push_back(txid_out);
     }
 
+    bool IsNullifierFromMe(const std::array<uint8_t, 32>& nullifier) const {
+        return orchard_wallet_is_nullifier_from_me(inner.get(), nullifier.data());
+    }
+
     std::vector<uint256> GetPotentialSpendsFromNullifier(const uint256& nullifier) const {
         std::vector<uint256> result;
         orchard_wallet_get_potential_spends_from_nullifier(

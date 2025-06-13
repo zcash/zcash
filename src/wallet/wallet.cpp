@@ -4082,6 +4082,11 @@ bool CWallet::IsFromMe(const CTransaction& tx) const
             return true;
         }
     }
+    for (const auto& action : tx.GetOrchardBundle().GetDetails()->actions()) {
+        if (orchardWallet.IsNullifierFromMe(action.nullifier())) {
+            return true;
+        }
+    }
     return false;
 }
 
@@ -4978,6 +4983,11 @@ bool CWalletTx::IsFromMe(const isminefilter& filter) const
     }
     for (const auto& spend : GetSaplingSpends()) {
         if (pwallet->IsSaplingNullifierFromMe(spend.nullifier())) {
+            return true;
+        }
+    }
+    for (const auto& action : GetOrchardBundle().GetDetails()->actions()) {
+        if (pwallet->orchardWallet.IsNullifierFromMe(action.nullifier())) {
             return true;
         }
     }

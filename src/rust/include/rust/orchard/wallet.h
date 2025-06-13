@@ -335,6 +335,13 @@ bool orchard_wallet_get_txdata(
         push_output_t push_output_cb
         );
 
+/**
+ * Returns true if this nullifier belongs to one of the notes in our wallet.
+ */
+bool orchard_wallet_is_nullifier_from_me(
+        const OrchardWalletPtr* wallet,
+        const unsigned char *nullifier);
+
 typedef void (*push_txid_callback_t)(void* resultVector, unsigned char txid[32]);
 
 /**
