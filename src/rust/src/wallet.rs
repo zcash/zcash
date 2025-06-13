@@ -1183,6 +1183,18 @@ pub extern "C" fn orchard_wallet_get_txdata(
     }
 }
 
+#[no_mangle]
+pub extern "C" fn orchard_wallet_is_nullifier_from_me(
+    wallet: *const Wallet,
+    nullifier: *const [c_uchar; 32],
+) -> bool {
+    let wallet = unsafe { wallet.as_ref() }.expect("Wallet pointer may not be null.");
+    let nullifier =
+        Nullifier::from_bytes(unsafe { nullifier.as_ref() }.expect("nullifier may not be null."));
+
+    wallet.nullifiers.contains_key(&nullifier.unwrap())
+}
+
 pub type PushTxId = unsafe extern "C" fn(obj: Option<FFICallbackReceiver>, txid: *const [u8; 32]);
 
 #[no_mangle]
