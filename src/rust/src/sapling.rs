@@ -27,11 +27,12 @@ use zcash_primitives::{
     memo::MemoBytes,
     merkle_tree::merkle_path_from_slice,
     transaction::{
-        components::{sapling as sapling_serialization, Amount},
+        components::sapling as sapling_serialization,
         txid::{BlockTxCommitmentDigester, TxIdDigester},
         Authorized, Transaction, TransactionDigest,
     },
 };
+use zcash_protocol::value::ZatBalance;
 
 use super::GROTH_PROOF_SIZE;
 use super::{
@@ -124,7 +125,9 @@ impl Output {
 }
 
 #[derive(Clone)]
-pub(crate) struct Bundle(pub(crate) Option<sapling::Bundle<sapling::bundle::Authorized, Amount>>);
+pub(crate) struct Bundle(
+    pub(crate) Option<sapling::Bundle<sapling::bundle::Authorized, ZatBalance>>,
+);
 
 pub(crate) fn none_sapling_bundle() -> Box<Bundle> {
     Box::new(Bundle(None))
@@ -170,7 +173,9 @@ impl Bundle {
             .map_err(|e| format!("Failed to serialize Sapling bundle: {}", e))
     }
 
-    pub(crate) fn inner(&self) -> Option<&sapling::Bundle<sapling::bundle::Authorized, Amount>> {
+    pub(crate) fn inner(
+        &self,
+    ) -> Option<&sapling::Bundle<sapling::bundle::Authorized, ZatBalance>> {
         self.0.as_ref()
     }
 
@@ -247,14 +252,14 @@ impl Bundle {
 }
 
 pub(crate) struct BundleAssembler {
-    value_balance: Amount,
+    value_balance: ZatBalance,
     shielded_spends: Vec<sapling::bundle::SpendDescription<sapling::bundle::Authorized>>,
     shielded_outputs: Vec<sapling::bundle::OutputDescription<[u8; 192]>>, // GROTH_PROOF_SIZE
 }
 
 pub(crate) fn new_bundle_assembler() -> Box<BundleAssembler> {
     Box::new(BundleAssembler {
-        value_balance: Amount::zero(),
+        value_balance: ZatBalance::zero(),
         shielded_spends: vec![],
         shielded_outputs: vec![],
     })
@@ -450,7 +455,7 @@ impl SaplingBuilder {
         let _ = MemoBytes::from_bytes(&memo).map_err(|e| format!("Invalid memo: {}", e))?;
 
         self.builder
-            .add_output(ovk, to, value, Some(memo))
+            .add_output(ovk, to, value, memo)
             .map_err(|e| format!("Failed to add Sapling recipient: {}", e))
     }
 
@@ -459,7 +464,7 @@ impl SaplingBuilder {
         let prover = crate::sapling::StaticTxProver;
         let rng = OsRng;
         let bundle = builder
-            .build::<StaticTxProver, StaticTxProver, _, Amount>(&extsks, rng)
+            .build::<StaticTxProver, StaticTxProver, _, ZatBalance>(&extsks, rng)
             .map_err(|e| format!("Failed to build Sapling bundle: {}", e))?
             .map(|(bundle, _)| bundle.create_proofs(&prover, &prover, rng, ()));
         Ok(SaplingUnauthorizedBundle {
@@ -473,7 +478,7 @@ pub(crate) struct SaplingUnauthorizedBundle {
     pub(crate) bundle: Option<
         sapling::Bundle<
             sapling::builder::InProgress<sapling::builder::Proven, sapling::builder::Unsigned>,
-            Amount,
+            ZatBalance,
         >,
     >,
     signing_keys: Vec<SpendAuthorizingKey>,
@@ -614,7 +619,7 @@ impl Verifier {
         binding_sig: &[u8; 64],
         sighash_value: &[u8; 32],
     ) -> bool {
-        let value_balance = match Amount::from_i64(value_balance) {
+        let value_balance = match ZatBalance::from_i64(value_balance) {
             Ok(vb) => vb,
             Err(_) => return false,
         };
