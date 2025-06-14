@@ -3,7 +3,6 @@ use sapling::{
     zip32::{sapling_address, sapling_derive_internal_fvk, sapling_find_address},
     Diversifier,
 };
-use zcash_primitives::zip32;
 
 #[cxx::bridge]
 mod ffi {

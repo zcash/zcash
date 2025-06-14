@@ -55,7 +55,8 @@ public:
             consensus.vUpgrades[Consensus::UPGRADE_HEARTWOOD].nActivationHeight,
             consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight,
             consensus.vUpgrades[Consensus::UPGRADE_NU5].nActivationHeight,
-            consensus.vUpgrades[Consensus::UPGRADE_NU6].nActivationHeight);
+            consensus.vUpgrades[Consensus::UPGRADE_NU6].nActivationHeight,
+            consensus.vUpgrades[Consensus::UPGRADE_NU6_1].nActivationHeight);
     }
     const CMessageHeader::MessageStartChars& MessageStart() const { return pchMessageStart; }
     const std::vector<unsigned char>& AlertKey() const { return vAlertPubKey; }
@@ -167,5 +168,12 @@ void UpdateRegtestPow(
  * Allows modifying the regtest funding stream parameters.
  */
 void UpdateFundingStreamParameters(Consensus::FundingStreamIndex idx, Consensus::FundingStream fs);
+
+/**
+ * Allows modifying the regtest one-time lockbox disbursement parameters.
+ */
+void UpdateOnetimeLockboxDisbursementParameters(
+    Consensus::OnetimeLockboxDisbursementIndex idx,
+    Consensus::OnetimeLockboxDisbursement ld);
 
 #endif // BITCOIN_CHAINPARAMS_H
