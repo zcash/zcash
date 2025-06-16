@@ -53,6 +53,7 @@ class CoinbaseFundingStreamsTest(BitcoinTestFramework):
             nuparams(CANOPY_BRANCH_ID, 3),
             nuparams(NU6_BRANCH_ID, 4),
             "-nurejectoldversions=false",
+            "-preferredtxversion=4",
             "-allowdeprecated=getnewaddress",
             "-allowdeprecated=z_getnewaddress",
             "-allowdeprecated=z_getbalance",
