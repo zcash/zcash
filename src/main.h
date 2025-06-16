@@ -245,7 +245,7 @@ static const signed int DEFAULT_CHECKBLOCKS = MIN_BLOCKS_TO_KEEP;
 static const unsigned int DEFAULT_CHECKLEVEL = 3;
 
 /** Prefer to create v4 transactions. */
-static const int32_t DEFAULT_PREFERRED_TX_VERSION = SAPLING_TX_VERSION;
+static const int32_t DEFAULT_PREFERRED_TX_VERSION = ZIP225_TX_VERSION;
 static const std::set<int32_t> SUPPORTED_TX_VERSIONS = { SAPLING_TX_VERSION, ZIP225_TX_VERSION };
 extern int32_t nPreferredTxVersion;
 

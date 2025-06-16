@@ -602,7 +602,7 @@ Compatibility options:
 
   -preferredtxversion
        Preferentially create transactions having the specified version when
-       possible (default: 4)
+       possible (default: 5)
 
 """
 
