@@ -8,7 +8,8 @@ use orchard::{
     primitives::redpallas::{Signature, SpendAuth},
 };
 use zcash_note_encryption::try_output_recovery_with_ovk;
-use zcash_primitives::transaction::components::{orchard as orchard_serialization, Amount};
+use zcash_primitives::transaction::components::orchard as orchard_serialization;
+use zcash_protocol::value::ZatBalance;
 
 use crate::{bridge::ffi, streams::CppStream};
 
@@ -49,7 +50,7 @@ impl Action {
 }
 
 #[derive(Clone)]
-pub struct Bundle(Option<orchard::Bundle<Authorized, Amount>>);
+pub struct Bundle(Option<orchard::Bundle<Authorized, ZatBalance>>);
 
 pub(crate) fn none_orchard_bundle() -> Box<Bundle> {
     Box::new(Bundle(None))
@@ -71,7 +72,7 @@ impl Bundle {
         Box::new(Bundle(if bundle.is_null() {
             None
         } else {
-            let bundle: *mut orchard::Bundle<Authorized, Amount> = bundle.cast();
+            let bundle: *mut orchard::Bundle<Authorized, ZatBalance> = bundle.cast();
             Some(*Box::from_raw(bundle))
         }))
     }
@@ -97,13 +98,13 @@ impl Bundle {
             .map_err(|e| format!("Failed to serialize Orchard bundle: {}", e))
     }
 
-    pub(crate) fn inner(&self) -> Option<&orchard::Bundle<Authorized, Amount>> {
+    pub(crate) fn inner(&self) -> Option<&orchard::Bundle<Authorized, ZatBalance>> {
         self.0.as_ref()
     }
 
     pub(crate) fn as_ptr(&self) -> *const ffi::OrchardBundlePtr {
         if let Some(bundle) = self.inner() {
-            let ret: *const orchard::Bundle<Authorized, Amount> = bundle;
+            let ret: *const orchard::Bundle<Authorized, ZatBalance> = bundle;
             ret.cast()
         } else {
             ptr::null()

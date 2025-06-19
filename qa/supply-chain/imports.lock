@@ -2,11 +2,11 @@
 # cargo-vet imports lock
 
 [[publisher.bridgetree]]
-version = "0.6.0"
-when = "2024-09-25"
-user-id = 169181
-user-login = "nuttycom"
-user-name = "Kris Nuttycombe"
+version = "0.7.0"
+when = "2025-06-05"
+user-id = 6289
+user-login = "str4d"
+user-name = "Jack Grigg"
 
 [[publisher.bumpalo]]
 version = "3.16.0"
@@ -57,29 +57,29 @@ user-id = 1244
 user-login = "ebfull"
 
 [[publisher.incrementalmerkletree]]
-version = "0.7.1"
-when = "2024-12-16"
+version = "0.8.2"
+when = "2025-02-01"
 user-id = 169181
 user-login = "nuttycom"
 user-name = "Kris Nuttycombe"
 
 [[publisher.incrementalmerkletree-testing]]
-version = "0.2.0"
-when = "2024-10-04"
+version = "0.3.0"
+when = "2025-01-31"
 user-id = 169181
 user-login = "nuttycom"
 user-name = "Kris Nuttycombe"
 
 [[publisher.orchard]]
-version = "0.10.2"
-when = "2025-05-08"
+version = "0.11.0"
+when = "2025-02-21"
 user-id = 169181
 user-login = "nuttycom"
 user-name = "Kris Nuttycombe"
 
 [[publisher.sapling-crypto]]
-version = "0.4.0"
-when = "2024-12-17"
+version = "0.5.0"
+when = "2025-02-21"
 user-id = 169181
 user-login = "nuttycom"
 user-name = "Kris Nuttycombe"
@@ -169,18 +169,18 @@ user-login = "kennykerr"
 user-name = "Kenny Kerr"
 
 [[publisher.zcash_address]]
-version = "0.6.2"
-when = "2024-12-13"
-user-id = 6289
-user-login = "str4d"
-user-name = "Jack Grigg"
+version = "0.8.0"
+when = "2025-06-02"
+user-id = 169181
+user-login = "nuttycom"
+user-name = "Kris Nuttycombe"
 
 [[publisher.zcash_encoding]]
-version = "0.2.2"
-when = "2024-12-13"
-user-id = 6289
-user-login = "str4d"
-user-name = "Jack Grigg"
+version = "0.3.0"
+when = "2025-02-21"
+user-id = 169181
+user-login = "nuttycom"
+user-name = "Kris Nuttycombe"
 
 [[publisher.zcash_history]]
 version = "0.4.0"
@@ -190,46 +190,46 @@ user-login = "str4d"
 user-name = "Jack Grigg"
 
 [[publisher.zcash_primitives]]
-version = "0.21.0"
-when = "2024-12-17"
+version = "0.23.0"
+when = "2025-06-02"
 user-id = 169181
 user-login = "nuttycom"
 user-name = "Kris Nuttycombe"
 
 [[publisher.zcash_proofs]]
-version = "0.21.0"
-when = "2024-12-17"
+version = "0.23.0"
+when = "2025-06-02"
 user-id = 169181
 user-login = "nuttycom"
 user-name = "Kris Nuttycombe"
 
 [[publisher.zcash_protocol]]
-version = "0.4.3"
-when = "2024-12-17"
+version = "0.5.2"
+when = "2025-06-02"
 user-id = 169181
 user-login = "nuttycom"
 user-name = "Kris Nuttycombe"
 
 [[publisher.zcash_spec]]
-version = "0.1.2"
-when = "2024-10-22"
-user-id = 6289
-user-login = "str4d"
-user-name = "Jack Grigg"
+version = "0.2.1"
+when = "2025-02-20"
+user-id = 199950
+user-login = "daira"
+user-name = "Daira-Emma Hopwood"
 
 [[publisher.zcash_transparent]]
-version = "0.1.0"
-when = "2024-12-17"
+version = "0.3.0"
+when = "2025-06-02"
 user-id = 169181
 user-login = "nuttycom"
 user-name = "Kris Nuttycombe"
 
 [[publisher.zip32]]
-version = "0.1.3"
-when = "2024-12-13"
-user-id = 6289
-user-login = "str4d"
-user-name = "Jack Grigg"
+version = "0.2.0"
+when = "2025-02-20"
+user-id = 169181
+user-login = "nuttycom"
+user-name = "Kris Nuttycombe"
 
 [[audits.bytecode-alliance.wildcard-audits.bumpalo]]
 who = "Nick Fitzgerald <fitzgen@gmail.com>"
@@ -2087,6 +2087,34 @@ criteria = "safe-to-deploy"
 delta = "2.7.2 -> 2.7.4"
 aggregated-from = "https://raw.githubusercontent.com/zcash/librustzcash/main/supply-chain/audits.toml"
 
+[[audits.zcash.audits.nonempty]]
+who = "Kris Nuttycombe <kris@nutty.land>"
+criteria = "safe-to-deploy"
+version = "0.11.0"
+notes = """
+Additional use of `unsafe` to wrap `NonZeroUsize::new_unchecked`; in both cases
+the argument to this method is `<Vec length or capacity> + 1`; in general this
+is safe with the exception that if an existing `Vec` has length or capacity
+`usize::MAX` this could wrap into zero; it would be better to use the safe
+operation and then `expect` to generate a panic, rather than risk undefined
+behavior.
+
+Additions are:
+- no_std support
+- sorting
+- `nonzero` module (just wrappers
+- `serde` support
+- `nonempty macro` (trivial, verified safe)
+"""
+aggregated-from = "https://raw.githubusercontent.com/zcash/librustzcash/main/supply-chain/audits.toml"
+
+[[audits.zcash.audits.redjubjub]]
+who = "Kris Nuttycombe <kris@nutty.land>"
+criteria = "safe-to-deploy"
+delta = "0.7.0 -> 0.8.0"
+notes = "This release adds `no-std` compatibility."
+aggregated-from = "https://raw.githubusercontent.com/zcash/librustzcash/main/supply-chain/audits.toml"
+
 [[audits.zcash.audits.regex-automata]]
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
@@ -2097,12 +2125,6 @@ aggregated-from = "https://raw.githubusercontent.com/zcash/librustzcash/main/sup
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "0.8.3 -> 0.8.4"
-aggregated-from = "https://raw.githubusercontent.com/zcash/librustzcash/main/supply-chain/audits.toml"
-
-[[audits.zcash.audits.secp256k1]]
-who = "Jack Grigg <jack@electriccoin.co>"
-criteria = "safe-to-deploy"
-delta = "0.26.0 -> 0.27.0"
 aggregated-from = "https://raw.githubusercontent.com/zcash/librustzcash/main/supply-chain/audits.toml"
 
 [[audits.zcash.audits.semver]]
