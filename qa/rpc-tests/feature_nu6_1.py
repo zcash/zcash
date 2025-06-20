@@ -76,9 +76,11 @@ class OnetimeLockboxDisbursementTest(BitcoinTestFramework):
         self.nodes[1].stop()
         bitcoind_processes[1].wait()
         new_args = [
-            fundingstream(3, 4, 12, [fs_transparent, fs_transparent]),   # FS_FPF_ZCG: 8%
-            fundingstream(4, 4, 12, ["DEFERRED_POOL", "DEFERRED_POOL"]), # FS_DEFERRED: 12%
-            onetimelockboxdisbursement(0, NU6_1_BRANCH_ID, ld_amount * COIN, ld_p2sh)
+            fundingstream(3, 4, 8, [fs_transparent, fs_transparent]),   # FS_FPF_ZCG: 8%
+            fundingstream(4, 4, 8, ["DEFERRED_POOL", "DEFERRED_POOL"]), # FS_DEFERRED: 12%
+            onetimelockboxdisbursement(0, NU6_1_BRANCH_ID, ld_amount * COIN, ld_p2sh),
+            fundingstream(5, 8, 12, [fs_transparent, fs_transparent]),   # FS_FPF_ZCG_H3: 8%
+            fundingstream(6, 8, 12, ["DEFERRED_POOL", "DEFERRED_POOL"]), # FS_CCF_H3: 12%
         ]
         self.nodes[0] = self.start_node_with(0, new_args)
         self.nodes[1] = self.start_node_with(1, new_args)
