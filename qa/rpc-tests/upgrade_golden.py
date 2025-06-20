@@ -11,7 +11,15 @@ from test_framework.util import (
 )
 from test_framework.util import (
     nuparams,
-    OVERWINTER_BRANCH_ID, SAPLING_BRANCH_ID, BLOSSOM_BRANCH_ID, HEARTWOOD_BRANCH_ID, CANOPY_BRANCH_ID, NU5_BRANCH_ID, NU6_BRANCH_ID)
+    OVERWINTER_BRANCH_ID,
+    SAPLING_BRANCH_ID,
+    BLOSSOM_BRANCH_ID,
+    HEARTWOOD_BRANCH_ID,
+    CANOPY_BRANCH_ID,
+    NU5_BRANCH_ID,
+    NU6_BRANCH_ID,
+    NU6_1_BRANCH_ID,
+)
 
 import shutil
 import logging
@@ -25,6 +33,7 @@ HAS_HEARTWOOD = HAS_BLOSSOM + [nuparams(HEARTWOOD_BRANCH_ID, 40)]
 HAS_CANOPY    = HAS_HEARTWOOD + [nuparams(CANOPY_BRANCH_ID, 50)]
 HAS_NU5       = HAS_CANOPY + [nuparams(NU5_BRANCH_ID, 60)]
 HAS_NU6       = HAS_NU5 + [nuparams(NU6_BRANCH_ID, 70)]
+HAS_NU6_1     = HAS_NU6 + [nuparams(NU6_1_BRANCH_ID, 80)]
 
 class Upgrade():
     def __init__(self, h, p, a):
@@ -39,6 +48,7 @@ class UpgradeGoldenTest(BitcoinTestFramework):
                         , Upgrade(55, os.path.dirname(os.path.realpath(__file__))+"/golden/canopy.tar.gz", HAS_CANOPY)
                         , Upgrade(65, os.path.dirname(os.path.realpath(__file__))+"/golden/nu5.tar.gz", HAS_NU5)
                         , Upgrade(75, os.path.dirname(os.path.realpath(__file__))+"/golden/nu6.tar.gz", HAS_NU6)
+                        , Upgrade(85, os.path.dirname(os.path.realpath(__file__))+"/golden/nu6.1.tar.gz", HAS_NU6_1)
                         ]
 
         logging.info("Initializing test directory "+self.options.tmpdir)

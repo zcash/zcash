@@ -1365,6 +1365,55 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         }
     }
 
+    if (!mapMultiArgs["-onetimelockboxdisbursement"].empty()) {
+        // Allow overriding network upgrade parameters for testing
+        if (chainparams.NetworkIDString() != "regtest") {
+            return InitError("One-time lockbox disbursement parameters may only be overridden on regtest.");
+        }
+        const std::vector<std::string>& disbursements = mapMultiArgs["-onetimelockboxdisbursement"];
+        for (auto i : disbursements) {
+            std::vector<std::string> vDisbursementParams;
+            boost::split(vDisbursementParams, i, boost::is_any_of(":"));
+            if (vDisbursementParams.size() != 4) {
+                return InitError("One-time lockbox disbursement parameters malformed, expecting disbursementId:hexBranchId:zatoshis:p2shAddress");
+            }
+            int nDisbursementId;
+            if (!ParseInt32(vDisbursementParams[0], &nDisbursementId) ||
+                    nDisbursementId < Consensus::FIRST_ONETIME_LOCKBOX_DISBURSEMENT ||
+                    nDisbursementId >= Consensus::MAX_ONETIME_LOCKBOX_DISBURSEMENTS) {
+                return InitError(strprintf("Invalid disbursementId (%s)", vDisbursementParams[0]));
+            }
+
+            Consensus::UpgradeIndex upgrade;
+            // One-time lockbox disbursements are supported from NU6.1 onwards.
+            bool found = false;
+            for (auto i = (uint32_t) Consensus::UPGRADE_NU6_1; i < Consensus::MAX_NETWORK_UPGRADES; ++i)
+            {
+                if (vDisbursementParams[1].compare(HexInt(NetworkUpgradeInfo[i].nBranchId)) == 0) {
+                    upgrade = (Consensus::UpgradeIndex) i;
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                return InitError(strprintf("Invalid network upgrade (%s)", vDisbursementParams[1]));
+            }
+
+            CAmount zatoshis;
+            if (!ParseInt64(vDisbursementParams[2], &zatoshis)) {
+                return InitError(strprintf("Invalid one-time lockbox disbursement amount (%s)", vDisbursementParams[2]));
+            }
+
+            auto ld = Consensus::OnetimeLockboxDisbursement::Parse(
+                    chainparams.GetConsensus(), chainparams,
+                    upgrade, zatoshis, vDisbursementParams[3]);
+
+            UpdateOnetimeLockboxDisbursementParameters(
+                    (Consensus::OnetimeLockboxDisbursementIndex) nDisbursementId,
+                    ld);
+        }
+    }
+
 #ifdef ENABLE_MINING
     if (mapArgs.count("-mineraddress")) {
         KeyIO keyIO(chainparams);
