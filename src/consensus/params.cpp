@@ -46,6 +46,18 @@ namespace Consensus {
             .specification = "https://zips.z.cash/zip-0214",
             .valueNumerator = 12,
             .valueDenominator = 100,
+        },
+        {
+            .recipient = "Zcash Community Grants to third halving",
+            .specification = "https://zips.z.cash/zip-0214",
+            .valueNumerator = 8,
+            .valueDenominator = 100,
+        },
+        {
+            .recipient = "Coinholder-Controlled Fund to third halving",
+            .specification = "https://zips.z.cash/zip-0214",
+            .valueNumerator = 12,
+            .valueDenominator = 100,
         }
     };
     static constexpr bool validateFundingStreamInfo(uint32_t idx) {
@@ -274,6 +286,40 @@ namespace Consensus {
         return std::visit(GetFundingStreamOrThrow(), validationResult);
     };
 
+    OnetimeLockboxDisbursement OnetimeLockboxDisbursement::Parse(
+        const Consensus::Params& params,
+        const KeyConstants& keyConstants,
+        const UpgradeIndex upgrade,
+        const CAmount zatoshis,
+        const std::string& strAddress)
+    {
+        KeyIO keyIO(keyConstants);
+
+        if (upgrade < Consensus::UPGRADE_NU6_1) {
+            throw std::runtime_error("Cannot define one-time lockbox disbursements prior to NU6.1.");
+        }
+
+        // Parse the address string into concrete types.
+        auto addr = keyIO.DecodePaymentAddress(strAddress);
+        if (!addr.has_value()) {
+            throw std::runtime_error("One-time lockbox disbursement address was not a valid " PACKAGE_NAME " address.");
+        }
+
+        CScript recipient;
+        examine(addr.value(), match {
+            [&](const CScriptID& scriptId) {
+                recipient = GetScriptForDestination(scriptId);
+            },
+            [&](const auto& zaddr) {
+                throw std::runtime_error("One-time lockbox disbursement address was not a valid transparent P2SH address.");
+            }
+        });
+
+        // TODO: Consider verifying that the set of (recipient, amount) tuples
+        // are distinct from all possible funding stream tuples.
+        return OnetimeLockboxDisbursement(upgrade, zatoshis, recipient);
+    };
+
     void Params::AddZIP207FundingStream(
         const KeyConstants& keyConstants,
         FundingStreamIndex idx,
@@ -301,6 +347,18 @@ namespace Consensus {
                 endHeight,
                 recipients);
         vFundingStreams[idx] = std::visit(GetFundingStreamOrThrow(), validationResult);
+    };
+
+    void Params::AddZIPXXXLockboxDisbursement(
+        const KeyConstants& keyConstants,
+        OnetimeLockboxDisbursementIndex idx,
+        UpgradeIndex upgrade,
+        CAmount zatoshis,
+        const std::string& strAddress)
+    {
+        vOnetimeLockboxDisbursements[idx] = OnetimeLockboxDisbursement::Parse(
+                *this, keyConstants,
+                upgrade, zatoshis, strAddress);
     };
 
     CAmount Params::GetBlockSubsidy(int nHeight) const
@@ -384,6 +442,27 @@ namespace Consensus {
         }
 
         return requiredElements;
+    };
+
+    std::vector<OnetimeLockboxDisbursement> Params::GetLockboxDisbursementsForHeight(int nHeight) const
+    {
+        std::vector<OnetimeLockboxDisbursement> disbursements;
+
+        // Disbursements are disabled if NU6.1 is not active.
+        if (NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU6_1)) {
+            for (uint32_t idx = Consensus::FIRST_ONETIME_LOCKBOX_DISBURSEMENT; idx < Consensus::MAX_ONETIME_LOCKBOX_DISBURSEMENTS; idx++) {
+                // The following indexed access is safe as
+                // Consensus::MAX_ONETIME_LOCKBOX_DISBURSEMENTS is used
+                // in the definition of vOnetimeLockboxDisbursements.
+                auto ld = vOnetimeLockboxDisbursements[idx];
+
+                if (ld && GetActivationHeight(ld.value().GetUpgrade()) == nHeight) {
+                    disbursements.push_back(ld.value());
+                }
+            }
+        }
+
+        return disbursements;
     };
 
     FundingStreamRecipient FundingStream::Recipient(const Consensus::Params& params, int nHeight) const
