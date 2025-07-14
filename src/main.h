@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
-// Copyright (c) 2016-2023 The Zcash developers
+// Copyright (c) 2016-2025 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -60,8 +60,6 @@ class PrecomputedTransactionData;
 
 struct CNodeStateStats;
 
-/** Default for accepting alerts from the P2P network. */
-static const bool DEFAULT_ALERTS = true;
 /** Maximum reorg length we will accept before we shut down and alert the user. */
 static const unsigned int MAX_REORG_LENGTH = COINBASE_MATURITY - 1;
 /** Default for DEFAULT_WHITELISTRELAY. */
@@ -220,8 +218,6 @@ extern CFeeRate minRelayTxFee;
 extern CAmount maxTxFee;
 /** Limit on the number of unpaid actions a transaction can have to be accepted to the mempool. */
 extern CAmount nTxUnpaidActionLimit;
-/** Whether alert messages are processed. */
-extern bool fAlerts;
 /** If the tip is older than this (in seconds), the node is considered to be in initial block download. */
 extern int64_t nMaxTipAge;
 
