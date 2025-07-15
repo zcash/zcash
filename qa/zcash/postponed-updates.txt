@@ -57,9 +57,6 @@ bdb 18.1.40 2026-03-01
 
 # These have no important security or critical stability issues.
 native_zstd 1.5.7 2025-12-31
-native_ccache 4.11 2025-12-31
-native_ccache 4.11.1 2025-12-31
-native_ccache 4.11.2 2025-12-31
 native_cmake 4.0.0 2025-12-31
 native_cmake 4.0.1 2025-12-31
 native_cmake 4.0.2 2025-12-31
