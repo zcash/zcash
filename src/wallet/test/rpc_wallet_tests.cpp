@@ -1663,7 +1663,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
             TransparentCoinbasePolicy::Disallow);
     TransactionStrategy strategy(PrivacyPolicy::AllowRevealedRecipients);
 
-    builder.PrepareTransaction(*pwalletMain, selector, {}, testnetzaddr, chainActive, strategy, -1, 1)
+    (void)builder.PrepareTransaction(*pwalletMain, selector, {}, testnetzaddr, chainActive, strategy, -1, 1)
         .map_error([&](const auto& err) {
             // TODO: Provide `operator==` on `InputSelectionError` and use that here.
             BOOST_CHECK(std::holds_alternative<InvalidFeeError>(err));
@@ -1672,7 +1672,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
             BOOST_FAIL("Fee value of -1 expected to be out of the valid range of values.");
         });
 
-    builder.PrepareTransaction(*pwalletMain, selector, {}, testnetzaddr, chainActive, strategy, 1, 1)
+    (void)builder.PrepareTransaction(*pwalletMain, selector, {}, testnetzaddr, chainActive, strategy, 1, 1)
         .map_error([&](const auto& err) {
             // TODO: Provide `operator==` on `InputSelectionError` and use that here.
             BOOST_CHECK(examine(err, match {

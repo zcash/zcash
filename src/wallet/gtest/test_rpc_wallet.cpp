@@ -114,7 +114,7 @@ TEST(WalletRPCTests, PrepareTransaction)
             SpendableInputs inputs;
             inputs.utxos.emplace_back(&wtx, 0, std::nullopt, 100, true);
 
-            builder.PrepareTransaction(
+            (void)builder.PrepareTransaction(
                     *pwalletMain,
                     selector,
                     inputs,
@@ -203,7 +203,7 @@ TEST(WalletRPCTests, RPCZMergeToAddressInternals)
     inputs.utxos.emplace_back(&wtx, 0, std::nullopt, 100, true);
 
     // Can’t send to Sprout
-    builder.PrepareTransaction(
+    (void)builder.PrepareTransaction(
             *pwalletMain,
             selector,
             inputs,
@@ -223,7 +223,7 @@ TEST(WalletRPCTests, RPCZMergeToAddressInternals)
         .map([](const auto&) { EXPECT_TRUE(false); });
 
     // Insufficient funds
-    builder.PrepareTransaction(
+    (void)builder.PrepareTransaction(
             *pwalletMain,
             selector,
             inputs,
