@@ -60,9 +60,7 @@ native_zstd 1.5.7 2025-12-31
 native_ccache 4.11 2025-12-31
 native_ccache 4.11.1 2025-12-31
 native_ccache 4.11.2 2025-12-31
-native_cmake 3.31.4 2025-12-31
-native_cmake 3.31.5 2025-12-31
-native_cmake 3.31.6 2025-12-31
-native_cmake 3.31.7 2025-12-31
 native_cmake 4.0.0 2025-12-31
 native_cmake 4.0.1 2025-12-31
+native_cmake 4.0.2 2025-12-31
+native_cmake 4.0.3 2025-12-31
