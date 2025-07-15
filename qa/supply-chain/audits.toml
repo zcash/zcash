@@ -729,6 +729,11 @@ notes = """
   faster, but no longer resistant to HashDoS.
 """
 
+[[audits.cxx]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.158 -> 1.0.160"
+
 [[audits.cxxbridge-flags]]
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
@@ -804,6 +809,11 @@ delta = "1.0.135 -> 1.0.136"
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.146 -> 1.0.158"
+
+[[audits.cxxbridge-flags]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.158 -> 1.0.160"
 
 [[audits.cxxbridge-macro]]
 who = "Daira Hopwood <daira@jacaranda.org>"
@@ -907,6 +917,15 @@ delta = "1.0.128 -> 1.0.136"
 notes = """
 Changes to generated `unsafe` code are to add the new `unsafe` annotations added
 in Rust 1.82 to the `extern` blocks.
+"""
+
+[[audits.cxxbridge-macro]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.158 -> 1.0.160"
+notes = """
+Changes to generated code were to add support for `C-unwind` across the FFI.
+Also replaced an internal ordered map impl with the `indexmap` crate.
 """
 
 [[audits.der]]
