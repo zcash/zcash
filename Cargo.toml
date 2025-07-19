@@ -42,7 +42,7 @@ bls12_381 = "0.8"
 bridgetree = "0.7"
 byteorder = "1"
 crossbeam-channel = "0.5"
-getrandom = "0.2"
+getrandom = "0.3"
 group = "0.13"
 hex = "0.4"
 incrementalmerkletree = "0.8"
@@ -74,7 +74,7 @@ wagyu-zcash-parameters = "0.2"
 
 # Rust/C++ interop
 # The version needs to match depends/packages/native_cxxbridge.mk
-cxx = { version = "=1.0.158", features = ["c++17"] }
+cxx = { version = "=1.0.160", features = ["c++17"] }
 
 # Rust threading
 rayon = "1.5"

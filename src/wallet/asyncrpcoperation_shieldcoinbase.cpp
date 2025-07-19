@@ -194,7 +194,7 @@ Remaining AsyncRPCOperation_shieldcoinbase::prepare(CWallet& wallet) {
             fee_,
             nAnchorConfirmations);
 
-    preparationResult
+    (void)preparationResult
         .map_error([&](const InputSelectionError& err) {
             ThrowInputSelectionError(err, ztxoSelector_, strategy_);
         })

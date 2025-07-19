@@ -677,7 +677,7 @@ WalletTxBuilder::ResolveInputsAndPayments(
     std::optional<AddressResolutionError> resolutionError;
     for (const auto& payment : payments) {
         auto res = ResolvePayment(payment, canResolveOrchard, strategy, maxSaplingAvailable, maxOrchardAvailable, orchardOutputs);
-        res.map([&](const ResolvedPayment& rpayment) { resolvedPayments.emplace_back(rpayment); });
+        (void)res.map([&](const ResolvedPayment& rpayment) { resolvedPayments.emplace_back(rpayment); });
         if (!res.has_value()) {
             return tl::make_unexpected(res.error());
         }

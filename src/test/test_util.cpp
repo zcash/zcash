@@ -96,7 +96,7 @@ UniValue CallRPC(std::string args)
     }
     auto params = RPCConvertValues(strMethod, vArgs);
 
-    params.map_error([&](auto failure) {
+    (void)params.map_error([&](auto failure) {
         throw std::runtime_error(FormatConversionFailure(strMethod, failure));
     });
 

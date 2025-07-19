@@ -1,4 +1,4 @@
-use getrandom::getrandom;
+use getrandom::fill as getrandom;
 
 #[cxx::bridge]
 mod ffi {

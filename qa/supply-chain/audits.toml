@@ -18,6 +18,11 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "0.21.0 -> 0.22.0"
 
+[[audits.adler2]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "2.0.0 -> 2.0.1"
+
 [[audits.aead]]
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
@@ -145,6 +150,12 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "0.3.8 -> 0.3.9"
 notes = "Changes to `unsafe` lines are to make some existing `unsafe fn`s `const`."
+
+[[audits.autocfg]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.4.0 -> 1.5.0"
+notes = "Filesystem change is to remove the generated LLVM IR output file after probing."
 
 [[audits.backtrace]]
 who = "Jack Grigg <jack@electriccoin.co>"
@@ -401,6 +412,11 @@ criteria = "safe-to-deploy"
 delta = "2.0.1 -> 3.0.0"
 notes = "Changes to stdin FD handling look fine (moving to newer safer APIs)."
 
+[[audits.clearscreen]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "4.0.1 -> 4.0.2"
+
 [[audits.constant_time_eq]]
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = ["safe-to-deploy", "crypto-reviewed"]
@@ -584,6 +600,15 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "0.8.20 -> 0.8.21"
 
+[[audits.crunchy]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.2.3 -> 0.2.4"
+notes = """
+Build script change is to fix a bug where a path separator for an included file
+was being selected by the target OS instead of the host OS.
+"""
+
 [[audits.crypto-common]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = ["crypto-reviewed", "safe-to-deploy"]
@@ -729,6 +754,11 @@ notes = """
   faster, but no longer resistant to HashDoS.
 """
 
+[[audits.cxx]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.158 -> 1.0.160"
+
 [[audits.cxxbridge-flags]]
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
@@ -804,6 +834,11 @@ delta = "1.0.135 -> 1.0.136"
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.146 -> 1.0.158"
+
+[[audits.cxxbridge-flags]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.158 -> 1.0.160"
 
 [[audits.cxxbridge-macro]]
 who = "Daira Hopwood <daira@jacaranda.org>"
@@ -909,11 +944,25 @@ Changes to generated `unsafe` code are to add the new `unsafe` annotations added
 in Rust 1.82 to the `extern` blocks.
 """
 
+[[audits.cxxbridge-macro]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.158 -> 1.0.160"
+notes = """
+Changes to generated code were to add support for `C-unwind` across the FFI.
+Also replaced an internal ordered map impl with the `indexmap` crate.
+"""
+
 [[audits.der]]
 who = "Daira-Emma Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
 delta = "0.7.8 -> 0.7.9"
 notes = "The change to ignore RUSTSEC-2023-0071 is correct for this crate."
+
+[[audits.der]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.7.9 -> 0.7.10"
 
 [[audits.deranged]]
 who = "Jack Grigg <jack@electriccoin.co>"
@@ -1025,6 +1074,11 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "0.3.8 -> 0.3.9"
 notes = "Only affects `visionos` target, which is treated the same as `macos` etc."
+
+[[audits.errno]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.3.11 -> 0.3.13"
 
 [[audits.fastrand]]
 who = "Jack Grigg <jack@electriccoin.co>"
@@ -1272,6 +1326,12 @@ The following system implementations have additional `unsafe` code modifications
 - `windows`: Added `RtlGenRandom` fallback for non-UWP Windows.
 """
 
+[[audits.getrandom]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.2.15 -> 0.2.16"
+notes = "New support for Cygwin looks correct to me."
+
 [[audits.gimli]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -1361,6 +1421,11 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "0.14.27 -> 0.14.28"
 
+[[audits.hyper]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.14.30 -> 0.14.32"
+
 [[audits.indexmap]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -1418,6 +1483,15 @@ delta = "2.9.0 -> 2.10.0"
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "2.10.0 -> 2.10.1"
+
+[[audits.ipnet]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "2.10.1 -> 2.11.0"
+notes = """
+Introduces an implicit MSRV of 1.81 for no-std usage, but does not declare it as
+std usage continues to work with earlier Rust versions.
+"""
 
 [[audits.itoa]]
 who = "Jack Grigg <jack@z.cash>"
@@ -1536,6 +1610,12 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "1.0.7 -> 1.0.8"
 
+[[audits.link-cplusplus]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.9 -> 1.0.10"
+notes = "Only an MSRV bump (to 1.51); build script change is just formatting."
+
 [[audits.linux-raw-sys]]
 who = "Daira-Emma Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
@@ -1599,6 +1679,11 @@ code (but adapted to `u16` and `u8` reads, instead of `u32`).
 who = "Daira-Emma Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
 delta = "2.7.1 -> 2.7.2"
+
+[[audits.memchr]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "2.7.4 -> 2.7.5"
 
 [[audits.memoffset]]
 who = "Jack Grigg <jack@electriccoin.co>"
@@ -1755,6 +1840,11 @@ criteria = "safe-to-deploy"
 delta = "1.15.0 -> 1.16.0"
 notes = "New unsafe code calls AIX `getsystemcfg` API exposed by `libc` to access the SMT mode."
 
+[[audits.num_cpus]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.16.0 -> 1.17.0"
+
 [[audits.object]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -1884,6 +1974,11 @@ who = "Jack Grigg <thestr4d@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "0.11.1 -> 0.11.2"
 
+[[audits.phf]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.11.2 -> 0.11.3"
+
 [[audits.phf_codegen]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -1895,6 +1990,12 @@ who = "Jack Grigg <thestr4d@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "0.11.1 -> 0.11.2"
 
+[[audits.phf_codegen]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.11.2 -> 0.11.3"
+notes = "Only an MSRV bump (to 1.61)."
+
 [[audits.phf_generator]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -1905,6 +2006,11 @@ notes = "Just dependency and edition bumps and code formatting."
 who = "Jack Grigg <thestr4d@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "0.11.1 -> 0.11.2"
+
+[[audits.phf_generator]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.11.2 -> 0.11.3"
 
 [[audits.phf_shared]]
 who = "Jack Grigg <jack@z.cash>"
@@ -1920,6 +2026,12 @@ newtype around `str`.
 who = "Jack Grigg <thestr4d@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "0.11.1 -> 0.11.2"
+
+[[audits.phf_shared]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.11.2 -> 0.11.3"
+notes = "Bumped MSRV and dependency versions to remove an `unsafe` block."
 
 [[audits.pin-project-lite]]
 who = "Jack Grigg <jack@electriccoin.co>"
@@ -2047,6 +2159,15 @@ that is compiled with whatever `RUSTC` is set to (but the build script already
 relies on the `RUSTC` environment variable for inspecting the compiler version).
 """
 
+[[audits.proc-macro2]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.94 -> 1.0.95"
+notes = """
+Refactors code handling paths to source files, but AFAICT none of the affected
+code involves filesystem access.
+"""
+
 [[audits.proptest]]
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
@@ -2159,6 +2280,11 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.10.4 -> 1.10.5"
 
+[[audits.regex]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.10.6 -> 1.11.1"
+
 [[audits.regex-automata]]
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
@@ -2208,6 +2334,11 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "0.1.23 -> 0.1.24"
 
+[[audits.rustc-demangle]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.1.24 -> 0.1.25"
+
 [[audits.rustc_version]]
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
@@ -2238,6 +2369,12 @@ notes = "Cursory review."
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.18 -> 1.0.19"
+
+[[audits.rustversion]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.20 -> 1.0.21"
+notes = "Build script change is to fix building with `-Zfmt-debug=none`."
 
 [[audits.ryu]]
 who = "Jack Grigg <jack@electriccoin.co>"
@@ -2467,6 +2604,12 @@ delta = "2.1.0 -> 2.2.0"
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "0.3.10 -> 0.3.11"
+
+[[audits.siphasher]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.3.11 -> 1.0.1"
+notes = "No code changes, just stabilising the code in SemVer."
 
 [[audits.sketches-ddsketch]]
 who = "Jack Grigg <jack@z.cash>"
@@ -2714,6 +2857,11 @@ Adds `unsafe` code that makes an assumption that `ptr::null_mut::<Entry<T>>()` i
 of an `AtomicPtr<Entry<T>>`, but this is likely a correct assumption.
 """
 
+[[audits.thread_local]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.1.8 -> 1.1.9"
+
 [[audits.time]]
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
@@ -2955,6 +3103,12 @@ criteria = "safe-to-deploy"
 delta = "0.4.1 -> 0.5.0"
 notes = "I checked correctness of to_blocks which uses unsafe code in a safe function."
 
+[[audits.valuable]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.1.0 -> 0.1.1"
+notes = "Build script changes are for linting."
+
 [[audits.wagyu-zcash-parameters]]
 who = "Sean Bowe <ewillbefull@gmail.com>"
 criteria = ["safe-to-deploy", "crypto-reviewed"]
@@ -2989,6 +3143,15 @@ version = "0.2.0"
 who = "Sean Bowe <ewillbefull@gmail.com>"
 criteria = ["safe-to-deploy", "crypto-reviewed"]
 version = "0.2.0"
+
+[[audits.wait-timeout]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.2.0 -> 0.2.1"
+notes = """
+- Changes to `unsafe` code blocks are just formatting.
+- Changes to `extern fn`s are to declare them explicitly as `extern \"C\" fn`s.
+"""
 
 [[audits.want]]
 who = "Jack Grigg <jack@electriccoin.co>"
@@ -3143,7 +3306,7 @@ end = "2025-10-02"
 criteria = "safe-to-deploy"
 user-id = 6289 # Jack Grigg (str4d)
 start = "2020-06-26"
-end = "2024-09-21"
+end = "2026-07-16"
 
 [[trusted.f4jumble]]
 criteria = ["safe-to-deploy", "crypto-reviewed"]
@@ -3151,9 +3314,15 @@ user-id = 6289 # Jack Grigg (str4d)
 start = "2021-09-22"
 end = "2026-01-02"
 
+[[trusted.ff]]
+criteria = "safe-to-deploy"
+user-id = 6289 # Jack Grigg (str4d)
+start = "2021-08-11"
+end = "2026-07-16"
+
 [[trusted.halo2_gadgets]]
 criteria = ["safe-to-deploy", "crypto-reviewed"]
-user-id = 1244 # ebfull
+user-id = 1244
 start = "2022-05-10"
 end = "2024-09-21"
 
@@ -3176,14 +3345,20 @@ start = "2024-12-13"
 end = "2026-01-02"
 
 [[trusted.halo2_proofs]]
+criteria = "safe-to-deploy"
+user-id = 6289 # Jack Grigg (str4d)
+start = "2022-01-20"
+end = "2026-07-16"
+
+[[trusted.halo2_proofs]]
 criteria = ["safe-to-deploy", "crypto-reviewed"]
-user-id = 1244 # ebfull
+user-id = 1244
 start = "2022-05-10"
 end = "2024-09-21"
 
 [[trusted.incrementalmerkletree]]
 criteria = "safe-to-deploy"
-user-id = 1244 # ebfull
+user-id = 1244
 start = "2021-06-24"
 end = "2024-09-21"
 
@@ -3213,7 +3388,7 @@ end = "2025-10-02"
 
 [[trusted.orchard]]
 criteria = ["safe-to-deploy", "crypto-reviewed", "license-reviewed"]
-user-id = 1244 # ebfull
+user-id = 1244
 start = "2022-10-19"
 end = "2024-09-21"
 
@@ -3303,7 +3478,7 @@ end = "2025-07-19"
 
 [[trusted.zcash_address]]
 criteria = "safe-to-deploy"
-user-id = 1244 # ebfull
+user-id = 1244
 start = "2022-10-19"
 end = "2024-09-21"
 
@@ -3321,7 +3496,7 @@ end = "2025-08-26"
 
 [[trusted.zcash_encoding]]
 criteria = "safe-to-deploy"
-user-id = 1244 # ebfull
+user-id = 1244
 start = "2022-10-19"
 end = "2024-09-21"
 
@@ -3339,7 +3514,7 @@ end = "2026-06-04"
 
 [[trusted.zcash_history]]
 criteria = "safe-to-deploy"
-user-id = 1244 # ebfull
+user-id = 1244
 start = "2020-03-04"
 end = "2024-09-21"
 
@@ -3369,7 +3544,7 @@ end = "2025-08-26"
 
 [[trusted.zcash_primitives]]
 criteria = ["safe-to-deploy", "crypto-reviewed", "license-reviewed"]
-user-id = 1244 # ebfull
+user-id = 1244
 start = "2019-10-08"
 end = "2024-09-21"
 
