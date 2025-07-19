@@ -34,6 +34,7 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
             '-checkmempool',
             '-debug=mempool',
             '-blockmaxsize=4000',
+            '-preferredtxversion=4',
             '-allowdeprecated=getnewaddress',
             '-allowdeprecated=z_getnewaddress',
             '-allowdeprecated=z_getbalance',
