@@ -63,7 +63,6 @@ pub(crate) fn network(
             canopy: i32_to_optional_height(canopy),
             nu5: i32_to_optional_height(nu5),
             nu6: i32_to_optional_height(nu6),
-            #[cfg(zcash_unstable = "nu6.1")]
             nu6_1: i32_to_optional_height(nu6_1),
         }),
         _ => return Err("Unsupported network kind"),
