@@ -349,7 +349,7 @@ namespace Consensus {
         vFundingStreams[idx] = std::visit(GetFundingStreamOrThrow(), validationResult);
     };
 
-    void Params::AddZIPXXXLockboxDisbursement(
+    void Params::AddZIP271LockboxDisbursement(
         const KeyConstants& keyConstants,
         OnetimeLockboxDisbursementIndex idx,
         UpgradeIndex upgrade,

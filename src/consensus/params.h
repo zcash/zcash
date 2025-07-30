@@ -184,10 +184,10 @@ public:
  * Being array indices, these MUST be numbered consecutively.
  */
 enum OnetimeLockboxDisbursementIndex : uint32_t {
-    LD_ZIPXXX_NU6_1,
+    LD_ZIP271_NU6_1,
     MAX_ONETIME_LOCKBOX_DISBURSEMENTS
 };
-const auto FIRST_ONETIME_LOCKBOX_DISBURSEMENT = LD_ZIPXXX_NU6_1;
+const auto FIRST_ONETIME_LOCKBOX_DISBURSEMENT = LD_ZIP271_NU6_1;
 
 /**
  * An amount of funds that the activation block for the given upgrade must
@@ -393,7 +393,7 @@ struct Params {
      * too late in the consensus rules. We need to be able to calculate `lockboxValue` in
      * `SetChainPoolValues`, at which point we only know the block's height and contents.
      */
-    void AddZIPXXXLockboxDisbursement(
+    void AddZIP271LockboxDisbursement(
         const KeyConstants& keyConstants,
         OnetimeLockboxDisbursementIndex idx,
         UpgradeIndex upgrade,
