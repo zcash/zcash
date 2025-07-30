@@ -141,6 +141,9 @@ public:
             uint256S("0000000000d723156d9b65ffcf4984da7a19675ed7e2f06d9e5d5188af087bf8");
         consensus.vUpgrades[Consensus::UPGRADE_NU6].nProtocolVersion = 170120;
         consensus.vUpgrades[Consensus::UPGRADE_NU6].nActivationHeight = 2726400;
+        consensus.vUpgrades[Consensus::UPGRADE_NU6_1].nProtocolVersion = 170140;
+        consensus.vUpgrades[Consensus::UPGRADE_NU6_1].nActivationHeight =
+            Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
         consensus.vUpgrades[Consensus::UPGRADE_ZFUTURE].nProtocolVersion = 0x7FFFFFFF;
         consensus.vUpgrades[Consensus::UPGRADE_ZFUTURE].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
@@ -464,6 +467,9 @@ public:
             uint256S("0006d75c60b3093d1b671ff7da11c99ea535df9927c02e6ed9eb898605eb7381");
         consensus.vUpgrades[Consensus::UPGRADE_NU6].nProtocolVersion = 170110;
         consensus.vUpgrades[Consensus::UPGRADE_NU6].nActivationHeight = 2976000;
+        consensus.vUpgrades[Consensus::UPGRADE_NU6_1].nProtocolVersion = 170130;
+        consensus.vUpgrades[Consensus::UPGRADE_NU6_1].nActivationHeight =
+            Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
         consensus.vUpgrades[Consensus::UPGRADE_ZFUTURE].nProtocolVersion = 0x7FFFFFFF;
         consensus.vUpgrades[Consensus::UPGRADE_ZFUTURE].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
@@ -739,6 +745,9 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_NU6].nProtocolVersion = 170110;
         consensus.vUpgrades[Consensus::UPGRADE_NU6].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
+        consensus.vUpgrades[Consensus::UPGRADE_NU6_1].nProtocolVersion = 170130;
+        consensus.vUpgrades[Consensus::UPGRADE_NU6_1].nActivationHeight =
+            Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
         consensus.vUpgrades[Consensus::UPGRADE_ZFUTURE].nProtocolVersion = 0x7FFFFFFF;
         consensus.vUpgrades[Consensus::UPGRADE_ZFUTURE].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
@@ -819,6 +828,14 @@ public:
     {
         assert(idx >= Consensus::FIRST_FUNDING_STREAM && idx < Consensus::MAX_FUNDING_STREAMS);
         consensus.vFundingStreams[idx] = fs;
+    }
+
+    void UpdateOnetimeLockboxDisbursementParameters(
+        Consensus::OnetimeLockboxDisbursementIndex idx,
+        Consensus::OnetimeLockboxDisbursement ld)
+    {
+        assert(idx >= Consensus::FIRST_ONETIME_LOCKBOX_DISBURSEMENT && idx < Consensus::MAX_ONETIME_LOCKBOX_DISBURSEMENTS);
+        consensus.vOnetimeLockboxDisbursements[idx] = ld;
     }
 
     void UpdateRegtestPow(
@@ -921,6 +938,13 @@ void UpdateNetworkUpgradeParameters(Consensus::UpgradeIndex idx, int nActivation
 void UpdateFundingStreamParameters(Consensus::FundingStreamIndex idx, Consensus::FundingStream fs)
 {
     regTestParams.UpdateFundingStreamParameters(idx, fs);
+}
+
+void UpdateOnetimeLockboxDisbursementParameters(
+    Consensus::OnetimeLockboxDisbursementIndex idx,
+    Consensus::OnetimeLockboxDisbursement ld)
+{
+    regTestParams.UpdateOnetimeLockboxDisbursementParameters(idx, ld);
 }
 
 void UpdateRegtestPow(

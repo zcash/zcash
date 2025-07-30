@@ -99,6 +99,9 @@ def nuparams(branch_id, height):
 def fundingstream(idx, start_height, end_height, addrs):
     return '-fundingstream=%d:%d:%d:%s' % (idx, start_height, end_height, ",".join(addrs))
 
+def onetimelockboxdisbursement(idx, branch_id, zatoshis, addr):
+    return '-onetimelockboxdisbursement=%d:%x:%d:%s' % (idx, branch_id, zatoshis, addr)
+
 def ser_compactsize(n):
     if n < 253:
         return struct.pack("B", n)
