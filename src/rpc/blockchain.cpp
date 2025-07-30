@@ -1563,6 +1563,11 @@ UniValue getmempoolinfo(const UniValue& params, bool fHelp)
             "  \"size\": xxxxx                (numeric) Current tx count\n"
             "  \"bytes\": xxxxx               (numeric) Sum of all tx sizes\n"
             "  \"usage\": xxxxx               (numeric) Total memory usage for the mempool\n"
+            "  \"fullyNotified\": true|false  (boolean, regtest only)\n"
+            "                               Whether the node has finished notifying all\n"
+            "                               listeners/tests about every transaction currently\n"
+            "                               in the mempool. This key is returned only when the\n"
+            "                               node is running in regtest.\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("getmempoolinfo", "")
