@@ -183,8 +183,8 @@ user-id = 73222
 user-login = "wasmtime-publish"
 
 [[publisher.zcash_address]]
-version = "0.8.0"
-when = "2025-06-02"
+version = "0.9.0"
+when = "2025-07-31"
 user-id = 169181
 user-login = "nuttycom"
 user-name = "Kris Nuttycombe"
@@ -204,22 +204,22 @@ user-login = "str4d"
 user-name = "Jack Grigg"
 
 [[publisher.zcash_primitives]]
-version = "0.23.0"
-when = "2025-06-02"
+version = "0.24.0"
+when = "2025-07-31"
 user-id = 169181
 user-login = "nuttycom"
 user-name = "Kris Nuttycombe"
 
 [[publisher.zcash_proofs]]
-version = "0.23.0"
-when = "2025-06-02"
+version = "0.24.0"
+when = "2025-07-31"
 user-id = 169181
 user-login = "nuttycom"
 user-name = "Kris Nuttycombe"
 
 [[publisher.zcash_protocol]]
-version = "0.5.3"
-when = "2025-06-17"
+version = "0.6.0"
+when = "2025-07-31"
 user-id = 169181
 user-login = "nuttycom"
 user-name = "Kris Nuttycombe"
@@ -232,8 +232,8 @@ user-login = "daira"
 user-name = "Daira-Emma Hopwood"
 
 [[publisher.zcash_transparent]]
-version = "0.3.0"
-when = "2025-06-02"
+version = "0.4.0"
+when = "2025-07-31"
 user-id = 169181
 user-login = "nuttycom"
 user-name = "Kris Nuttycombe"

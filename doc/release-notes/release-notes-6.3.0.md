@@ -1,6 +1,27 @@
 Notable changes
 ===============
 
+Network Upgrade 6.1
+-------------------
+
+The code preparations for the Network Upgrade 6.1 consensus rules are finished and
+included in this release. The following ZIPs are being deployed:
+
+- [ZIP 271: Deferred Dev Fund Lockbox Disbursement](https://zips.z.cash/zip-0271)
+- [ZIP 1016: Community and Coinholder Funding Model](https://zips.z.cash/zip-1016) (partially)
+
+NU6.1 will activate on testnet at height **3,536,500**, and can also be activated
+at a specific height in regtest mode by setting the config option
+`-nuparams=4dec4df0:HEIGHT`.
+
+As with previous network upgrades, it is possible that backwards-incompatible
+changes might be made to the consensus rules in this testing phase, prior to
+setting the mainnet activation height. In the event that this happens, testnet
+will be rolled back in v6.10.0 and a second testnet activation will occur.
+
+See [ZIP 255](https://zips.z.cash/zip-0255) for additional information about the
+deployment process for NU6.1.
+
 Fixed Orchard bug in transparent balance APIs
 ---------------------------------------------
 

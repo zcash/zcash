@@ -469,8 +469,7 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_NU6].nProtocolVersion = 170110;
         consensus.vUpgrades[Consensus::UPGRADE_NU6].nActivationHeight = 2976000;
         consensus.vUpgrades[Consensus::UPGRADE_NU6_1].nProtocolVersion = 170130;
-        consensus.vUpgrades[Consensus::UPGRADE_NU6_1].nActivationHeight =
-            Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
+        consensus.vUpgrades[Consensus::UPGRADE_NU6_1].nActivationHeight = 3536500;
         consensus.vUpgrades[Consensus::UPGRADE_ZFUTURE].nProtocolVersion = 0x7FFFFFFF;
         consensus.vUpgrades[Consensus::UPGRADE_ZFUTURE].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
@@ -505,6 +504,7 @@ public:
         {
             auto canopyActivation = consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight;
             auto nu6Activation = consensus.vUpgrades[Consensus::UPGRADE_NU6].nActivationHeight;
+            auto nu6_1Activation = consensus.vUpgrades[Consensus::UPGRADE_NU6_1].nActivationHeight;
 
             // ZIP 214 Revision 0
             std::vector<std::string> bp_addresses = {
@@ -599,6 +599,50 @@ public:
                 Consensus::FS_DEFERRED,
                 nu6Activation,
                 3396000);
+
+            // ZIP 214 Revision 2
+            // FPF uses a single address repeated 27 times, once for each funding period.
+            // There are 27 periods because the start height is after the second halving
+            // on testnet and does not align with a period boundary.
+            std::vector<std::string> fpf_addresses_h3(27, "t2HifwjUj9uyxr9bknR8LFuQbc98c3vkXtu");
+            consensus.AddZIP207FundingStream(
+                keyConstants,
+                Consensus::FS_FPF_ZCG_H3,
+                nu6_1Activation,
+                4476000,
+                fpf_addresses_h3);
+            consensus.AddZIP207LockboxStream(
+                keyConstants,
+                Consensus::FS_CCF_H3,
+                nu6_1Activation,
+                4476000);
+
+            // ZIP 271
+            // For testing purposes, we split the lockbox contents into 10 equal chunks.
+            std::string nu6_1_kho_address = "t2RnBRiqrN1nW4ecZs1Fj3WWjNdnSs4kiX8";
+            static const CAmount nu6_1_disbursement_amount = 78750 * COIN;
+            static const CAmount nu6_1_chunk_amount = 7875 * COIN;
+            static constexpr auto nu6_1_chunks = {
+                Consensus::LD_ZIP271_NU6_1_CHUNK_1,
+                Consensus::LD_ZIP271_NU6_1_CHUNK_2,
+                Consensus::LD_ZIP271_NU6_1_CHUNK_3,
+                Consensus::LD_ZIP271_NU6_1_CHUNK_4,
+                Consensus::LD_ZIP271_NU6_1_CHUNK_5,
+                Consensus::LD_ZIP271_NU6_1_CHUNK_6,
+                Consensus::LD_ZIP271_NU6_1_CHUNK_7,
+                Consensus::LD_ZIP271_NU6_1_CHUNK_8,
+                Consensus::LD_ZIP271_NU6_1_CHUNK_9,
+                Consensus::LD_ZIP271_NU6_1_CHUNK_10,
+            };
+            static_assert(nu6_1_chunk_amount * nu6_1_chunks.size() == nu6_1_disbursement_amount);
+            for (auto idx : nu6_1_chunks) {
+                consensus.AddZIP271LockboxDisbursement(
+                    keyConstants,
+                    idx,
+                    Consensus::UPGRADE_NU6_1,
+                    nu6_1_chunk_amount,
+                    nu6_1_kho_address);
+            }
         }
 
         // On testnet we activate this rule 6 blocks after Blossom activation. From block 299188 and
