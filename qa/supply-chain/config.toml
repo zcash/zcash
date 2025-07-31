@@ -538,10 +538,6 @@ criteria = "safe-to-deploy"
 version = "0.3.30"
 criteria = "safe-to-deploy"
 
-[[exemptions.time-macros]]
-version = "0.2.22"
-criteria = "safe-to-deploy"
-
 [[exemptions.tokio]]
 version = "1.40.0"
 criteria = "safe-to-deploy"
