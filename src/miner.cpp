@@ -737,7 +737,9 @@ std::optional<MinerAddress> ExtractMinerAddress::operator()(const CKeyID &keyID)
     return mAddr;
 }
 std::optional<MinerAddress> ExtractMinerAddress::operator()(const CScriptID &addr) const {
-    return std::nullopt;
+    boost::shared_ptr<MinerAddressScript> mAddr(new MinerAddressScript());
+    mAddr->reserveScript = CScript() << OP_HASH160 << ToByteVector(addr) << OP_EQUAL;
+    return mAddr;
 }
 std::optional<MinerAddress> ExtractMinerAddress::operator()(const libzcash::SproutPaymentAddress &addr) const {
     return std::nullopt;

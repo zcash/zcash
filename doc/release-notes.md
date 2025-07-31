@@ -27,3 +27,9 @@ Updates to default values
   `4` (the v4 transaction format introduced in the 2018 Sapling Network Upgrade)
   to `5` (the v5 transaction format introduced in the 2022 NU5 Network Upgrade).
   Use `-preferredtxversion=4` to retain the previous behaviour.
+
+Mining
+------
+
+- The address to which mining outputs are sent, set by `-mineraddress`, can
+  now be a P2SH address.
