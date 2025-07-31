@@ -14,7 +14,7 @@
 // Shut down nodes running this version of code, `RELEASE_TO_DEPRECATION_WEEKS` weeks' worth
 // of blocks after the estimated release block height. A warning is shown during the 14 days'
 // worth of blocks prior to shut down.
-static const int APPROX_RELEASE_HEIGHT = 3012376;
+static const int APPROX_RELEASE_HEIGHT = 3019104;
 static const int RELEASE_TO_DEPRECATION_WEEKS = 14;
 static const int EXPECTED_BLOCKS_PER_HOUR = 3600 / Consensus::POST_BLOSSOM_POW_TARGET_SPACING;
 static_assert(EXPECTED_BLOCKS_PER_HOUR == 48, "The value of Consensus::POST_BLOSSOM_POW_TARGET_SPACING was chosen such that this assertion holds.");
