@@ -277,6 +277,7 @@ BITCOIN_CORE_H = \
   metrics.h \
   miner.h \
   net.h \
+  netaddress.h \
   netbase.h \
   noui.h \
   policy/policy.h \
@@ -570,6 +571,7 @@ libbitcoin_common_a_SOURCES = \
   key.cpp \
   key_io.cpp \
   keystore.cpp \
+  netaddress.cpp \
   netbase.cpp \
   primitives/tx_version_info.cpp \
   proof_verifier.cpp \
