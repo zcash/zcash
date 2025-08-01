@@ -73,3 +73,7 @@ native_cmake 4.0.0 2025-12-31
 native_cmake 4.0.1 2025-12-31
 native_cmake 4.0.2 2025-12-31
 native_cmake 4.0.3 2025-12-31
+
+# Postponed due to proximity to the release
+native_cxxbridge 1.0.161 2025-08-15
+rustcxx 1.0.161 2025-08-15

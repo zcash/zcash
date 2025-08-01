@@ -3,10 +3,11 @@ name = "librustzcash"
 description = "Rust FFI used by the zcashd binary. Not an official API."
 version = "0.2.0"
 authors = [
-    "Sean Bowe <sean@electriccoin.co>",
+    "Sean Bowe",
     "Jay Graber",
     "Jack Grigg <jack@electriccoin.co>",
     "Daira-Emma Hopwood <daira@jacaranda.org>",
+    "Yasser <yasser@electriccoin.co>",
     "Ying Tong Lai",
     "Simon Liu",
     "Kris Nuttycombe <kris@electriccoin.co>",
@@ -59,14 +60,14 @@ redjubjub = "0.8"
 tracing = "0.1"
 tracing-core = "0.1"
 tracing-appender = "0.2"
-transparent = { package = "zcash_transparent", version = "0.3" }
-zcash_address = "0.8"
+transparent = { package = "zcash_transparent", version = "0.4" }
+zcash_address = "0.9"
 zcash_encoding = "0.3"
 zcash_history = "0.4"
 zcash_note_encryption = "0.4"
-zcash_primitives = { version = "0.23", features = ["temporary-zcashd", "transparent-inputs"] }
-zcash_proofs = { version = "0.23", features = ["directories"] }
-zcash_protocol = { version = "0.5", features = ["local-consensus"] }
+zcash_primitives = { version = "0.24", features = ["temporary-zcashd", "transparent-inputs"] }
+zcash_proofs = { version = "0.24", features = ["directories"] }
+zcash_protocol = { version = "0.6", features = ["local-consensus"] }
 ed25519-zebra = "4"
 zeroize = "1.4.2"
 zip32 = "0.2"
@@ -105,7 +106,7 @@ macro_find_and_replace = "1"
 [dev-dependencies]
 incrementalmerkletree = { version = "0.8", features = ["test-dependencies"] }
 proptest = "1.0.0"
-zcash_primitives = { version = "0.23", features = ["temporary-zcashd", "transparent-inputs", "test-dependencies"] }
+zcash_primitives = { version = "0.24", features = ["temporary-zcashd", "transparent-inputs", "test-dependencies"] }
 
 [dependencies.tracing-subscriber]
 version = "0.3"
@@ -116,12 +117,3 @@ features = ["ansi", "env-filter", "fmt", "time"]
 lto = 'thin'
 panic = 'abort'
 codegen-units = 1
-
-[patch.crates-io]
-transparent = { package = "zcash_transparent", git = "https://github.com/zcash/librustzcash.git", rev = "56ddab94b66f701bfd0a80a35841613c87b94f61" }
-zcash_address = { git = "https://github.com/zcash/librustzcash.git", rev = "56ddab94b66f701bfd0a80a35841613c87b94f61" }
-zcash_encoding = { git = "https://github.com/zcash/librustzcash.git", rev = "56ddab94b66f701bfd0a80a35841613c87b94f61" }
-zcash_history = { git = "https://github.com/zcash/librustzcash.git", rev = "56ddab94b66f701bfd0a80a35841613c87b94f61" }
-zcash_primitives = { git = "https://github.com/zcash/librustzcash.git", rev = "56ddab94b66f701bfd0a80a35841613c87b94f61" }
-zcash_proofs = { git = "https://github.com/zcash/librustzcash.git", rev = "56ddab94b66f701bfd0a80a35841613c87b94f61" }
-zcash_protocol = { git = "https://github.com/zcash/librustzcash.git", rev = "56ddab94b66f701bfd0a80a35841613c87b94f61" }
