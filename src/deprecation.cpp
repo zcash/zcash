@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2023 The Zcash developers
+// Copyright (c) 2017-2025 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -57,7 +57,7 @@ void EnforceNodeDeprecation(const CChainParams& params, int nHeight, bool forceL
                                  DEPRECATION_HEIGHT) + " " +
                        _("You should upgrade to the latest version of Zcash.");
             LogPrintf("*** %s\n", msg);
-            CAlert::Notify(msg, fThread);
+            AlertNotify(msg, fThread);
             uiInterface.ThreadSafeMessageBox(msg, "", CClientUIInterface::MSG_ERROR);
         }
         StartShutdown();
@@ -67,7 +67,7 @@ void EnforceNodeDeprecation(const CChainParams& params, int nHeight, bool forceL
                             DEPRECATION_HEIGHT) + " " +
                   _("You should upgrade to the latest version of Zcash.");
         LogPrintf("*** %s\n", msg);
-        CAlert::Notify(msg, fThread);
+        AlertNotify(msg, fThread);
         uiInterface.ThreadSafeMessageBox(msg, "", CClientUIInterface::MSG_WARNING);
     }
 }

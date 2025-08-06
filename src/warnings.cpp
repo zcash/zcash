@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2016 The Bitcoin Core developers
-// Copyright (c) 2020-2023 The Zcash developers
+// Copyright (c) 2020-2025 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -88,25 +88,6 @@ std::pair<std::string, int64_t> GetWarnings(const std::string& strFor)
         nPriority = 2000;
         statusbar.first = rpc.first = _("Warning: We do not appear to fully agree with our peers! You may need to upgrade, or other nodes may need to upgrade.");
         statusbar.second = rpc.second = GetTime();
-    }
-
-    // Alerts
-    {
-        LOCK(cs_mapAlerts);
-        for (const std::pair<uint256, CAlert>& item : mapAlerts)
-        {
-            const CAlert& alert = item.second;
-            if (alert.AppliesToMe() && alert.nPriority > nPriority)
-            {
-                nPriority = alert.nPriority;
-                statusbar.first = alert.strStatusBar;
-                statusbar.second = GetTime();
-                if (alert.nPriority >= ALERT_PRIORITY_SAFE_MODE) {
-                    rpc.first = alert.strRPCError;
-                    rpc.second = statusbar.second;
-                }
-            }
-        }
     }
 
     if (strFor == "statusbar")

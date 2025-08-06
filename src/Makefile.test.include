@@ -1,6 +1,6 @@
 # Copyright (c) 2016-2020 The Zcash developers
 # Copyright (c) 2013-2019 The Bitcoin Core developers
-# Copyright (c) 2013-2019 Bitcoin Developers
+# Copyright (c) 2013-2025 Bitcoin Developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -47,7 +47,7 @@ JSON_TEST_FILES = \
   test/data/unified_full_viewing_keys.json \
   test/data/zip0244.json
 
-RAW_TEST_FILES = test/data/alertTests.raw
+RAW_TEST_FILES =
 
 GENERATED_TEST_FILES = $(JSON_TEST_FILES:.json=.json.h) $(RAW_TEST_FILES:.raw=.raw.h)
 
@@ -59,7 +59,6 @@ BITCOIN_TESTS =\
   test/arith_uint256_tests.cpp \
   test/scriptnum10.h \
   test/addrman_tests.cpp \
-  test/alert_tests.cpp \
   test/allocator_tests.cpp \
   test/base32_tests.cpp \
   test/base58_tests.cpp \
@@ -182,14 +181,6 @@ parallel_btests: $(SUITES)
 %.json.h: %.json
 	@$(MKDIR_P) $(@D)
 	@echo "namespace json_tests{" > $@
-	@echo "static unsigned const char $(*F)[] = {" >> $@
-	@$(HEXDUMP) -v -e '8/1 "0x%02x, "' -e '"\n"' $< | $(SED) -e 's/0x  ,//g' >> $@
-	@echo "};};" >> $@
-	@echo "Generated $@"
-
-%.raw.h: %.raw
-	@$(MKDIR_P) $(@D)
-	@echo "namespace alert_tests{" > $@
 	@echo "static unsigned const char $(*F)[] = {" >> $@
 	@$(HEXDUMP) -v -e '8/1 "0x%02x, "' -e '"\n"' $< | $(SED) -e 's/0x  ,//g' >> $@
 	@echo "};};" >> $@
