@@ -22,12 +22,21 @@ case ${ZCASHD_NETWORK} in
   mainnet)
     ZCASHD_CMD+=("-addnode=mainnet.z.cash")
     ;;
+  regtest)
+    ZCASHD_CMD+=("-regtest")
+    ;;
   *)
     echo "Error, unknown network: ${ZCASHD_NETWORK}"
     exit 1
     ;;
 esac
 
+if [[ -n "${ZCASHD_ACK_FLAG}" ]]; then
+    ZCASHD_CMD+=("${ZCASHD_ACK_FLAG}")
+fi
+
+if [[ -n "${ZCASHD_CONFIG}" ]];then ZCASHD_CMD+=("-conf=${ZCASHD_CONFIG}");fi
+if [[ -n "${ZCASHD_DATADIR}" ]];then ZCASHD_CMD+=("-datadir=${ZCASHD_DATADIR}");fi
 if [[ -n "${ZCASHD_SHOWMETRICS}" ]];then ZCASHD_CMD+=("-showmetrics=${ZCASHD_SHOWMETRICS}");fi
 if [[ -n "${ZCASHD_LOGIPS}" ]];then ZCASHD_CMD+=("-logips=${ZCASHD_LOGIPS}");fi
 if [[ -n "${ZCASHD_EXPERIMENTALFEATURES}" ]];then ZCASHD_CMD+=("-experimentalfeatures=${ZCASHD_EXPERIMENTALFEATURES}");fi
@@ -35,6 +44,7 @@ if [[ -n "${ZCASHD_GEN}" ]];then ZCASHD_CMD+=("-gen=${ZCASHD_GEN}");fi
 if [[ -n "${ZCASHD_EQUIHASHSOLVER}" ]];then ZCASHD_CMD+=("-equihashsolver=${ZCASHD_EQUIHASHSOLVER}");fi
 if [[ -n "${ZCASHD_GENPROCLIMIT}" ]];then ZCASHD_CMD+=("-genproclimit=${ZCASHD_GENPROCLIMIT}");fi
 if [[ -n "${ZCASHD_ZSHIELDCOINBASE}" ]];then ZCASHD_CMD+=("-zshieldcoinbase=${ZCASHD_ZSHIELDCOINBASE}");fi
+if [[ -n "${ZCASHD_RPCCOOKIE_FILE}" ]];then ZCASHD_CMD+=("-rpccookiefile=${ZCASHD_RPCCOOKIE_FILE}");fi
 if [[ -n "${ZCASHD_RPCUSER}" ]];then ZCASHD_CMD+=("-rpcuser=${ZCASHD_RPCUSER}");fi
 if [[ -n "${ZCASHD_RPCPASSWORD}" ]];then ZCASHD_CMD+=("-rpcpassword=${ZCASHD_RPCPASSWORD}");fi
 if [[ -n "${ZCASHD_RPCBIND}" ]];then ZCASHD_CMD+=("-rpcbind=${ZCASHD_RPCBIND}");fi
