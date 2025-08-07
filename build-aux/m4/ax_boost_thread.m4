@@ -62,6 +62,14 @@ AC_DEFUN([AX_BOOST_THREAD],
         LDFLAGS="$LDFLAGS $BOOST_LDFLAGS"
         export LDFLAGS
 
+        # MinGW Clang complains about -mthreads as an unused option.
+        # See https://github.com/msys2/MINGW-packages/issues/9850
+        if echo "$CXX" --version | grep -q clang; then
+            CXX_Name_=Clang
+        else
+            CXX_Name_=NotClang
+        fi
+
         AC_CACHE_CHECK(whether the Boost::Thread library is available,
                        ax_cv_boost_thread,
         [AC_LANG_PUSH([C++])
@@ -73,7 +81,11 @@ AC_DEFUN([AX_BOOST_THREAD],
                      break;
                      ;;
                  xmingw32 )
-                     CXXFLAGS="-mthreads $CXXFLAGS"
+                     if test "$CXX_Name_" = Clang; then
+                         CXXFLAGS="-D_MT $CXXFLAGS"
+                     else
+                         CXXFLAGS="-mthreads $CXXFLAGS"
+                     fi
                      break;
                      ;;
                  *android* )
@@ -101,7 +113,11 @@ AC_DEFUN([AX_BOOST_THREAD],
                     break;
                     ;;
                 xmingw32 )
-                    BOOST_CPPFLAGS="-mthreads $BOOST_CPPFLAGS"
+                    if test "$CXX_Name_" = Clang; then
+                        BOOST_CPPFLAGS="-D_MT $BOOST_CPPFLAGS"
+                    else
+                        BOOST_CPPFLAGS="-mthreads $BOOST_CPPFLAGS"
+                    fi
                     break;
                     ;;
                 *android* )
