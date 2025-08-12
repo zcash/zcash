@@ -38,7 +38,7 @@ jobs:
 
     steps:
       - name: Check out the base branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           # We fetch the entire repository to ensure we have the common ancestor
           # of the base branch and the PR branch.
