@@ -122,7 +122,7 @@ jobs:
       rpc_test_shards_matrix: ${{ steps.set-rpc-tests.outputs.rpc_test_shards_matrix }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # Configure the build and test matrices. Notes:
       # - The `*_names` lists of platforms are combined with job-specific lists to build
@@ -219,7 +219,7 @@ jobs:
         include: ${{ fromJson(needs.setup.outputs.build_matrix) }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install Homebrew build dependencies
         if: matrix.brew_deps != ''
@@ -327,7 +327,7 @@ jobs:
         include: ${{ fromJson(needs.setup.outputs.build_matrix) }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install Homebrew build dependencies
         if: matrix.brew_deps != ''
@@ -391,7 +391,7 @@ jobs:
       matrix:
         include: ${{ fromJson(needs.setup.outputs.test_matrix) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Download src artifact
         uses: actions/download-artifact@v4
@@ -422,7 +422,7 @@ jobs:
         shard_index: [0, 1]
         include: ${{ fromJson(needs.setup.outputs.test_matrix) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Download src artifact
         uses: actions/download-artifact@v4
@@ -481,7 +481,7 @@ jobs:
         include: ${{ fromJson(needs.setup.outputs.test_matrix) }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Run Rust tests
         run: cargo test
 
@@ -500,7 +500,7 @@ jobs:
       matrix:
         include: ${{ fromJson(needs.setup.outputs.unix_test_matrix) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install Homebrew build dependencies
         if: matrix.brew_deps != ''
@@ -533,7 +533,7 @@ jobs:
       matrix:
         include: ${{ fromJson(needs.setup.outputs.unix_test_matrix) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install Homebrew build dependencies
         if: matrix.brew_deps != ''
@@ -577,7 +577,7 @@ jobs:
         include: ${{ fromJson(needs.setup.outputs.unix_test_matrix) }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Download src artifact
         uses: actions/download-artifact@v4
@@ -610,7 +610,7 @@ jobs:
         include: ${{ fromJson(needs.setup.outputs.test_matrix) }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Download depends/${{ matrix.host }}/lib
         uses: actions/download-artifact@v4
@@ -640,7 +640,7 @@ jobs:
         include: ${{ fromJson(needs.setup.outputs.unix_test_matrix) }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Download src artifact
         uses: actions/download-artifact@v4
@@ -712,7 +712,7 @@ jobs:
         include: ${{ fromJson(needs.setup.outputs.rpc_test_shards_matrix) }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Cache Python dependencies for RPC tests
         uses: actions/cache@v4
