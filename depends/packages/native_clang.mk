@@ -68,6 +68,7 @@ define $(package)_stage_cmds
   cp bin/llvm-objcopy $($(package)_staging_prefix_dir)/bin && \
   cp -P bin/clang $($(package)_staging_prefix_dir)/bin && \
   cp -P bin/clang++ $($(package)_staging_prefix_dir)/bin && \
+  (test ! -f bin/clang-tidy || cp -P bin/clang-tidy $($(package)_staging_prefix_dir)/bin) && \
   cp -P bin/ld.lld $($(package)_staging_prefix_dir)/bin && \
   cp -P bin/ld64.lld $($(package)_staging_prefix_dir)/bin && \
   cp -P bin/lld-link $($(package)_staging_prefix_dir)/bin && \
