@@ -147,7 +147,7 @@ BOOST_DATA_TEST_CASE(DoS_mapOrphans, boost::unit_test::data::xrange(static_cast<
         tx.vout[0].nValue = 1*CENT;
         tx.vout[0].scriptPubKey = GetScriptForDestination(key.GetPubKey().GetID());
 
-        AddOrphanTx(tx, i);
+        AddOrphanTx(CTransaction(tx), i);
     }
 
     // ... and 50 that depend on other orphans:
@@ -162,10 +162,10 @@ BOOST_DATA_TEST_CASE(DoS_mapOrphans, boost::unit_test::data::xrange(static_cast<
         tx.vout.resize(1);
         tx.vout[0].nValue = 1*CENT;
         tx.vout[0].scriptPubKey = GetScriptForDestination(key.GetPubKey().GetID());
-        const PrecomputedTransactionData txdata(tx, {txPrev.vout[0]});
+        const PrecomputedTransactionData txdata(CTransaction(tx), {txPrev.vout[0]});
         SignSignature(keystore, txPrev, tx, txdata, 0, SIGHASH_ALL, consensusBranchId);
 
-        AddOrphanTx(tx, i);
+        AddOrphanTx(CTransaction(tx), i);
     }
 
     // This really-big orphan should be ignored:
@@ -186,14 +186,14 @@ BOOST_DATA_TEST_CASE(DoS_mapOrphans, boost::unit_test::data::xrange(static_cast<
         // Fake the coins being spent (the random orphan doesn't actually have them all).
         std::vector<CTxOut> allPrevOutputs;
         allPrevOutputs.resize(tx.vin.size(), txPrev.vout[0]);
-        const PrecomputedTransactionData txdata(tx, allPrevOutputs);
+        const PrecomputedTransactionData txdata(CTransaction(tx), allPrevOutputs);
         SignSignature(keystore, txPrev, tx, txdata, 0, SIGHASH_ALL, consensusBranchId);
         // Re-use same signature for other inputs
         // (they don't have to be valid for this test)
         for (unsigned int j = 1; j < tx.vin.size(); j++)
             tx.vin[j].scriptSig = tx.vin[0].scriptSig;
 
-        BOOST_CHECK(!AddOrphanTx(tx, i));
+        BOOST_CHECK(!AddOrphanTx(CTransaction(tx), i));
     }
 
     // Test EraseOrphansFor:

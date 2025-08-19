@@ -72,7 +72,7 @@ CWalletTx FakeWalletTx() {
     CMutableTransaction mtx;
     mtx.vout.resize(1);
     mtx.vout[0].nValue = 1;
-    return CWalletTx(nullptr, mtx);
+    return CWalletTx(nullptr, CTransaction(mtx));
 }
 
 }
@@ -1688,13 +1688,12 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
 }
 
 void TestWTxStatus(const Consensus::Params consensusParams, const int delta) {
-
     auto AddTrx = [&consensusParams]() {
         auto taddr = pwalletMain->GenerateNewKey(true).GetID();
         CMutableTransaction mtx = CreateNewContextualCMutableTransaction(consensusParams, 1, false);
         CScript scriptPubKey = CScript() << OP_DUP << OP_HASH160 << ToByteVector(taddr) << OP_EQUALVERIFY << OP_CHECKSIG;
         mtx.vout.push_back(CTxOut(5 * COIN, scriptPubKey));
-        CWalletTx wtx(pwalletMain, mtx);
+        CWalletTx wtx(pwalletMain, CTransaction(mtx));
         pwalletMain->LoadWalletTx(wtx);
         return wtx;
     };
