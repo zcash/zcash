@@ -11,23 +11,6 @@ fi
 env | sort | grep ZCASHD || true
 export ZCASHD_CMD=('zcashd' '-printtoconsole')
 
-if [[ -z ${ZCASHD_NETWORK} ]];then
-  export ZCASHD_NETWORK=mainnet
-fi
-
-case ${ZCASHD_NETWORK} in
-  testnet)
-    ZCASHD_CMD+=("-testnet" "-addnode=testnet.z.cash")
-    ;;
-  mainnet)
-    ZCASHD_CMD+=("-addnode=mainnet.z.cash")
-    ;;
-  *)
-    echo "Error, unknown network: ${ZCASHD_NETWORK}"
-    exit 1
-    ;;
-esac
-
 if [[ -n "${ZCASHD_SHOWMETRICS}" ]];then ZCASHD_CMD+=("-showmetrics=${ZCASHD_SHOWMETRICS}");fi
 if [[ -n "${ZCASHD_LOGIPS}" ]];then ZCASHD_CMD+=("-logips=${ZCASHD_LOGIPS}");fi
 if [[ -n "${ZCASHD_EXPERIMENTALFEATURES}" ]];then ZCASHD_CMD+=("-experimentalfeatures=${ZCASHD_EXPERIMENTALFEATURES}");fi
