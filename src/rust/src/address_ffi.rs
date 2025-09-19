@@ -90,8 +90,11 @@ impl UnifiedAddressHelper {
                         tracing::error!("Unified Address contains invalid Orchard receiver");
                         false
                     } else {
+                        let addr_value = addr.unwrap();
+                        let boxed_addr = Box::new(addr_value);
+                        let raw_ptr = Box::into_raw(boxed_addr);
                         unsafe {
-                            (orchard_cb.unwrap())(ua_obj, Box::into_raw(Box::new(addr.unwrap())))
+                            (orchard_cb.unwrap())(ua_obj, raw_ptr)
                         }
                     }
                 }
