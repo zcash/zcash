@@ -2,7 +2,7 @@ Zcash Contributors
 ==================
 
 * Jack Grigg (2234)
-* Kris Nuttycombe (752)
+* Kris Nuttycombe (756)
 * Daira-Emma Hopwood (528)
 * Simon Liu (464)
 * Sean Bowe (413)
@@ -62,13 +62,13 @@ Zcash Contributors
 * Hennadii Stepanov (8)
 * Chun Kuan Lee (8)
 * Ben Wilson (8)
+* y4ssi (7)
 * Karl-Johan Alm (7)
 * Alex Wied (7)
 * David Mercer (6)
 * Daniel Kraft (6)
 * Daniel Cousens (6)
 * Casey Rodarmor (6)
-* y4ssi (5)
 * jnewbery (5)
 * ca333 (5)
 * MeshCollider (5)
