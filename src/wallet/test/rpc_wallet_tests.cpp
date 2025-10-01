@@ -334,6 +334,8 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
         Params().GetConsensus().vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight != Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
     bool nu6Enabled =
         Params().GetConsensus().vUpgrades[Consensus::UPGRADE_NU6].nActivationHeight != Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
+    bool nu6_1Enabled =
+        Params().GetConsensus().vUpgrades[Consensus::UPGRADE_NU6_1].nActivationHeight != Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
 
     // slow start + blossom activation + (pre blossom halving - blossom activation) * 2
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 1046400"));
@@ -385,7 +387,24 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
 
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 3146400"));
     obj = retValue.get_obj();
-    BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), 1.5625);
+    BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), nu6_1Enabled ? 1.25 : 1.5625);
+    BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 0.0);
+    if (nu6_1Enabled) {
+        check_funding_streams(obj, { "Zcash Community Grants to third halving" },
+                                   { 0.125,                       },
+                                   {
+                                       "t3cFfPt1Bcvgez9ZbMBFWeZsskxTkPzGCow"
+                                   });
+        check_lockbox_streams(obj, { "Coinholder-Controlled Fund to third halving" },
+                                   { 0.1875,       });
+    } else {
+        BOOST_CHECK(find_value(obj, "fundingstreams").empty());
+        BOOST_CHECK(find_value(obj, "lockboxstreams").empty());
+    }
+
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 4406400"));
+    obj = retValue.get_obj();
+    BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), 0.78125);
     BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 0.0);
     BOOST_CHECK(find_value(obj, "fundingstreams").empty());
 
