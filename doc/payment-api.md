@@ -111,7 +111,7 @@ z_listoperationids <br>| [state] | Return a list of operationids for all operati
 
 ## Asynchronous RPC call Error Codes
 
-Zcash error codes are defined in https://github.com/zcash/zcash/blob/master/src/rpcprotocol.h
+Zcash error codes are defined in https://github.com/zcash/zcash/blob/master/src/rpc/protocol.h
 
 ### z_sendmany error codes
 
