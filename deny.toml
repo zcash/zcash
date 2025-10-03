@@ -24,6 +24,7 @@ allow = [
 # targets).
 exceptions = [
     { name = "arrayref", allow = ["BSD-2-Clause"] },
+    { name = "bounded-vec", allow = ["CC0-1.0"] },
     { name = "curve25519-dalek", allow = ["BSD-3-Clause"] },
     { name = "foldhash", allow = ["Zlib"] },
     { name = "secp256k1", allow = ["CC0-1.0"] },

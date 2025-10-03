@@ -69,14 +69,14 @@ impl TransparentAuthorizingContext for TransparentAuth {
     fn input_amounts(&self) -> Vec<Zatoshis> {
         self.all_prev_outputs
             .iter()
-            .map(|prevout| prevout.value)
+            .map(|prevout| prevout.value())
             .collect()
     }
 
     fn input_scriptpubkeys(&self) -> Vec<Script> {
         self.all_prev_outputs
             .iter()
-            .map(|prevout| prevout.script_pubkey.clone())
+            .map(|prevout| prevout.script_pubkey().clone())
             .collect()
     }
 }
@@ -295,9 +295,9 @@ pub extern "C" fn zcash_transaction_zip244_signature_digest(
             // real `script_code` across the FFI (and paying the serialization and parsing
             // cost for no benefit), we set it to the prevout's `script_pubkey`. This
             // happens to be correct anyway for every output script kind except P2SH.
-            &prevout.script_pubkey,
-            &prevout.script_pubkey,
-            prevout.value,
+            prevout.script_pubkey(),
+            prevout.script_pubkey(),
+            prevout.value(),
         ))
     };
 

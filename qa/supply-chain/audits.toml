@@ -262,6 +262,12 @@ criteria = "safe-to-deploy"
 delta = "0.7.1 -> 0.8.0"
 notes = "I previously reviewed the crypto-sensitive portions of these changes as well."
 
+[[audits.bounded-vec]]
+who = "Kris Nuttycombe <kris@nutty.land>"
+criteria = "safe-to-deploy"
+version = "0.9.0"
+notes = "Crate forbids unsafe code and uses no powerful imports. It consists primarily of safe constructors for newtype wrappers around `Vec`."
+
 [[audits.bs58]]
 who = "Daira-Emma Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
@@ -3492,7 +3498,7 @@ end = "2025-03-18"
 criteria = "safe-to-deploy"
 user-id = 169181 # Kris Nuttycombe (nuttycom)
 start = "2024-08-20"
-end = "2025-08-26"
+end = "2026-10-03"
 
 [[trusted.zcash_encoding]]
 criteria = "safe-to-deploy"
@@ -3540,7 +3546,7 @@ end = "2025-10-02"
 criteria = "safe-to-deploy"
 user-id = 169181 # Kris Nuttycombe (nuttycom)
 start = "2024-08-20"
-end = "2025-08-26"
+end = "2026-10-03"
 
 [[trusted.zcash_primitives]]
 criteria = ["safe-to-deploy", "crypto-reviewed", "license-reviewed"]
@@ -3564,7 +3570,7 @@ end = "2025-10-02"
 criteria = "safe-to-deploy"
 user-id = 169181 # Kris Nuttycombe (nuttycom)
 start = "2024-08-20"
-end = "2025-08-26"
+end = "2026-10-03"
 
 [[trusted.zcash_proofs]]
 criteria = ["safe-to-deploy", "crypto-reviewed", "license-reviewed"]
@@ -3577,6 +3583,12 @@ criteria = "safe-to-deploy"
 user-id = 169181 # Kris Nuttycombe (nuttycom)
 start = "2024-01-27"
 end = "2026-06-05"
+
+[[trusted.zcash_script]]
+criteria = "safe-to-deploy"
+user-id = 6289 # Jack Grigg (str4d)
+start = "2025-09-25"
+end = "2026-10-03"
 
 [[trusted.zcash_spec]]
 criteria = "safe-to-deploy"
