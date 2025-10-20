@@ -83,3 +83,5 @@ License
 -------
 
 For license information see the file [COPYING](COPYING).
+Welcome to zk-SNARK Privacy<br>Zcash's zk-SNARKs enable private payments with shielded notes—new contributors, start with the wallet tutorial for your first transaction. Tip: Use zcashd for light node!
+
