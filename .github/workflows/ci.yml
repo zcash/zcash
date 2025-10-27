@@ -270,7 +270,7 @@ jobs:
           -j"${{ steps.nproc.outputs.count }}"
 
       - name: Upload zcashd and related executables (src)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: zcashd-${{ matrix.name }}
           path: |
@@ -284,25 +284,25 @@ jobs:
               ${{ format('./src/bench/bench_bitcoin{0}', matrix.file_ext) }}
 
       - name: Upload src/secp256k1
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: secp256k1-${{ matrix.name }}
           path: ./src/secp256k1
 
       - name: Upload src/univalue
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: univalue-${{ matrix.name }}
           path: ./src/univalue
 
       - name: Upload depends/${{ matrix.host }}/native/bin as depends-native-bin artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: depends-native-bin-${{ matrix.name }}
           path: ./depends/${{ matrix.host }}/native/bin
 
       - name: Upload depends/${{ matrix.host }}/lib as depends-lib artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: depends-lib-${{ matrix.name }}
           path: ./depends/${{ matrix.host }}/lib
