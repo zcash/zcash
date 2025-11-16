@@ -1171,7 +1171,7 @@ private:
     CWallet* pwallet;
     rust::Box<wallet::BatchScanner> inner;
     std::map<uint256, WalletDecryptedNotes> decryptedNotes;
-
+    bool skipSync = false;  // Add skip sync feature for bounty Zcash
     static rust::Box<wallet::BatchScanner> CreateBatchScanner(CWallet* pwallet);
 
     WalletBatchScanner(CWallet* pwalletIn) : pwallet(pwalletIn), inner(CreateBatchScanner(pwalletIn)) {}
