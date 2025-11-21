@@ -1,6 +1,23 @@
+# .gitignore - ULTIMATE CLEAN CONFIGURATION (Zcash/Bitcoin Derivative)
+
+# =======================================================
+# 1. DISTRIBUTION AND PACKAGING ARTIFACTS
+# Files that are generated for release and should not be tracked by Git.
+# =======================================================
 *.tar.gz
 *.deb
 *.exe
+*.dmg
+share/setup.nsi
+contrib/debian/files
+contrib/debian/substvars
+
+
+# =======================================================
+# 2. APPLICATION EXECUTABLES & BUILD OUTPUTS
+# Compiled binaries, libraries, and linked objects.
+# =======================================================
+# Primary Executables
 src/bitcoin
 src/zcashd
 src/zcashd-wallet-tool
@@ -11,10 +28,35 @@ src/zcash-tx
 src/test/test_bitcoin
 zcutil/bin/
 
-*zcashTest.pk
-*zcashTest.vk
+# Libtool and Compilation Artifacts (C/C++ and general)
+*.o
+*.o.tmp
+*.o-*
+*.a
+*.lib
+*.lo
+*.la
+.deps
+.dirstamp
+.libs
+Makefile
+Makefile.test
+src/test/buildenv.py
 
-# autoreconf
+# Generated header files (Protocol Buffers, Resources, JSON)
+*.pb.cc
+*.pb.h
+*.json.h
+*.raw.h
+qrc_*.cpp
+src/rust/gen/
+src/univalue/gen
+
+
+# =======================================================
+# 3. AUTOCONF/AUTOMAKE ARTIFACTS (BUILD SYSTEM)
+# Generated files from 'autoreconf' and './configure' which should not be version controlled.
+# =======================================================
 Makefile.in
 aclocal.m4
 autom4te.cache/
@@ -23,11 +65,7 @@ build-aux/config.sub
 build-aux/depcomp
 build-aux/install-sh
 build-aux/ltmain.sh
-build-aux/m4/libtool.m4
-build-aux/m4/lt~obsolete.m4
-build-aux/m4/ltoptions.m4
-build-aux/m4/ltsugar.m4
-build-aux/m4/ltversion.m4
+build-aux/m4/
 build-aux/missing
 build-aux/compile
 build-aux/test-driver
@@ -36,99 +74,82 @@ config.status
 configure
 configure~
 libtool
-src/config/bitcoin-config.h
-src/config/bitcoin-config.h.in
-src/config/stamp-h1
-share/setup.nsi
 confdefs.h
 conftest.cpp
 conftest.err
+src/config/bitcoin-config.h
+src/config/bitcoin-config.h.in
+src/config/stamp-h1
+libzcash_script.pc
 
-venv-mnf/
-src/univalue/gen
 
-.deps
-.dirstamp
-.libs
-.*.swp
-*.*~*
-*.bak
-*.rej
-*.orig
-*.pyc
-*.o
-*.o.tmp
-*.o-*
-.zcash
-*.a
-*.lib
-*.pb.cc
-*.pb.h
-.vscode
+# =======================================================
+# 4. RUST ARTIFACTS
+# Standard ignores for Rust projects (Cargo).
+# =======================================================
+.cargo/config* # Catches config and config.toml
+target/              # Standard Rust compilation output directory
 
-*.log
-*.trs
-*.dmg
 
-*.json.h
-*.raw.h
-
-#libtool object files
-*.lo
-*.la
-
-# Compilation
-Makefile
-
-# Rust
-.cargo/.configured-for-*
-.cargo/config
-.cargo/config.toml
-src/rust/gen/
-target/
-
-# Unit-tests
-Makefile.test
-src/test/buildenv.py
-
-# Resources cpp
-qrc_*.cpp
-
-# Mac specific
-.DS_Store
-build
-
-#lcov
+# =======================================================
+# 5. TEST, COVERAGE, AND FUZZING ARTIFACTS
+# Outputs generated during QA, testing, and security analysis.
+# =======================================================
 *.gcno
 *.gcda
 /*.info
+*.trs
 test_bitcoin.coverage/
 zcash-gtest.coverage/
 total.coverage/
 coverage_percent.txt
 afl-temp
-
-#build tests
 linux-coverage-build
 linux-build
 win32-build
 qa/pull-tester/tests_config.py
 qa/pull-tester/tests_config.ini
 qa/cache/*
-
-!src/leveldb*/Makefile
-
-/doc/doxygen/
-
-libzcash_script.pc
-
-contrib/debian/files
-contrib/debian/substvars
-
 src/fuzzing/*/input
 src/fuzzing/*/output
 src/fuzz.cpp
 
-.updatecheck-token
-.env
-poetry.lock
+# Specific Keys/Parameters (often sensitive or generated during testing)
+*zcashTest.pk
+*zcashTest.vk
+
+
+# =======================================================
+# 6. RUNTIME AND USER CONFIGURATION
+# Files created during application execution or user setup.
+# =======================================================
+.zcash                 # Default Zcash data directory
+.updatecheck-token     # Update check token file
+*.log                  # General log files
+.env                   # Local environment variable files
+venv-mnf/              # Python virtual environment (if used)
+poetry.lock            # Python dependency lock file (if used)
+
+
+# =======================================================
+# 7. EDITOR / OS / VERSION CONTROL ARTIFACTS
+# Temporary files and common operating system junk.
+# =======================================================
+.DS_Store          # macOS specific
+.vscode            # VS Code configuration directory
+.*.swp             # Vim/Vi swap files
+*.*~* # General backup files (e.g., Gedit)
+*.bak
+*.rej
+*.orig
+*.pyc
+
+
+# =======================================================
+# 8. EXCEPTION RULES (Files to KEEP)
+# Important: These must always be included for specific build processes.
+# =======================================================
+!src/leveldb*/Makefile
+
+# Doxygen documentation can often be rebuilt but is explicitly ignored here.
+/doc/doxygen/
