@@ -1,27 +1,36 @@
-# Configuration file for cargo-deny
+# Configuration for cargo-deny
+# This file checks dependencies for license compliance, known security vulnerabilities,
+# and duplicate versions to ensure a clean and secure supply chain.
 
 [graph]
+# Targets to check. 
+# Added 'aarch64-apple-darwin' for modern Apple Silicon (M1/M2/M3) support.
 targets = [
     { triple = "aarch64-unknown-linux-gnu" },
+    { triple = "aarch64-apple-darwin" },
     { triple = "x86_64-apple-darwin" },
     { triple = "x86_64-pc-windows-gnu" },
     { triple = "x86_64-unknown-freebsd" },
     { triple = "x86_64-unknown-linux-gnu" },
 ]
 
+# -----------------------------------------------------------------------------
+# License Checks
+# -----------------------------------------------------------------------------
 [licenses]
 version = 2
+# We want high confidence when detecting licenses automatically.
+confidence-threshold = 0.8
+
+# Standard permissive licenses allowed project-wide.
 allow = [
     "Apache-2.0",
     "MIT",
 ]
-# Each entry in this list should have a corresponding `contrib/debian/copyright`
-# entry for `Files: depends/*/vendored-sources/CRATE_NAME/*` (or the relevant
-# subset of files). The reverse might not be true however: `cargo-deny` only
-# checks licenses for dependencies that are compiled into the end binary for the
-# above listed targets, whereas `contrib/debian/copyright` covers anything that
-# may end up in a source archive (including dev-dependencies and unsupported
-# targets).
+
+# Exceptions for specific crates that use non-standard but acceptable licenses.
+# These usually require manual verification against `contrib/debian/copyright` 
+# or specific project policies.
 exceptions = [
     { name = "arrayref", allow = ["BSD-2-Clause"] },
     { name = "bounded-vec", allow = ["CC0-1.0"] },
@@ -30,6 +39,41 @@ exceptions = [
     { name = "secp256k1", allow = ["CC0-1.0"] },
     { name = "secp256k1-sys", allow = ["CC0-1.0"] },
     { name = "subtle", allow = ["BSD-3-Clause"] },
+    # Note: WTFPL is generally frowned upon in enterprise environments due to unprofessional language,
+    # but allowed here as a specific exception for 'terminfo'.
     { name = "terminfo", allow = ["WTFPL"] },
     { name = "unicode-ident", allow = ["Unicode-3.0"] },
 ]
+
+# -----------------------------------------------------------------------------
+# Security Advisories (RECOMMENDED ADDITION)
+# -----------------------------------------------------------------------------
+[advisories]
+# Fail the build if a vulnerability is found in the dependency tree.
+vulnerability = "deny"
+# Fail if a crate is unmaintained (optional, but good practice).
+unmaintained = "warn"
+# Ignore specific advisory IDs here if they are false positives or irrelevant.
+ignore = []
+
+# -----------------------------------------------------------------------------
+# Banned Crates & Duplicates (RECOMMENDED ADDITION)
+# -----------------------------------------------------------------------------
+[bans]
+# Detect multiple versions of the same crate in the dependency tree.
+# This reduces binary size and compile times.
+multiple-versions = "warn" 
+# Ensure wildcard dependencies ("*") are not used.
+wildcards = "deny"
+# Allow specific multiple versions if strictly necessary (e.g., transitional periods).
+skip = []
+# Example: Ban specific crates that are known to be problematic.
+deny = []
+
+# -----------------------------------------------------------------------------
+# Sources (Security)
+# -----------------------------------------------------------------------------
+[sources]
+# Ensure we only pull crates from crates.io or known git repositories.
+unknown-registry = "deny"
+unknown-git = "deny"
