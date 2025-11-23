@@ -1,33 +1,64 @@
 #!/bin/sh
 
+# -----------------------------------------------------------------------------
+# Shell Configuration
+# -----------------------------------------------------------------------------
+# Force strict POSIX locale for consistent processing.
 export LC_ALL=C
+
+# Exit immediately on error (set -e) and treat unset variables as an error (set -u).
 set -eu
-set +x
 
-cmd_pref() {
-    if command -v "$2" >/dev/null; then
-        eval "$1=$2"
+# -----------------------------------------------------------------------------
+# Platform & Dependency Detection
+# -----------------------------------------------------------------------------
+
+# Function to resolve the absolute path of the script.
+# Replaces the complex 'eval' logic with a direct check for GNU readlink (greadlink).
+# This ensures compatibility with macOS (BSD) and Linux.
+resolve_path() {
+    if command -v greadlink >/dev/null 2>&1; then
+        READLINK="greadlink"
     else
-        eval "$1=$3"
+        READLINK="readlink"
     fi
+    
+    # Navigate to the project root directory relative to this script.
+    cd "$(dirname "$("$READLINK" -f "$0")")/.." || exit 1
 }
 
-# If a g-prefixed version of the command exists, use it preferentially.
-gprefix() {
-    cmd_pref "$1" "g$2" "$2"
-}
+resolve_path
 
-gprefix READLINK readlink
-cd "$(dirname "$("$READLINK" -f "$0")")/.."
+# -----------------------------------------------------------------------------
+# Build Variables Configuration
+# -----------------------------------------------------------------------------
 
-# Allow user overrides to $MAKE. Typical usage for users who need it:
-#   MAKE=gmake ./zcutil/build.sh -j$(nproc)
+# Detect the number of CPU cores for parallel compilation.
+# This significantly speeds up the build process if the user hasn't specified args.
+if [ -z "${MAKEARGS-}" ]; then
+    if command -v nproc >/dev/null 2>&1; then
+        CORES=$(nproc)
+    elif command -v sysctl >/dev/null 2>&1; then
+        CORES=$(sysctl -n hw.ncpu)
+    else
+        CORES=1
+    fi
+    # Use n-1 cores to keep the system responsive, or 1 if single core.
+    if [ "$CORES" -gt 1 ]; then
+        PARALLEL_JOBS="-j$((CORES - 1))"
+    else
+        PARALLEL_JOBS="-j1"
+    fi
+else
+    PARALLEL_JOBS=""
+fi
+
+# Allow user overrides for the MAKE command (useful for BSDs using gmake).
 if [ -z "${MAKE-}" ]; then
     MAKE="make"
 fi
 
-# Allow overrides to $BUILD and $HOST for porters. Most users will not need it.
-#   BUILD=i686-pc-linux-gnu ./zcutil/build.sh
+# Detect Build and Host types using the depends system config.
 if [ -z "${BUILD-}" ]; then
     BUILD="$(./depends/config.guess)"
 fi
@@ -35,63 +66,89 @@ if [ -z "${HOST-}" ]; then
     HOST="$BUILD"
 fi
 
-# Allow users to set arbitrary compile flags. Most users will not need this.
+# Parse command line arguments to determine verbosity and configuration flags.
+# We default to quiet builds unless V=1 is passed.
 if [ -z "${CONFIGURE_FLAGS-}" ]; then
-    # If the user did not set CONFIGURE_FLAGS, then use "--quiet" unless V=1 was given.
     CONFIGURE_FLAGS="--quiet"
-    for arg in "$@"
-    do
+    for arg in "$@"; do
         if [ "$arg" = "V=1" ]; then
             CONFIGURE_FLAGS=""
+            break
         fi
     done
 fi
 
-if [ "$*" = '--help' ]
-then
+# -----------------------------------------------------------------------------
+# Help & Usage
+# -----------------------------------------------------------------------------
+
+if [ "$*" = '--help' ]; then
     cat <<EOF
 Usage:
-
 $0 --help
   Show this help message and exit.
 
 $0 [ MAKEARGS... ]
-  Build Zcash and most of its transitive dependencies from
-  source. MAKEARGS are applied to both dependencies and Zcash itself.
+  Build Zcash and its dependencies. 
+  Arguments are passed to 'make'.
 
-  Pass flags to ./configure using the CONFIGURE_FLAGS environment variable.
-  For example, to enable coverage instrumentation (thus enabling "make cov"
-  to work), call:
+  Environment Variables:
+    CONFIGURE_FLAGS  Pass flags to ./configure (e.g., "--enable-lcov")
+    MAKE             Override the make command (e.g., "gmake")
+    V=1              Enable verbose output
 
-      CONFIGURE_FLAGS="--enable-lcov --disable-hardening" ./zcutil/build.sh
-
-  For verbose output, use:
-      ./zcutil/build.sh V=1
+  Example:
+    ./zcutil/build.sh -j8
 EOF
     exit 0
 fi
 
+# -----------------------------------------------------------------------------
+# Build Execution
+# -----------------------------------------------------------------------------
+
+# Print commands and their arguments as they are executed (debugging).
 set -x
 
-eval "$MAKE" --version
+# Verify tool versions
+"$MAKE" --version
 as --version
 
+# Set DEBUG flag based on configuration
 case "$CONFIGURE_FLAGS" in
-(*"--enable-debug"*)
-    DEBUG=1
-;;
-(*)
-    DEBUG=
-;;esac
+    *"--enable-debug"*)
+        DEBUG=1
+        ;;
+    *)
+        DEBUG=
+        ;;
+esac
 
+# 1. Build Dependencies
+# We pass the host/build info and potential debug flags.
 HOST="$HOST" BUILD="$BUILD" "$MAKE" "$@" -C ./depends/ DEBUG="$DEBUG"
 
-if [ "${BUILD_STAGE:-all}" = "depends" ]
-then
+# If we are only building dependencies, exit here.
+if [ "${BUILD_STAGE:-all}" = "depends" ]; then
     exit 0
 fi
 
+# 2. Clean Previous Build
+# NOTE: This forces a clean build every time. Consider removing this 
+# if you want incremental builds for faster development cycles.
 ./zcutil/clean.sh
+
+# 3. Autogenerate Configuration
 ./autogen.sh
+
+# 4. Configure
+# We use the site configuration generated by the dependency build.
 CONFIG_SITE="$PWD/depends/$HOST/share/config.site" ./configure $CONFIGURE_FLAGS
-"$MAKE" "$@"
+
+# 5. Compile
+# If no arguments were provided, use the auto-detected parallel jobs.
+if [ $# -eq 0 ]; then
+    "$MAKE" $PARALLEL_JOBS
+else
+    "$MAKE" "$@"
+fi
