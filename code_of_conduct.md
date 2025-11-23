@@ -1,66 +1,96 @@
-# Contributor Code of Conduct
+Contributor Code of Conduct
 
-As contributors and maintainers of this project, and in the interest of
-fostering an open and welcoming community, we pledge to respect all people who
-contribute through reporting issues, posting feature requests, updating
-documentation, submitting pull requests or patches, and other activities.
+Our Pledge
 
-We are committed to making participation in this project a harassment-free
-experience for everyone, regardless of level of experience, gender, gender
-identity and expression, sexual orientation, disability, personal appearance,
-body size, race, ethnicity, age, religion, or nationality.
+In the interest of fostering an open and welcoming community, we, as contributors and maintainers of this project, pledge to make participation a harassment-free and respectful experience for everyone.
+
+We commit to respecting all individuals who contribute through reporting issues, posting feature requests, updating documentation, submitting pull requests, or any other activity, regardless of:
+
+Experience level
+
+Gender, gender identity, and expression
+
+Sexual orientation
+
+Disability
+
+Personal appearance or body size
+
+Race, ethnicity, age, religion, or nationality
+
+Expected Standards of Behavior
+
+Examples of positive behavior include:
+
+Using welcoming and inclusive language.
+
+Being respectful of differing viewpoints and experiences.
+
+Gracefully accepting constructive criticism.
+
+Focusing on what is best for the community.
+
+Showing empathy towards other community members.
+
+Unacceptable Behavior
 
 Examples of unacceptable behavior by participants include:
 
-* The use of sexualized language or imagery
-* The use of language or imagery that originates with, or has been
-  adopted as a symbol or "dog-whistle" for, any of: right-wing extremism,
-  anti-Semitism, Islamophobia, white supremacism, eugenics, homophobia, or
-  transphobia (whether or not the use by itself falls into those categories)
-* Personal attacks
-* Trolling or insulting/derogatory comments
-* Public or private harassment
-* Publishing other's private information, such as physical or electronic
-  addresses, without explicit permission
-* Other unethical or unprofessional conduct
+1. Harassment and Exclusion
 
-Project maintainers have the right and responsibility to remove, edit, or
-reject comments, commits, code, wiki edits, issues, and other contributions
-that are not aligned to this Code of Conduct, or to ban temporarily or
-permanently any contributor for other behaviors that they deem inappropriate,
-threatening, offensive, or harmful. Note that contributors may be volunteers
-who do not represent Electric Coin Company. They are free to express their own
-opinions so long as they adhere to these guidelines.
+Trolling, insulting, or derogatory comments.
 
-By adopting this Code of Conduct, project maintainers commit themselves to
-fairly and consistently applying these principles to every aspect of managing
-this project. Project maintainers who do not follow or enforce the Code of
-Conduct may be permanently removed from the project team.
+Personal attacks or sustained harassment, public or private.
 
-This Code of Conduct applies both within project spaces and in public spaces
-when an individual is representing the project or its community.
+Publishing others' private information, such as physical or electronic addresses, without explicit permission.
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported by contacting a project maintainer (see below). All
-complaints will be reviewed and investigated and will result in a response that
-is deemed necessary and appropriate to the circumstances. Maintainers are
-obligated to maintain confidentiality with regard to the reporter of an
-incident.
+2. Discriminatory Language and Imagery
 
-You may send reports to [our Conduct email](mailto:conduct@electriccoin.co).
+The use of sexualized language or imagery.
 
-If you wish to contact specific maintainers directly, the following have made
-themselves available for conduct issues:
+The use of language or imagery that originates with, or has been adopted as a symbol or "dog-whistle" for, hate groups, including but not limited to: right-wing extremism, anti-Semitism, Islamophobia, white supremacism, eugenics, homophobia, or transphobia.
 
-- Daira-Emma Hopwood (daira-emma at electriccoin.co)
-- Kris Nuttycombe (kris at electriccoin.co)
-- Jack Grigg (jack at electriccoin.co)
+Any other unethical or unprofessional conduct.
 
+Responsibilities of Maintainers
 
-This Code of Conduct is adapted from the [Contributor Covenant][homepage],
-version 1.3.0, available at
-[https://www.contributor-covenant.org/version/1/3/0/][version]
+Project maintainers are responsible for clarifying the standards of acceptable behavior and are expected to take appropriate and fair corrective action in response to any instances of unacceptable behavior.
 
-[homepage]: https://www.contributor-covenant.org
-[version]: https://www.contributor-covenant.org/version/1/3/0/
+Maintainers have the right and responsibility to:
 
+Remove, edit, or reject comments, commits, code, wiki edits, issues, and other contributions that do not align with this Code of Conduct.
+
+Ban temporarily or permanently any contributor for behaviors they deem inappropriate, threatening, offensive, or harmful.
+
+Maintainers who do not follow or enforce the Code of Conduct will face permanent removal from the project team.
+
+Note: Contributors may be volunteers who do not represent the organization (Electric Coin Company). They are free to express their own opinions so long as they adhere to these guidelines.
+
+Scope
+
+This Code of Conduct applies both within project spaces (e.g., repositories, issue trackers) and in public spaces when an individual is representing the project or its community.
+
+Enforcement and Reporting
+
+Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by contacting a project maintainer using the methods below. All complaints will be promptly reviewed, investigated, and will result in a response deemed necessary and appropriate to the circumstances.
+
+Maintainers are obligated to maintain confidentiality with regard to the reporter of an incident.
+
+How to Report an Incident
+
+Primary Reporting Channel (Confidential):
+You may send reports to the dedicated Conduct email address:
+conduct@electriccoin.co
+
+Direct Maintainer Contact:
+If you wish to contact specific maintainers directly for conduct issues:
+
+Daira-Emma Hopwood (daira-emma at electriccoin.co)
+
+Kris Nuttycombe (kris at electriccoin.co)
+
+Jack Grigg (jack at electriccoin.co)
+
+This Code of Conduct is adapted from the Contributor Covenant,
+Version 2.1, available at
+https://www.contributor-covenant.org/version/2/1/code_of_conduct/
