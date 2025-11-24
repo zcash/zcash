@@ -1,54 +1,63 @@
 #!/bin/sh
 
+# Set environment variables for portability and strictness.
 export LC_ALL=C
+# -e: Exit immediately if a command exits with a non-zero status.
+# -u: Treat unset variables as an error.
 set -eu
-set +x
 
-cmd_pref() {
-    if command -v "$2" >/dev/null; then
-        eval "$1=$2"
+# --- Function Definitions ---
+
+# Use 'g' prefixed commands (like greadlink, gmake) if available, 
+# for better compatibility on macOS (which uses BSD utilities).
+# Arguments: $1: Variable to assign, $2: Base command name
+gprefix() {
+    # Check if 'g' prefixed version exists
+    if command -v "g$2" >/dev/null; then
+        eval "$1=\"g$2\""
     else
-        eval "$1=$3"
+        eval "$1=\"$2\""
     fi
 }
 
-# If a g-prefixed version of the command exists, use it preferentially.
-gprefix() {
-    cmd_pref "$1" "g$2" "$2"
-}
+# --- Command Path Setup ---
 
+# Detect the preferred 'readlink' version and assign it to READLINK.
 gprefix READLINK readlink
+
+# Change directory to the repository root.
+# Uses READLINK to handle relative paths and symbolic links reliably.
 cd "$(dirname "$("$READLINK" -f "$0")")/.."
 
-# Allow user overrides to $MAKE. Typical usage for users who need it:
-#   MAKE=gmake ./zcutil/build.sh -j$(nproc)
-if [ -z "${MAKE-}" ]; then
-    MAKE="make"
-fi
+# --- Environment Variable Defaults ---
 
-# Allow overrides to $BUILD and $HOST for porters. Most users will not need it.
-#   BUILD=i686-pc-linux-gnu ./zcutil/build.sh
-if [ -z "${BUILD-}" ]; then
-    BUILD="$(./depends/config.guess)"
-fi
-if [ -z "${HOST-}" ]; then
-    HOST="$BUILD"
-fi
+# Allow user overrides (e.g., MAKE=gmake ./zcutil/build.sh).
+# Set defaults using Parameter Expansion: ${VAR:-default_value}
+MAKE=${MAKE:-make}
 
-# Allow users to set arbitrary compile flags. Most users will not need this.
-if [ -z "${CONFIGURE_FLAGS-}" ]; then
-    # If the user did not set CONFIGURE_FLAGS, then use "--quiet" unless V=1 was given.
-    CONFIGURE_FLAGS="--quiet"
-    for arg in "$@"
-    do
-        if [ "$arg" = "V=1" ]; then
-            CONFIGURE_FLAGS=""
-        fi
-    done
-fi
+# Allow overrides for porters (BUILD=i686-pc-linux-gnu ./zcutil/build.sh).
+# Determine the build machine type.
+BUILD=${BUILD:-$(./depends/config.guess)}
+# Assume host is the same as build unless explicitly overridden.
+HOST=${HOST:-$BUILD}
 
-if [ "$*" = '--help' ]
-then
+# Handle CONFIGURE_FLAGS.
+QUIET_FLAG="--quiet"
+# Check if V=1 (verbose) argument was passed in.
+for arg in "$@"
+do
+    if [ "$arg" = "V=1" ]; then
+        QUIET_FLAG=""
+        break
+    fi
+done
+
+# If CONFIGURE_FLAGS is unset, apply the quiet flag (or empty if V=1 was passed).
+CONFIGURE_FLAGS=${CONFIGURE_FLAGS:-$QUIET_FLAG}
+
+# --- Help Message ---
+
+if [ "$*" = '--help' ]; then
     cat <<EOF
 Usage:
 
@@ -71,27 +80,40 @@ EOF
     exit 0
 fi
 
+# Enable command tracing for the build steps (standard for build scripts).
 set -x
 
-eval "$MAKE" --version
+# --- Dependency Build ---
+
+# Display versions for debugging environment issues.
+"$MAKE" --version
 as --version
 
-case "$CONFIGURE_FLAGS" in
-(*"--enable-debug"*)
+# Check if debug mode is explicitly enabled via CONFIGURE_FLAGS.
+DEBUG=""
+if echo "$CONFIGURE_FLAGS" | grep -q --enable-debug; then
     DEBUG=1
-;;
-(*)
-    DEBUG=
-;;esac
+fi
 
+# Build dependencies. Pass MAKEARGS and the detected DEBUG flag.
 HOST="$HOST" BUILD="$BUILD" "$MAKE" "$@" -C ./depends/ DEBUG="$DEBUG"
 
-if [ "${BUILD_STAGE:-all}" = "depends" ]
-then
+# Stop if the user only requested the 'depends' stage.
+if [ "${BUILD_STAGE:-all}" = "depends" ]; then
     exit 0
 fi
 
+# --- Main Project Build ---
+
+# Clean up previous build artifacts.
 ./zcutil/clean.sh
+
+# Regenerate configure scripts, etc.
 ./autogen.sh
+
+# Configure the Zcash project.
+# CONFIG_SITE ensures the project uses the dependencies built in the 'depends' directory.
 CONFIG_SITE="$PWD/depends/$HOST/share/config.site" ./configure $CONFIGURE_FLAGS
+
+# Build the main project.
 "$MAKE" "$@"
