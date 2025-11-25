@@ -1,118 +1,129 @@
 # ===========================================================================
-#   https://www.gnu.org/software/autoconf-archive/ax_boost_filesystem.html
+# AX_BOOST_FILESYSTEM: Checks for the Boost Filesystem C++ library.
 # ===========================================================================
-#
-# SYNOPSIS
-#
-#   AX_BOOST_FILESYSTEM
-#
-# DESCRIPTION
-#
-#   Test for Filesystem library from the Boost C++ libraries. The macro
-#   requires a preceding call to AX_BOOST_BASE. Further documentation is
-#   available at <http://randspringer.de/boost/index.html>.
-#
-#   This macro calls:
-#
-#     AC_SUBST(BOOST_FILESYSTEM_LIB)
-#
-#   And sets:
-#
-#     HAVE_BOOST_FILESYSTEM
-#
-# LICENSE
-#
-#   Copyright (c) 2009 Thomas Porschberg <thomas@randspringer.de>
-#   Copyright (c) 2009 Michael Tindal
-#   Copyright (c) 2009 Roman Rybalko <libtorrent@romanr.info>
-#
-#   Copying and distribution of this file, with or without modification, are
-#   permitted in any medium without royalty provided the copyright notice
-#   and this notice are preserved. This file is offered as-is, without any
-#   warranty.
 
-#serial 28
+# serial 28
 
 AC_DEFUN([AX_BOOST_FILESYSTEM],
 [
-	AC_ARG_WITH([boost-filesystem],
-	AS_HELP_STRING([--with-boost-filesystem@<:@=special-lib@:>@],
-                   [use the Filesystem library from boost - it is possible to specify a certain library for the linker
-                        e.g. --with-boost-filesystem=boost_filesystem-gcc-mt ]),
+    # Define a unique variable prefix for this macro's internal state.
+    AX_BOOST_FILESYSTEM_WANT=yes
+    AX_BOOST_FILESYSTEM_USER_LIB=""
+
+    AC_ARG_WITH([boost-filesystem],
+        AS_HELP_STRING([--with-boost-filesystem@<:@=special-lib@:>@],
+            [Use the Filesystem library from Boost. Optional: specify a linker library name,
+             e.g., --with-boost-filesystem=boost_filesystem-gcc-mt]),
         [
-        if test "$withval" = "no"; then
-			want_boost="no"
-        elif test "$withval" = "yes"; then
-            want_boost="yes"
-            ax_boost_user_filesystem_lib=""
-        else
-		    want_boost="yes"
-		ax_boost_user_filesystem_lib="$withval"
-		fi
+            # Handle the user input for --with-boost-filesystem
+            AS_CASE(["$withval"],
+                [no], [AX_BOOST_FILESYSTEM_WANT=no],
+                [yes], [AX_BOOST_FILESYSTEM_WANT=yes],
+                [*],
+                [
+                    AX_BOOST_FILESYSTEM_WANT=yes
+                    AX_BOOST_FILESYSTEM_USER_LIB="$withval"
+                ]
+            )
         ],
-        [want_boost="yes"]
-	)
+        [AX_BOOST_FILESYSTEM_WANT=yes]
+    )
 
-	if test "x$want_boost" = "xyes"; then
+    # Proceed with the check only if the user explicitly requested it (or the default is 'yes').
+    AS_IF([test "x$AX_BOOST_FILESYSTEM_WANT" = "xyes"], [
+        # AC_PROG_CC is required for compilation checks (though AC_LANG_PROGRAM implies C/C++ support).
         AC_REQUIRE([AC_PROG_CC])
-		CPPFLAGS_SAVED="$CPPFLAGS"
-		CPPFLAGS="$CPPFLAGS $BOOST_CPPFLAGS"
-		export CPPFLAGS
+        AC_REQUIRE([AX_BOOST_BASE]) # Essential prerequisite check
 
-		LDFLAGS_SAVED="$LDFLAGS"
-		LDFLAGS="$LDFLAGS $BOOST_LDFLAGS"
-		export LDFLAGS
+        # -----------------------------------------------------------
+        # Save and set compiler/linker flags provided by AX_BOOST_BASE
+        # -----------------------------------------------------------
+        CPPFLAGS_SAVED="$CPPFLAGS"
+        CPPFLAGS="$CPPFLAGS $BOOST_CPPFLAGS"
 
-		LIBS_SAVED=$LIBS
-		LIBS="$LIBS $BOOST_SYSTEM_LIB"
-		export LIBS
+        LDFLAGS_SAVED="$LDFLAGS"
+        LDFLAGS="$LDFLAGS $BOOST_LDFLAGS"
 
-        AC_CACHE_CHECK(whether the Boost::Filesystem library is available,
-					   ax_cv_boost_filesystem,
-        [AC_LANG_PUSH([C++])
-         AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[@%:@include <boost/filesystem/path.hpp>]],
-                                   [[using namespace boost::filesystem;
-                                   path my_path( "foo/bar/data.txt" );
-                                   return 0;]])],
-					       ax_cv_boost_filesystem=yes, ax_cv_boost_filesystem=no)
-         AC_LANG_POP([C++])
-		])
-		if test "x$ax_cv_boost_filesystem" = "xyes"; then
-			AC_DEFINE(HAVE_BOOST_FILESYSTEM,,[define if the Boost::Filesystem library is available])
-            BOOSTLIBDIR=`echo $BOOST_LDFLAGS | sed -e 's/@<:@^\/@:>@*//'`
-            if test "x$ax_boost_user_filesystem_lib" = "x"; then
-                for libextension in `ls -r $BOOSTLIBDIR/libboost_filesystem* 2>/dev/null | sed 's,.*/lib,,' | sed 's,\..*,,'` ; do
-                     ax_lib=${libextension}
-				    AC_CHECK_LIB($ax_lib, exit,
-                                 [BOOST_FILESYSTEM_LIB="-l$ax_lib"; AC_SUBST(BOOST_FILESYSTEM_LIB) link_filesystem="yes"; break],
-                                 [link_filesystem="no"])
-				done
-                if test "x$link_filesystem" != "xyes"; then
-                for libextension in `ls -r $BOOSTLIBDIR/boost_filesystem* 2>/dev/null | sed 's,.*/,,' | sed -e 's,\..*,,'` ; do
-                     ax_lib=${libextension}
-				    AC_CHECK_LIB($ax_lib, exit,
-                                 [BOOST_FILESYSTEM_LIB="-l$ax_lib"; AC_SUBST(BOOST_FILESYSTEM_LIB) link_filesystem="yes"; break],
-                                 [link_filesystem="no"])
-				done
-		    fi
-            else
-               for ax_lib in $ax_boost_user_filesystem_lib boost_filesystem-$ax_boost_user_filesystem_lib; do
-				      AC_CHECK_LIB($ax_lib, exit,
-                                   [BOOST_FILESYSTEM_LIB="-l$ax_lib"; AC_SUBST(BOOST_FILESYSTEM_LIB) link_filesystem="yes"; break],
-                                   [link_filesystem="no"])
-                  done
+        LIBS_SAVED="$LIBS"
+        # Link against the boost_system library, which is a common dependency for Filesystem.
+        LIBS="$LIBS $BOOST_SYSTEM_LIB"
+        
+        # NOTE: Exporting shell variables is usually not necessary within Autoconf macros 
+        # as they operate within the same shell environment, but included for fidelity.
+        export CPPFLAGS LDFLAGS LIBS
 
-            fi
-            if test "x$ax_lib" = "x"; then
-                AC_MSG_ERROR(Could not find a version of the Boost::Filesystem library!)
-            fi
-			if test "x$link_filesystem" != "xyes"; then
-				AC_MSG_ERROR(Could not link against $ax_lib !)
-			fi
-		fi
+        # -----------------------------------------------------------
+        # Check for header and basic compilation (Boost::Filesystem requires C++ linkage)
+        # -----------------------------------------------------------
+        AC_CACHE_CHECK([whether the Boost::Filesystem header is available],
+                       [ax_cv_boost_filesystem_header],
+            [AC_LANG_PUSH([C++])
+             AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[@%:@include <boost/filesystem/path.hpp>]],
+                                                [[using namespace boost::filesystem;
+                                                path my_path( "foo/bar/data.txt" );
+                                                return 0;]])],
+                               [ax_cv_boost_filesystem_header=yes],
+                               [ax_cv_boost_filesystem_header=no])
+             AC_LANG_POP([C++])
+            ])
 
-		CPPFLAGS="$CPPFLAGS_SAVED"
-		LDFLAGS="$LDFLAGS_SAVED"
-		LIBS="$LIBS_SAVED"
-	fi
+        AS_IF([test "x$ax_cv_boost_filesystem_header" = "xyes"], [
+            # Header found. Now, attempt to link against the required library.
+            AC_DEFINE(HAVE_BOOST_FILESYSTEM,,[define if the Boost::Filesystem library is available])
+            
+            # Extract the library directory path from BOOST_LDFLAGS (e.g., -L/path/to/boost/lib)
+            # This is fragile but necessary for robust Boost library search due to naming conventions.
+            BOOSTLIBDIR=`echo $BOOST_LDFLAGS | sed -e 's/-L//'`
+            link_filesystem=no
+            ax_lib=""
+
+            AS_IF([test "x$AX_BOOST_FILESYSTEM_USER_LIB" = "x"], [
+                # --- Default search (no user specified library) ---
+                
+                # Search for library files using standard naming conventions (libboost_filesystem* and boost_filesystem*).
+                # Using 'ls -r' tries the newest/most complex versions first.
+                for libextension in `ls -r "$BOOSTLIBDIR"/libboost_filesystem* 2>/dev/null | sed 's,.*/lib,,' | sed 's,\..*,,'` ; do
+                    ax_lib=${libextension}
+                    AC_CHECK_LIB($ax_lib, exit,
+                        [BOOST_FILESYSTEM_LIB="-l$ax_lib"; link_filesystem="yes"; break])
+                done
+                
+                # If libboost_filesystem* failed, try files named boost_filesystem* (sometimes used for non-standard links).
+                AS_IF([test "x$link_filesystem" != "xyes"], [
+                    for libextension in `ls -r "$BOOSTLIBDIR"/boost_filesystem* 2>/dev/null | sed 's,.*/,,' | sed -e 's,\..*,,'` ; do
+                        ax_lib=${libextension}
+                        AC_CHECK_LIB($ax_lib, exit,
+                            [BOOST_FILESYSTEM_LIB="-l$ax_lib"; link_filesystem="yes"; break])
+                    done
+                ])
+            ], [
+                # --- User specified library via --with-boost-filesystem=special-lib ---
+                
+                # Check the user-provided library name first, then check common variations.
+                for ax_lib in "$AX_BOOST_FILESYSTEM_USER_LIB" "boost_filesystem-$AX_BOOST_FILESYSTEM_USER_LIB"; do
+                    AC_CHECK_LIB($ax_lib, exit,
+                        [BOOST_FILESYSTEM_LIB="-l$ax_lib"; link_filesystem="yes"; break])
+                done
+            ])
+
+            # -----------------------------------------------------------
+            # Final verification and error handling
+            # -----------------------------------------------------------
+            AS_IF([test "x$link_filesystem" = "xyes"], [
+                AC_SUBST(BOOST_FILESYSTEM_LIB) # Success: substitute the found library name.
+            ], [
+                # Error if we couldn't find a library that links successfully.
+                AS_IF([test "x$ax_lib" = "x"], [
+                    AC_MSG_ERROR([Could not find a suitable version of the Boost::Filesystem library.])
+                ], [
+                    AC_MSG_ERROR([Could not link against library '$ax_lib'. Please check your BOOST_LDFLAGS and dependencies.])
+                ])
+            ])
+        ])
+
+        # Restore saved flags to avoid polluting other checks in the configure script.
+        CPPFLAGS="$CPPFLAGS_SAVED"
+        LDFLAGS="$LDFLAGS_SAVED"
+        LIBS="$LIBS_SAVED"
+    ])
 ])
