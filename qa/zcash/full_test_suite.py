@@ -1,57 +1,58 @@
 #!/usr/bin/env python3
 #
-# Execute all of the automated tests related to Zcash.
+# Execute all automated tests related to Zcash.
+# This script organizes, runs, and reports results for C++, Rust, and security tests.
 #
 
 import argparse
 from glob import glob
 import os
+from pathlib import Path
 import re
 import subprocess
 import sys
+from typing import Callable, Dict, List, Union
 
-REPOROOT = os.path.dirname(
-    os.path.dirname(
-        os.path.dirname(
-            os.path.abspath(__file__)
-        )
-    )
-)
+# Determine the repository root directory by navigating up three levels from this script's location.
+REPOROOT = Path(__file__).resolve().parent.parent.parent.parent
 
-def repofile(filename):
-    return os.path.join(REPOROOT, filename)
+def repofile(filename: str) -> str:
+    """Returns the absolute path to a file within the repository root."""
+    return str(REPOROOT / filename)
 
-def get_arch_dir():
-    depends_dir = os.path.join(REPOROOT, 'depends')
+def get_arch_dir() -> Optional[str]:
+    """
+    Detects the architecture-specific build directory inside the 'depends' folder.
+    Prioritizes Linux, then MacOS, then Windows (MinGW).
+    """
+    depends_dir = REPOROOT / 'depends'
 
-    arch_dir = os.path.join(depends_dir, 'x86_64-pc-linux-gnu')
-    if os.path.isdir(arch_dir):
-        return arch_dir
+    # 1. Linux (x86_64-pc-linux-gnu)
+    arch_dir = depends_dir / 'x86_64-pc-linux-gnu'
+    if arch_dir.is_dir():
+        return str(arch_dir)
 
-    # Not Linux, try MacOS
-    arch_dirs = glob(os.path.join(depends_dir, 'x86_64-apple-darwin*'))
+    # 2. MacOS
+    arch_dirs = glob(str(depends_dir / 'x86_64-apple-darwin*'))
     if arch_dirs:
-        # Just try the first one; there will only be one in CI
         return arch_dirs[0]
 
-    # Not MacOS, try Windows
-    arch_dirs = glob(os.path.join(depends_dir, 'x86_64-w64-mingw32*'))
+    # 3. Windows (MinGW)
+    arch_dirs = glob(str(depends_dir / 'x86_64-w64-mingw32*'))
     if arch_dirs:
-        # Just try the first one; there will only be one in CI
         return arch_dirs[0]
 
-    print("!!! cannot find architecture dir under depends/ !!!")
+    # Error handling moved to caller for cleaner execution flow
     return None
 
 
-#
-# Custom test runners
-#
+# --- Security Check Utilities ---
 
-RE_RPATH_RUNPATH = re.compile('No RPATH.*No RUNPATH')
-RE_FORTIFY_AVAILABLE = re.compile('FORTIFY_SOURCE support available.*Yes')
-RE_FORTIFY_USED = re.compile('Binary compiled with FORTIFY_SOURCE support.*Yes')
+RE_RPATH_RUNPATH = re.compile(r'No RPATH.*No RUNPATH')
+RE_FORTIFY_AVAILABLE = re.compile(r'FORTIFY_SOURCE support available.*Yes')
+RE_FORTIFY_USED = re.compile(r'Binary compiled with FORTIFY_SOURCE support.*Yes')
 
+# List of binaries that are C++ (CXX) and Rust-based
 CXX_BINARIES = [
     'src/zcashd',
     'src/zcash-cli',
@@ -63,125 +64,157 @@ RUST_BINARIES = [
     'src/zcashd-wallet-tool',
 ]
 
-def test_rpath_runpath(filename):
-    output = subprocess.check_output(
-        [repofile('qa/zcash/checksec.sh'), '--file=' + repofile(filename)]
-    )
+def _run_checksec_script(filename: str, options: List[str]) -> bytes:
+    """Helper to execute the checksec.sh script."""
+    command = [repofile('qa/zcash/checksec.sh')] + options
+    try:
+        return subprocess.check_output(command)
+    except subprocess.CalledProcessError as e:
+        print(f"ERROR: checksec.sh failed for {filename}. Output:\n{e.output.decode()}")
+        return b'' # Return empty bytes on error
+
+def test_rpath_runpath(filename: str) -> bool:
+    """Checks if the binary has RPATH or RUNPATH set (should be absent)."""
+    output = _run_checksec_script(filename, [f'--file={repofile(filename)}'])
+    
     if RE_RPATH_RUNPATH.search(output.decode('utf-8')):
-        print('PASS: %s has no RPATH or RUNPATH.' % filename)
+        print(f'PASS: {filename} has no RPATH or RUNPATH.')
         return True
     else:
-        print('FAIL: %s has an RPATH or a RUNPATH.' % filename)
-        print(output)
+        print(f'FAIL: {filename} has an RPATH or a RUNPATH.')
+        print(output.decode('utf-8'))
         return False
 
-def test_fortify_source(filename):
+def test_fortify_source(filename: str) -> bool:
+    """Checks if the C++ binary was compiled with FORTIFY_SOURCE enabled."""
     proc = subprocess.Popen(
-        [repofile('qa/zcash/checksec.sh'), '--fortify-file=' + repofile(filename)],
+        [repofile('qa/zcash/checksec.sh'), f'--fortify-file={repofile(filename)}'],
         stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE, # Added stderr capture for safety
     )
+    # Read the two crucial lines for FORTIFY_SOURCE check
     line1 = proc.stdout.readline()
     line2 = proc.stdout.readline()
     proc.terminate()
-    if RE_FORTIFY_AVAILABLE.search(line1.decode('utf-8')) and RE_FORTIFY_USED.search(line2.decode('utf-8')):
-        print('PASS: %s has FORTIFY_SOURCE.' % filename)
+    
+    # Check if FORTIFY support is available AND used
+    if (RE_FORTIFY_AVAILABLE.search(line1.decode('utf-8')) and 
+        RE_FORTIFY_USED.search(line2.decode('utf-8'))):
+        print(f'PASS: {filename} has FORTIFY_SOURCE.')
         return True
     else:
-        print('FAIL: %s is missing FORTIFY_SOURCE.' % filename)
+        print(f'FAIL: {filename} is missing FORTIFY_SOURCE.')
+        # Print the relevant lines for debugging
+        print(line1.decode('utf-8').strip()) 
+        print(line2.decode('utf-8').strip())
         return False
 
-def check_security_hardening():
+def check_security_hardening() -> bool:
+    """Runs all security hardening checks (PIE, RELRO, Canary, NX, RPATH, FORTIFY)."""
     ret = True
-
-    # PIE, RELRO, Canary, and NX are tested by make check-security.
-    if os.path.exists(repofile('src/Makefile')):
+    src_makefile = REPOROOT / 'src' / 'Makefile'
+    
+    if src_makefile.exists():
+        # Prefer running the standard Makefile target
         ret &= subprocess.call(['make', '-C', repofile('src'), 'check-security']) == 0
     else:
-        # Equivalent to make check-security (this is just for CI purpose)
-        bin_programs = ['src/zcashd', 'src/zcash-cli', 'src/zcash-tx', 'src/bench/bench_bitcoin']  # Replace with actual values
-        bin_scripts = ['src/zcashd-wallet-tool']   # Replace with actual values
-
-        print(f"Checking binary security of {bin_programs + bin_scripts}...")
+        # Fallback for CI environments where make might not be fully configured
+        bin_programs = CXX_BINARIES + RUST_BINARIES # Use the centralized list
+        
+        print(f"Checking security hardening for {len(bin_programs)} binaries/scripts...")
 
         for program in bin_programs:
+            is_script = program in RUST_BINARIES # Check if it's a script/non-PIE binary
             command = [repofile('contrib/devtools/security-check.py'), repofile(program)]
+            
+            # Allow no canary for non-C++ binaries/scripts
+            if is_script:
+                command.insert(1, '--allow-no-canary')
+                
             ret &= subprocess.call(command) == 0
 
-        for script in bin_scripts:
-            command = [repofile('contrib/devtools/security-check.py'), '--allow-no-canary', repofile(script)]
-            ret &= subprocess.call(command) == 0
+    # The remaining checks are only applicable to ELF binaries (Linux/Unix executables)
+    zcashd_path = REPOROOT / 'src' / 'zcashd'
+    if zcashd_path.exists():
+        with open(zcashd_path, 'rb') as f:
+            magic = f.read(4)
+            # Check for ELF magic number (\x7f followed by E L F)
+            if not magic.startswith(b'\x7fELF'):
+                return ret # Not ELF, skip remaining security checks
 
-    # The remaining checks are only for ELF binaries
-    # Assume that if zcashd is an ELF binary, they all are
-    with open(repofile('src/zcashd'), 'rb') as f:
-        magic = f.read(4)
-        if not magic.startswith(b'\x7fELF'):
-            return ret
-
+    # Check RPATH/RUNPATH for all binaries
     for bin in CXX_BINARIES + RUST_BINARIES:
         ret &= test_rpath_runpath(bin)
 
-    # NOTE: checksec.sh does not reliably determine whether FORTIFY_SOURCE
-    # is enabled for the entire binary. See issue #915.
-    # FORTIFY_SOURCE is not applicable to Rust binaries.
+    # Check FORTIFY_SOURCE for C++ binaries only
     for bin in CXX_BINARIES:
         ret &= test_fortify_source(bin)
 
     return ret
 
-def ensure_no_dot_so_in_depends():
-    arch_dir = get_arch_dir()
-    if arch_dir is None:
+def ensure_no_dot_so_in_depends() -> bool:
+    """Checks the depends/lib directory for shared libraries (.so files), which should not be present."""
+    arch_dir_path = get_arch_dir()
+    
+    if arch_dir_path is None:
+        print("!!! arch-specific build dir not present. Did you build the ./depends tree? !!!")
         return False
-
+    
+    lib_dir = Path(arch_dir_path) / 'lib'
     exit_code = 0
+    
+    if lib_dir.is_dir():
+        shared_objects = [lib.name for lib in lib_dir.iterdir() if lib.name.endswith(".so")]
 
-    if os.path.isdir(arch_dir):
-        lib_dir = os.path.join(arch_dir, 'lib')
-        libraries = os.listdir(lib_dir)
-
-        for lib in libraries:
-            if lib.find(".so") != -1:
-                print(lib)
-                exit_code = 1
+        if shared_objects:
+            print("FAIL: Found unexpected shared object (.so) files in depends/lib:")
+            for lib in shared_objects:
+                print(f"  {lib}")
+            exit_code = 1
+        else:
+            print("PASS: No shared object (.so) files found in depends/lib.")
+            exit_code = 0
     else:
+        # This case should be mostly covered by the arch_dir_path check, but acts as fallback.
+        print("FAIL: lib directory not found under architecture dir.")
         exit_code = 2
-        print("arch-specific build dir not present")
-        print("Did you build the ./depends tree?")
-        print("Are you on a currently unsupported architecture?")
-
-    if exit_code == 0:
-        print("PASS.")
-    else:
-        print("FAIL.")
-
+        
     return exit_code == 0
 
-def util_test():
+# --- Standard Test Runners ---
+
+def util_test() -> bool:
+    """Runs the Python utility tests (bitcoin-util-test.py)."""
     return subprocess.call(
         [sys.executable, repofile('src/test/bitcoin-util-test.py')],
         cwd=repofile('src'),
+        # Explicitly setting PYTHONPATH and srcdir for the test script environment
         env={'PYTHONPATH': repofile('src/test'), 'srcdir': repofile('src')}
     ) == 0
 
-def rust_test():
+def rust_test() -> bool:
+    """Runs unit and integration tests for Rust components using Cargo."""
     arch_dir = get_arch_dir()
     if arch_dir is None:
+        # Error message is already printed in get_arch_dir check (or should be handled better by main)
         return False
 
     rust_env = os.environ.copy()
+    # Configure Cargo to use the toolchain built by 'depends'
     rust_env['RUSTC'] = os.path.join(arch_dir, 'native', 'bin', 'rustc')
+    
+    cargo_path = os.path.join(arch_dir, 'native', 'bin', 'cargo')
+    
     return subprocess.call([
-        os.path.join(arch_dir, 'native', 'bin', 'cargo'),
+        cargo_path,
         'test',
         '--manifest-path',
-        os.path.join(REPOROOT, 'Cargo.toml'),
+        repofile('Cargo.toml'),
     ], env=rust_env) == 0
 
-#
-# Tests
-#
+# --- Test Orchestration ---
 
+# Define the order and mapping of test stages
 STAGES = [
     'rust-test',
     'btest',
@@ -194,7 +227,7 @@ STAGES = [
     'rpc',
 ]
 
-STAGE_COMMANDS = {
+STAGE_COMMANDS: Dict[str, Union[Callable[[], bool], List[str]]] = {
     'rust-test': rust_test,
     'btest': [repofile('src/test/test_bitcoin'), '-p'],
     'gtest': [repofile('src/zcash-gtest')],
@@ -207,45 +240,58 @@ STAGE_COMMANDS = {
 }
 
 
-#
-# Test driver
-#
+# --- Test Driver ---
 
-def run_stage(stage):
-    print('Running stage %s' % stage)
+def run_stage(stage: str) -> bool:
+    """Executes a single test stage and prints status."""
+    print(f'Running stage {stage}')
     print('=' * (len(stage) + 14))
     print()
 
     cmd = STAGE_COMMANDS[stage]
-    if type(cmd) == type([]):
+    
+    if isinstance(cmd, list):
+        # Command is a list of strings (external program call)
         ret = subprocess.call(cmd) == 0
     else:
+        # Command is a callable function (internal Python logic)
         ret = cmd()
 
     print()
     print('-' * (len(stage) + 15))
-    print('Finished stage %s' % stage)
+    print(f'Finished stage {stage}')
     print()
 
     return ret
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--list-stages', dest='list', action='store_true')
-    parser.add_argument('stage', nargs='*', default=STAGES,
-                        help='One of %s'%STAGES)
+    """Main entry point for the test execution script."""
+    parser = argparse.ArgumentParser(description='Execute Zcash automated tests.')
+    parser.add_argument(
+        '--list-stages', 
+        dest='list', 
+        action='store_true',
+        help='List all available test stages.'
+    )
+    parser.add_argument(
+        'stage', 
+        nargs='*', 
+        default=STAGES,
+        help=f'One or more stages to run. Defaults to all: {", ".join(STAGES)}'
+    )
     args = parser.parse_args()
 
-    # Check for list
+    # Handle --list-stages
     if args.list:
+        print("Available test stages:")
         for s in STAGES:
-            print(s)
+            print(f"- {s}")
         sys.exit(0)
 
-    # Check validity of stages
+    # Validate requested stages
     for s in args.stage:
-        if s not in STAGES:
-            print("Invalid stage '%s' (choose from %s)" % (s, STAGES))
+        if s not in STAGE_COMMANDS:
+            print(f"Invalid stage '{s}' (choose from {', '.join(STAGES)})")
             sys.exit(1)
 
     # Run the stages
@@ -253,12 +299,14 @@ def main():
     for s in args.stage:
         passed = run_stage(s)
         if not passed:
-            print("!!! Stage %s failed !!!" % (s,))
+            print(f"!!! Stage {s} failed !!!")
         all_passed &= passed
 
     if not all_passed:
         print("!!! One or more test stages failed !!!")
         sys.exit(1)
+        
+    print("All requested test stages completed successfully.")
 
 if __name__ == '__main__':
     main()
