@@ -109,7 +109,7 @@ proptest = "1.0.0"
 zcash_primitives = { version = "0.26", features = ["temporary-zcashd", "transparent-inputs", "test-dependencies"] }
 
 [dependencies.tracing-subscriber]
-version = "0.3"
+version = "0.3.22"
 default-features = false
 features = ["ansi", "env-filter", "fmt", "time"]
 
