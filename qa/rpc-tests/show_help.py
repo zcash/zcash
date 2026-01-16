@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2014-2016 The Bitcoin Core developers
-# Copyright (c) 2017-2024 The Zcash developers
+# Copyright (c) 2017-2025 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -30,12 +30,9 @@ Options:
   -version
        Print version and exit
 
-  -alerts
-       Receive and display P2P network alerts (default: 1)
-
   -alertnotify=<cmd>
-       Execute command when a relevant alert is received or we see a really
-       long fork (%s in cmd is replaced by message)
+       Execute command on node end-of-service or when we see a really long fork
+       (%s in cmd is replaced by message)
 
   -allowdeprecated=<feature>
        Explicitly allow the use of the specified deprecated feature. Multiple

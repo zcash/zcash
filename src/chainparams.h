@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
-// Copyright (c) 2016-2023 The Zcash developers
+// Copyright (c) 2016-2025 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -59,7 +59,6 @@ public:
             consensus.vUpgrades[Consensus::UPGRADE_NU6_1].nActivationHeight);
     }
     const CMessageHeader::MessageStartChars& MessageStart() const { return pchMessageStart; }
-    const std::vector<unsigned char>& AlertKey() const { return vAlertPubKey; }
     int GetDefaultPort() const { return nDefaultPort; }
 
     CAmount SproutValuePoolCheckpointHeight() const { return nSproutValuePoolCheckpointHeight; }
@@ -112,8 +111,6 @@ protected:
 
     Consensus::Params consensus;
     CMessageHeader::MessageStartChars pchMessageStart;
-    //! Raw pub key bytes for the broadcast alert signing key.
-    std::vector<unsigned char> vAlertPubKey;
     int nDefaultPort = 0;
     uint64_t nPruneAfterHeight = 0;
     std::vector<CDNSSeedData> vSeeds;

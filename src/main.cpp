@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
-// Copyright (c) 2015-2023 The Zcash developers
+// Copyright (c) 2015-2025 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -102,7 +102,6 @@ bool fIBDSkipTxVerification = DEFAULT_IBD_SKIP_TX_VERIFICATION;
 bool fCoinbaseEnforcedShieldingEnabled = true;
 size_t nCoinCacheUsage = 5000 * 300;
 uint64_t nPruneTarget = 0;
-bool fAlerts = DEFAULT_ALERTS;
 int64_t nMaxTipAge = DEFAULT_MAX_TIP_AGE;
 
 std::optional<unsigned int> expiryDeltaArg = std::nullopt;
@@ -2363,7 +2362,7 @@ void CheckForkWarningConditions(const Consensus::Params& params)
         {
             std::string warning = std::string("'Warning: Large-work fork detected, forking after block ") +
                 pindexBestForkBase->phashBlock->ToString() + std::string("'");
-            CAlert::Notify(warning, true);
+            AlertNotify(warning, true);
         }
         if (pindexBestForkTip && pindexBestForkBase)
         {
@@ -2376,7 +2375,7 @@ void CheckForkWarningConditions(const Consensus::Params& params)
         {
             std::string warning = std::string("Warning: Found invalid chain at least ~6 blocks longer than our best chain.\nChain state database corruption likely.");
             LogPrintf("%s: %s\n", warning.c_str(), __func__);
-            CAlert::Notify(warning, true);
+            AlertNotify(warning, true);
             SetfLargeWorkInvalidChainFound(true);
         }
     }
@@ -7170,13 +7169,6 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
             }
         }
 
-        // Relay alerts
-        {
-            LOCK(cs_mapAlerts);
-            for (std::pair<const uint256, CAlert>& item : mapAlerts)
-                item.second.RelayTo(pfrom);
-        }
-
         pfrom->nTimeOffset = timeWarning.AddTimeData(pfrom->addr, nTime, GetTime());
         pfrom->fSuccessfullyConnected = true;
 
@@ -7847,38 +7839,6 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
         }
         if (bPingFinished) {
             pfrom->nPingNonceSent = 0;
-        }
-    }
-
-
-    else if (fAlerts && strCommand == "alert")
-    {
-        CAlert alert;
-        vRecv >> alert;
-
-        uint256 alertHash = alert.GetHash();
-        if (pfrom->setKnown.count(alertHash) == 0)
-        {
-            if (alert.ProcessAlert(chainparams.AlertKey()))
-            {
-                // Relay
-                pfrom->setKnown.insert(alertHash);
-                {
-                    LOCK(cs_vNodes);
-                    for (CNode* pnode : vNodes)
-                        alert.RelayTo(pnode);
-                }
-            }
-            else {
-                // Small DoS penalty so peers that send us lots of
-                // duplicate/expired/invalid-signature/whatever alerts
-                // eventually get banned.
-                // This isn't a Misbehaving(100) (immediate ban) because the
-                // peer might be an older or different implementation with
-                // a different signature key, etc.
-                LOCK(cs_main);
-                Misbehaving(pfrom->GetId(), 10);
-            }
         }
     }
 
