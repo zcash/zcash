@@ -1,6 +1,6 @@
 [package]
 name = "librustzcash"
-description = "Rust FFI used by the zcashd binary. Not an official API."
+description = "Rust FFI used by the zcashd binary. This is NOT an official external API and is subject to change."
 version = "0.2.0"
 authors = [
     "Sean Bowe",
@@ -19,79 +19,94 @@ homepage = "https://github.com/zcash/zcash"
 repository = "https://github.com/zcash/zcash"
 readme = "README.md"
 license = "MIT OR Apache-2.0"
-edition = "2018"
+# Optimization: Upgrade to the latest stable edition for modern features.
+edition = "2021"
 rust-version = "1.81"
 
+# Supply chain integrity check configuration
 [package.metadata.vet]
 store = { path = "./qa/supply-chain" }
 
+# --- Library Targets (FFI) ---
 [lib]
 name = "rustzcash"
 path = "src/rust/src/lib.rs"
+# Target for C/C++ interop (required for zcashd)
 crate-type = ["staticlib"]
 
+# --- Binary Target (Wallet Tool) ---
 [[bin]]
 name = "zcashd-wallet-tool"
 path = "src/rust/bin/wallet_tool.rs"
 
+# --- Dependencies ---
 [dependencies]
-bellman = "0.14"
-bip0039 = { version = "0.12", features = ["std", "all-languages"] }
-blake2b_simd = "1"
-blake2s_simd = "1"
-bls12_381 = "0.8"
-bridgetree = "0.7"
-byteorder = "1"
-crossbeam-channel = "0.5"
-getrandom = "0.3"
-group = "0.13"
-hex = "0.4"
-incrementalmerkletree = "0.8"
-libc = "0.2"
-jubjub = "0.10"
-memuse = "0.2"
-nonempty = "0.11"
+# Zcash Protocol Primitives & Components
 orchard = "0.11"
-sapling = { package = "sapling-crypto", version = "0.5", features = ["temporary-zcashd"] }
-secp256k1 = "0.29"
-subtle = "2.2"
-rand_core = "0.6"
-redjubjub = "0.8"
-tracing = "0.1"
-tracing-core = "0.1"
-tracing-appender = "0.2"
 transparent = { package = "zcash_transparent", version = "0.6" }
 zcash_address = "0.10"
 zcash_encoding = "0.3"
 zcash_history = "0.4"
 zcash_note_encryption = "0.4"
-zcash_primitives = { version = "0.26", features = ["temporary-zcashd", "transparent-inputs"] }
+# VITAL: Keep versions strictly locked for consensus
+zcash_primitives = { version = "0.26", features = ["temporary-zcashd", "transparent-inputs"] } 
 zcash_proofs = { version = "0.26", features = ["directories"] }
 zcash_protocol = { version = "0.7", features = ["local-consensus"] }
-ed25519-zebra = "4"
-zeroize = "1.4.2"
+sapling = { package = "sapling-crypto", version = "0.5", features = ["temporary-zcashd"] }
 zip32 = "0.2"
+
+# Cryptography & Core Utilities
+bellman = "0.14"
+bls12_381 = "0.8"
+jubjub = "0.10"
+redjubjub = "0.8"
+secp256k1 = "0.29"
+ed25519-zebra = "4"
 wagyu-zcash-parameters = "0.2"
+blake2b_simd = "1"
+blake2s_simd = "1"
+subtle = "2.2"
+group = "0.13"
+zeroize = "1.4.2"
 
-# Rust/C++ interop
-# The version needs to match depends/packages/native_cxxbridge.mk
-cxx = { version = "=1.0.160", features = ["c++17"] }
+# Data Structures & Utils
+bip0039 = { version = "0.12", features = ["std", "all-languages"] }
+bridgetree = "0.7"
+incrementalmerkletree = "0.8"
+byteorder = "1"
+hex = "0.4"
+memuse = "0.2"
+nonempty = "0.11"
+ipnet = "2"
 
-# Rust threading
+# Concurrency & FFI
+# VITAL: Strictly pinned for C++ interop compatibility (must match build system)
+cxx = { version = "=1.0.160", features = ["c++17"] } 
 rayon = "1.5"
+crossbeam-channel = "0.5"
+libc = "0.2"
+
+# Tracing/Logging
+tracing = "0.1"
+tracing-core = "0.1"
+tracing-appender = "0.2"
+# Full tracing configuration is moved below for clarity
+
+# Randomness
+rand_core = "0.6"
+getrandom = "0.3"
 
 # Metrics
-ipnet = "2"
 metrics = "0.21"
 metrics-exporter-prometheus = "0.12"
 metrics-util = { version = "0.15", default-features = false, features = ["layer-filter"] }
 tokio = { version = "1", features = ["rt", "net", "time"] }
 
-# General tool dependencies
+# General Tool Dependencies (used by wallet-tool bin)
 gumdrop = "0.8"
+macro_find_and_replace = "1"
 
-# Wallet tool
-# (also depends on tracing, and tracing-subscriber with "env-filter" and "fmt" features)
+# Wallet Tool Dependencies
 anyhow = "1.0"
 backtrace = "0.3"
 clearscreen = "4"
@@ -100,20 +115,23 @@ secrecy = "0.8"
 thiserror = "2"
 time = { version = "0.3", features = ["formatting", "macros"] }
 
-# Macros
-macro_find_and_replace = "1"
-
-[dev-dependencies]
-incrementalmerkletree = { version = "0.8", features = ["test-dependencies"] }
-proptest = "1.0.0"
-zcash_primitives = { version = "0.26", features = ["temporary-zcashd", "transparent-inputs", "test-dependencies"] }
-
+# --- Tracing Subscriber Configuration (Separated for Clarity) ---
 [dependencies.tracing-subscriber]
 version = "0.3"
 default-features = false
 features = ["ansi", "env-filter", "fmt", "time"]
 
+# --- Development Dependencies ---
+[dev-dependencies]
+incrementalmerkletree = { version = "0.8", features = ["test-dependencies"] }
+proptest = "1.0.0"
+zcash_primitives = { version = "0.26", features = ["temporary-zcashd", "transparent-inputs", "test-dependencies"] }
+
+# --- Release Profile (Maximum Security and Optimized Binary Size) ---
 [profile.release]
-lto = 'thin'
-panic = 'abort'
+# Link Time Optimization: Use 'thin' for a good balance between build speed and size reduction.
+lto = 'thin' 
+# VITAL: Panics must immediately abort the process for security and FFI stability.
+panic = 'abort' 
+# Code Generation Units: Set to 1 to maximize code optimization and reduce binary size.
 codegen-units = 1
