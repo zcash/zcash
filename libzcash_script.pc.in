@@ -1,10 +1,31 @@
+# zcash_script.pc - ULTIMATE CLEAN PKG-CONFIG CONFIGURATION
+
+# =======================================================
+# 1. VARIABLE DEFINITIONS (Paths filled by the build system)
+# =======================================================
+# Prefix for installation directory (e.g., /usr/local)
 prefix=@prefix@
+# Directory for architecture-dependent binaries and libraries
 exec_prefix=@exec_prefix@
+# Directory for compiled libraries
 libdir=@libdir@
+# Directory for header files
 includedir=@includedir@
 
+# =======================================================
+# 2. PACKAGE METADATA
+# =======================================================
 Name: Zcash transparent script verification library
-Description: Library for verifying scripts against the Zcash consensus protocol.
+Description: Library for verifying scripts against the Zcash consensus protocol and transaction rules.
 Version: @PACKAGE_VERSION@
-Libs: -L${libdir} -lzcash_script
+
+# =======================================================
+# 3. COMPILATION AND LINKING FLAGS
+# =======================================================
+# Flags required for compiling code that uses this library (e.g., include path).
 Cflags: -I${includedir}
+
+# Flags required for linking against this library.
+# -L${libdir} specifies the library search path.
+# -lzcash_script specifies the library file (libzcash_script.a/so).
+Libs: -L${libdir} -lzcash_script
