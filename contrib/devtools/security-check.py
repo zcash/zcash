@@ -178,7 +178,7 @@ CHECKS = {
 }
 
 def identify_executable(executable):
-    with open(filename, 'rb') as f:
+    with open(executable, 'rb') as f:
         magic = f.read(4)
     if magic.startswith(b'MZ'):
         return 'PE'
