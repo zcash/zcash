@@ -1,6 +1,10 @@
-# Configuration file for cargo-deny
+# Configuration file for cargo-deny (dependency auditing and linting tool).
 
+# --- [graph] Section ---
+# Configuration for the dependency graph checks (cycle detection, unused dependencies, etc.).
 [graph]
+# Specifies the target triples for which the dependency graph should be audited. 
+# This ensures that only dependencies required for these specific platforms are checked for licensing.
 targets = [
     { triple = "aarch64-unknown-linux-gnu" },
     { triple = "x86_64-apple-darwin" },
@@ -9,12 +13,20 @@ targets = [
     { triple = "x86_64-unknown-linux-gnu" },
 ]
 
+# --- [licenses] Section ---
+# Configuration for license compliance auditing.
 [licenses]
+# Use the latest SPDX license expression version for consistency.
 version = 2
+
+# List of licenses explicitly permitted for use in the project.
+# All transitive dependencies must use one of these licenses, unless listed in 'exceptions'.
 allow = [
     "Apache-2.0",
     "MIT",
 ]
+
+# Note regarding compliance requirements:
 # Each entry in this list should have a corresponding `contrib/debian/copyright`
 # entry for `Files: depends/*/vendored-sources/CRATE_NAME/*` (or the relevant
 # subset of files). The reverse might not be true however: `cargo-deny` only
@@ -22,14 +34,24 @@ allow = [
 # above listed targets, whereas `contrib/debian/copyright` covers anything that
 # may end up in a source archive (including dev-dependencies and unsupported
 # targets).
+
+# Explicitly allowed exceptions for dependencies using licenses not included in the 'allow' list.
 exceptions = [
-    { name = "arrayref", allow = ["BSD-2-Clause"] },
-    { name = "bounded-vec", allow = ["CC0-1.0"] },
-    { name = "curve25519-dalek", allow = ["BSD-3-Clause"] },
-    { name = "foldhash", allow = ["Zlib"] },
-    { name = "secp256k1", allow = ["CC0-1.0"] },
-    { name = "secp256k1-sys", allow = ["CC0-1.0"] },
-    { name = "subtle", allow = ["BSD-3-Clause"] },
-    { name = "terminfo", allow = ["WTFPL"] },
+    # BSD-2-Clause is highly permissive, allowed for the 'arrayref' crate.
+    { name = "arrayref", allow = ["BSD-2-Clause"] }, 
+    # CC0-1.0 (Public Domain Dedication) is highly permissive.
+    { name = "bounded-vec", allow = ["CC0-1.0"] }, 
+    # BSD-3-Clause is highly permissive, allowed for the 'curve25519-dalek' library.
+    { name = "curve25519-dalek", allow = ["BSD-3-Clause"] }, 
+    # Zlib is a permissive, non-copyleft license.
+    { name = "foldhash", allow = ["Zlib"] }, 
+    # CC0-1.0 (Public Domain Dedication) for cryptography crates.
+    { name = "secp256k1", allow = ["CC0-1.0"] }, 
+    { name = "secp256k1-sys", allow = ["CC0-1.0"] }, 
+    # BSD-3-Clause is highly permissive, allowed for the 'subtle' crate.
+    { name = "subtle", allow = ["BSD-3-Clause"] }, 
+    # WTFPL (Do What The Fuck You Want To Public License) is equivalent to Public Domain, but unique.
+    { name = "terminfo", allow = ["WTFPL"] }, 
+    # Unicode licensing is typically handled with exceptions.
     { name = "unicode-ident", allow = ["Unicode-3.0"] },
 ]
