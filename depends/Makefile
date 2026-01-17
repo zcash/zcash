@@ -116,8 +116,6 @@ $(host_arch)_$(host_os)_native_toolchain?=$($(host_os)_native_toolchain)
 
 include funcs.mk
 
-binutils_path=$($($(host_arch)_$(host_os)_native_binutils)_prefixbin)
-toolchain_path=$($($(host_arch)_$(host_os)_native_toolchain)_prefixbin)
 final_build_id_long+=$(shell $(build_SHA256SUM) config.site.in)
 final_build_id+=$(shell echo -n $(final_build_id_long) | $(build_SHA256SUM) | cut -c-$(HASH_LENGTH))
 $(host_prefix)/.stamp_$(final_build_id): $(native_packages) $(packages)
@@ -134,21 +132,46 @@ $(host_prefix)/.stamp_$(final_build_id): $(native_packages) $(packages)
 	fi
 	$(AT)touch $@
 
+# $PATH is not preserved between ./configure and make by convention. Its
+# modification and overriding at ./configure time is (as I understand it)
+# supposed to be captured by the AC_{PROG_{,OBJ}CXX,PATH_{PROG,TOOL}} macros,
+# which will expand the program names to their full absolute paths. The notable
+# exception is command line overriding: ./configure CC=clang, which skips the
+# program name expansion step, and works because the user implicitly indicates
+# with CC=clang that clang will be available in $PATH at all times, and is most
+# likely part of the user's system.
+#
+# Therefore, when we "seed the autoconf cache"/"override well-known program
+# vars" by setting AR=<blah> in our config.site, either one of two things needs
+# to be true for the build system to work correctly:
+#
+#   1. If we refer to the program by name (e.g. AR=riscv64-gnu-linux-ar), the
+#      tool needs to be available in $PATH at all times.
+#
+#   2. If the tool is _**not**_ expected to be available in $PATH at all times
+#      (such as is the case for our native_cctools binutils tools), it needs to
+#      be referred to by its absolute path, such as would be output by the
+#      AC_PATH_{PROG,TOOL} macros.
+#
+# Minor note: it is also okay to refer to tools by their absolute path even if
+# we expect them to be available in $PATH at all times, more specificity does
+# not hurt.
 $(host_prefix)/share/config.site : config.site.in $(host_prefix)/.stamp_$(final_build_id)
 	$(AT)@mkdir -p $(@D)
 	$(AT)sed -e 's|@HOST@|$(host)|' \
-            -e 's|@CC@|$(toolchain_path)$(host_CC)|' \
-            -e 's|@CXX@|$(toolchain_path)$(host_CXX)|' \
-            -e 's|@AR@|$(binutils_path)$(host_AR)|' \
-            -e 's|@RANLIB@|$(binutils_path)$(host_RANLIB)|' \
-            -e 's|@NM@|$(binutils_path)$(host_NM)|' \
-            -e 's|@STRIP@|$(binutils_path)$(host_STRIP)|' \
+            -e 's|@CC@|$(host_CC)|' \
+            -e 's|@CXX@|$(host_CXX)|' \
+            -e 's|@AR@|$(host_AR)|' \
+            -e 's|@RANLIB@|$(host_RANLIB)|' \
+            -e 's|@NM@|$(host_NM)|' \
+            -e 's|@STRIP@|$(host_STRIP)|' \
             -e 's|@build_os@|$(build_os)|' \
             -e 's|@host_os@|$(host_os)|' \
             -e 's|@CFLAGS@|$(strip $(host_CFLAGS) $(host_$(release_type)_CFLAGS))|' \
             -e 's|@CXXFLAGS@|$(strip $(host_CXXFLAGS) $(host_$(release_type)_CXXFLAGS))|' \
             -e 's|@CPPFLAGS@|$(strip $(host_CPPFLAGS) $(host_$(release_type)_CPPFLAGS))|' \
             -e 's|@LDFLAGS@|$(strip $(host_LDFLAGS) $(host_$(release_type)_LDFLAGS))|' \
+            -e 's|@allow_host_packages@|$(ALLOW_HOST_PACKAGES)|' \
             -e 's|@rust_target@|$(call rust_target,native_rust,$(canonical_host),$(host_os))|' \
             -e 's|@no_wallet@|$(NO_WALLET)|' \
             -e 's|@debug@|$(DEBUG)|' \

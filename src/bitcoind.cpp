@@ -4,6 +4,10 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
+#if defined(HAVE_CONFIG_H)
+#include "config/bitcoin-config.h"
+#endif
+
 #include "clientversion.h"
 #include "deprecation.h"
 #include "fs.h"
@@ -15,6 +19,7 @@
 #include "util/system.h"
 #include "httpserver.h"
 #include "httprpc.h"
+#include "util/strencodings.h"
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/thread.hpp>
@@ -76,16 +81,16 @@ bool AppInit(int argc, char* argv[])
     // Process help and version before taking care about datadir
     if (mapArgs.count("-?") || mapArgs.count("-h") ||  mapArgs.count("-help") || mapArgs.count("-version"))
     {
-        std::string strUsage = _("Zcash Daemon") + " " + _("version") + " " + FormatFullVersion() + "\n" + PrivacyInfo();
+        std::string strUsage = strprintf(_("%s Daemon"), _(PACKAGE_NAME)) + " " + _("version") + " " + FormatFullVersion() + "\n" + PrivacyInfo();
 
         if (mapArgs.count("-version"))
         {
-            strUsage += LicenseInfo();
+            strUsage += FormatParagraph(LicenseInfo());
         }
         else
         {
             strUsage += "\n" + _("Usage:") + "\n" +
-                  "  zcashd [options]                     " + _("Start Zcash Daemon") + "\n";
+                  "  zcashd [options]                     " + strprintf(_("Start %s Daemon"), _(PACKAGE_NAME)) + "\n";
 
             strUsage += "\n" + HelpMessage(HMM_BITCOIND);
         }
