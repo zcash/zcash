@@ -6,8 +6,8 @@
 import hashlib
 import sys
 import os
-from random import SystemRandom
 import base64
+import binascii
 import hmac
 
 if len(sys.argv) < 2:
@@ -16,13 +16,8 @@ if len(sys.argv) < 2:
 
 username = sys.argv[1]
 
-#This uses os.urandom() underneath
-cryptogen = SystemRandom()
-
 #Create 16 byte hex salt
-salt_sequence = [cryptogen.randrange(256) for i in range(16)]
-hexseq = list(map(hex, salt_sequence))
-salt = "".join([x[2:] for x in hexseq])
+salt = binascii.hexlify(os.urandom(16))
 
 #Create 32 byte b64 password
 password = base64.urlsafe_b64encode(os.urandom(32))
@@ -30,6 +25,7 @@ password = base64.urlsafe_b64encode(os.urandom(32))
 digestmod = hashlib.sha256
 
 if sys.version_info.major >= 3:
+    salt = salt.decode('utf-8')
     password = password.decode('utf-8')
     digestmod = 'SHA256'
  
