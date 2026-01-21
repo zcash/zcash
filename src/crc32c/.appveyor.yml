@@ -1,37 +1,52 @@
-# Build matrix / environment variables are explained on:
-# https://www.appveyor.com/docs/appveyor-yml/
-# This file can be validated on: https://ci.appveyor.com/tools/validate-yaml
-
-version: "{build}"
-
-environment:
-  matrix:
-    # AppVeyor currently has no custom job name feature.
-    # http://help.appveyor.com/discussions/questions/1623-can-i-provide-a-friendly-name-for-jobs
-    - JOB: Visual Studio 2017
-      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
-      CMAKE_GENERATOR: Visual Studio 15 2017
-
-platform:
-  - x86
-  - x64
-
-configuration:
-  - RelWithDebInfo
-  - Debug
-
-build_script:
-  - git submodule update --init --recursive
-  - mkdir build
-  - cd build
-  - if "%platform%"=="x64" set CMAKE_GENERATOR=%CMAKE_GENERATOR% Win64
-  - cmake --version
-  - cmake .. -G "%CMAKE_GENERATOR%" -DCRC32C_USE_GLOG=0
-      -DCMAKE_CONFIGURATION_TYPES="%CONFIGURATION%"
-  - cmake --build . --config "%CONFIGURATION%"
-  - cd ..
-
-test_script:
-  - build\%CONFIGURATION%\crc32c_tests.exe
-  - build\%CONFIGURATION%\crc32c_capi_tests.exe
-  - build\%CONFIGURATION%\crc32c_bench.exe
+{
+  "name": "futures-sdk",
+  "version": "1.0.0",
+  "description": "High-performance SDK for institutional futures trading and Web3 integration",
+  "main": "dist/bundle.js",
+  "module": "dist/bundle.esm.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    /* Development & Local Testing */
+    "start": "ws --port 3333 --directory dist",
+    "dev": "webpack serve --mode development",
+    
+    /* Build & Optimization */
+    "prebuild": "npm run clean",
+    "build": "webpack --mode production",
+    "clean": "rimraf dist",
+    
+    /* Security & Quality Control */
+    "lint": "eslint src/**/*.ts",
+    "test": "jest --passWithNoTests",
+    "audit": "npm audit fix"
+  },
+  "keywords": [
+    "futures",
+    "trading-sdk",
+    "solana",
+    "ethereum",
+    "orderbook",
+    "web3"
+  ],
+  "author": "Institutional Trading Systems",
+  "license": "ISC",
+  "dependencies": {
+    "local-web-server": "^5.2.1"
+  },
+  "devDependencies": {
+    "webpack": "^5.0.0",
+    "webpack-cli": "^5.0.0",
+    "rimraf": "^5.0.0",
+    "typescript": "^5.0.0",
+    "ts-loader": "^9.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
