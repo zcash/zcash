@@ -1,0 +1,8 @@
+#!/bin/sh
+
+if [ ! -d "$SNAP_USER_DATA/.zcash" ]; then
+  mkdir $SNAP_USER_DATA/.zcash/
+  cp -R $SNAP/zcash.conf $SNAP_USER_DATA/.zcash/
+fi
+
+exec "$SNAP/bin/zcashd" "$@"

@@ -1,0 +1,68 @@
+name: zcash
+version: master
+summary: an implementation of the "Zerocash" protocol
+description: |
+  This software is the Zcash client. Based on Bitcoin's code, it intends to
+  offer a far higher standard of privacy through a sophisticated zero-knowledge
+  proving scheme that preserves confidentiality of transaction metadata.
+
+grade: devel # must be 'stable' to release into candidate/stable channels
+confinement: strict
+
+apps:
+  daemon:
+    command: zcashd-wrapper
+    plugs: [network, network-bind]
+    aliases: [zcashd]
+  cli:
+    command: zcash-cli
+    plugs: [network]
+    aliases: [zcash-cli]
+  tx:
+    command: zcash-tx
+    aliases: [zcash-tx]
+  fetch-params:
+    command: fetch-params.sh
+    plugs: [network]
+    aliases: [zcash-fetch-params]
+
+parts:
+  zcash:
+    source: .
+    plugin: nil
+    build: ./zcutil/build.sh
+    install: |
+      mkdir $SNAPCRAFT_PART_INSTALL/bin
+      mv src/zcashd $SNAPCRAFT_PART_INSTALL/bin
+      mv src/zcash-cli $SNAPCRAFT_PART_INSTALL/bin
+      mv src/zcash-tx $SNAPCRAFT_PART_INSTALL/bin
+      cp zcutil/fetch-params.sh $SNAPCRAFT_PART_INSTALL
+    build-packages:
+      - build-essential
+      - pkg-config
+      - libc6-dev
+      - m4
+      - g++-multilib
+      - autoconf
+      - libtool
+      - libncurses5-dev
+      - unzip
+      - git
+      - python
+      - zlib1g-dev
+      - wget
+      - bsdmainutils
+      - automake
+    stage-packages:
+       # fetch-parameters requires flock and wget.
+       - util-linux
+       - wget
+  default-config:
+     plugin: dump
+     source: contrib/debian/examples/
+     stage:
+       - zcash.conf
+  wrapper:
+    plugin: dump
+    source: snap/
+    stage: [zcashd-wrapper]
