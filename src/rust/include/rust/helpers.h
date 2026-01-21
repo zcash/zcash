@@ -29,6 +29,6 @@
 #define T_ESCAPEQUOTE(a) T_DOUBLEESCAPE(a)
 
 // Computes the length of the given array. This is COUNT_OF from Chromium.
-#define T_ARRLEN(x) ((sizeof(x) / sizeof(0 [x])) / ((size_t)(!(sizeof(x) % sizeof(0 [x])))))
+#define T_ARRLEN(x) ((sizeof(x) / sizeof(0 [x])) / ((size_t)(!(sizeof(x) % sizeof(0 [x]))))) /* NOLINT(readability-misplaced-array-index) */
 
 #endif // ZCASH_RUST_INCLUDE_RUST_HELPERS_H
