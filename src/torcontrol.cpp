@@ -5,6 +5,7 @@
 
 #include "torcontrol.h"
 #include "util/strencodings.h"
+#include "netbase.h"
 #include "net.h"
 #include "util/system.h"
 #include "crypto/hmac_sha256.h"
@@ -504,8 +505,8 @@ void TorController::add_onion_cb(TorControlConnection& _conn, const TorControlRe
             return;
         }
 
-        service = CService(service_id+".onion", GetListenPort(), false);
-        LogPrintf("tor: Got service ID %s, advertizing service %s\n", service_id, service.ToString());
+        service = LookupNumeric(std::string(service_id+".onion").c_str(), GetListenPort());
+        LogPrintf("tor: Got service ID %s, advertising service %s\n", service_id, service.ToString());
         if (WriteBinaryFile(GetPrivateKeyFile(), private_key)) {
             LogPrint("tor", "tor: Cached service private key to %s\n", GetPrivateKeyFile().string());
         } else {
@@ -528,7 +529,8 @@ void TorController::auth_cb(TorControlConnection& _conn, const TorControlReply& 
         // Now that we know Tor is running setup the proxy for onion addresses
         // if -onion isn't set to something else.
         if (GetArg("-onion", "") == "") {
-            proxyType addrOnion = proxyType(CService("127.0.0.1", 9050), true);
+            CService resolved(LookupNumeric("127.0.0.1", 9050));
+            proxyType addrOnion = proxyType(resolved, true);
             SetProxy(NET_TOR, addrOnion);
             SetLimited(NET_TOR, false);
         }
