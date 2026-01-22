@@ -16,6 +16,12 @@ is a common reason.)
 
 ### Pre-release checklist:
 
+Ensure `make dist` generates a tree that will build. If this fails, Gitian reproducible builds will fail:
+
+```
+$ ./zcutil/fake-gitian.sh
+```
+
 Check that dependencies are properly hosted.
 
 Check that there are no surprising performance regressions.
