@@ -172,7 +172,7 @@ TestChain100Setup::CreateAndProcessBlock(const std::vector<CMutableTransaction>&
     // Replace mempool-selected txns with just coinbase plus passed-in txns:
     block.vtx.resize(1);
     for (const CMutableTransaction& tx : txns)
-        block.vtx.push_back(tx);
+        block.vtx.emplace_back(tx);
     // IncrementExtraNonce creates a valid coinbase and merkleRoot
     unsigned int extraNonce = 0;
     IncrementExtraNonce(pblocktemplate, chainActive.Tip(), extraNonce, chainparams.GetConsensus());
@@ -219,11 +219,10 @@ TestChain100Setup::~TestChain100Setup()
 #endif // ENABLE_MINING
 
 
-CTxMemPoolEntry TestMemPoolEntryHelper::FromTx(CMutableTransaction &tx, CTxMemPool *pool) {
-    CTransaction txn(tx);
+CTxMemPoolEntry TestMemPoolEntryHelper::FromTx(const CTransaction &tx, CTxMemPool *pool) {
     bool hasNoDependencies = pool ? pool->HasNoInputsOf(tx) : hadNoDependencies;
 
-    return CTxMemPoolEntry(txn, nFee, nTime, nHeight,
+    return CTxMemPoolEntry(tx, nFee, nTime, nHeight,
                            hasNoDependencies, spendsCoinbase, sigOpCount, nBranchId);
 }
 

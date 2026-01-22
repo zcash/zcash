@@ -38,11 +38,11 @@ static std::pair<CMutableTransaction, std::vector<CTxOut>> DummyV5Transaction() 
 
 TEST(SigHashTest, Zip244AcceptsKnownHashTypes) {
     auto parts = DummyV5Transaction();
-    auto mtx = parts.first;
+    CTransaction ctx(parts.first);
     auto allPrevOutputs = parts.second;
 
     unsigned int nIn = 1;
-    PrecomputedTransactionData txdata(mtx, allPrevOutputs);
+    PrecomputedTransactionData txdata(ctx, allPrevOutputs);
     // These aren't used for ZIP 244 sighashes.
     CScript scriptCode;
     CAmount amount;
@@ -59,17 +59,17 @@ TEST(SigHashTest, Zip244AcceptsKnownHashTypes) {
     };
     for (auto nHashType : knownSighashTypes) {
         EXPECT_NO_THROW(SignatureHash(
-            scriptCode, mtx, nIn, nHashType, amount, consensusBranchId, txdata));
+            scriptCode, ctx, nIn, nHashType, amount, consensusBranchId, txdata));
     }
 }
 
 TEST(SigHashTest, Zip244RejectsUnknownHashTypes) {
     auto parts = DummyV5Transaction();
-    auto mtx = parts.first;
+    CTransaction ctx(parts.first);
     auto allPrevOutputs = parts.second;
 
     unsigned int nIn = 1;
-    PrecomputedTransactionData txdata(mtx, allPrevOutputs);
+    PrecomputedTransactionData txdata(ctx, allPrevOutputs);
     // These aren't used for ZIP 244 sighashes.
     CScript scriptCode;
     CAmount amount;
@@ -84,7 +84,7 @@ TEST(SigHashTest, Zip244RejectsUnknownHashTypes) {
     };
     for (auto nHashType : unknownSighashTypes) {
         EXPECT_THROW(
-            SignatureHash(scriptCode, mtx, nIn, nHashType, amount, consensusBranchId, txdata),
+            SignatureHash(scriptCode, ctx, nIn, nHashType, amount, consensusBranchId, txdata),
             std::logic_error);
     }
 }
@@ -97,8 +97,9 @@ TEST(SigHashTest, Zip244RejectsSingleWithoutCorrespondingOutput) {
     // Modify the transaction to have only 1 output.
     mtx.vout.resize(1);
 
+    CTransaction ctx(mtx);
     unsigned int nIn = 1;
-    PrecomputedTransactionData txdata(mtx, allPrevOutputs);
+    PrecomputedTransactionData txdata(ctx, allPrevOutputs);
     // These aren't used for ZIP 244 sighashes.
     CScript scriptCode;
     CAmount amount;
@@ -113,7 +114,7 @@ TEST(SigHashTest, Zip244RejectsSingleWithoutCorrespondingOutput) {
     };
     for (auto nHashType : nonSighashSingleTypes) {
         EXPECT_NO_THROW(SignatureHash(
-            scriptCode, mtx, nIn, nHashType, amount, consensusBranchId, txdata));
+            scriptCode, ctx, nIn, nHashType, amount, consensusBranchId, txdata));
     }
 
     // SIGHASH_SINGLE types should throw an error.
@@ -123,7 +124,7 @@ TEST(SigHashTest, Zip244RejectsSingleWithoutCorrespondingOutput) {
     };
     for (auto nHashType : sighashSingleTypes) {
         EXPECT_THROW(
-            SignatureHash(scriptCode, mtx, nIn, nHashType, amount, consensusBranchId, txdata),
+            SignatureHash(scriptCode, ctx, nIn, nHashType, amount, consensusBranchId, txdata),
             std::logic_error);
     }
 }
