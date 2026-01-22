@@ -1574,7 +1574,7 @@ Uses `unsafe` blocks to interact with `windows-sys` crate.
 - The slice constructed from the `PWSTR` correctly goes out of scope before
   `guard` is dropped.
 - A code comment says that `path_ptr` is valid for `len` bytes, but `PCWSTR` is
-  a `*const u16` and `lstrlenW` returns its length \"in characters\" (which the
+  a `*const u16` and `lstrlenW` returns its length "in characters" (which the
   Windows documentation confirms means the number of `WCHAR` values). This is
   likely a typo; the code checks that `len * size_of::<u16>() <= isize::MAX`.
 """
@@ -1769,8 +1769,8 @@ based on what I've seen in other uses of the windows-sys crate. Unsafe code
 falls into two categories:
 - Usage of `mem::zeroed()`, which doesn't look obviously wrong. The
   `..unsafe { mem::zeroed() }` in `sys::unix::selector::kqueue` looks weird
-  but AFAICT is saying \"take any unspecified fields from an instance of this
-  struct that has been zero-initialized\", which is fine for integer fields. It
+  but AFAICT is saying "take any unspecified fields from an instance of this
+  struct that has been zero-initialized", which is fine for integer fields. It
   would be nice if there was documentation to this effect (explaining why this
   is done instead of `..Default::default()`).
 - Calls to Windows API methods. These are either pre-existing (and altered for
@@ -2054,8 +2054,8 @@ who = "Daira Emma Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
 version = "3.0.2"
 notes = """
-This crate uses `#![forbid(unsafe_code)]` and its build script is safe. It only \"provides programmatic access to
-information about valid Rust platforms, sourced from the Rust compiler\"; it does not attempt any detection that
+This crate uses `#![forbid(unsafe_code)]` and its build script is safe. It only "provides programmatic access to
+information about valid Rust platforms, sourced from the Rust compiler"; it does not attempt any detection that
 would require unsafety.
 """
 
@@ -3156,7 +3156,7 @@ criteria = "safe-to-deploy"
 delta = "0.2.0 -> 0.2.1"
 notes = """
 - Changes to `unsafe` code blocks are just formatting.
-- Changes to `extern fn`s are to declare them explicitly as `extern \"C\" fn`s.
+- Changes to `extern fn`s are to declare them explicitly as `extern "C" fn`s.
 """
 
 [[audits.want]]
