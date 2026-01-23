@@ -101,9 +101,6 @@ native_zstd 1.5.7 2026-04-01
 libsodium 1.0.21 2026-04-01
 tl_expected 1.3.0 2026-04-01
 tl_expected 1.3.1 2026-04-01
-native_ccache 4.12 2026-04-01
-native_ccache 4.12.1 2026-04-01
-native_ccache 4.12.2 2026-04-01
 native_cxxbridge 1.0.161 2026-04-01
 native_cxxbridge 1.0.162 2026-04-01
 native_cxxbridge 1.0.163 2026-04-01
