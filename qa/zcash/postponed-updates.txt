@@ -88,6 +88,24 @@ native_rust 1.91.0 2026-04-01
 native_rust 1.91.1 2026-04-01
 native_rust 1.92.0 2026-04-01
 
+# Requires MSRV 1.82
+native_cxxbridge 1.0.187 2026-04-01
+native_cxxbridge 1.0.188 2026-04-01
+native_cxxbridge 1.0.189 2026-04-01
+native_cxxbridge 1.0.190 2026-04-01
+native_cxxbridge 1.0.191 2026-04-01
+native_cxxbridge 1.0.192 2026-04-01
+native_cxxbridge 1.0.193 2026-04-01
+native_cxxbridge 1.0.194 2026-04-01
+rustcxx 1.0.187 2026-04-01
+rustcxx 1.0.188 2026-04-01
+rustcxx 1.0.189 2026-04-01
+rustcxx 1.0.190 2026-04-01
+rustcxx 1.0.191 2026-04-01
+rustcxx 1.0.192 2026-04-01
+rustcxx 1.0.193 2026-04-01
+rustcxx 1.0.194 2026-04-01
+
 # We follow upstream Bitcoin Core's LevelDB updates
 leveldb 1.23 2026-04-01
 
@@ -99,70 +117,6 @@ native_zstd 1.5.7 2026-04-01
 
 # Postponed due to proximity to the release
 libsodium 1.0.21 2026-04-01
-native_cxxbridge 1.0.161 2026-04-01
-native_cxxbridge 1.0.162 2026-04-01
-native_cxxbridge 1.0.163 2026-04-01
-native_cxxbridge 1.0.164 2026-04-01
-native_cxxbridge 1.0.165 2026-04-01
-native_cxxbridge 1.0.166 2026-04-01
-native_cxxbridge 1.0.167 2026-04-01
-native_cxxbridge 1.0.168 2026-04-01
-native_cxxbridge 1.0.169 2026-04-01
-native_cxxbridge 1.0.170 2026-04-01
-native_cxxbridge 1.0.171 2026-04-01
-native_cxxbridge 1.0.172 2026-04-01
-native_cxxbridge 1.0.173 2026-04-01
-native_cxxbridge 1.0.174 2026-04-01
-native_cxxbridge 1.0.175 2026-04-01
-native_cxxbridge 1.0.176 2026-04-01
-native_cxxbridge 1.0.177 2026-04-01
-native_cxxbridge 1.0.178 2026-04-01
-native_cxxbridge 1.0.179 2026-04-01
-native_cxxbridge 1.0.180 2026-04-01
-native_cxxbridge 1.0.181 2026-04-01
-native_cxxbridge 1.0.182 2026-04-01
-native_cxxbridge 1.0.183 2026-04-01
-native_cxxbridge 1.0.184 2026-04-01
-native_cxxbridge 1.0.185 2026-04-01
-native_cxxbridge 1.0.186 2026-04-01
-native_cxxbridge 1.0.187 2026-04-01
-native_cxxbridge 1.0.188 2026-04-01
-native_cxxbridge 1.0.189 2026-04-01
-native_cxxbridge 1.0.190 2026-04-01
-native_cxxbridge 1.0.191 2026-04-01
-native_cxxbridge 1.0.192 2026-04-01
-rustcxx 1.0.161 2026-04-01
-rustcxx 1.0.162 2026-04-01
-rustcxx 1.0.163 2026-04-01
-rustcxx 1.0.164 2026-04-01
-rustcxx 1.0.165 2026-04-01
-rustcxx 1.0.166 2026-04-01
-rustcxx 1.0.167 2026-04-01
-rustcxx 1.0.168 2026-04-01
-rustcxx 1.0.169 2026-04-01
-rustcxx 1.0.170 2026-04-01
-rustcxx 1.0.171 2026-04-01
-rustcxx 1.0.172 2026-04-01
-rustcxx 1.0.173 2026-04-01
-rustcxx 1.0.174 2026-04-01
-rustcxx 1.0.175 2026-04-01
-rustcxx 1.0.176 2026-04-01
-rustcxx 1.0.177 2026-04-01
-rustcxx 1.0.178 2026-04-01
-rustcxx 1.0.179 2026-04-01
-rustcxx 1.0.180 2026-04-01
-rustcxx 1.0.181 2026-04-01
-rustcxx 1.0.182 2026-04-01
-rustcxx 1.0.183 2026-04-01
-rustcxx 1.0.184 2026-04-01
-rustcxx 1.0.185 2026-04-01
-rustcxx 1.0.186 2026-04-01
-rustcxx 1.0.187 2026-04-01
-rustcxx 1.0.188 2026-04-01
-rustcxx 1.0.189 2026-04-01
-rustcxx 1.0.190 2026-04-01
-rustcxx 1.0.191 2026-04-01
-rustcxx 1.0.192 2026-04-01
 utfcpp 4.0.7 2026-04-01
 utfcpp 4.0.8 2026-04-01
 utfcpp 4.0.9 2026-04-01

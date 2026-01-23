@@ -846,6 +846,11 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.158 -> 1.0.160"
 
+[[audits.cxxbridge-flags]]
+who = "Jack Grigg <thestr4d@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "1.0.160 -> 1.0.186"
+
 [[audits.cxxbridge-macro]]
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
@@ -1621,6 +1626,16 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.9 -> 1.0.10"
 notes = "Only an MSRV bump (to 1.51); build script change is just formatting."
+
+[[audits.link-cplusplus]]
+who = "Jack Grigg <thestr4d@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "1.0.10 -> 1.0.12"
+notes = """
+Change to build script is to read `dummy.cc` from the repo instead of writing it
+out manually. The only difference with the new in-repo file is the addition of a
+`#pragma clang diagnostic`.
+"""
 
 [[audits.linux-raw-sys]]
 who = "Daira-Emma Hopwood <daira@jacaranda.org>"
