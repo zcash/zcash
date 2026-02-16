@@ -10,6 +10,7 @@
 #include "serialize.h"
 
 #include <stdlib.h>
+#include <limits>
 #include <string>
 
 typedef int64_t CAmount;
@@ -31,6 +32,35 @@ extern const std::string MINOR_CURRENCY_UNIT;
  * */
 static const CAmount MAX_MONEY = 21000000 * COIN;
 inline bool MoneyRange(const CAmount& nValue) { return (nValue >= 0 && nValue <= MAX_MONEY); }
+
+/**
+ * Clamp a CAmount into the valid money range [0, MAX_MONEY].
+ * Returns 0 for negative values and MAX_MONEY for values exceeding the cap.
+ */
+inline CAmount ClampToMoneyRange(const CAmount& nValue) {
+    if (nValue < 0) return 0;
+    if (nValue > MAX_MONEY) return MAX_MONEY;
+    return nValue;
+}
+
+/**
+ * Safe addition of two CAmount values with overflow detection.
+ * Returns true if the sum is valid and within MoneyRange, false otherwise.
+ * On failure, nResult is set to 0.
+ */
+inline bool SafeMoneyAdd(const CAmount& a, const CAmount& b, CAmount& nResult) {
+    // Check for overflow before adding
+    if (a > 0 && b > std::numeric_limits<CAmount>::max() - a) {
+        nResult = 0;
+        return false;
+    }
+    if (a < 0 && b < std::numeric_limits<CAmount>::min() - a) {
+        nResult = 0;
+        return false;
+    }
+    nResult = a + b;
+    return MoneyRange(nResult);
+}
 
 /** The legacy default fee that was defined in ZIP 313. */
 static const CAmount LEGACY_DEFAULT_FEE = 1000;
