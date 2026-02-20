@@ -51,16 +51,16 @@ macro_rules! all_languages {
     ($self:expr, $ctx:expr, $e:expr) => {
         $self.handle(
             $ctx,
-            replace_token_sequence!{[LANGUAGE], [bip0039::English], $e},
-            replace_token_sequence!{[LANGUAGE], [bip0039::ChineseSimplified], $e},
-            replace_token_sequence!{[LANGUAGE], [bip0039::ChineseTraditional], $e},
-            replace_token_sequence!{[LANGUAGE], [bip0039::Czech], $e},
-            replace_token_sequence!{[LANGUAGE], [bip0039::French], $e},
-            replace_token_sequence!{[LANGUAGE], [bip0039::Italian], $e},
-            replace_token_sequence!{[LANGUAGE], [bip0039::Japanese], $e},
-            replace_token_sequence!{[LANGUAGE], [bip0039::Korean], $e},
-            replace_token_sequence!{[LANGUAGE], [bip0039::Portuguese], $e},
-            replace_token_sequence!{[LANGUAGE], [bip0039::Spanish], $e},
+            replace_token_sequence!{[LANGUAGE], [bip0039::Language::English], $e},
+            replace_token_sequence!{[LANGUAGE], [bip0039::Language::ChineseSimplified], $e},
+            replace_token_sequence!{[LANGUAGE], [bip0039::Language::ChineseTraditional], $e},
+            replace_token_sequence!{[LANGUAGE], [bip0039::Language::Czech], $e},
+            replace_token_sequence!{[LANGUAGE], [bip0039::Language::French], $e},
+            replace_token_sequence!{[LANGUAGE], [bip0039::Language::Italian], $e},
+            replace_token_sequence!{[LANGUAGE], [bip0039::Language::Japanese], $e},
+            replace_token_sequence!{[LANGUAGE], [bip0039::Language::Korean], $e},
+            replace_token_sequence!{[LANGUAGE], [bip0039::Language::Portuguese], $e},
+            replace_token_sequence!{[LANGUAGE], [bip0039::Language::Spanish], $e},
         )
     };
 }
@@ -72,7 +72,7 @@ impl Language {
         f: impl FnOnce(&str) -> Option<T>,
     ) -> Option<T> {
         all_languages!(self, (entropy, f), |(entropy, f)| {
-            bip0039::Mnemonic::<LANGUAGE>::from_entropy(entropy)
+            bip0039::Mnemonic::from_entropy(LANGUAGE, entropy)
                 .ok()
                 .and_then(|mnemonic| f(mnemonic.phrase()))
         })
@@ -85,7 +85,7 @@ impl Language {
         f: impl FnOnce([u8; 64]) -> Option<T>,
     ) -> Option<T> {
         all_languages!(self, (phrase, passphrase, f), |(phrase, passphrase, f)| {
-            bip0039::Mnemonic::<LANGUAGE>::from_phrase(phrase)
+            bip0039::Mnemonic::from_phrase(LANGUAGE, phrase)
                 .ok()
                 .and_then(|mnemonic| f(mnemonic.to_seed(passphrase)))
         })
@@ -93,7 +93,7 @@ impl Language {
 
     fn validate_mnemonic<'a, P: Into<Cow<'a, str>>>(self, phrase: P) -> Option<()> {
         all_languages!(self, phrase, |phrase| {
-            bip0039::Mnemonic::<LANGUAGE>::validate(phrase).ok()
+            bip0039::Mnemonic::validate(LANGUAGE, phrase).ok()
         })
     }
 }
