@@ -87,7 +87,7 @@ class TxExpiringSoonTest(BitcoinTestFramework):
         testnode0 = TestNode()
         connections = []
         connections.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0],
-                                    testnode0, "regtest", SAPLING_PROTO_VERSION))
+                                    testnode0, "regtest", protocol_version=SAPLING_PROTO_VERSION))
         testnode0.add_connection(connections[0])
 
         # Start up network handling in another thread
@@ -152,7 +152,7 @@ class TxExpiringSoonTest(BitcoinTestFramework):
         # Set up test node for node 2
         testnode2 = TestNode()
         connections.append(NodeConn('127.0.0.1', p2p_port(2), self.nodes[2],
-                                    testnode2, "regtest", SAPLING_PROTO_VERSION))
+                                    testnode2, "regtest", protocol_version=SAPLING_PROTO_VERSION))
         testnode2.add_connection(connections[-1])
 
         # Verify block count
