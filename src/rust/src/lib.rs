@@ -75,13 +75,9 @@ static mut SPROUT_GROTH16_PARAMS_PATH: Option<PathBuf> = None;
 static mut ORCHARD_PK: Option<orchard::circuit::ProvingKey> = None;
 static mut ORCHARD_VK: Option<orchard::circuit::VerifyingKey> = None;
 
-/// Converts CtOption<t> into Option<T>
+/// Converts CtOption<T> into Option<T>
 fn de_ct<T>(ct: CtOption<T>) -> Option<T> {
-    if ct.is_some().into() {
-        Some(ct.unwrap())
-    } else {
-        None
-    }
+    ct.into()
 }
 
 const GROTH_PROOF_SIZE: usize = 48 // π_A

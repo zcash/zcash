@@ -54,7 +54,7 @@ nonempty = "0.11"
 orchard = "0.11"
 sapling = { package = "sapling-crypto", version = "0.5", features = ["temporary-zcashd"] }
 secp256k1 = "0.29"
-subtle = "2.2"
+subtle = "2.6.1"
 rand_core = "0.6"
 redjubjub = "0.8"
 tracing = "0.1"
