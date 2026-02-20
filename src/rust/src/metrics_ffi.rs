@@ -1,5 +1,5 @@
 use libc::{c_char, c_double};
-use metrics::{try_recorder, Key, Label};
+use metrics::{Key, Label};
 use metrics_exporter_prometheus::{BuildError, PrometheusBuilder};
 use metrics_util::layers::{FilterLayer, Stack};
 
@@ -157,7 +157,7 @@ pub extern "C" fn metrics_key(
     label_values: *const *const c_char,
     labels_len: usize,
 ) -> *mut FfiKey {
-    if try_recorder().is_none() {
+    if !metrics::recorder_present() {
         // No recorder is currently installed, so don't genenerate a key. We check for
         // null inside each API that consumes an FfiKey, just in case a recorder was
         // installed in a racy way.

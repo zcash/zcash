@@ -84,9 +84,9 @@ rayon = "1.5"
 
 # Metrics
 ipnet = "2"
-metrics = "0.21"
-metrics-exporter-prometheus = "0.12"
-metrics-util = { version = "0.15", default-features = false, features = ["layer-filter"] }
+metrics = "0.24"
+metrics-exporter-prometheus = "0.16"
+metrics-util = { version = "0.18", default-features = false, features = ["layer-filter"] }
 tokio = { version = "1", features = ["rt", "net", "time"] }
 
 # General tool dependencies
