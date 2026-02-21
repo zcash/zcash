@@ -75,7 +75,9 @@ wagyu-zcash-parameters = "0.2"
 
 # Rust/C++ interop
 # The version needs to match depends/packages/native_cxxbridge.mk
-cxx = { version = "=1.0.160", features = ["c++17"] }
+# 1.0.187 has MSRV 1.87
+# 1.0.188+ has MSRV 1.82
+cxx = { version = "=1.0.186", features = ["c++17"] }
 
 # Rust threading
 rayon = "1.5"

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2014-2016 The Bitcoin Core developers
-# Copyright (c) 2017-2024 The Zcash developers
+# Copyright (c) 2017-2025 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -30,12 +30,9 @@ Options:
   -version
        Print version and exit
 
-  -alerts
-       Receive and display P2P network alerts (default: 1)
-
   -alertnotify=<cmd>
-       Execute command when a relevant alert is received or we see a really
-       long fork (%s in cmd is replaced by message)
+       Execute command on node end-of-service or when we see a really long fork
+       (%s in cmd is replaced by message)
 
   -allowdeprecated=<feature>
        Explicitly allow the use of the specified deprecated feature. Multiple
@@ -429,11 +426,11 @@ Debugging/Testing options:
   -debug=<category>
        Output debugging information (default: 0, supplying <category> is
        optional). If <category> is not supplied or if <category> = 1, output
-       all debugging information. <category> can be: addrman, alert, bench,
-       coindb, db, http, libevent, lock, mempool, mempoolrej, net,
-       partitioncheck, pow, proxy, prune, rand, receiveunsafe, reindex, rpc,
-       selectcoins, tor, valuepool, zmq, zrpc, zrpcunsafe (implies zrpc). For
-       multiple specific categories use -debug=<category> multiple times.
+       all debugging information. <category> can be: addrman, bench, coindb,
+       db, http, libevent, lock, mempool, mempoolrej, net, partitioncheck, pow,
+       proxy, prune, rand, receiveunsafe, reindex, rpc, selectcoins, tor,
+       valuepool, zmq, zrpc, zrpcunsafe (implies zrpc). For multiple specific
+       categories use -debug=<category> multiple times.
 
   -experimentalfeatures
        Enable use of experimental features

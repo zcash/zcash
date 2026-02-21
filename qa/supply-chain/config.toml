@@ -155,15 +155,15 @@ version = "0.1.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.cxx]]
-version = "1.0.158"
+version = "1.0.186"
+criteria = "safe-to-deploy"
+
+[[exemptions.cxx-build]]
+version = "1.0.186"
 criteria = "safe-to-deploy"
 
 [[exemptions.cxxbridge-macro]]
-version = "1.0.158"
-criteria = "safe-to-deploy"
-
-[[exemptions.der]]
-version = "0.7.8"
+version = "1.0.186"
 criteria = "safe-to-deploy"
 
 [[exemptions.digest]]
@@ -240,10 +240,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.hermit-abi]]
 version = "0.3.3"
-criteria = "safe-to-deploy"
-
-[[exemptions.hermit-abi]]
-version = "0.5.2"
 criteria = "safe-to-deploy"
 
 [[exemptions.hmac]]
@@ -442,20 +438,8 @@ criteria = "safe-to-deploy"
 version = "0.3.0"
 criteria = "safe-to-deploy"
 
-[[exemptions.regex]]
-version = "1.10.6"
-criteria = "safe-to-deploy"
-
-[[exemptions.regex-automata]]
-version = "0.1.10"
-criteria = "safe-to-deploy"
-
 [[exemptions.regex-automata]]
 version = "0.3.8"
-criteria = "safe-to-deploy"
-
-[[exemptions.regex-syntax]]
-version = "0.6.27"
 criteria = "safe-to-deploy"
 
 [[exemptions.ripemd]]
@@ -472,6 +456,10 @@ criteria = "safe-to-deploy"
 
 [[exemptions.rusty-fork]]
 version = "0.3.0"
+criteria = "safe-to-deploy"
+
+[[exemptions.scratch]]
+version = "1.0.9"
 criteria = "safe-to-deploy"
 
 [[exemptions.secp256k1]]
@@ -522,6 +510,10 @@ criteria = "safe-to-deploy"
 version = "3.3.0"
 criteria = "safe-to-deploy"
 
+[[exemptions.termcolor]]
+version = "1.4.1"
+criteria = "safe-to-deploy"
+
 [[exemptions.terminfo]]
 version = "0.9.0"
 criteria = "safe-to-deploy"
@@ -546,16 +538,8 @@ criteria = "safe-to-deploy"
 version = "0.3.3"
 criteria = "safe-to-deploy"
 
-[[exemptions.tracing]]
-version = "0.1.40"
-criteria = "safe-to-deploy"
-
 [[exemptions.tracing-appender]]
 version = "0.2.2"
-criteria = "safe-to-deploy"
-
-[[exemptions.tracing-attributes]]
-version = "0.1.23"
 criteria = "safe-to-deploy"
 
 [[exemptions.typenum]]
@@ -620,6 +604,10 @@ criteria = "safe-to-deploy"
 
 [[exemptions.winapi-i686-pc-windows-gnu]]
 version = "0.4.0"
+criteria = "safe-to-deploy"
+
+[[exemptions.winapi-util]]
+version = "0.1.9"
 criteria = "safe-to-deploy"
 
 [[exemptions.winapi-x86_64-pc-windows-gnu]]

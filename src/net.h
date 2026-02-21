@@ -349,7 +349,6 @@ public:
     // flood relay
     std::vector<CAddress> vAddrToSend;
     bool fGetAddr;
-    std::set<uint256> setKnown;
     int64_t nNextAddrSend;
     int64_t nNextLocalAddrSend;
 
