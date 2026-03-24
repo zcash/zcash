@@ -37,13 +37,13 @@ path = "src/rust/bin/wallet_tool.rs"
 [dependencies]
 bellman = "0.14"
 bip0039 = { version = "0.12", features = ["std", "all-languages"] }
-blake2b_simd = "1"
-blake2s_simd = "1"
+blake2b_simd = "1,<1.0.4" # 1.0.4 has MSRV 1.85
+blake2s_simd = "1,<1.0.4" # 1.0.4 has MSRV 1.85
 bls12_381 = "0.8"
 bridgetree = "0.7"
 byteorder = "1"
 crossbeam-channel = "0.5"
-getrandom = "0.3"
+getrandom = "0.3,<0.3.4" # 0.3.4 depends on wasip2 which has MSRV 1.82
 group = "0.13"
 hex = "0.4"
 incrementalmerkletree = "0.8"
@@ -68,7 +68,7 @@ zcash_note_encryption = "0.4"
 zcash_primitives = { version = "0.26", features = ["temporary-zcashd", "transparent-inputs"] }
 zcash_proofs = { version = "0.26", features = ["directories"] }
 zcash_protocol = { version = "0.7", features = ["local-consensus"] }
-ed25519-zebra = "4"
+ed25519-zebra = "4,<4.2" # 4.2.0 has MSRV 1.85
 zeroize = "1.4.2"
 zip32 = "0.2"
 wagyu-zcash-parameters = "0.2"
@@ -95,20 +95,31 @@ gumdrop = "0.8"
 # Wallet tool
 # (also depends on tracing, and tracing-subscriber with "env-filter" and "fmt" features)
 anyhow = "1.0"
-backtrace = "0.3"
+backtrace = "0.3,<0.3.75" # 0.3.75 has MSRV 1.82
 clearscreen = "4"
 rand = "0.8"
 secrecy = "0.8"
 thiserror = "2"
-time = { version = "0.3", features = ["formatting", "macros"] }
+time = { version = "0.3,<0.3.45", features = ["formatting", "macros"] } # 0.3.45 has MSRV 1.83
 
 # Macros
 macro_find_and_replace = "1"
+
+# MSRV pins for transient dependencies
+base64ct = "1,<1.8"      # 1.8.0  has MSRV 1.85
+home = "0.5,<0.5.12"     # 0.5.12 has MSRV 1.88
+indexmap = "2,<2.12"     # 2.12.0 has MSRV 1.82
+tempfile = "3,<3.25"     # 3.25.0 permits getrandom 0.4 which has MSRV 1.85
+time-core = "0.1,<0.1.7" # 0.1.7  has MSRV 1.83
 
 [dev-dependencies]
 incrementalmerkletree = { version = "0.8", features = ["test-dependencies"] }
 proptest = "1.0.0"
 zcash_primitives = { version = "0.26", features = ["temporary-zcashd", "transparent-inputs", "test-dependencies"] }
+
+# MSRV pins for transient dependencies
+[target.'cfg(all(target_arch = "wasm32", target_os = "wasi", target_env = "p2"))'.dev-dependencies.wasi]
+version = "0.14,<0.14.5" # 0.14.5 has MSRV 1.82
 
 [dependencies.tracing-subscriber]
 version = "0.3.20"
