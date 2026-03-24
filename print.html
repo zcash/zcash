@@ -13,21 +13,20 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
-        <link rel="icon" href="favicon.svg">
-        <link rel="shortcut icon" href="favicon.png">
-        <link rel="stylesheet" href="css/variables.css">
-        <link rel="stylesheet" href="css/general.css">
-        <link rel="stylesheet" href="css/chrome.css">
-        <link rel="stylesheet" href="css/print.css" media="print">
+        <link rel="icon" href="favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="favicon-8114d1fc.png">
+        <link rel="stylesheet" href="css/variables-8adf115d.css">
+        <link rel="stylesheet" href="css/general-2459343d.css">
+        <link rel="stylesheet" href="css/chrome-ae938929.css">
+        <link rel="stylesheet" href="css/print-9e4910d8.css" media="print">
 
         <!-- Fonts -->
-        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
-        <link rel="stylesheet" href="fonts/fonts.css">
+        <link rel="stylesheet" href="fonts/fonts-9644e21d.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" id="highlight-css" href="highlight.css">
-        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
-        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+        <link rel="stylesheet" id="mdbook-highlight-css" href="highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
 
         <!-- Custom theme stylesheets -->
 
@@ -37,10 +36,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex.js";
+            window.path_to_searchindex_js = "searchindex-f84849a5.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc.js"></script>
+        <script src="toc-da9f99e0.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -54,7 +53,7 @@
             </div>
         </div>
     </div>
-    <div id="body-container">
+    <div id="mdbook-body-container">
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
         <script>
             try {
@@ -83,12 +82,12 @@
             html.classList.add("js");
         </script>
 
-        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
 
         <!-- Hide / unhide sidebar before it is displayed -->
         <script>
             let sidebar = null;
-            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
             if (document.body.clientWidth >= 1080) {
                 try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
                 sidebar = sidebar || 'visible';
@@ -103,39 +102,39 @@
             }
         </script>
 
-        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
             <!-- populated by js -->
             <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
             <noscript>
                 <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
             </noscript>
-            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
                 <div class="sidebar-resize-indicator"></div>
             </div>
         </nav>
 
-        <div id="page-wrapper" class="page-wrapper">
+        <div id="mdbook-page-wrapper" class="page-wrapper">
 
             <div class="page">
-                <div id="menu-bar-hover-placeholder"></div>
-                <div id="menu-bar" class="menu-bar sticky">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
                     <div class="left-buttons">
-                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
-                            <i class="fa fa-bars"></i>
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
                         </label>
-                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
-                            <i class="fa fa-paint-brush"></i>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
                         </button>
-                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
-                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
                         </ul>
-                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
-                            <i class="fa fa-search"></i>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
                         </button>
                     </div>
 
@@ -143,44 +142,44 @@
 
                     <div class="right-buttons">
                         <a href="print.html" title="Print this book" aria-label="Print this book">
-                            <i id="print-button" class="fa fa-print"></i>
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
                         </a>
 
                     </div>
                 </div>
 
-                <div id="search-wrapper" class="hidden">
-                    <form id="searchbar-outer" class="searchbar-outer">
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
                         <div class="search-wrapper">
-                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
                             <div class="spinner-wrapper">
-                                <i class="fa fa-spinner fa-spin"></i>
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
                             </div>
                         </div>
                     </form>
-                    <div id="searchresults-outer" class="searchresults-outer hidden">
-                        <div id="searchresults-header" class="searchresults-header"></div>
-                        <ul id="searchresults">
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
                         </ul>
                     </div>
                 </div>
 
                 <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
                 <script>
-                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
-                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
-                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
                         link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
                     });
                 </script>
 
-                <div id="content" class="content">
+                <div id="mdbook-content" class="content">
                     <main>
-                        <h1>Zcash 6.10.0
-<img align="right" width="120" height="80" src="doc/imgs/logo.png"></h1>
+                        <h1 id="zcash-6110"><a class="header" href="#zcash-6110">Zcash 6.11.0
+<img align="right" width="120" height="80" src="doc/imgs/logo.png"></a></h1>
 <h2 id="what-is-zcash"><a class="header" href="#what-is-zcash">What is Zcash?</a></h2>
 <p><a href="https://z.cash/">Zcash</a> is HTTPS for money.</p>
-<p>Initially based on Bitcoin's design, Zcash has been developed from
+<p>Initially based on Bitcoin’s design, Zcash has been developed from
 the Zerocash protocol to offer a far higher standard of privacy and
 anonymity. It uses a sophisticated zero-knowledge proving scheme to
 preserve confidentiality and hide the connections between shielded
@@ -194,6 +193,7 @@ connection, the synchronization process could take several days.</p>
 <p align="center">
   <img src="doc/imgs/zcashd_screen.gif" height="500">
 </p>
+
 <p>The <code>zcashd</code> code is derived from a source fork of
 <a href="https://github.com/bitcoin/bitcoin">Bitcoin Core</a>. The code was forked
 initially from Bitcoin Core v0.11.2, and the two codebases have diverged
@@ -234,11 +234,13 @@ for help and more information.</li>
 for detailed instructions.</p>
 <h2 id="license"><a class="header" href="#license">License</a></h2>
 <p>For license information see the file <a href="COPYING">COPYING</a>.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="user-documentation"><a class="header" href="#user-documentation">User Documentation</a></h1>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="user-documentation"><a class="header" href="#user-documentation">User Documentation</a></h1>
 <p>This section contains user documentation specific to <code>zcashd</code>.</p>
 <p>See <a href="https://zcash.readthedocs.io/">here</a> for more general Zcash documentation, as well as
 installation instructions for <code>zcashd</code>.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="zcashd-release-support"><a class="header" href="#zcashd-release-support"><code>zcashd</code> Release Support</a></h1>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="zcashd-release-support"><a class="header" href="#zcashd-release-support"><code>zcashd</code> Release Support</a></h1>
 <h2 id="release-cadence-and-support-window"><a class="header" href="#release-cadence-and-support-window">Release cadence and support window</a></h2>
 <p><code>zcashd</code> releases happen approximately every six weeks, although this may change if a
 particular release is delayed, or if a hotfix release occurs.</p>
@@ -268,55 +270,83 @@ Upgrade will have shut down by the time the Network Upgrade activates.</li>
 <p>The End-of-Support height for a running <code>zcashd</code> can be queried over JSON-RPC using the
 <code>getdeprecationinfo</code> method.</p>
 <p>The following table shows End-of-Support information for recent <code>zcashd</code> releases. It is
-automatically updated during each release. "End of Support" dates are estimated at that
+automatically updated during each release. “End of Support” dates are estimated at that
 time, and may shift due to changes in network solution power.</p>
 <!-- RELEASE_SCRIPT_START_MARKER - If you make changes here, check make-release.py -->
-<div class="table-wrapper"><table><thead><tr><th><code>zcashd</code> version</th><th>Release date</th><th>Halt height</th><th>End of Support</th></tr></thead><tbody>
-<tr><td>6.3.0</td><td>2025-07-31</td><td>3132000</td><td>2025-11-06</td></tr>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th><code>zcashd</code> version</th><th>Release date</th><th>Halt height</th><th>End of Support</th></tr>
+</thead>
+<tbody>
 <tr><td>6.10.0</td><td>2025-10-01</td><td>3214000</td><td>2026-01-21</td></tr>
-</tbody></table>
-</div><!-- RELEASE_SCRIPT_END_MARKER -->
-<div style="break-before: page; page-break-before: always;"></div><h1 id="platform-support"><a class="header" href="#platform-support">Platform Support</a></h1>
-<p>Support for different platforms (build "targets" and operating systems) are organised into
+<tr><td>6.11.0</td><td>2026-01-08</td><td>3327100</td><td>2026-04-30</td></tr>
+</tbody>
+</table>
+</div>
+<!-- RELEASE_SCRIPT_END_MARKER -->
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="platform-support"><a class="header" href="#platform-support">Platform Support</a></h1>
+<p>Support for different platforms (build “targets” and operating systems) are organised into
 three tiers, each with a different set of guarantees. For more information on the policies
-for targets at each tier, see the <a href="user/../dev/platform-tier-policy.html">Platform Tier Policy</a>.</p>
+for targets at each tier, see the <a href="#platform-tier-policy">Platform Tier Policy</a>.</p>
 <h2 id="tier-1"><a class="header" href="#tier-1">Tier 1</a></h2>
-<p>Tier 1 platforms can be thought of as "guaranteed to work". ECC builds official binary
+<p>Tier 1 platforms can be thought of as “guaranteed to work”. ECC builds official binary
 releases for each tier 1 platform, and automated testing ensures that each tier 1 platform
 builds and passes tests after each change.</p>
-<p>"End of Support" dates are the latest currently-known date after which the platform will
+<p>“End of Support” dates are the latest currently-known date after which the platform will
 be removed from tier 1. These dates are subject to change.</p>
-<div class="table-wrapper"><table><thead><tr><th>target</th><th>OS</th><th>End of Support</th></tr></thead><tbody>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>target</th><th>OS</th><th>End of Support</th></tr>
+</thead>
+<tbody>
 <tr><td><code>x86_64-pc-linux-gnu</code></td><td>Debian 11</td><td>June 2026</td></tr>
 <tr><td></td><td>Debian 12</td><td>June 2028</td></tr>
 <tr><td></td><td>Ubuntu 22.04</td><td>April 2027</td></tr>
-</tbody></table>
+</tbody>
+</table>
 </div>
 <h2 id="tier-2"><a class="header" href="#tier-2">Tier 2</a></h2>
-<p>Tier 2 platforms can be thought of as "guaranteed to build". ECC builds official binary
+<p>Tier 2 platforms can be thought of as “guaranteed to build”. ECC builds official binary
 releases for each tier 2 platform, and automated builds ensure that each tier 2 platform
-builds after each change. Automated tests are not always run so it's not guaranteed to
+builds after each change. Automated tests are not always run so it’s not guaranteed to
 produce a working build, but tier 2 platforms often work to quite a good degree, and
 patches are always welcome!</p>
-<p>"End of Support" dates are the latest currently-known date after which the platform will
+<p>“End of Support” dates are the latest currently-known date after which the platform will
 be removed from tier 2. These dates are subject to change.</p>
-<div class="table-wrapper"><table><thead><tr><th>target</th><th>OS</th><th>End of Support</th></tr></thead><tbody>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>target</th><th>OS</th><th>End of Support</th></tr>
+</thead>
+<tbody>
 <tr><td>N/A</td><td></td><td></td></tr>
-</tbody></table>
+</tbody>
+</table>
 </div>
 <h2 id="tier-3"><a class="header" href="#tier-3">Tier 3</a></h2>
 <p>Tier 3 platforms are those for which the <code>zcashd</code> codebase has support, but ECC does not
 require builds or tests to pass, so these may or may not work. Official builds are not
 available.</p>
-<div class="table-wrapper"><table><thead><tr><th>target</th><th>OS</th><th>notes</th></tr></thead><tbody>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>target</th><th>OS</th><th>notes</th></tr>
+</thead>
+<tbody>
 <tr><td><code>x86_64-pc-linux-gnu</code></td><td>Arch</td><td></td></tr>
 <tr><td></td><td>Ubuntu 24.04</td><td></td></tr>
 <tr><td><code>x86_64-unknown-freebsd</code></td><td>FreeBSD</td><td></td></tr>
 <tr><td><code>x86_64-w64-mingw32</code></td><td>Windows</td><td>64-bit MinGW</td></tr>
 <tr><td><code>x86_64-apple-darwin16</code></td><td>macOS 10.14+</td><td></td></tr>
 <tr><td><code>aarch64-linux-gnu</code></td><td>ARM64 Linux</td><td></td></tr>
-</tbody></table>
-</div><div style="break-before: page; page-break-before: always;"></div><h1 id="wallet-backup-instructions"><a class="header" href="#wallet-backup-instructions">Wallet Backup Instructions</a></h1>
+</tbody>
+</table>
+</div>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="wallet-backup-instructions"><a class="header" href="#wallet-backup-instructions">Wallet Backup Instructions</a></h1>
 <h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
 <p>Backing up your Zcash private keys is the best way to be proactive about
 preventing loss of access to your ZEC.</p>
@@ -338,10 +368,10 @@ guides or support channels provided for those services.</p>
 private keys needed to spend your ZEC and view your shielded ZEC.</p>
 <p>For all methods, you will need to include an export directory setting in your
 config file (<code>zcash.conf</code> located in the data directory which is <code>~/.zcash/</code>
-unless it's been overridden with <code>datadir=</code> setting):</p>
+unless it’s been overridden with <code>datadir=</code> setting):</p>
 <p><code>exportdir=path/to/chosen/export/directory</code></p>
 <p>You may chose any directory within the home directory as the location for
-export &amp; backup files. If the directory doesn't exist, it will be created.</p>
+export &amp; backup files. If the directory doesn’t exist, it will be created.</p>
 <p>Note that zcashd will need to be stopped and restarted for edits in the config
 file to take effect.</p>
 <h3 id="using-backupwallet"><a class="header" href="#using-backupwallet">Using <code>backupwallet</code></a></h3>
@@ -387,7 +417,7 @@ transactions if it is not already part of the wallet.</p>
 it, instead use:</p>
 <pre><code class="language-bash">$ zcash-cli z_importkey &lt;z-private-key&gt; no
 </code></pre>
-<p>For other instructions on fine-tuning the wallet rescan, see the command's help
+<p>For other instructions on fine-tuning the wallet rescan, see the command’s help
 documentation:</p>
 <pre><code class="language-bash">$ zcash-cli help z_importkey
 </code></pre>
@@ -396,11 +426,12 @@ documentation:</p>
 </code></pre>
 <p>This has the same functionality as <code>z_importkey</code> but works with transparent
 addresses.</p>
-<p>See the command's help documentation for instructions on fine-tuning the wallet
+<p>See the command’s help documentation for instructions on fine-tuning the wallet
 rescan:</p>
 <pre><code class="language-bash">$ zcash-cli help importprivkey
 </code></pre>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="shielding-coinbase-utxos"><a class="header" href="#shielding-coinbase-utxos">Shielding Coinbase UTXOs</a></h1>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="shielding-coinbase-utxos"><a class="header" href="#shielding-coinbase-utxos">Shielding Coinbase UTXOs</a></h1>
 <p><strong>Summary</strong></p>
 <p>Use <code>z_shieldcoinbase</code> RPC call to shield coinbase UTXOs.</p>
 <p><strong>Who should read this document</strong></p>
@@ -508,10 +539,16 @@ created by a call to z_shieldcoinbase.
 </ul>
 </li>
 </ul>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="data-directory-files"><a class="header" href="#data-directory-files">Data Directory Files</a></h1>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="data-directory-files"><a class="header" href="#data-directory-files">Data Directory Files</a></h1>
 <p>Files within the zcashd data directory (<code>~/.zcash/</code> on Linux unless otherwise specified)
 include:</p>
-<div class="table-wrapper"><table><thead><tr><th>File</th><th>Description</th></tr></thead><tbody>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>File</th><th>Description</th></tr>
+</thead>
+<tbody>
 <tr><td><code>zcash.conf</code></td><td>contains configuration settings for zcashd</td></tr>
 <tr><td><code>zcashd.pid</code></td><td>stores the process id of zcashd while running</td></tr>
 <tr><td><code>blocks/blk000*.dat</code></td><td>block data (custom, 128 MiB per file)</td></tr>
@@ -527,8 +564,11 @@ include:</p>
 <tr><td><code>.lock</code></td><td>data directory lock file (empty)</td></tr>
 <tr><td><code>testnet3/*</code></td><td>contains testnet versions of these files, except <code>zcash.conf</code>, if running <code>-testnet</code></td></tr>
 <tr><td><code>onion_private_key</code></td><td>cached Tor hidden service private key for <code>-listenonion</code></td></tr>
-</tbody></table>
-</div><div style="break-before: page; page-break-before: always;"></div><h1 id="zcashd-metrics"><a class="header" href="#zcashd-metrics">zcashd metrics</a></h1>
+</tbody>
+</table>
+</div>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="zcashd-metrics"><a class="header" href="#zcashd-metrics">zcashd metrics</a></h1>
 <h2 id="metrics-ui"><a class="header" href="#metrics-ui">Metrics UI</a></h2>
 <p>This is the user interface that <code>zcashd</code> displays by default when run. It
 displays a small selection of interesting metrics, but is not intended for
@@ -592,7 +632,7 @@ wallet holding live funds.</p>
 <h3 id="metrics-collection-with-docker"><a class="header" href="#metrics-collection-with-docker">Metrics collection with Docker</a></h3>
 <p>A docker-compose.yml has been provided in <code>./contrib/metrics</code> that sets up
 local instances of <code>prometheus</code> and <code>grafana</code> and provides a dashboard that
-charts several of the various metrics exposed by <code>zcashd</code>'s <code>prometheus</code>
+charts several of the various metrics exposed by <code>zcashd</code>’s <code>prometheus</code>
 endpoint. Note that both <code>docker</code> and <code>docker-compose</code> must ordinarily be run
 with superuser permissions (use <code>sudo</code>) when running on Linux.</p>
 <p><code>docker-compose up</code><sup class="footnote-reference" id="fr-1-1"><a href="#footnote-1">1</a></sup> will start local instances of <code>prometheus</code> and <code>grafana</code>,
@@ -648,11 +688,14 @@ docker run --detach -p 9090:9090 --volume prometheus-storage:/prometheus --volum
 docker run --detach -p 3030:3030 --env GF_SERVER_HTTP_PORT=3030 --volume grafana-storage:/var/lib/grafana grafana/grafana
 </code></pre>
 <hr>
-<ol class="footnote-definition"><li id="footnote-1">
+<ol class="footnote-definition">
+<li id="footnote-1">
 <p>This requires a running Docker daemon. See <a href="https://docs.docker.com/config/daemon/start/">the relevant section of the
 Docker Engine manual</a>. <a href="#fr-1-1">↩</a></p>
 </li>
-</ol><div style="break-before: page; page-break-before: always;"></div><h1 id="tor-support-in-zcash"><a class="header" href="#tor-support-in-zcash">Tor Support in Zcash</a></h1>
+</ol>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="tor-support-in-zcash"><a class="header" href="#tor-support-in-zcash">Tor Support in Zcash</a></h1>
 <p>Tor can be used to provide a layer of network anonymity for Zcash users.
 Additionally, Zcash users may chose to connect only to Tor hidden services, and
 also to expose their own Tor hidden service to allow users to connect to them
@@ -660,32 +703,32 @@ over the Tor network.</p>
 <ol start="0">
 <li>Install Tor</li>
 </ol>
-<hr />
+<hr>
 <p>The easiest way to install Tor is to use the
 <a href="https://www.torproject.org/download/">Tor Browser Bundle</a>.  For headless
 installs, you probably want to install the Tor daemon.  The Tor Project
 provides <a href="https://support.torproject.org/apt/">instructions</a> for doing this on
 common Linux distributions.  Note that the Tor Browser Bundle exposes a SOCKS
 listener on tcp/9150 by default, while the Tor daemon exposes the SOCKS
-listener on tcp/9050.  For the purposes of the example below, we'll assume that
-you're using the Tor daemon and that the SOCKS listener is on tcp/9050.</p>
+listener on tcp/9050.  For the purposes of the example below, we’ll assume that
+you’re using the Tor daemon and that the SOCKS listener is on tcp/9050.</p>
 <ol>
 <li>Run zcashd over Tor</li>
 </ol>
-<hr />
+<hr>
 <p>Configuring zcashd to use a Tor SOCKS proxy will route all outgoing connections
 over Tor.</p>
 <pre><code class="language-bash">$ zcashd -proxy=127.0.0.1:9050
 </code></pre>
 <p>Yay!  Your zcashd node is now leveraging the Tor network to connect to other
-zcashd nodes.  But there's more fun to be had.  By creating a
+zcashd nodes.  But there’s more fun to be had.  By creating a
 <a href="https://2019.www.torproject.org/docs/faq.html.en#TorOnionServices">Tor Hidden Service</a>.
-you can help promote privacy for Zcash users by advertising your node's .onion
+you can help promote privacy for Zcash users by advertising your node’s .onion
 address to other Tor Zcash users.</p>
 <ol start="2">
 <li>Expose your zcashd via a Tor hidden service (optional)</li>
 </ol>
-<hr />
+<hr>
 <p>Edit your /etc/tor/torrc (or equivalent config file) to map the hidden service
 to your zcashd TCP listener.  The directory can be whatever you like but the
 port numbers should be equal to the zcashd p2p listen port (8233 by default).
@@ -713,7 +756,7 @@ HiddenServicePort 8233 127.0.0.1:8233
 <p>Note that zcashd does not yet support Onion v3 addresses, but will do so before
 v2 addresses are removed from Tor.  See <a href="https://github.com/zcash/zcash/issues/3051">this
 issue</a> for more information on
-what's required to make zcashd support v3 Onion addresses.</p>
+what’s required to make zcashd support v3 Onion addresses.</p>
 <p>After making these edits to /etc/tor/torrc, restart tor to create the hidden
 service hostname and keys.</p>
 <pre><code class="language-bash">$ sudo systemctl restart tor
@@ -790,9 +833,9 @@ correctly advertising its Onion address to the network.</p>
 <ol start="3">
 <li>Dynamically Configure Onion Service (Optional)</li>
 </ol>
-<hr />
-<p>Starting with Tor version 0.2.7.1 it is possible, through Tor's control socket
-API, to create and destroy 'ephemeral' hidden services programmatically. zcashd
+<hr>
+<p>Starting with Tor version 0.2.7.1 it is possible, through Tor’s control socket
+API, to create and destroy ‘ephemeral’ hidden services programmatically. zcashd
 has been updated to make use of this.</p>
 <p>This configuration could be used instead of manually configuring the Onion
 service as in step 2 above.</p>
@@ -805,7 +848,7 @@ requires a Tor connection to work. It can be explicitly disabled with
 <code>-listenonion=0</code> and, if not disabled, configured using the <code>-torcontrol</code>
 and <code>-torpassword</code> settings. To show verbose debugging information, pass
 <code>-debug=tor</code>.</p>
-<p>Connecting to Tor's control socket API requires one of two authentication
+<p>Connecting to Tor’s control socket API requires one of two authentication
 methods to be configured:</p>
 <ol>
 <li>Cookie authentication, which requires write access to the <code>CookieAuthFile</code>
@@ -836,7 +879,7 @@ Feb 11 15:26:47.565  INFO main: ProcessMessages: advertizing address tweustb4j6o
 <ol start="4">
 <li>Connect to a single Zcash Onion server</li>
 </ol>
-<hr />
+<hr>
 <p>This invocation will start zcashd and connect via Tor to a single zcashd onion
 server.</p>
 <p>Launch zcashd as follows:</p>
@@ -867,7 +910,7 @@ or <code>-connect=0</code> alone to disable automatic connections</li>
 <ol start="4">
 <li>Connect to multiple Zcash Onion servers</li>
 </ol>
-<hr />
+<hr>
 <p>This invocation will start zcashd, skip DNS seeding, connect via Tor to a
 multiple zcashd onion servers, and also advertise your Onion server to other
 Tor capable Zcash nodes.</p>
@@ -894,7 +937,8 @@ if <code>listen=1</code> and <code>bind</code> is not set.</li>
 <li><code>-onlynet=&lt;net&gt;</code>: Only connect to nodes in network <code>&lt;net&gt;</code> (ipv4, ipv6 or
 onion)</li>
 </ul>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="security-warnings"><a class="header" href="#security-warnings">Security Warnings</a></h1>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="security-warnings"><a class="header" href="#security-warnings">Security Warnings</a></h1>
 <h2 id="security-audit"><a class="header" href="#security-audit">Security Audit</a></h2>
 <p>Zcash has been subjected to a formal third-party security review. For security
 announcements, audit results and other general security information, see
@@ -975,10 +1019,10 @@ users should be controlled to prevent confused-deputy attacks which could spend
 from any keys held by that zcashd.</p>
 <h2 id="block-chain-reorganization-major-differences"><a class="header" href="#block-chain-reorganization-major-differences">Block Chain Reorganization: Major Differences</a></h2>
 <p>Users should be aware of new behavior in Zcash that differs significantly from
-Bitcoin: in the case of a block chain reorganization, Bitcoin's coinbase
+Bitcoin: in the case of a block chain reorganization, Bitcoin’s coinbase
 maturity rule helps to ensure that any reorganization shorter than the maturity
 interval will not invalidate any of the rolled-back transactions. Zcash keeps
-Bitcoin's 100-block maturity interval for generation transactions, but because
+Bitcoin’s 100-block maturity interval for generation transactions, but because
 JoinSplits must be anchored within a block, this provides more limited
 protection against transactions becoming invalidated. In the case of a block
 chain reorganization for Zcash, all JoinSplits which were anchored within the
@@ -1005,12 +1049,13 @@ if you want to examine the memo field of a note being spent.</p>
 <p>In addition to potential mistakes in code we added to Bitcoin Core, and
 potential mistakes in our modifications to Bitcoin Core, it is also possible
 that there were potential changes we were supposed to make to Bitcoin Core but
-didn't, either because we didn't even consider making those changes, or we ran
+didn’t, either because we didn’t even consider making those changes, or we ran
 out of time. We have brainstormed and documented a variety of such
 possibilities in <a href="https://github.com/zcash/zcash/issues/826">issue #826</a>, and
 believe that we have changed or done everything that was necessary for the
 1.0.0 launch. Users may want to review this list themselves.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="deprecated-features"><a class="header" href="#deprecated-features">Deprecated Features</a></h1>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="deprecated-features"><a class="header" href="#deprecated-features">Deprecated Features</a></h1>
 <p>In order to support the continuous improvement of <code>zcashd</code>, features are
 periodically deprecated and removed when they have been superseded or are no
 longer useful.  Deprecation follows a 3-stage process:</p>
@@ -1027,9 +1072,9 @@ Disabled features may be reenabled via use of the <code>-allowdeprecated</code> 
 <li>In the third stage, the feature is fully removed and is no longer available.</li>
 </ol>
 <p>Features that enter Stage 1 in a particular release will be disabled by default
-after no fewer than 3 releases that update <code>zcashd</code>'s minor-version, and
+after no fewer than 3 releases that update <code>zcashd</code>’s minor-version, and
 features will only be fully removed after a total of at least 6 minor-version updates.
-<code>zcashd</code>'s release schedule intends to produce a release that updates the minor
+<code>zcashd</code>’s release schedule intends to produce a release that updates the minor
 version every 6 weeks, so deprecated features remain accessible by default for
 approximately 18 weeks, and then can be expected to be removed no less than 36
 weeks after their initial deprecation. Deprecation and removal timelines might
@@ -1039,14 +1084,20 @@ be extended beyond this on a case-by-case basis to satisfy user requirements.</p
 <p>The following features are deprecated, but remain enabled by default. These features
 will be disabled if <code>-allowdeprecated=none</code> is added to the CLI arguments when starting
 the node, or if an <code>allowdeprecated=none</code> line is added to <code>zcash.conf</code>.</p>
-<div class="table-wrapper"><table><thead><tr><th><code>feature</code></th><th>Deprecated</th><th>Feature details</th></tr></thead><tbody>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th><code>feature</code></th><th>Deprecated</th><th>Feature details</th></tr>
+</thead>
+<tbody>
 <tr><td><code>z_gettotalbalance</code></td><td>5.0.0</td><td>The <code>z_gettotalbalance</code> RPC method.</td></tr>
 <tr><td><code>createrawtransaction</code></td><td>6.2.0</td><td>The <code>createrawtransaction</code> RPC method.</td></tr>
 <tr><td><code>fundrawtransaction</code></td><td>6.2.0</td><td>The <code>fundrawtransaction</code> RPC method.</td></tr>
 <tr><td><code>signrawtransaction</code></td><td>6.2.0</td><td>The <code>signrawtransactions</code> RPC method.</td></tr>
 <tr><td><code>keypoolrefill</code></td><td>6.2.0</td><td>The <code>keypoolrefill</code> RPC method.</td></tr>
 <tr><td><code>settxfee</code></td><td>6.2.0</td><td>The <code>settxfee</code> RPC method.</td></tr>
-</tbody></table>
+</tbody>
+</table>
 </div>
 <p>The <code>createrawtransaction</code>, <code>fundrawtransaction</code>, and <code>signrawtransaction</code> RPC methods are intended to be replaced
 by PCZT-based functionality implemented in Zallet <a href="https://github.com/zcash/wallet/issues/99">zcash/wallet#99</a>.</p>
@@ -1056,8 +1107,13 @@ Sprout) are also deprecated.</p>
 <p>Each feature in the table below may be enabled by adding <code>-allowdeprecated=&lt;feature&gt;</code>
 to the CLI arguments when starting the node, or by adding an <code>allowdeprecated=&lt;feature&gt;</code>
 line to <code>zcash.conf</code>.</p>
-<div class="table-wrapper"><table><thead><tr><th><code>feature</code></th><th>Deprecated</th><th>Default-disabled</th><th>Feature details</th></tr></thead><tbody>
-<tr><td><code>legacy_privacy</code></td><td>5.0.0</td><td>5.4.0</td><td>The default "legacy" privacy policy for <code>z_sendmany</code> has been replaced by the <code>FullPrivacy</code> directive.</td></tr>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th><code>feature</code></th><th>Deprecated</th><th>Default-disabled</th><th>Feature details</th></tr>
+</thead>
+<tbody>
+<tr><td><code>legacy_privacy</code></td><td>5.0.0</td><td>5.4.0</td><td>The default “legacy” privacy policy for <code>z_sendmany</code> has been replaced by the <code>FullPrivacy</code> directive.</td></tr>
 <tr><td><code>getnewaddress</code></td><td>5.0.0</td><td>5.4.0</td><td>The <code>getnewaddress</code> RPC method.</td></tr>
 <tr><td><code>getrawchangeaddress</code></td><td>5.0.0</td><td>5.4.0</td><td>The <code>getrawchangeaddress</code> RPC method.</td></tr>
 <tr><td><code>z_getnewaddress</code></td><td>5.0.0</td><td>5.4.0</td><td>The <code>z_getnewaddress</code> RPC method.</td></tr>
@@ -1068,12 +1124,15 @@ line to <code>zcash.conf</code>.</p>
 <tr><td><code>gbt_oldhashes</code></td><td>5.4.0</td><td>6.2.0</td><td>The <code>finalsaplingroothash</code>, <code>lightclientroothash</code>, and <code>blockcommitmentshash</code> fields in the output of <code>getblocktemplate</code>, which are replaced by the <code>defaultroots</code> field.</td></tr>
 <tr><td><code>deprecationinfo_deprecationheight</code></td><td>5.5.0</td><td>6.2.0</td><td>The <code>deprecationheight</code> field returned by the <code>getdeprecationinfo</code> RPC method has been replaced by the <code>end_of_service</code> object.</td></tr>
 <tr><td><code>getnetworkhashps</code></td><td>6.2.0</td><td>6.2.0</td><td>The <code>getnetworkhashps</code> RPC method (use <code>getnetworksolps</code> instead).</td></tr>
-</tbody></table>
+</tbody>
+</table>
 </div>
 <p><code>*</code> As of version 6.2.0, <code>addrtype</code> is default-disabled even when zcashd is compiled without the <code>ENABLE_WALLET</code> flag.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="developer-documentation"><a class="header" href="#developer-documentation">Developer Documentation</a></h1>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="developer-documentation"><a class="header" href="#developer-documentation">Developer Documentation</a></h1>
 <p>This section contains documentation aimed at contributors to the <code>zcashd</code> codebase.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="expectations-for-dns-seed-operators"><a class="header" href="#expectations-for-dns-seed-operators">Expectations for DNS Seed operators</a></h1>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="expectations-for-dns-seed-operators"><a class="header" href="#expectations-for-dns-seed-operators">Expectations for DNS Seed operators</a></h1>
 <p>Zcash attempts to minimize the level of trust in DNS seeds,
 but DNS seeds still pose a small amount of risk for the network.
 As such, DNS seeds must be run by entities which have some minimum
@@ -1091,7 +1150,7 @@ contracted by the operator are equally expected to uphold these expectations.</p
 <li>
 <p>The DNS seed results must consist exclusively of fairly selected and
 functioning Zcash nodes from the public network to the best of the
-operator's understanding and capability.</p>
+operator’s understanding and capability.</p>
 </li>
 <li>
 <p>For the avoidance of doubt, the results may be randomized but must not
@@ -1132,7 +1191,8 @@ situations but should be discussed in public in advance.</p>
 <li><a href="https://github.com/zcash/zcash-seeder">zcash-seeder</a> is a reference
 implementation of a DNS seed.</li>
 </ul>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="rust-in-zcashd"><a class="header" href="#rust-in-zcashd">Rust in <code>zcashd</code></a></h1>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="rust-in-zcashd"><a class="header" href="#rust-in-zcashd">Rust in <code>zcashd</code></a></h1>
 <p><code>zcashd</code> is primarily a C++ codebase, but most new code is being written in Rust
 where possible.</p>
 <h2 id="auditing-rust-dependencies"><a class="header" href="#auditing-rust-dependencies">Auditing Rust dependencies</a></h2>
@@ -1143,10 +1203,10 @@ CI will fail until corresponding audits have been added.</p>
 that are excluded from auditing checks. We aim to reduce this list over time.
 New entries should not be added to the exclusion list without justification.</p>
 <p>To audit a dependency, first <a href="https://mozilla.github.io/cargo-vet/install.html">install <code>cargo-vet</code></a> and then follow the
-<a href="https://mozilla.github.io/cargo-vet/performing-audits.html">"Performing Audits" guide</a>. If you are updating a dependency then instead of
+<a href="https://mozilla.github.io/cargo-vet/performing-audits.html">“Performing Audits” guide</a>. If you are updating a dependency then instead of
 auditing the new version in its entirety, you can optionally just audit the
 delta between the old and new versions - even if the old version is in the
-"unaudited" exclusion list.</p>
+“unaudited” exclusion list.</p>
 <h2 id="adding-new-dependencies-in-online-rust-mode"><a class="header" href="#adding-new-dependencies-in-online-rust-mode">Adding new dependencies in online-Rust mode</a></h2>
 <p>The <code>zcashd</code> build system pins all dependencies, and in order to facilitate
 reproducible builds, <code>cargo</code> is configured to run in offline mode with vendored
@@ -1159,11 +1219,11 @@ required by package `librustzcash v0.2.0 (/path/to/zcash)`
 </code></pre>
 <p>To add dependencies that are compatible with the reproducible build system, you need to follow these steps:</p>
 <ol>
-<li>First, if you've made changes to dependencies in <code>Cargo.toml</code>, these must be reverted before the next step:
+<li>First, if you’ve made changes to dependencies in <code>Cargo.toml</code>, these must be reverted before the next step:
 <pre><code>git stash
 </code></pre>
 </li>
-<li>Next, reconfigure the build system for "online" mode:
+<li>Next, reconfigure the build system for “online” mode:
 <pre><code>CONFIGURE_FLAGS=--enable-online-rust ./zcutil/build.sh
 </code></pre>
 </li>
@@ -1231,10 +1291,11 @@ orchard = { path = "../relative/path/to/orchard" }
 <p>Usually you can apply a patch to use a locally checked out dependency without
 needing to build <code>zcashd</code> in online-Rust mode. However, if your local changes
 include a new dependency, you will need to ensure you are in online-Rust mode.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="regtest"><a class="header" href="#regtest">Regtest</a></h1>
-<p><em>Regtest</em> ("regression test") is one of the three <em>network types</em>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="regtest"><a class="header" href="#regtest">Regtest</a></h1>
+<p><em>Regtest</em> (“regression test”) is one of the three <em>network types</em>
 supported by Zcash, the others being <code>testnet</code> and <code>mainnet</code>.
-Regtest is an entirely local, self-contained mode -- your node or nodes
+Regtest is an entirely local, self-contained mode – your node or nodes
 do not talk with peers out in the world. It gives you complete
 control of the state of the blockchain and the sequence of events.
 You start with an empty blockchain (just the genesis block, block 0).
@@ -1245,7 +1306,7 @@ use <code>regtest</code> mode (usually starting multiple nodes), but you may use
 manually and interactively to learn, test, and experiment. Most often
 just one node is used in this case.</p>
 <h2 id="example-session"><a class="header" href="#example-session">Example session</a></h2>
-<p>Here's a sample session (after you've built <code>zcashd</code> and <code>zcash-cli</code>):</p>
+<p>Here’s a sample session (after you’ve built <code>zcashd</code> and <code>zcash-cli</code>):</p>
 <pre><code>$ mkdir /tmp/regtest-datadir
 $ cat &lt;&lt;EOF &gt;/tmp/regtest-datadir/zcash.conf
 regtest=1
@@ -1292,12 +1353,12 @@ On <code>mainnet</code> and <code>testnet</code>, these activate at
 fixed, known block heights (<a href="https://github.com/zcash/zcash/blob/master/src/chainparams.cpp#L117">example</a>).
 In <code>regtest</code> mode, you determine the activation heights. Upgrades may occur at
 any height greater than 0, and multiple upgrades can occur at the same height. The upgrades
-have a strict ordering (as shown in the upgrades source file); for example, Canopy can't
+have a strict ordering (as shown in the upgrades source file); for example, Canopy can’t
 be activated before Blossom.</p>
 <p>You specify the upgrade heights using multiple <code>-nuparams=</code><em>&lt;branch-id&gt;</em> arguments.
 (The branch IDs are available in the
 <a href="https://github.com/zcash/zcash/blob/master/src/consensus/upgrades.cpp">upgrades.cpp file</a>)
-It's convenient to add these to the configuration file, for example:</p>
+It’s convenient to add these to the configuration file, for example:</p>
 <pre><code>$ cat &lt;&lt;EOF &gt;&gt;/tmp/regtest-datadir/zcash.conf
 nuparams=76b809bb:1
 nuparams=f5b9230b:5
@@ -1310,8 +1371,8 @@ is done automatically. Similarly, activating Heartwood at height 5
 also simultaneously activates Blossom. Since no later upgrades are specified, none
 of them will activate, regardless of height reached.</p>
 <p><strong>IMPORTANT</strong>: if you change the network upgrade heights from one
-test run to the next, it's almost always necessary to start fresh
-by removing the data directory, otherwise you'll encounter strange errors.</p>
+test run to the next, it’s almost always necessary to start fresh
+by removing the data directory, otherwise you’ll encounter strange errors.</p>
 <p>You can see which network upgrades are currently active and which are pending
 (using the above <code>nuparams</code> settings as an example):</p>
 <pre><code>$ src/zcash-cli -datadir=/tmp/regtest-datadir generate 2
@@ -1365,23 +1426,24 @@ $
 <pre><code>$ src/zcash-cli -datadir=/tmp/test9d907s8a/96246/node0 getblockchaininfo
 </code></pre>
 <p>(The other <code>zcashd</code> command-line arguments are generally not needed by
-<code>zcash-cli</code>.) You can see the running node's debug log file:</p>
+<code>zcash-cli</code>.) You can see the running node’s debug log file:</p>
 <pre><code>$ cat /tmp/test9d907s8a/96246/node0/regtest/debug.log
 </code></pre>
 <p>or look at its configuration file.</p>
 <pre><code>$ cat /tmp/test9d907s8a/96246/node0/zcash.conf
 </code></pre>
 <p>In this way, the RPC test framework can teach us more about running <code>regtest</code> nodes.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="platform-tier-policy"><a class="header" href="#platform-tier-policy">Platform Tier Policy</a></h1>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="platform-tier-policy"><a class="header" href="#platform-tier-policy">Platform Tier Policy</a></h1>
 <h2 id="general"><a class="header" href="#general">General</a></h2>
 <p>ECC provides three tiers of platform support, modeled after the
 <a href="https://doc.rust-lang.org/stable/rustc/target-tier-policy.html">Rust Target Tier Policy</a>:</p>
 <ul>
 <li>The Zcash developers provide no guarantees about tier 3 platforms; they exist in the
 codebase, but may or may not build.</li>
-<li>ECC's continuous integration checks that tier 2 platforms will always build, but they
+<li>ECC’s continuous integration checks that tier 2 platforms will always build, but they
 may or may not pass tests.</li>
-<li>ECC's continuous integration checks that tier 1 platforms will always build and pass
+<li>ECC’s continuous integration checks that tier 1 platforms will always build and pass
 tests.</li>
 </ul>
 <p>Adding a new tier 3 platform imposes minimal requirements; we focus primarily on avoiding
@@ -1403,8 +1465,8 @@ and platform-specific patches should always use their own best judgment regardin
 quality of work, and the suitability of a platform for the Zcash project. Neither this
 policy nor any decisions made regarding platforms shall create any binding agreement or
 estoppel by any party.</p>
-<p>For a list of all supported platforms and their corresponding tiers ("tier 3", "tier 2",
-or "tier 1"), see <a href="dev/../user/platform-support.html">Platform Support</a>.</p>
+<p>For a list of all supported platforms and their corresponding tiers (“tier 3”, “tier 2”,
+or “tier 1”), see <a href="#platform-support">Platform Support</a>.</p>
 <p>The availability or tier of a platform in Zcash releases is not a hard stability guarantee
 about the future availability or tier of that platform. Higher-level platform tiers are an
 increasing commitment to the support of a platform, and we will take that commitment and
@@ -1412,10 +1474,10 @@ potential disruptions into account when evaluating the potential demotion or rem
 platform that has been part of a stable release. The promotion or demotion of a platform
 will not generally affect existing stable releases, only current development and future
 releases.</p>
-<p>In this policy, the words "MUST" and "MUST NOT" specify absolute requirements that a
-platform must meet to qualify for a tier. The words "SHOULD" and "SHOULD NOT" specify
+<p>In this policy, the words “MUST” and “MUST NOT” specify absolute requirements that a
+platform must meet to qualify for a tier. The words “SHOULD” and “SHOULD NOT” specify
 requirements that apply in almost all cases, but for which the approving teams may grant
-an exception for good reason. The word "MAY" indicates something entirely optional, and
+an exception for good reason. The word “MAY” indicates something entirely optional, and
 does not indicate guidance or recommendations. This language is based on
 <a href="https://tools.ietf.org/html/rfc2119">IETF RFC 2119</a>.</p>
 <h2 id="tier-3-platform-policy"><a class="header" href="#tier-3-platform-policy">Tier 3 platform policy</a></h2>
@@ -1455,13 +1517,13 @@ team member reporting the outcome of a team discussion.</p>
 <ul>
 <li>A tier 2 platform MUST have value to people other than its proponents. (It MAY still be
 a niche platform, but it MUST NOT be exclusively useful for an inherently closed group.)</li>
-<li>A tier 2 platform MUST have a designated team of developers (the "platform maintainers")
+<li>A tier 2 platform MUST have a designated team of developers (the “platform maintainers”)
 supporting it, without the need for a paid support contract.</li>
 <li>The platform MUST NOT place undue burden on Zcash developers not specifically concerned
 with that platform. Zcash developers are expected to not gratuitously break a tier 2
 platform, but are not expected to become experts in every tier 2 platform, and are not
 expected to provide platform-specific implementations for every tier 2 platform.</li>
-<li>The platform MUST build reliably in CI, for all components that ECC's CI considers
+<li>The platform MUST build reliably in CI, for all components that ECC’s CI considers
 mandatory.</li>
 <li>All requirements for tier 3 apply.</li>
 </ul>
@@ -1475,22 +1537,23 @@ tier 1 platforms to our highest standard of requirements.</p>
 and MUST serve the ongoing needs of multiple production users of Zcash across multiple
 organizations or projects. These requirements are subjective. A tier 1 platform MAY be
 demoted or removed if it becomes obsolete or no longer meets this requirement.</li>
-<li>The platform MUST build and pass tests reliably in CI, for all components that ECC's CI
+<li>The platform MUST build and pass tests reliably in CI, for all components that ECC’s CI
 considers mandatory.</li>
 <li>Building the platform and running the test suite for the platform MUST NOT take
 substantially longer than other platforms, and SHOULD NOT substantially raise the
 maintenance burden of the CI infrastructure.</li>
 <li>Tier 1 platforms MUST NOT have a hard requirement for signed, verified, or otherwise
-"approved" binaries. Developers MUST be able to build, run, and test binaries for the
+“approved” binaries. Developers MUST be able to build, run, and test binaries for the
 platform on systems they control, or provide such binaries for others to run. (Doing so
-MAY require enabling some appropriate "developer mode" on such systems, but MUST NOT
+MAY require enabling some appropriate “developer mode” on such systems, but MUST NOT
 require the payment of any additional fee or other consideration, or agreement to any
 onerous legal agreements.)</li>
 <li>All requirements for tier 2 apply.</li>
 </ul>
 <p>A tier 1 platform MAY be demoted or removed if it no longer meets these requirements but
 still meets the requirements for a lower tier.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="deprecation-procedure"><a class="header" href="#deprecation-procedure">Deprecation Procedure</a></h1>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="deprecation-procedure"><a class="header" href="#deprecation-procedure">Deprecation Procedure</a></h1>
 <p>From time to time, features of <code>zcashd</code> and its associated wallet and RPC API are
 deprecated to allow eventual removal of functionality that has been superseded
 by more recent improvements. Deprecation follows a process whereby deprecate
@@ -1517,33 +1580,37 @@ user-facing API documentation and CLI help text.</li>
 removed.</li>
 </ol>
 <p>Features that enter Stage 1 in a particular release should be disabled by
-default after no fewer than 3 releases that update <code>zcashd</code>'s
+default after no fewer than 3 releases that update <code>zcashd</code>’s
 minor-version, and features should only be fully removed after a total of 6 minor-version
-updates. <code>zcashd</code>'s release schedule intends to produce a release that updates
+updates. <code>zcashd</code>’s release schedule intends to produce a release that updates
 the minor version every 6 weeks, so deprecated features remain accessible by
 default for approximately 18 weeks, and then can be expected to be removed no
 less than 36 weeks from their initial deprecation. The deprecation timeline for
 each newly deprecated feature should be documented in
-<a href="dev/../user/deprecation.html">../user/deprecation.md</a>.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="design"><a class="header" href="#design">Design</a></h1>
+<a href="#deprecated-features">../user/deprecation.md</a>.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="design"><a class="header" href="#design">Design</a></h1>
 <p>Zcash was originally a fork of Bitcoin 0.11.2, and as such the <code>zcashd</code> node architecture
 is very similar to <code>bitcoind</code>. There are however several differences, most notably the
 addition of shielded pools to the consensus logic and full node state.</p>
 <p>In this section of the book, we describe the overall architecture that we inherit from
 <code>bitcoind</code>, the changes we have made to the inherited components, and the new components
 we have introduced.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="chain-state"><a class="header" href="#chain-state">Chain state</a></h1>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="chain-state"><a class="header" href="#chain-state">Chain state</a></h1>
 <p>TBD</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="coins-view"><a class="header" href="#coins-view">"Coins" view</a></h1>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="coins-view"><a class="header" href="#coins-view">“Coins” view</a></h1>
 <p>TBD</p>
 <h2 id="notes"><a class="header" href="#notes">Notes</a></h2>
 <ul>
 <li>This is the main context in which <code>CTxOut::IsNull()</code> is used. The other is a
-single spot in the mempool code. Once we've backported the
+single spot in the mempool code. Once we’ve backported the
 <a href="https://github.com/bitcoin/bitcoin/pull/10195">per-txout CoinsDB</a> we can
 hopefully eliminate this method.</li>
 </ul>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="p2p-data-propagation"><a class="header" href="#p2p-data-propagation">P2P data propagation</a></h1>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="p2p-data-propagation"><a class="header" href="#p2p-data-propagation">P2P data propagation</a></h1>
 <p>This page contains notes about how block and transaction data is tracked and propagated by
 <code>zcashd</code>. Most of this behaviour is inherited from Bitcoin Core, but some differences have
 developed.</p>
@@ -1551,7 +1618,7 @@ developed.</p>
 one place is generally useful for understanding the overall dynamic :)</p>
 <h2 id="recentrejects"><a class="header" href="#recentrejects"><code>recentRejects</code></a></h2>
 <p>When a transaction is rejected by <code>AcceptToMemoryPool</code>, the transaction is added to the
-<code>recentRejects</code> Bloom filter, so that we don't process it again. The Bloom filter resets
+<code>recentRejects</code> Bloom filter, so that we don’t process it again. The Bloom filter resets
 whenever the chain tip changes, as previously invalid transactions might become valid.</p>
 <p>To prevent DoS attacks against wallets submitting transactions, <code>recentRejects</code> needs to
 store a commitment to the entire transaction. This ensures that if a transaction is
@@ -1565,17 +1632,17 @@ the txid with a globally-fixed (all-ones) suffix.</li>
 </ul>
 <h2 id="maporphantransactions"><a class="header" href="#maporphantransactions"><code>mapOrphanTransactions</code></a></h2>
 <p>Upstream uses this map to store transactions that are rejected by <code>AcceptToMemoryPool</code>
-because the node doesn't have their transparent inputs. <code>zcashd</code> inherits this behaviour
+because the node doesn’t have their transparent inputs. <code>zcashd</code> inherits this behaviour
 but limits it to purely-transparent transactions (that is, if a transaction contains any
 shielded components, the node rejects it as invalid and adds it to <code>recentRejects</code>).</p>
 <p><code>mapOrphanTransactions</code> indexes transactions by txid. This means that if an orphan
 transaction is received (spending transparent UTXOs the node does not know about), and it
 also happens to be invalid for other reasons (subsequent <code>AcceptToMemoryPool</code> rules that
-haven't yet been checked), then the node will not request any v5+ transactions with the
+haven’t yet been checked), then the node will not request any v5+ transactions with the
 same txid but different authorizing data. This does not create a DoS problem for wallets,
 because an adversary that manipulated an orphan transaction to be invalid under the above
-constraints would also need to prevent the orphan's parent from entering the mempool, and
-eventually a parent is reached that is not an orphan. Once the orphan's direct parent is
+constraints would also need to prevent the orphan’s parent from entering the mempool, and
+eventually a parent is reached that is not an orphan. Once the orphan’s direct parent is
 accepted, the orphan is re-evaluated, and if it had been manipulated to be invalid, its
 wtxid is added to <code>recentRejects</code> while its txid is removed from <code>mapOrphanTransactions</code>,
 enabling the wallet to rebroadcast the unmodified transaction.</p>
@@ -1597,6 +1664,11 @@ enabling the wallet to rebroadcast the unmodified transaction.</p>
 
         </div>
 
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
 
 
 
@@ -1605,13 +1677,13 @@ enabling the wallet to rebroadcast the unmodified transaction.</p>
         </script>
 
 
-        <script src="elasticlunr.min.js"></script>
-        <script src="mark.min.js"></script>
-        <script src="searcher.js"></script>
+        <script src="elasticlunr-ef4e11c1.min.js"></script>
+        <script src="mark-09e88c2c.min.js"></script>
+        <script src="searcher-c2a407aa.js"></script>
 
-        <script src="clipboard.min.js"></script>
-        <script src="highlight.js"></script>
-        <script src="book.js"></script>
+        <script src="clipboard-1626706a.min.js"></script>
+        <script src="highlight-abc7f01d.js"></script>
+        <script src="book-a0b12cfe.js"></script>
 
         <!-- Custom JS scripts -->
 
