@@ -52,6 +52,9 @@ libcxx 21.1.5 2026-04-01
 libcxx 21.1.6 2026-04-01
 libcxx 21.1.7 2026-04-01
 libcxx 21.1.8 2026-04-01
+libcxx 22.1.0 2026-04-01
+libcxx 22.1.1 2026-04-01
+libcxx 22.1.2 2026-04-01
 native_clang 19.1.0 2026-04-01
 native_clang 19.1.1 2026-04-01
 native_clang 19.1.2 2026-04-01
@@ -78,6 +81,9 @@ native_clang 21.1.5 2026-04-01
 native_clang 21.1.6 2026-04-01
 native_clang 21.1.7 2026-04-01
 native_clang 21.1.8 2026-04-01
+native_clang 22.1.0 2026-04-01
+native_clang 22.1.1 2026-04-01
+native_clang 22.1.2 2026-04-01
 native_rust 1.82.0 2026-04-01
 native_rust 1.83.0 2026-04-01
 native_rust 1.84.0 2026-04-01
@@ -93,6 +99,8 @@ native_rust 1.91.0 2026-04-01
 native_rust 1.91.1 2026-04-01
 native_rust 1.92.0 2026-04-01
 native_rust 1.93.0 2026-04-01
+native_rust 1.93.1 2026-04-01
+native_rust 1.94.0 2026-04-01
 
 # Requires MSRV 1.82
 native_cxxbridge 1.0.187 2026-04-01
@@ -113,13 +121,10 @@ rustcxx 1.0.193 2026-04-01
 rustcxx 1.0.194 2026-04-01
 
 # We follow upstream Bitcoin Core's LevelDB updates
-leveldb 1.23 2026-04-01
+leveldb 1.23 2026-08-01
 
 # We're never updating to this version
-bdb 18.1.40 2026-03-01
-
-# These have no important security or critical stability issues.
-native_zstd 1.5.7 2026-04-01
+bdb 18.1.40 2027-03-01
 
 # Postponed due to proximity to the release
 libsodium 1.0.21 2026-04-01
