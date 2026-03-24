@@ -246,10 +246,6 @@ criteria = "safe-to-deploy"
 version = "0.13.0-pre.4"
 criteria = "safe-to-deploy"
 
-[[exemptions.http]]
-version = "0.2.8"
-criteria = "safe-to-deploy"
-
 [[exemptions.http-body]]
 version = "0.4.5"
 criteria = "safe-to-deploy"
@@ -400,14 +396,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.primitive-types]]
 version = "0.12.2"
-criteria = "safe-to-deploy"
-
-[[exemptions.proc-macro-error-attr2]]
-version = "2.0.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.proc-macro-error2]]
-version = "2.0.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.proptest]]
