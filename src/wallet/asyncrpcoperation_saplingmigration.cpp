@@ -15,7 +15,7 @@
 #include <variant>
 #include <zip317.h>
 
-const int MIGRATION_EXPIRY_DELTA = 450;
+const int MIGRATION_EXPIRY_DELTA = 50;
 
 AsyncRPCOperation_saplingmigration::AsyncRPCOperation_saplingmigration(int targetHeight, uint256 saplingAnchor) :
     targetHeight_(targetHeight), saplingAnchor_(saplingAnchor) {}
@@ -207,12 +207,18 @@ void AsyncRPCOperation_saplingmigration::setMigrationResult(int numTxCreated, co
 CAmount AsyncRPCOperation_saplingmigration::chooseAmount(const CAmount& availableFunds) {
     CAmount amount = 0;
     do {
-        // 1. Choose an integer exponent uniformly in the range 6 to 8 inclusive.
-        int exponent = GetRand(3) + 6;
+        // 1. Choose an integer exponent uniformly in one of two ranges:
+        //    - Fast range (when availableFunds > 1 ZEC): 8 to 10 inclusive.
+        //    - Slow range (original ZIP 380 parameters): 6 to 8 inclusive.
+        int exponentFloor = 6;
+        if (availableFunds > COIN) {
+            exponentFloor = 8;
+        }
+        int exponent = GetRand(3) + exponentFloor;
         // 2. Choose an integer mantissa uniformly in the range 1 to 99 inclusive.
         uint64_t mantissa = GetRand(99) + 1;
         // 3. Calculate amount := (mantissa * 10^exponent) zatoshi.
-        int pow = std::pow(10, exponent);
+        int64_t pow = std::pow(10, exponent);
         amount = mantissa * pow;
         // 4. If amount is greater than the amount remaining to send, repeat from step 1.
     } while (amount > availableFunds);

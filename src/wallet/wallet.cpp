@@ -1474,7 +1474,7 @@ void CWallet::RunSaplingMigration(int blockHeight) {
     // height minus 1, then this could leak information. Therefore, for target
     // height N, implementations SHOULD start generating the transactions at around
     // height N-5
-    if (blockHeight % 500 == 495) {
+    if (blockHeight % 100 == 95) {
         std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
         std::shared_ptr<AsyncRPCOperation> lastOperation = q->getOperationForId(saplingMigrationOperationId);
         if (lastOperation != nullptr) {
@@ -1488,7 +1488,7 @@ void CWallet::RunSaplingMigration(int blockHeight) {
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_saplingmigration(targetHeight, saplingAnchor));
         saplingMigrationOperationId = operation->getId();
         q->addOperation(operation);
-    } else if (blockHeight % 500 == 499) {
+    } else if (blockHeight % 100 == 99) {
         std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
         std::shared_ptr<AsyncRPCOperation> lastOperation = q->getOperationForId(saplingMigrationOperationId);
         if (lastOperation != nullptr) {
