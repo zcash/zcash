@@ -58,8 +58,8 @@ user-login = "str4d"
 user-name = "Jack Grigg"
 
 [[publisher.halo2_proofs]]
-version = "0.3.1"
-when = "2025-07-09"
+version = "0.3.2"
+when = "2025-12-04"
 user-id = 6289
 user-login = "str4d"
 user-name = "Jack Grigg"
@@ -190,8 +190,8 @@ user-id = 73222
 user-login = "wasmtime-publish"
 
 [[publisher.zcash_address]]
-version = "0.10.0"
-when = "2025-10-02"
+version = "0.10.1"
+when = "2025-10-20"
 user-id = 169181
 user-login = "nuttycom"
 user-name = "Kris Nuttycombe"
@@ -211,29 +211,29 @@ user-login = "str4d"
 user-name = "Jack Grigg"
 
 [[publisher.zcash_primitives]]
-version = "0.26.0"
-when = "2025-10-02"
+version = "0.26.4"
+when = "2025-12-18"
 user-id = 169181
 user-login = "nuttycom"
 user-name = "Kris Nuttycombe"
 
 [[publisher.zcash_proofs]]
-version = "0.26.0"
-when = "2025-10-02"
+version = "0.26.1"
+when = "2025-10-20"
 user-id = 169181
 user-login = "nuttycom"
 user-name = "Kris Nuttycombe"
 
 [[publisher.zcash_protocol]]
-version = "0.7.0"
-when = "2025-10-02"
+version = "0.7.2"
+when = "2025-12-11"
 user-id = 169181
 user-login = "nuttycom"
 user-name = "Kris Nuttycombe"
 
 [[publisher.zcash_script]]
-version = "0.4.0"
-when = "2025-09-25"
+version = "0.4.2"
+when = "2025-10-24"
 user-id = 6289
 user-login = "str4d"
 user-name = "Jack Grigg"
@@ -246,18 +246,18 @@ user-login = "daira"
 user-name = "Daira-Emma Hopwood"
 
 [[publisher.zcash_transparent]]
-version = "0.6.0"
-when = "2025-10-02"
+version = "0.6.3"
+when = "2025-12-18"
 user-id = 169181
 user-login = "nuttycom"
 user-name = "Kris Nuttycombe"
 
 [[publisher.zip32]]
-version = "0.2.0"
-when = "2025-02-20"
-user-id = 169181
-user-login = "nuttycom"
-user-name = "Kris Nuttycombe"
+version = "0.2.1"
+when = "2025-09-17"
+user-id = 6289
+user-login = "str4d"
+user-name = "Jack Grigg"
 
 [[audits.bytecode-alliance.wildcard-audits.bumpalo]]
 who = "Nick Fitzgerald <fitzgen@gmail.com>"
@@ -2688,4 +2688,10 @@ who = "Kris Nuttycombe <kris@nutty.land>"
 criteria = "safe-to-deploy"
 version = "0.4.1"
 notes = "Additive-only change that exposes the ability to decrypt by pk_d and esk. No functional changes."
+aggregated-from = "https://raw.githubusercontent.com/zcash/librustzcash/main/supply-chain/audits.toml"
+
+[[audits.zcash.audits.zcash_script]]
+who = "Jack Grigg <thestr4d@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.4.2 -> 0.4.3"
 aggregated-from = "https://raw.githubusercontent.com/zcash/librustzcash/main/supply-chain/audits.toml"
