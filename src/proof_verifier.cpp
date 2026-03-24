@@ -58,6 +58,10 @@ ProofVerifier ProofVerifier::Disabled() {
     return ProofVerifier(false);
 }
 
+bool ProofVerifier::IsStrict() {
+    return perform_verification;
+}
+
 bool ProofVerifier::VerifySprout(
     const JSDescription& jsdesc,
     const ed25519::VerificationKey& joinSplitPubKey
