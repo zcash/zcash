@@ -112,6 +112,10 @@ indexmap = "2,<2.12"     # 2.12.0 has MSRV 1.82
 tempfile = "3,<3.25"     # 3.25.0 permits getrandom 0.4 which has MSRV 1.85
 time-core = "0.1,<0.1.7" # 0.1.7  has MSRV 1.83
 
+[build-dependencies]
+# MSRV pins for transient dependencies
+clap = { version = "4,<4.6", default-features = false } # 4.6.0 has MSRV 1.85
+
 [dev-dependencies]
 incrementalmerkletree = { version = "0.8", features = ["test-dependencies"] }
 proptest = "1.0.0"
