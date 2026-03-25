@@ -42,8 +42,8 @@ criteria = "safe-to-deploy"
 version = "1.1.1"
 criteria = "safe-to-deploy"
 
-[[exemptions.anyhow]]
-version = "1.0.89"
+[[exemptions.anstyle]]
+version = "1.0.14"
 criteria = "safe-to-deploy"
 
 [[exemptions.backtrace]]
@@ -108,6 +108,10 @@ criteria = "safe-to-deploy"
 
 [[exemptions.chacha20poly1305]]
 version = "0.9.0"
+criteria = "safe-to-deploy"
+
+[[exemptions.clap_lex]]
+version = "0.7.7"
 criteria = "safe-to-deploy"
 
 [[exemptions.clearscreen]]
@@ -234,20 +238,12 @@ criteria = "safe-to-deploy"
 version = "0.14.2"
 criteria = "safe-to-deploy"
 
-[[exemptions.hashbrown]]
-version = "0.15.4"
-criteria = "safe-to-deploy"
-
 [[exemptions.hermit-abi]]
 version = "0.3.3"
 criteria = "safe-to-deploy"
 
 [[exemptions.hmac]]
 version = "0.13.0-pre.4"
-criteria = "safe-to-deploy"
-
-[[exemptions.http]]
-version = "0.2.8"
 criteria = "safe-to-deploy"
 
 [[exemptions.http-body]]
@@ -268,10 +264,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.indexmap]]
 version = "1.8.1"
-criteria = "safe-to-deploy"
-
-[[exemptions.indexmap]]
-version = "2.10.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.ipnet]]
@@ -402,14 +394,6 @@ criteria = "safe-to-deploy"
 version = "0.12.2"
 criteria = "safe-to-deploy"
 
-[[exemptions.proc-macro-error-attr2]]
-version = "2.0.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.proc-macro-error2]]
-version = "2.0.1"
-criteria = "safe-to-deploy"
-
 [[exemptions.proptest]]
 version = "1.6.0"
 criteria = "safe-to-deploy"
@@ -502,10 +486,6 @@ criteria = "safe-to-deploy"
 version = "1.0.102"
 criteria = "safe-to-deploy"
 
-[[exemptions.syn]]
-version = "2.0.94"
-criteria = "safe-to-deploy"
-
 [[exemptions.tempfile]]
 version = "3.3.0"
 criteria = "safe-to-deploy"
@@ -564,10 +544,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.wasi]]
 version = "0.11.0+wasi-snapshot-preview1"
-criteria = "safe-to-deploy"
-
-[[exemptions.wasi]]
-version = "0.14.2+wasi-0.2.4"
 criteria = "safe-to-deploy"
 
 [[exemptions.wasm-bindgen]]
