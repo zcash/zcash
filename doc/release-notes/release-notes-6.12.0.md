@@ -1,6 +1,42 @@
 Notable changes
 ===============
 
+Fix to Sprout transaction verification logic
+--------------------------------------------
+
+A vulnerability was identified in zcashd that could have allowed invalid
+transactions to be accepted under certain conditions, which potentially could
+have resulted in the draining of user funds from the old, deprecated Sprout
+pool.
+
+The patch fixing this bug, corresponding to
+https://github.com/zcash/zcash/commit/db969c63f48f0f9fc518112ed0b7ace1af78b9d0,
+has been deployed by mining pools that comprise a supermajority of the
+hashpower at the time of this writing, preventing the bug from being exploited.
+The bug was not exploited, and all user funds are safe, including funds held in
+the Sprout pool. You can verify this by running Zebra or this latest release of
+zcashd (v6.12.0). Each of those implementations verify that only valid
+transactions have been added to the Zcash blockchain, proving that the bug was
+not exploited before it was fixed.
+
+The vulnerability was reported privately by white-hat security researcher Alex
+“Scalar” Sol and handled through coordinated disclosure by Shielded Labs and
+Zcash Open Development Lab (ZODL) engineers, in coordination with mining pools.
+
+Importantly, this bug, and bugs like this one, could not have been used to
+inflate the overall supply of ZEC. Zcash implements “turnstiles” between value
+pools (the transparent pool, the old deprecated Sprout pool, the Sapling pool,
+and the current Orchard pool), which serve as “blast doors” limiting the blast
+radius of a possible exploit. The Sprout turnstile limits the amount of ZEC
+that can come out of the Sprout pool, preventing inflation of the total supply
+of ZEC, and protecting users who store their ZEC in the other value pools from
+being impacted by this bug or bugs like it.
+
+This bug could not have been used to violate the privacy of Zcash users. Zcash
+user privacy is protected by end-to-end-encryption between the user’s wallets,
+and the behavior of the Zcash miners and full nodes—even if there is a bug in
+their code—cannot violate user privacy.
+
 Removed the P2P network alert system
 ------------------------------------
 
