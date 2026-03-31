@@ -97,7 +97,7 @@ class SproutSaplingMigration(BitcoinTestFramework):
         assert_equal('saplingmigration', operationstatus[0]['method'])
         assert_equal(target_height, operationstatus[0]['target_height'])
 
-        result = wait_and_assert_operationid_status_result(node, operationstatus[0]['id'])
+        result = wait_and_assert_operationid_status_result(node, operationstatus[0]['id'], timeout=1200)
         print("result: {}".format(result))
         assert_equal('saplingmigration', result['method'])
         assert_equal(target_height, result['target_height'])

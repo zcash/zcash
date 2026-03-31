@@ -55,14 +55,14 @@ class GetBlockTemplateTest(BitcoinTestFramework):
         # sprout to transparent (v4)
         recipients = [{"address": self.transparent_addr, "amount": Decimal('0.1')}]
         myopid = node.z_sendmany(self.sprout_addr, recipients, 1, ZIP_317_FEE, 'AllowRevealedRecipients')
-        wait_and_assert_operationid_status(node, myopid)
+        wait_and_assert_operationid_status(node, myopid, timeout=1200)
 
     def add_nu5_v5_tx_to_mempool(self):
         node = self.node
         fee = conventional_fee(3)
         recipients = [{"address": self.unified_addr, "amount": Decimal('10') - fee}]
         myopid = node.z_sendmany(get_coinbase_address(node), recipients, 1, fee, 'AllowRevealedSenders')
-        wait_and_assert_operationid_status(node, myopid)
+        wait_and_assert_operationid_status(node, myopid, timeout=1200)
 
     def add_transparent_tx_to_mempool(self):
         node = self.node

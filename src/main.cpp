@@ -5065,7 +5065,7 @@ bool CheckBlock(const CBlock& block,
         return state.DoS(100, error("CheckBlock(): out-of-bounds SigOpCount"),
                          REJECT_INVALID, "bad-blk-sigops", true);
 
-    if (fCheckPOW && fCheckMerkleRoot)
+    if (fCheckPOW && fCheckMerkleRoot && verifier.IsStrict())
         block.fChecked = true;
 
     return true;
@@ -5267,9 +5267,14 @@ static bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state
  * Store block on disk.
  * If dbp is non-NULL, the file is known to already reside on disk.
  *
- * JoinSplit proofs are not verified here; the only
- * caller of AcceptBlock (ProcessNewBlock) later invokes ActivateBestChain,
- * which ultimately calls ConnectBlock in a manner that can verify the proofs.
+ * JoinSplit proofs are not verified for consensus here; the only caller of
+ * AcceptBlock in the consensus path is ProcessNewBlock, which later invokes
+ * ActivateBestChain, which ultimately calls ConnectBlock in a manner that
+ * can verify the proofs.
+ *
+ * (AcceptBlock is also called from LoadExternalBlockFile in ThreadImport,
+ * but those CBlock objects are discarded, and then ActivateBestChain is
+ * called which is the consensus path in that case.)
  */
 static bool AcceptBlock(const CBlock& block, CValidationState& state, const CChainParams& chainparams, CBlockIndex** ppindex, bool fRequested, const CDiskBlockPos* dbp)
 {

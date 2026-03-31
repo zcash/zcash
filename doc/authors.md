@@ -1,9 +1,9 @@
 Zcash Contributors
 ==================
 
-* Jack Grigg (2234)
-* Kris Nuttycombe (762)
-* Daira-Emma Hopwood (528)
+* Jack Grigg (2253)
+* Kris Nuttycombe (767)
+* Daira-Emma Hopwood (530)
 * Simon Liu (464)
 * Sean Bowe (413)
 * Eirik Ogilvie-Wigley (273)
@@ -70,6 +70,7 @@ Zcash Contributors
 * Daniel Cousens (6)
 * Casey Rodarmor (6)
 * jnewbery (5)
+* dependabot[bot] (5)
 * ca333 (5)
 * MeshCollider (5)
 * Johnathan Corgan (5)
@@ -81,7 +82,6 @@ Zcash Contributors
 * sandakersmann (4)
 * instagibbs (4)
 * gladcow (4)
-* dependabot[bot] (4)
 * WO (4)
 * Sjors Provoost (4)
 * Miodrag Popović (4)
