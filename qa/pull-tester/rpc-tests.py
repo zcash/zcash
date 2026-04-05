@@ -131,6 +131,7 @@ BASE_SCRIPTS= [
     'rewind_index.py',
     'p2p_txexpiry_dos.py',
     'p2p_txexpiringsoon.py',
+    'p2p_duplicate_block_clobbers_chain_value.py',
     'p2p_node_bloom.py',
     'regtest_signrawtransaction.py',
     'shorter_block_times.py',
