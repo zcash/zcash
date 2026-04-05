@@ -4801,7 +4801,7 @@ void FallbackSproutValuePoolBalance(
                 // Apparently we have been. So, we should expect the current
                 // value to match the hardcoded one.
                 assert(*pindex->nChainSproutValue == chainparams.SproutValuePoolCheckpointBalance());
-                // And we should expect non-none for the delta stored in the block index here,
+                // And we should expect non-nullopt for the delta stored in the block index here,
                 // or the checkpoint is too early.
                 assert(pindex->nSproutValue != std::nullopt);
             }
@@ -4812,6 +4812,92 @@ void FallbackSproutValuePoolBalance(
             );
         }
     }
+}
+
+// Set `nChain<pool>Value` fields on `pindex` for Sprout, Sapling, Orchard, and
+// Lockbox pools by accumulating the per-block deltas into the parent's chain
+// totals. The per-block delta fields (`nSproutValue`, `nSaplingValue`,
+// `nOrchardValue`, `nLockboxValue`) must already be populated on `pindex`.
+//
+// For the genesis block (`pprev == nullptr`), the chain values are set equal
+// to the per-block deltas. We assert `nHeight == 0` to catch the mis-use where
+// a non-genesis block with a null `pprev` would otherwise be silently treated
+// as genesis, corrupting chain value accumulation for all descendants.
+//
+// For non-genesis blocks, chain values are set to `*pprev->nChain<pool>Value +
+// pindex-><per-block>Value` when `pprev` has the corresponding chain value
+// populated, and to `std::nullopt` otherwise. For Sprout, `nSproutValue` itself
+// may be `std::nullopt` on legacy block indexes written by client versions
+// older than SPROUT_VALUE_VERSION; in that case the child's `nChainSproutValue`
+// is also `std::nullopt`.
+//
+// This does NOT touch `nChainTotalSupply` or `nChainTransparentValue`; those
+// require a coins view and are set in `ConnectBlock`.
+static bool AccumulateChainPoolValues(CBlockIndex *pindex)
+{
+    if (pindex->pprev == nullptr) {
+        // Only the genesis block has a null parent. A non-genesis block with
+        // `pprev == nullptr` would silently corrupt chain value accumulation
+        // by setting chain values equal to the per-block deltas instead of
+        // accumulating from the parent.
+        assert(pindex->nHeight == 0);
+        pindex->nChainSproutValue = pindex->nSproutValue;
+        pindex->nChainSaplingValue = pindex->nSaplingValue;
+        pindex->nChainOrchardValue = pindex->nOrchardValue;
+        pindex->nChainLockboxValue = pindex->nLockboxValue;
+        return true;
+    }
+
+    // Pre-addition range checks to prevent signed integer overflow (UB).
+    // On-disk per-block deltas could be corrupted, so we cannot assume
+    // they are in range.
+
+    // Sprout: both the parent chain value and the per-block delta must be
+    // populated. The per-block delta may be missing on legacy block indexes.
+    if (pindex->pprev->nChainSproutValue.has_value() && pindex->nSproutValue.has_value()) {
+        CAmount chainSproutValue = pindex->pprev->nChainSproutValue.value();
+        if (!MoneyRange(chainSproutValue) || !MoneyDeltaRange(pindex->nSproutValue.value())) {
+            return error("%s: sprout pool value out of range at height %d", __func__, pindex->nHeight);
+        }
+        pindex->nChainSproutValue = chainSproutValue + pindex->nSproutValue.value();
+    } else {
+        pindex->nChainSproutValue = std::nullopt;
+    }
+
+    // Sapling
+    if (pindex->pprev->nChainSaplingValue.has_value()) {
+        CAmount chainSaplingValue = pindex->pprev->nChainSaplingValue.value();
+        if (!MoneyRange(chainSaplingValue) || !MoneyDeltaRange(pindex->nSaplingValue)) {
+            return error("%s: sapling pool value out of range at height %d", __func__, pindex->nHeight);
+        }
+        pindex->nChainSaplingValue = chainSaplingValue + pindex->nSaplingValue;
+    } else {
+        pindex->nChainSaplingValue = std::nullopt;
+    }
+
+    // Orchard
+    if (pindex->pprev->nChainOrchardValue.has_value()) {
+        CAmount chainOrchardValue = pindex->pprev->nChainOrchardValue.value();
+        if (!MoneyRange(chainOrchardValue) || !MoneyDeltaRange(pindex->nOrchardValue)) {
+            return error("%s: orchard pool value out of range at height %d", __func__, pindex->nHeight);
+        }
+        pindex->nChainOrchardValue = chainOrchardValue + pindex->nOrchardValue;
+    } else {
+        pindex->nChainOrchardValue = std::nullopt;
+    }
+
+    // Lockbox
+    if (pindex->pprev->nChainLockboxValue.has_value()) {
+        CAmount chainLockboxValue = pindex->pprev->nChainLockboxValue.value();
+        if (!MoneyRange(chainLockboxValue) || !MoneyDeltaRange(pindex->nLockboxValue)) {
+            return error("%s: lockbox pool value out of range at height %d", __func__, pindex->nHeight);
+        }
+        pindex->nChainLockboxValue = chainLockboxValue + pindex->nLockboxValue;
+    } else {
+        pindex->nChainLockboxValue = std::nullopt;
+    }
+
+    return true;
 }
 
 // Compute the effect of `block` on the chain supply and the value in each value pool.
@@ -4900,13 +4986,22 @@ bool SetChainPoolValues(
     pindex->nChainTransparentValue = std::nullopt;
 
     pindex->nSproutValue = sproutValue;
-    pindex->nChainSproutValue = std::nullopt;
     pindex->nSaplingValue = saplingValue;
-    pindex->nChainSaplingValue = std::nullopt;
     pindex->nOrchardValue = orchardValue;
-    pindex->nChainOrchardValue = std::nullopt;
     pindex->nLockboxValue = lockboxValue;
     pindex->nChainLockboxValue = std::nullopt;
+
+    // Accumulate per-pool chain values from pprev. This makes chain values
+    // available to ConnectBlock in the TestBlockValidity path, where
+    // ReceivedBlockTransactions is not called.
+    if (!AccumulateChainPoolValues(pindex)) {
+        return false;
+    }
+
+    // Fall back to hardcoded Sprout value pool balance when a checkpoint
+    // height is crossed (relevant for legacy block indexes where nSproutValue
+    // may be missing).
+    FallbackSproutValuePoolBalance(pindex, chainparams);
 
     return true;
 }
@@ -4946,62 +5041,22 @@ bool ReceivedBlockTransactions(
             queue.pop_front();
             pindex->nChainTx = (pindex->pprev ? pindex->pprev->nChainTx : 0) + pindex->nTx;
 
-            if (pindex->pprev) {
-                // Transparent value and chain total supply are added to the
-                // block index only in `ConnectBlock`, because that's the only
-                // place that we have a valid coins view with which to compute
-                // the transparent input value and fees.
-
-                // Calculate the block's effect on the Sapling chain value pool balance.
-                if (pindex->pprev->nChainSproutValue.has_value() && pindex->nSproutValue.has_value()) {
-                    CAmount chainSproutValue = pindex->pprev->nChainSproutValue.value();
-                    if (!MoneyRange(chainSproutValue) || !MoneyDeltaRange(pindex->nSproutValue.value())) {
-                        return error("%s: previous sprout pool value out of range at height %d", __func__, pindex->nHeight);
-                    }
-                    pindex->nChainSproutValue = chainSproutValue + pindex->nSproutValue.value();
-                } else {
-                    pindex->nChainSproutValue = std::nullopt;
-                }
-
-                // Calculate the block's effect on the Sapling chain value pool balance.
-                if (pindex->pprev->nChainSaplingValue.has_value()) {
-                    CAmount chainSaplingValue = pindex->pprev->nChainSaplingValue.value();
-                    if (!MoneyRange(chainSaplingValue) || !MoneyDeltaRange(pindex->nSaplingValue)) {
-                        return error("%s: previous sapling pool value out of range at height %d", __func__, pindex->nHeight);
-                    }
-                    pindex->nChainSaplingValue = chainSaplingValue + pindex->nSaplingValue;
-                } else {
-                    pindex->nChainSaplingValue = std::nullopt;
-                }
-
-                // Calculate the block's effect on the Orchard chain value pool balance.
-                if (pindex->pprev->nChainOrchardValue.has_value()) {
-                    CAmount chainOrchardValue = pindex->pprev->nChainOrchardValue.value();
-                    if (!MoneyRange(chainOrchardValue) || !MoneyDeltaRange(pindex->nOrchardValue)) {
-                        return error("%s: previous orchard pool value out of range at height %d", __func__, pindex->nHeight);
-                    }
-                    pindex->nChainOrchardValue = chainOrchardValue + pindex->nOrchardValue;
-                } else {
-                    pindex->nChainOrchardValue = std::nullopt;
-                }
-
-                // Calculate the block's effect on the Lockbox balance
-                if (pindex->pprev->nChainLockboxValue.has_value()) {
-                    CAmount chainLockboxValue = pindex->pprev->nChainLockboxValue.value();
-                    if (!MoneyRange(chainLockboxValue) || !MoneyDeltaRange(pindex->nLockboxValue)) {
-                        return error("%s: previous lockbox pool value out of range at height %d", __func__, pindex->nHeight);
-                    }
-                    pindex->nChainLockboxValue = chainLockboxValue + pindex->nLockboxValue;
-                } else {
-                    pindex->nChainLockboxValue = std::nullopt;
-                }
-            } else {
+            // For the genesis block, seed the supply and transparent chain
+            // totals from the per-block deltas. For non-genesis blocks, these
+            // are computed in `ConnectBlock` (which has a coins view available
+            // for computing transparent input totals).
+            if (pindex->pprev == nullptr) {
                 pindex->nChainTotalSupply = pindex->nChainSupplyDelta;
                 pindex->nChainTransparentValue = pindex->nTransparentValue;
-                pindex->nChainSproutValue = pindex->nSproutValue;
-                pindex->nChainSaplingValue = pindex->nSaplingValue;
-                pindex->nChainOrchardValue = pindex->nOrchardValue;
-                pindex->nChainLockboxValue = pindex->nLockboxValue;
+            }
+
+            // Accumulate per-pool chain values (Sprout, Sapling, Orchard,
+            // Lockbox). This is idempotent with the accumulation performed in
+            // `SetChainPoolValues`; it is re-run here because out-of-order
+            // block reception can defer the parent's chain values becoming
+            // available until after `SetChainPoolValues` was called.
+            if (!AccumulateChainPoolValues(pindex)) {
+                return error("ReceivedBlockTransactions(): AccumulateChainPoolValues failed at height %d", pindex->nHeight);
             }
 
             // Fall back to hardcoded Sprout value pool balance
