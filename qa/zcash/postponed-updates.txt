@@ -84,6 +84,8 @@ native_clang 21.1.8 2026-04-01
 native_clang 22.1.0 2026-04-01
 native_clang 22.1.1 2026-04-01
 native_clang 22.1.2 2026-04-01
+native_cmake 4.3.0 2026-04-01
+native_cmake 4.3.1 2026-04-01
 native_rust 1.82.0 2026-04-01
 native_rust 1.83.0 2026-04-01
 native_rust 1.84.0 2026-04-01
@@ -101,6 +103,7 @@ native_rust 1.92.0 2026-04-01
 native_rust 1.93.0 2026-04-01
 native_rust 1.93.1 2026-04-01
 native_rust 1.94.0 2026-04-01
+native_rust 1.94.1 2026-04-01
 
 # Requires MSRV 1.82
 native_cxxbridge 1.0.187 2026-04-01
