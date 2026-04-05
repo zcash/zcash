@@ -322,6 +322,63 @@ TEST(Validation, ContextualCheckInputsDetectsOldBranchId) {
     RegtestDeactivateBlossom();
 }
 
+TEST(Validation, SetChainPoolValuesAccumulatesWhenParentIsPopulated) {
+    SelectParams(CBaseChainParams::REGTEST);
+    const auto chainParams = Params();
+    const auto sk = libzcash::SproutSpendingKey::random();
+
+    // Create a fake genesis block
+    CBlock block1;
+    block1.vtx.push_back(GetValidSproutReceive(sk, 5, true));
+    block1.hashMerkleRoot = BlockMerkleRoot(block1);
+    CBlockIndex fakeIndex1 {block1};
+
+    // Create a fake child block
+    CBlock block2;
+    block2.hashPrevBlock = block1.GetHash();
+    block2.vtx.push_back(GetValidSproutReceive(sk, 10, true));
+    block2.hashMerkleRoot = BlockMerkleRoot(block2);
+    CBlockIndex fakeIndex2 {block2};
+    fakeIndex2.pprev = &fakeIndex1;
+
+    CDiskBlockPos pos1;
+    ASSERT_TRUE(fakeIndex1.RaiseValidity(BLOCK_VALID_TREE));
+    ASSERT_TRUE(fakeIndex2.RaiseValidity(BLOCK_VALID_TREE));
+
+    // Fully process the genesis block so it has populated chain values.
+    CValidationState state;
+    {
+        LOCK(cs_main);
+        EXPECT_TRUE(SetChainPoolValues(chainParams, block1, &fakeIndex1));
+        EXPECT_TRUE(ReceivedBlockTransactions(block1, state, chainParams, &fakeIndex1, pos1));
+    }
+
+    // Sanity-check that genesis now has chain values populated.
+    { SCOPED_TRACE("genesis sprout"); ExpectAmount(10, fakeIndex1.nChainSproutValue); }
+    { SCOPED_TRACE("genesis sapling"); ExpectAmount(0, fakeIndex1.nChainSaplingValue); }
+    { SCOPED_TRACE("genesis orchard"); ExpectAmount(0, fakeIndex1.nChainOrchardValue); }
+    { SCOPED_TRACE("genesis lockbox"); ExpectAmount(0, fakeIndex1.nChainLockboxValue); }
+
+    // Call SetChainPoolValues on the child. With the eager accumulation,
+    // the child's chain pool values should be populated immediately, without
+    // needing a subsequent call to ReceivedBlockTransactions.
+    {
+        LOCK(cs_main);
+        EXPECT_TRUE(SetChainPoolValues(chainParams, block2, &fakeIndex2));
+    }
+
+    { SCOPED_TRACE("child sprout"); ExpectAmount(30, fakeIndex2.nChainSproutValue); }
+    { SCOPED_TRACE("child sapling"); ExpectAmount(0, fakeIndex2.nChainSaplingValue); }
+    { SCOPED_TRACE("child orchard"); ExpectAmount(0, fakeIndex2.nChainOrchardValue); }
+    { SCOPED_TRACE("child lockbox"); ExpectAmount(0, fakeIndex2.nChainLockboxValue); }
+
+    // Clean up: ensure that the fake CBlockIndex objects aren't still
+    // referenced by mapBlocksUnlinked (fakeIndex2 was never inserted, but
+    // fakeIndex1 may have been during its own ReceivedBlockTransactions call).
+    EnsureUnreferencedAsKeyOfMapBlocksUnlinked(&fakeIndex1);
+    EnsureUnreferencedAsKeyOfMapBlocksUnlinked(&fakeIndex2);
+}
+
 TEST(Validation, ReceivedBlockTransactions) {
     SelectParams(CBaseChainParams::REGTEST);
     const auto chainParams = Params();
@@ -381,7 +438,7 @@ TEST(Validation, ReceivedBlockTransactions) {
     {
         // Taking cs_main is required even when working on a fake index.
         LOCK(cs_main);
-        SetChainPoolValues(chainParams, block2, &fakeIndex2);
+        EXPECT_TRUE(SetChainPoolValues(chainParams, block2, &fakeIndex2));
         EXPECT_TRUE(ReceivedBlockTransactions(block2, state, chainParams, &fakeIndex2, pos2));
     }
 
@@ -417,7 +474,7 @@ TEST(Validation, ReceivedBlockTransactions) {
     {
         // Taking cs_main is required even when working on a fake index.
         LOCK(cs_main);
-        SetChainPoolValues(chainParams, block1, &fakeIndex1);
+        EXPECT_TRUE(SetChainPoolValues(chainParams, block1, &fakeIndex1));
         EXPECT_TRUE(ReceivedBlockTransactions(block1, state, chainParams, &fakeIndex1, pos1));
     }
     EXPECT_TRUE(fakeIndex1.IsValid(BLOCK_VALID_TRANSACTIONS));
