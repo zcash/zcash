@@ -1,6 +1,6 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
-// Copyright (c) 2015-2025 The Zcash developers
+// Copyright (c) 2015-2026 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -313,7 +313,7 @@ public:
         }
 
         // The best chain should have at least this much work.
-        consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000001517f0d837f57259");
+        consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000000017377d770fef14a9");
 
         /**
          * The message start string should be awesome! ⓩ❤
@@ -376,10 +376,11 @@ public:
             (2400000, uint256S("0x0000000000294d1c8d87a1b6566d302aa983691bc3cab0583a245389bbb9d285"))
             (2600000, uint256S("0x0000000000b5ad92fcec0069d590f674d05ec7d96b1ff727863ea390950c4e49"))
             (2800000, uint256S("0x00000000011a226fb25d778d65b055605a82da016989b7788e0ce83c4f8d64f7"))
-            (3000000, uint256S("0x0000000000573729e4db33678233e5dc0cc721c9c09977c64dcaa3f6344de8e9")),
-            1752983473,     // * UNIX timestamp of last checkpoint block
-            15537904,       // * total number of transactions between genesis and last checkpoint
-            5967            // * estimated number of transactions per day after checkpoint
+            (3000000, uint256S("0x0000000000573729e4db33678233e5dc0cc721c9c09977c64dcaa3f6344de8e9"))
+            (3200000, uint256S("0x0000000000a6454e906e0dc1fc54ae317ca97fa36786c0e45b4dedb787158aa5")),
+            1768053956,     // * UNIX timestamp of last checkpoint block
+            16725345,       // * total number of transactions between genesis and last checkpoint
+            6021            // * estimated number of transactions per day after checkpoint
                             //   (total number of tx * 48 * 24) / checkpoint block height
         };
 
