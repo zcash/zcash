@@ -4798,6 +4798,8 @@ bool ReceivedBlockTransactions(
     CBlockIndex *pindexNew,
     const CDiskBlockPos& pos)
 {
+    SetChainPoolValues(chainparams, block, pindexNew);
+
     pindexNew->nTx = block.vtx.size();
     pindexNew->nChainTx = 0;
 
@@ -5294,8 +5296,6 @@ static bool AcceptBlock(const CBlock& block, CValidationState& state, const CCha
 
     if (!AcceptBlockHeader(block, state, chainparams, &pindex))
         return false;
-
-    SetChainPoolValues(chainparams, block, pindex);
 
     // Try to process all requested blocks that we don't have, but only
     // process an unrequested block if it's new and has enough work to
@@ -6397,7 +6397,6 @@ bool InitBlockIndex(const CChainParams& chainparams)
             if (!WriteBlockToDisk(block, blockPos, chainparams.MessageStart()))
                 return error("LoadBlockIndex(): writing genesis block to disk failed");
             CBlockIndex *pindex = AddToBlockIndex(block, chainparams.GetConsensus());
-            SetChainPoolValues(chainparams, block, pindex);
             setDirtyBlockIndex.insert(pindex);
             if (!ReceivedBlockTransactions(block, state, chainparams, pindex, blockPos)) {
                 return error("LoadBlockIndex(): genesis block not accepted");
