@@ -598,6 +598,16 @@ double benchmark_connectblock_slow()
     index.pprev = &indexPrev;
     mapBlockIndex.insert(std::make_pair(hashPrev, &indexPrev));
 
+    // Populate chain pool values on the fake `index` so that ConnectBlock's
+    // turnstile assertions don't fire. Benchmarks measure ConnectBlock
+    // performance, not chain value accumulation — we use MAX_MONEY as a
+    // synthetic baseline large enough that the block's shielded deltas
+    // (positive or negative) cannot push any pool balance negative.
+    index.nChainSproutValue = MAX_MONEY;
+    index.nChainSaplingValue = MAX_MONEY;
+    index.nChainOrchardValue = MAX_MONEY;
+    index.nChainLockboxValue = MAX_MONEY;
+
     CValidationState state;
     struct timeval tv_start;
     timer_start(tv_start);
@@ -649,6 +659,16 @@ double benchmark_connectblock_sapling()
     index.pprev = &indexPrev;
     mapBlockIndex.insert(std::make_pair(hashPrev, &indexPrev));
 
+    // Populate chain pool values on the fake `index` so that ConnectBlock's
+    // turnstile assertions don't fire. Benchmarks measure ConnectBlock
+    // performance, not chain value accumulation — we use MAX_MONEY as a
+    // synthetic baseline large enough that the block's shielded deltas
+    // (positive or negative) cannot push any pool balance negative.
+    index.nChainSproutValue = MAX_MONEY;
+    index.nChainSaplingValue = MAX_MONEY;
+    index.nChainOrchardValue = MAX_MONEY;
+    index.nChainLockboxValue = MAX_MONEY;
+
     CValidationState state;
     struct timeval tv_start;
     timer_start(tv_start);
@@ -694,6 +714,16 @@ double benchmark_connectblock_orchard()
     indexPrev.hashFinalOrchardRoot = uint256S("03fa83e2eb5fd7dcf22a413a0226394cb7525c066e7b07f976e7bda75d2eb0a5");
     index.pprev = &indexPrev;
     mapBlockIndex.insert(std::make_pair(hashPrev, &indexPrev));
+
+    // Populate chain pool values on the fake `index` so that ConnectBlock's
+    // turnstile assertions don't fire. Benchmarks measure ConnectBlock
+    // performance, not chain value accumulation — we use MAX_MONEY as a
+    // synthetic baseline large enough that the block's shielded deltas
+    // (positive or negative) cannot push any pool balance negative.
+    index.nChainSproutValue = MAX_MONEY;
+    index.nChainSaplingValue = MAX_MONEY;
+    index.nChainOrchardValue = MAX_MONEY;
+    index.nChainLockboxValue = MAX_MONEY;
 
     CValidationState state;
     struct timeval tv_start;

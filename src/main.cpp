@@ -3158,42 +3158,57 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     if (chainparams.ZIP209Enabled()) {
         // Sprout
         //
-        // We can expect nChainSproutValue to be valid after the hardcoded
-        // height, and this will be enforced on all descendant blocks. If
-        // the node was reindexed then this will be enforced for all blocks.
-        if (pindex->nChainSproutValue) {
-            if (*pindex->nChainSproutValue < 0) {
-                return state.DoS(100, error("%s: turnstile violation in Sprout shielded value pool", __func__),
-                             REJECT_INVALID, "turnstile-violation-sprout-shielded-pool");
-            }
+        // `nChainSproutValue` is expected to be populated here. A legacy
+        // block index written by a client older than SPROUT_VALUE_VERSION
+        // (1.0.14) may have `nSproutValue == std::nullopt` for blocks below
+        // the hardcoded Sprout value pool checkpoint height, which would
+        // propagate into `nChainSproutValue == std::nullopt`. If that
+        // happens, the node must be reindexed to recompute per-block
+        // Sprout deltas from disk.
+        if (!pindex->nChainSproutValue.has_value()) {
+            return AbortNode(
+                state,
+                strprintf(
+                    "%s: nChainSproutValue is not set for block %s at height %d; "
+                    "this indicates legacy block index data that predates Sprout "
+                    "value pool tracking. A reindex is required.",
+                    __func__,
+                    pindex->GetBlockHash().ToString(),
+                    pindex->nHeight),
+                _("The Sprout shielded value pool balance is not tracked for "
+                  "some blocks in your block index. This may indicate legacy "
+                  "data that predates Sprout value pool tracking. Please "
+                  "restart zcashd with -reindex."));
+        }
+        if (pindex->nChainSproutValue.value() < 0) {
+            return state.DoS(100, error("%s: turnstile violation in Sprout shielded value pool", __func__),
+                         REJECT_INVALID, "turnstile-violation-sprout-shielded-pool");
         }
 
         // Sapling
         //
-        // If we've reached ConnectBlock, we have all transactions of
-        // parents and can expect nChainSaplingValue not to be std::nullopt.
-        // However, the miner and mining RPCs may not have populated this
-        // value and will call `TestBlockValidity`. So, we act
-        // conditionally.
-        if (pindex->nChainSaplingValue) {
-            if (*pindex->nChainSaplingValue < 0) {
-                return state.DoS(100, error("%s: turnstile violation in Sapling shielded value pool", __func__),
-                             REJECT_INVALID, "turnstile-violation-sapling-shielded-pool");
-            }
+        // `nChainSaplingValue` is always populated at this point:
+        // - For normal block connection via `ConnectTip`, the block index has
+        //   been through `ReceivedBlockTransactions` which accumulates from
+        //   `pprev`.
+        // - For `TestBlockValidity`, `SetChainPoolValues` eagerly accumulates
+        //   from `pprev == chainActive.Tip()`, which is always populated.
+        // - For `VerifyDB` (level 4 reconnection), the active chain has been
+        //   fully reconstructed by `LoadBlockIndexDB` at startup, which
+        //   re-accumulates chain values for all blocks with parents that have
+        //   populated values.
+        // A null value here indicates a programming error.
+        assert(pindex->nChainSaplingValue.has_value());
+        if (pindex->nChainSaplingValue.value() < 0) {
+            return state.DoS(100, error("%s: turnstile violation in Sapling shielded value pool", __func__),
+                         REJECT_INVALID, "turnstile-violation-sapling-shielded-pool");
         }
 
-        // Orchard
-        //
-        // If we've reached ConnectBlock, we have all transactions of
-        // parents and can expect nChainOrchardValue not to be std::nullopt.
-        // However, the miner and mining RPCs may not have populated this
-        // value and will call `TestBlockValidity`. So, we act
-        // conditionally.
-        if (pindex->nChainOrchardValue) {
-            if (*pindex->nChainOrchardValue < 0) {
-                return state.DoS(100, error("%s: turnstile violation in Orchard shielded value pool", __func__),
-                                 REJECT_INVALID, "turnstile-violation-orchard");
-            }
+        // Orchard (see Sapling comment above)
+        assert(pindex->nChainOrchardValue.has_value());
+        if (pindex->nChainOrchardValue.value() < 0) {
+            return state.DoS(100, error("%s: turnstile violation in Orchard shielded value pool", __func__),
+                             REJECT_INVALID, "turnstile-violation-orchard");
         }
     }
 
@@ -3204,16 +3219,12 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     // transactions, and so this check in practice is defending against
     // a programming error in defining the one-time lockbox disbursement(s).
     //
-    // If we've reached ConnectBlock, we have all transactions of
-    // parents and can expect nChainLockboxValue not to be std::nullopt.
-    // However, the miner and mining RPCs may not have populated this
-    // value and will call `TestBlockValidity`. So, we act
-    // conditionally.
-    if (pindex->nChainLockboxValue) {
-        if (*pindex->nChainLockboxValue < 0) {
-            return state.DoS(100, error("%s: invalid lockbox disbursement amount", __func__),
-                             REJECT_INVALID, "invalid-lockbox-disbursement-amount");
-        }
+    // `nChainLockboxValue` is always populated at this point, for the same
+    // reasons as Sapling/Orchard above.
+    assert(pindex->nChainLockboxValue.has_value());
+    if (pindex->nChainLockboxValue.value() < 0) {
+        return state.DoS(100, error("%s: invalid lockbox disbursement amount", __func__),
+                         REJECT_INVALID, "invalid-lockbox-disbursement-amount");
     }
 
     // Do not allow blocks that contain transactions which 'overwrite' older transactions,
