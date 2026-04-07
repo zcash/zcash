@@ -44,7 +44,7 @@
 # only invoked for non-duplicate blocks and only after `CheckBlock` has
 # validated the merkle root and individual transaction amounts).
 #
-# This test covers two scenarios:
+# This test covers three scenarios:
 #
 #   Scenario A (accidental P2P relay): send the unmodified tip block again.
 #     Exercises the case where a block is delivered twice from different
@@ -59,7 +59,13 @@
 #     `CheckBlock` (which would catch the merkle root mismatch) is not
 #     reached when `fAlreadyHave` returns early.
 #
-# In both scenarios the test verifies that:
+#   Scenario C (persistence across restart): after the Scenario B replay,
+#     force the corrupted index entry to be marked dirty (via
+#     `invalidateblock`/`reconsiderblock`), then restart the node.
+#     Under the buggy code this would persist the corrupted per-block
+#     deltas to disk and propagate wrong chain values on reload.
+#
+# In all scenarios the test verifies that:
 #   - chain pool values remain monitored (i.e., not nullopt)
 #   - the per-block delta values on the tip's index entry are unchanged
 #     (which would have been corrupted under the buggy code in scenario B)
@@ -84,7 +90,9 @@ from test_framework.util import (
     nuparams,
     p2p_port,
     start_nodes,
+    stop_nodes,
     wait_and_assert_operationid_status,
+    wait_bitcoinds,
 )
 from test_framework.zip317 import conventional_fee
 
@@ -318,7 +326,80 @@ class DuplicateBlockClobbersChainValueTest(BitcoinTestFramework):
         assert_pool_monitored(node, 'orchard')
         print("Scenario B prevented")
 
+        # Scenario C: persistence of corruption across restart
+        #
+        # Under the buggy code, the in-memory corruption from Scenario B
+        # is normally only in memory: `SetChainPoolValues` mutates
+        # `pindex` but `AcceptBlock` returns early via `fAlreadyHave`
+        # without adding the block index entry to `setDirtyBlockIndex`.
+        # On its own this means the corruption is wiped on restart.
+        #
+        # However, several flush paths can mark the corrupted index
+        # entry dirty *after* the corruption has been planted, causing
+        # the corrupted per-block deltas to be persisted to disk. The
+        # easiest path to trigger from a test is `invalidateblock`,
+        # which sets `BLOCK_FAILED_VALID` and adds the entry to
+        # `setDirtyBlockIndex`. Other paths (pruning, reorg-driven
+        # `ConnectBlock` reconnect, `reconsiderblock`) would also work.
+        #
+        # On the next graceful shutdown, the dirty entry — including the
+        # corrupted per-block delta — is written to disk. On restart,
+        # `LoadBlockIndexDB` reads the corrupted per-block delta and
+        # accumulates wrong chain values for descendants. The corruption
+        # is now durable.
+        #
+        # This scenario verifies that the fix prevents the in-memory
+        # corruption in the first place, so there is nothing to flush
+        # and the post-restart state matches the pre-attack state.
+
+        print("Testing Scenario C: target block pool state unchanged after flush + restart")
+        # Force the corrupted pindex to be marked dirty by performing a
+        # disconnect/reconnect cycle on the target. We use
+        # `invalidateblock` followed by `reconsiderblock`:
+        #
+        # - `invalidateblock(target_hash)` disconnects the target and its
+        #   descendants and marks them BLOCK_FAILED_VALID/BLOCK_FAILED_CHILD,
+        #   adding them to setDirtyBlockIndex.
+        # - `reconsiderblock(target_hash)` clears the failed flags and
+        #   triggers `ActivateBestChain`, which calls `ConnectBlock` to
+        #   reconnect each block. Each successful `ConnectBlock` call
+        #   adds the block to setDirtyBlockIndex (now with non-failed
+        #   status).
+        #
+        # The result: the corrupted target's `pindex` is marked dirty
+        # AND not flagged as failed, so the next graceful shutdown will
+        # flush its (corrupted, on the buggy code) per-block deltas to
+        # leveldb. (Failed blocks would be erased by RewindBlockIndex on
+        # the next startup, which is why we need to clear the failed
+        # flag before stopping.)
+        node.invalidateblock(target_hash)
+        node.reconsiderblock(target_hash)
+
+        # Disconnect the p2p peer before stopping the node.
         conn.disconnect_node()
+        time.sleep(1)
+
+        # Stop the node gracefully so that any dirty block index entries
+        # (including the now-dirty target) are flushed to disk.
+        stop_nodes(self.nodes)
+        wait_bitcoinds()
+
+        # Restart the node. `LoadBlockIndexDB` will reload the per-block
+        # deltas from disk and re-accumulate the chain pool values from
+        # genesis. On the fix branch the on-disk deltas are uncorrupted
+        # and the chain values are reconstructed correctly. On the buggy
+        # code, the on-disk deltas would be the doubled (corrupted)
+        # values from the malicious replay.
+        self.setup_network()
+        node = self.nodes[0]
+
+        # The targeted block's pool state on disk must still match the
+        # pre-attack state. Note: invalidateblock left the block marked
+        # `BLOCK_FAILED_VALID`, but `getblock` still returns the on-disk
+        # values for the index entry, so we can compare directly.
+        target_state_after_restart = get_block_pool_state(node, target_hash)
+        assert_equal(target_state_before, target_state_after_restart)
+        print("Scenario C prevented")
 
 
 if __name__ == '__main__':
