@@ -5924,62 +5924,6 @@ bool static LoadBlockIndexDB(const CChainParams& chainparams)
                     } else {
                         pindex->nChainTransparentValue = std::nullopt;
                     }
-
-                    if (pindex->pprev->nChainSproutValue.has_value() && pindex->nSproutValue.has_value()) {
-                        CAmount chainSproutValue = pindex->pprev->nChainSproutValue.value();
-                        if (!MoneyRange(chainSproutValue) || !MoneyDeltaRange(pindex->nSproutValue.value())) {
-                            return error("%s: previous sprout value out of range at height %d", __func__, pindex->nHeight);
-                        }
-                        chainSproutValue += pindex->nSproutValue.value();
-                        if (!MoneyRange(chainSproutValue)) {
-                            return error("%s: new sprout value out of range at height %d", __func__, pindex->nHeight);
-                        }
-                        pindex->nChainSproutValue = chainSproutValue;
-                    } else {
-                        pindex->nChainSproutValue = std::nullopt;
-                    }
-
-                    if (pindex->pprev->nChainSaplingValue.has_value()) {
-                        CAmount chainSaplingValue = pindex->pprev->nChainSaplingValue.value();
-                        if (!MoneyRange(chainSaplingValue) || !MoneyDeltaRange(pindex->nSaplingValue)) {
-                            return error("%s: previous sapling value out of range at height %d", __func__, pindex->nHeight);
-                        }
-                        chainSaplingValue += pindex->nSaplingValue;
-                        if (!MoneyRange(chainSaplingValue)) {
-                            return error("%s: new sapling value out of range at height %d", __func__, pindex->nHeight);
-                        }
-                        pindex->nChainSaplingValue = chainSaplingValue;
-                    } else {
-                        pindex->nChainSaplingValue = std::nullopt;
-                    }
-
-                    if (pindex->pprev->nChainOrchardValue.has_value()) {
-                        CAmount chainOrchardValue = pindex->pprev->nChainOrchardValue.value();
-                        if (!MoneyRange(chainOrchardValue) || !MoneyDeltaRange(pindex->nOrchardValue)) {
-                            return error("%s: previous orchard value out of range at height %d", __func__, pindex->nHeight);
-                        }
-                        chainOrchardValue += pindex->nOrchardValue;
-                        if (!MoneyRange(chainOrchardValue)) {
-                            return error("%s: new orchard value out of range at height %d", __func__, pindex->nHeight);
-                        }
-                        pindex->nChainOrchardValue = chainOrchardValue;
-                    } else {
-                        pindex->nChainOrchardValue = std::nullopt;
-                    }
-
-                    if (pindex->pprev->nChainLockboxValue.has_value()) {
-                        CAmount chainLockboxValue = pindex->pprev->nChainLockboxValue.value();
-                        if (!MoneyRange(chainLockboxValue) || !MoneyDeltaRange(pindex->nLockboxValue)) {
-                            return error("%s: previous lockbox value out of range at height %d", __func__, pindex->nHeight);
-                        }
-                        chainLockboxValue += pindex->nLockboxValue;
-                        if (!MoneyRange(chainLockboxValue)) {
-                            return error("%s: new lockbox value out of range at height %d", __func__, pindex->nHeight);
-                        }
-                        pindex->nChainLockboxValue = chainLockboxValue;
-                    } else {
-                        pindex->nChainLockboxValue = std::nullopt;
-                    }
                 } else {
                     pindex->nChainTx = 0;
                     pindex->nChainTotalSupply = std::nullopt;
@@ -5994,10 +5938,19 @@ bool static LoadBlockIndexDB(const CChainParams& chainparams)
                 pindex->nChainTx = pindex->nTx;
                 pindex->nChainTotalSupply = pindex->nChainSupplyDelta;
                 pindex->nChainTransparentValue = pindex->nTransparentValue;
-                pindex->nChainSproutValue = pindex->nSproutValue;
-                pindex->nChainSaplingValue = pindex->nSaplingValue;
-                pindex->nChainOrchardValue = pindex->nOrchardValue;
-                pindex->nChainLockboxValue = pindex->nLockboxValue;
+            }
+
+            // Accumulate per-pool chain values. For blocks with a parent
+            // whose nChainTx is zero (unlinked), the chain pool values
+            // were already set to nullopt above and AccumulateChainPoolValues
+            // is not called; it will be called later when the parent's data
+            // arrives. For all other cases (genesis or linked non-genesis),
+            // accumulate now.
+            if (pindex->pprev == nullptr || pindex->pprev->nChainTx) {
+                if (!AccumulateChainPoolValues(pindex)) {
+                    return error("%s: AccumulateChainPoolValues failed at height %d", __func__,
+                                 pindex->nHeight);
+                }
             }
 
             // Fall back to hardcoded Sprout value pool balance
