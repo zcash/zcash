@@ -214,7 +214,7 @@ namespace {
     CBlockIndex *pindexBestInvalid;
 
     /**
-     * The set of all CBlockIndex entries with BLOCK_VALID_TRANSACTIONS (for itself and all ancestors) and
+     * The set of all CBlockIndex entries with BLOCK_PARTIALLY_VALID_TRANSACTIONS (for itself and all ancestors) and
      * as good as our current tip or better. Entries may be failed, though, and pruning nodes may be
      * missing the data for the block.
      */
@@ -4727,7 +4727,7 @@ bool InvalidateBlock(CValidationState& state, const CChainParams& chainparams, C
     // add it again.
     BlockMap::iterator it = mapBlockIndex.begin();
     while (it != mapBlockIndex.end()) {
-        if (it->second->IsValid(BLOCK_VALID_TRANSACTIONS) && it->second->nChainTx && !setBlockIndexCandidates.value_comp()(it->second, chainActive.Tip())) {
+        if (it->second->IsValid(BLOCK_PARTIALLY_VALID_TRANSACTIONS) && it->second->nChainTx && !setBlockIndexCandidates.value_comp()(it->second, chainActive.Tip())) {
             setBlockIndexCandidates.insert(it->second);
         }
         it++;
@@ -4751,7 +4751,7 @@ bool ReconsiderBlock(CValidationState& state, CBlockIndex *pindex) {
         if (!it->second->IsValid() && it->second->GetAncestor(nHeight) == pindex) {
             it->second->nStatus &= ~BLOCK_FAILED_MASK;
             setDirtyBlockIndex.insert(it->second);
-            if (it->second->IsValid(BLOCK_VALID_TRANSACTIONS) && it->second->nChainTx && setBlockIndexCandidates.value_comp()(chainActive.Tip(), it->second)) {
+            if (it->second->IsValid(BLOCK_PARTIALLY_VALID_TRANSACTIONS) && it->second->nChainTx && setBlockIndexCandidates.value_comp()(chainActive.Tip(), it->second)) {
                 setBlockIndexCandidates.insert(it->second);
             }
             if (it->second == pindexBestInvalid) {
@@ -5065,7 +5065,7 @@ bool SetChainPoolValues(
 }
 
 /**
- * Mark a block as having its data received and checked (up to BLOCK_VALID_TRANSACTIONS).
+ * Mark a block as having its data received and checked (up to BLOCK_PARTIALLY_VALID_TRANSACTIONS).
  * The caller is expected to mark `pindexNew` as dirty by adding it to `setDirtyBlockIndex`.
  */
 bool ReceivedBlockTransactions(
@@ -5086,10 +5086,10 @@ bool ReceivedBlockTransactions(
     pindexNew->nDataPos = pos.nPos;
     pindexNew->nUndoPos = 0;
     pindexNew->nStatus |= BLOCK_HAVE_DATA;
-    pindexNew->RaiseValidity(BLOCK_VALID_TRANSACTIONS);
+    pindexNew->RaiseValidity(BLOCK_PARTIALLY_VALID_TRANSACTIONS);
 
     if (pindexNew->pprev == NULL || pindexNew->pprev->nChainTx) {
-        // If pindexNew is the genesis block or all parents are BLOCK_VALID_TRANSACTIONS.
+        // If pindexNew is the genesis block or all parents are BLOCK_PARTIALLY_VALID_TRANSACTIONS.
         deque<CBlockIndex*> queue;
         queue.push_back(pindexNew);
 
@@ -6027,7 +6027,7 @@ bool static LoadBlockIndexDB(const CChainParams& chainparams)
         } else {
             pindex->nCachedBranchId = SPROUT_BRANCH_ID;
         }
-        if (pindex->IsValid(BLOCK_VALID_TRANSACTIONS) && (pindex->nChainTx || pindex->pprev == NULL))
+        if (pindex->IsValid(BLOCK_PARTIALLY_VALID_TRANSACTIONS) && (pindex->nChainTx || pindex->pprev == NULL))
             setBlockIndexCandidates.insert(pindex);
         if (pindex->nStatus & BLOCK_FAILED_MASK && (!pindexBestInvalid || pindex->nChainWork > pindexBestInvalid->nChainWork))
             pindexBestInvalid = pindex;
@@ -6583,7 +6583,7 @@ bool RewindBlockIndex(const CChainParams& chainparams, bool& clearWitnessCaches)
                     ++ret.first;
                 }
             }
-        } else if (pindexIter->IsValid(BLOCK_VALID_TRANSACTIONS) && pindexIter->nChainTx) {
+        } else if (pindexIter->IsValid(BLOCK_PARTIALLY_VALID_TRANSACTIONS) && pindexIter->nChainTx) {
             setBlockIndexCandidates.insert(pindexIter);
         }
     }
@@ -6880,7 +6880,7 @@ void static CheckBlockIndex(const Consensus::Params& consensusParams)
     CBlockIndex* pindexFirstMissing = NULL; // Oldest ancestor of pindex which does not have BLOCK_HAVE_DATA.
     CBlockIndex* pindexFirstNeverProcessed = NULL; // Oldest ancestor of pindex for which nTx == 0.
     CBlockIndex* pindexFirstNotTreeValid = NULL; // Oldest ancestor of pindex which does not have BLOCK_VALID_TREE (regardless of being valid or not).
-    CBlockIndex* pindexFirstNotTransactionsValid = NULL; // Oldest ancestor of pindex which does not have BLOCK_VALID_TRANSACTIONS (regardless of being valid or not).
+    CBlockIndex* pindexFirstNotTransactionsValid = NULL; // Oldest ancestor of pindex which does not have BLOCK_PARTIALLY_VALID_TRANSACTIONS (regardless of being valid or not).
     CBlockIndex* pindexFirstNotChainValid = NULL; // Oldest ancestor of pindex which does not have BLOCK_VALID_CHAIN (regardless of being valid or not).
     CBlockIndex* pindexFirstNotScriptsValid = NULL; // Oldest ancestor of pindex which does not have BLOCK_VALID_SCRIPTS (regardless of being valid or not).
     while (pindex != NULL) {
@@ -6889,7 +6889,7 @@ void static CheckBlockIndex(const Consensus::Params& consensusParams)
         if (pindexFirstMissing == NULL && !(pindex->nStatus & BLOCK_HAVE_DATA)) pindexFirstMissing = pindex;
         if (pindexFirstNeverProcessed == NULL && pindex->nTx == 0) pindexFirstNeverProcessed = pindex;
         if (pindex->pprev != NULL && pindexFirstNotTreeValid == NULL && (pindex->nStatus & BLOCK_VALID_MASK) < BLOCK_VALID_TREE) pindexFirstNotTreeValid = pindex;
-        if (pindex->pprev != NULL && pindexFirstNotTransactionsValid == NULL && (pindex->nStatus & BLOCK_VALID_MASK) < BLOCK_VALID_TRANSACTIONS) pindexFirstNotTransactionsValid = pindex;
+        if (pindex->pprev != NULL && pindexFirstNotTransactionsValid == NULL && (pindex->nStatus & BLOCK_VALID_MASK) < BLOCK_PARTIALLY_VALID_TRANSACTIONS) pindexFirstNotTransactionsValid = pindex;
         if (pindex->pprev != NULL && pindexFirstNotChainValid == NULL && (pindex->nStatus & BLOCK_VALID_MASK) < BLOCK_VALID_CHAIN) pindexFirstNotChainValid = pindex;
         if (pindex->pprev != NULL && pindexFirstNotScriptsValid == NULL && (pindex->nStatus & BLOCK_VALID_MASK) < BLOCK_VALID_SCRIPTS) pindexFirstNotScriptsValid = pindex;
 
@@ -6900,8 +6900,8 @@ void static CheckBlockIndex(const Consensus::Params& consensusParams)
             assert(pindex == chainActive.Genesis()); // The current active chain's genesis block must be this block.
         }
         if (pindex->nChainTx == 0) assert(pindex->nSequenceId == 0);  // nSequenceId can't be set for blocks that aren't linked
-        // VALID_TRANSACTIONS is equivalent to nTx > 0 for all nodes (whether or not pruning has occurred).
-        // HAVE_DATA is only equivalent to nTx > 0 (or VALID_TRANSACTIONS) if no pruning has occurred.
+        // PARTIALLY_VALID_TRANSACTIONS is equivalent to nTx > 0 for all nodes (whether or not pruning has occurred).
+        // HAVE_DATA is only equivalent to nTx > 0 (or PARTIALLY_VALID_TRANSACTIONS) if no pruning has occurred.
         if (!fHavePruned) {
             // If we've never pruned, then HAVE_DATA should be equivalent to nTx > 0
             assert(!(pindex->nStatus & BLOCK_HAVE_DATA) == (pindex->nTx == 0));
@@ -6911,7 +6911,7 @@ void static CheckBlockIndex(const Consensus::Params& consensusParams)
             if (pindex->nStatus & BLOCK_HAVE_DATA) assert(pindex->nTx > 0);
         }
         if (pindex->nStatus & BLOCK_HAVE_UNDO) assert(pindex->nStatus & BLOCK_HAVE_DATA);
-        assert(((pindex->nStatus & BLOCK_VALID_MASK) >= BLOCK_VALID_TRANSACTIONS) == (pindex->nTx > 0)); // This is pruning-independent.
+        assert(((pindex->nStatus & BLOCK_VALID_MASK) >= BLOCK_PARTIALLY_VALID_TRANSACTIONS) == (pindex->nTx > 0)); // This is pruning-independent.
         // All parents having had data (at some point) is equivalent to all parents being VALID_TRANSACTIONS, which is equivalent to nChainTx being set.
         assert((pindexFirstNeverProcessed != NULL) == (pindex->nChainTx == 0)); // nChainTx != 0 is used to signal that all parent blocks have been processed (but may have been pruned).
         assert((pindexFirstNotTransactionsValid != NULL) == (pindex->nChainTx == 0));

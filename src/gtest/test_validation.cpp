@@ -406,8 +406,8 @@ TEST(Validation, ReceivedBlockTransactions) {
     ASSERT_TRUE(fakeIndex2.RaiseValidity(BLOCK_VALID_TREE));
     EXPECT_TRUE(fakeIndex1.IsValid(BLOCK_VALID_TREE));
     EXPECT_TRUE(fakeIndex2.IsValid(BLOCK_VALID_TREE));
-    EXPECT_FALSE(fakeIndex1.IsValid(BLOCK_VALID_TRANSACTIONS));
-    EXPECT_FALSE(fakeIndex2.IsValid(BLOCK_VALID_TRANSACTIONS));
+    EXPECT_FALSE(fakeIndex1.IsValid(BLOCK_PARTIALLY_VALID_TRANSACTIONS));
+    EXPECT_FALSE(fakeIndex2.IsValid(BLOCK_PARTIALLY_VALID_TRANSACTIONS));
 
     // Sprout pool values should not be set
     EXPECT_FALSE(fakeIndex1.nSproutValue.has_value());
@@ -442,8 +442,8 @@ TEST(Validation, ReceivedBlockTransactions) {
         EXPECT_TRUE(ReceivedBlockTransactions(block2, state, chainParams, &fakeIndex2, pos2));
     }
 
-    EXPECT_FALSE(fakeIndex1.IsValid(BLOCK_VALID_TRANSACTIONS));
-    EXPECT_TRUE(fakeIndex2.IsValid(BLOCK_VALID_TRANSACTIONS));
+    EXPECT_FALSE(fakeIndex1.IsValid(BLOCK_PARTIALLY_VALID_TRANSACTIONS));
+    EXPECT_TRUE(fakeIndex2.IsValid(BLOCK_PARTIALLY_VALID_TRANSACTIONS));
 
     // Sprout pool value delta should now be set for the second block,
     // but not any chain totals
@@ -477,8 +477,8 @@ TEST(Validation, ReceivedBlockTransactions) {
         EXPECT_TRUE(SetChainPoolValues(chainParams, block1, &fakeIndex1));
         EXPECT_TRUE(ReceivedBlockTransactions(block1, state, chainParams, &fakeIndex1, pos1));
     }
-    EXPECT_TRUE(fakeIndex1.IsValid(BLOCK_VALID_TRANSACTIONS));
-    EXPECT_TRUE(fakeIndex2.IsValid(BLOCK_VALID_TRANSACTIONS));
+    EXPECT_TRUE(fakeIndex1.IsValid(BLOCK_PARTIALLY_VALID_TRANSACTIONS));
+    EXPECT_TRUE(fakeIndex2.IsValid(BLOCK_PARTIALLY_VALID_TRANSACTIONS));
 
     // Sprout pool values should now be set for both blocks
     { SCOPED_TRACE("ExpectAmount"); ExpectAmount(10, fakeIndex1.nSproutValue); }
