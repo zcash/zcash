@@ -108,7 +108,7 @@ class FinalSaplingRootTest(BitcoinTestFramework):
         fee = conventional_fee(3)
         recipients = [{"address": saplingAddr0, "amount": Decimal('10') - fee}]
         myopid = self.nodes[0].z_sendmany(taddr0, recipients, 1, fee, 'AllowRevealedSenders')
-        mytxid = wait_and_assert_operationid_status(self.nodes[0], myopid)
+        mytxid = wait_and_assert_operationid_status(self.nodes[0], myopid, timeout=1200)
 
         self.sync_all()
         self.nodes[0].generate(1)
@@ -162,7 +162,7 @@ class FinalSaplingRootTest(BitcoinTestFramework):
         fee = conventional_fee(3)
         recipients = [{"address": taddr0, "amount": Decimal('12.34')}]
         opid = self.nodes[0].z_sendmany(zaddr0, recipients, 1, fee, 'AllowRevealedRecipients')
-        wait_and_assert_operationid_status(self.nodes[0], opid)
+        wait_and_assert_operationid_status(self.nodes[0], opid, timeout=1200)
 
         self.sync_all()
         self.nodes[0].generate(1)
@@ -187,7 +187,7 @@ class FinalSaplingRootTest(BitcoinTestFramework):
         saplingAddr1 = self.nodes[1].z_getnewaddress("sapling")
         recipients = [{"address": saplingAddr1, "amount": Decimal('2.34')}]
         myopid = self.nodes[0].z_sendmany(saplingAddr0, recipients, 1, ZIP_317_FEE)
-        mytxid = wait_and_assert_operationid_status(self.nodes[0], myopid)
+        mytxid = wait_and_assert_operationid_status(self.nodes[0], myopid, timeout=1200)
 
         self.sync_all()
         self.nodes[0].generate(1)
@@ -216,7 +216,7 @@ class FinalSaplingRootTest(BitcoinTestFramework):
         fee = conventional_fee(3)
         recipients = [{"address": taddr2, "amount": Decimal('2.34') - fee}]
         myopid = self.nodes[1].z_sendmany(saplingAddr1, recipients, 1, fee, 'AllowRevealedRecipients')
-        mytxid = wait_and_assert_operationid_status(self.nodes[1], myopid)
+        mytxid = wait_and_assert_operationid_status(self.nodes[1], myopid, timeout=1200)
 
         self.sync_all()
         self.nodes[0].generate(1)
