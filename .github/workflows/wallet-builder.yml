@@ -1,0 +1,61 @@
+name: Wallet builder
+
+# The regtest wallet-builder downloads ~4GB of zcashd binaries + proving
+# parameters and then runs a ~30-60 minute multi-version chain build. That is
+# far too heavy for every push, so we only exercise it when:
+#   - its own sources change in a pull request (path filter), or
+#   - it lands on master, or
+#   - once a week on a schedule (catches drift in the upstream download server
+#     and in newer zcashd behaviour), or
+#   - on demand via the Actions "Run workflow" button.
+#
+# This keeps the tool from silently rotting into dead code without slowing down
+# unrelated CI.
+on:
+  pull_request:
+    paths:
+      - 'qa/zcash/wallet-builder/**'
+      - '.github/workflows/wallet-builder.yml'
+  push:
+    branches:
+      - master
+    paths:
+      - 'qa/zcash/wallet-builder/**'
+      - '.github/workflows/wallet-builder.yml'
+  schedule:
+    - cron: '0 6 * * 1'  # 06:00 UTC every Monday
+  workflow_dispatch:
+
+jobs:
+  build-and-run:
+    name: Build regtest wallet fixture
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    defaults:
+      run:
+        working-directory: qa/zcash/wallet-builder
+    steps:
+      - uses: actions/checkout@v6.0.2
+
+      - name: Build the Docker image (~4GB download on first run)
+        run: make build
+
+      - name: Run the chain build
+        run: make run
+
+      - name: Extract artifacts to ./output/
+        run: make extract
+
+      - name: Verify the wallet fixture was produced
+        run: test -s output/wallet.dat
+
+      - name: Upload wallet fixture and manifests
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regtest-wallet-fixture
+          path: |
+            qa/zcash/wallet-builder/output/wallet.dat
+            qa/zcash/wallet-builder/output/full_manifest.json
+            qa/zcash/wallet-builder/output/manifests/
+          if-no-files-found: warn
