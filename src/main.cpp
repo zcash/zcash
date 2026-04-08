@@ -1488,6 +1488,15 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     }
     auto orchard_bundle = tx.GetOrchardBundle();
 
+    // Check Orchard action fields that are not validated by the proof circuit:
+    // - rk must not be the identity (causes a crash in proof verification)
+    // - epk must not be the identity (consensus rule: ephemeralKey must encode
+    //   a non-identity pallas point, per §5.4.9.4 of the protocol spec)
+    if (!orchard_bundle.ValidateWithoutProofVerification()) {
+        return state.DoS(100, error("CheckTransaction(): invalid Orchard action field encoding"),
+                         REJECT_INVALID, "bad-orchard-action-identity-point");
+    }
+
     // Transactions must contain some potential source of funds. This rejects
     // obviously-invalid transaction constructions early, but cannot prevent
     // e.g. a pure Sapling transaction with only dummy spends (which is
