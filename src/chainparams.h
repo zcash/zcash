@@ -64,6 +64,15 @@ public:
     CAmount SproutValuePoolCheckpointHeight() const { return nSproutValuePoolCheckpointHeight; }
     CAmount SproutValuePoolCheckpointBalance() const { return nSproutValuePoolCheckpointBalance; }
     uint256 SproutValuePoolCheckpointBlockHash() const { return hashSproutValuePoolCheckpointBlock; }
+    /**
+     * When true, the turnstile checks defined by ZIP 209 are enforced in
+     * `ConnectBlock`. Always true on mainnet and testnet (these are consensus
+     * rules). On regtest, defaults to false (so that regtest tests can
+     * construct chains that don't satisfy the turnstile invariants without
+     * being rejected) and is enabled only when `-developersetpoolsizezero` is
+     * set, allowing turnstile violations to be exercised by tests and developer
+     * debugging.
+     */
     bool ZIP209Enabled() const { return fZIP209Enabled; }
     bool RequireWalletBackup() const { return fRequireWalletBackup; }
 
