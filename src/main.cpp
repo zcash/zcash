@@ -1892,7 +1892,11 @@ bool AcceptToMemoryPool(
         // Bring the best block into scope
         view.GetBestBlock();
 
-        nValueIn = view.GetValueIn(tx);
+        try {
+            nValueIn = view.GetValueIn(tx);
+        } catch (const std::runtime_error& e) {
+            return state.DoS(100, false, REJECT_INVALID, "bad-txns-input-value-out-of-range");
+        }
 
         // we have all inputs cached now, so switch back to dummy
         view.SetBackend(dummy);
@@ -1912,7 +1916,12 @@ bool AcceptToMemoryPool(
             return state.DoS(0, false, REJECT_NONSTANDARD, "bad-txns-too-many-sigops", false,
                 strprintf("%d > %d", nSigOps, MAX_STANDARD_TX_SIGOPS));
 
-        CAmount nValueOut = tx.GetValueOut();
+        CAmount nValueOut;
+        try {
+            nValueOut = tx.GetValueOut();
+        } catch (const std::runtime_error& e) {
+            return state.DoS(100, false, REJECT_INVALID, "bad-txns-output-value-out-of-range");
+        }
         CAmount nFees = nValueIn-nValueOut;
         // nModifiedFees includes any fee deltas from PrioritiseTransaction
         CAmount nModifiedFees = nFees;
@@ -2604,17 +2613,28 @@ bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoins
 
         }
 
-        nValueIn += tx.GetShieldedValueIn();
+        try {
+            nValueIn += tx.GetShieldedValueIn();
+        } catch (const std::runtime_error& e) {
+            return state.DoS(100, false, REJECT_INVALID, "bad-txns-inputvalues-outofrange");
+        }
         if (!MoneyRange(nValueIn))
             return state.DoS(100, error("CheckInputs(): shielded input to transparent value pool out of range"),
                              REJECT_INVALID, "bad-txns-inputvalues-outofrange");
 
-        if (nValueIn < tx.GetValueOut())
+        CAmount nValueOut;
+        try {
+            nValueOut = tx.GetValueOut();
+        } catch (const std::runtime_error& e) {
+            return state.DoS(100, false, REJECT_INVALID, "bad-txns-outputvalues-outofrange");
+        }
+
+        if (nValueIn < nValueOut)
             return state.DoS(100, false, REJECT_INVALID, "bad-txns-in-belowout", false,
-                strprintf("value in (%s) < value out (%s)", FormatMoney(nValueIn), FormatMoney(tx.GetValueOut())));
+                strprintf("value in (%s) < value out (%s)", FormatMoney(nValueIn), FormatMoney(nValueOut)));
 
         // Tally transaction fees
-        CAmount nTxFee = nValueIn - tx.GetValueOut();
+        CAmount nTxFee = nValueIn - nValueOut;
         if (nTxFee < 0)
             return state.DoS(100, false, REJECT_INVALID, "bad-txns-fee-negative");
         nFees += nTxFee;
@@ -3279,7 +3299,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     // as previously computed using `SetChainPoolValues`.
     CAmount chainSupplyDelta = pindex->nLockboxValue;
     if (!MoneyDeltaRange(chainSupplyDelta)) {
-        return error("%s: chain supply delta out of range: %d at height %d", __func__, chainSupplyDelta, pindex->nHeight);
+        return state.DoS(100, error("%s: chain supply delta out of range: %d at height %d", __func__, chainSupplyDelta, pindex->nHeight),
+            REJECT_INVALID, "bad-chain-supply-delta-out-of-range");
     }
     CAmount transparentValueDelta = 0;
     size_t total_sapling_tx = 0;
@@ -3320,7 +3341,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                 const auto prevout = view.GetOutputFor(input);
                 transparentValueDelta -= prevout.nValue;
                 if (!MoneyDeltaRange(transparentValueDelta)) {
-                    return error("%s: transparent value delta out of range: %d at height %d", __func__, transparentValueDelta, pindex->nHeight);
+                    return state.DoS(100, error("%s: transparent value delta out of range: %d at height %d", __func__, transparentValueDelta, pindex->nHeight),
+                        REJECT_INVALID, "bad-transparent-value-delta-out-of-range");
                 }
                 allPrevOutputs.push_back(prevout);
             }
@@ -3387,18 +3409,32 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             //   the subtractions from `nLockboxValue` in `SetChainPoolValues`.
             // - This includes fees, which are then canceled out by the fee subtractions
             //   in the other branch of this conditional.
-            chainSupplyDelta += tx.GetValueOut();
+            try {
+                chainSupplyDelta += tx.GetValueOut();
+            } catch (const std::runtime_error& e) {
+                return state.DoS(100, error("%s: coinbase output value out of range at height %d", __func__, pindex->nHeight),
+                    REJECT_INVALID, "bad-cb-output-value-out-of-range");
+            }
             if (!MoneyDeltaRange(chainSupplyDelta)) {
-                return error("%s: chain supply delta out of range: %d at height %d", __func__, chainSupplyDelta, pindex->nHeight);
+                return state.DoS(100, error("%s: chain supply delta out of range: %d at height %d", __func__, chainSupplyDelta, pindex->nHeight),
+                    REJECT_INVALID, "bad-chain-supply-delta-out-of-range");
             }
         } else {
-            const auto txFee = view.GetValueIn(tx) - tx.GetValueOut();
+            CAmount txFee;
+            try {
+                txFee = view.GetValueIn(tx) - tx.GetValueOut();
+            } catch (const std::runtime_error& e) {
+                return state.DoS(100, error("%s: tx value out of range at height %d", __func__, pindex->nHeight),
+                    REJECT_INVALID, "bad-txns-value-out-of-range");
+            }
             if (!MoneyRange(txFee)) {
-                return error("%s: transaction fee out of range: %d at height %d", __func__, txFee, pindex->nHeight);
+                return state.DoS(100, error("%s: transaction fee out of range: %d at height %d", __func__, txFee, pindex->nHeight),
+                    REJECT_INVALID, "bad-txns-fee-out-of-range");
             }
             nFees += txFee;
             if (!MoneyRange(nFees)) {
-                return error("%s: total fees out of range: %d at height %d", __func__, nFees, pindex->nHeight);
+                return state.DoS(100, error("%s: total fees out of range: %d at height %d", __func__, nFees, pindex->nHeight),
+                    REJECT_INVALID, "bad-txns-total-fees-out-of-range");
             }
 
             // Fees from a transaction do not go into an output of the transaction,
@@ -3406,7 +3442,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             // they will be re-added in the other branch of this conditional.
             chainSupplyDelta -= txFee;
             if (!MoneyDeltaRange(chainSupplyDelta)) {
-                return error("%s: chain supply delta out of range: %d at height %d", __func__, chainSupplyDelta, pindex->nHeight);
+                return state.DoS(100, error("%s: chain supply delta out of range: %d at height %d", __func__, chainSupplyDelta, pindex->nHeight),
+                    REJECT_INVALID, "bad-chain-supply-delta-out-of-range");
             }
 
             std::vector<CScriptCheck> vChecks;
@@ -3515,7 +3552,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         for (const auto& out : tx.vout) {
             transparentValueDelta += out.nValue;
             if (!MoneyDeltaRange(transparentValueDelta)) {
-                return error("%s: transparent value delta out of range: %d at height %d", __func__, transparentValueDelta, pindex->nHeight);
+                return state.DoS(100, error("%s: transparent value delta out of range: %d at height %d", __func__, transparentValueDelta, pindex->nHeight),
+                    REJECT_INVALID, "bad-transparent-value-delta-out-of-range");
             }
         }
 
@@ -3554,11 +3592,13 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             if (pindex->pprev->nChainTotalSupply) {
                 CAmount chainTotalSupply = pindex->pprev->nChainTotalSupply.value();
                 if (!MoneyRange(chainTotalSupply)) {
-                    return error("%s: previous total supply out of range: %d at height %d", __func__, chainTotalSupply, pindex->nHeight);
+                    return state.DoS(100, error("%s: previous total supply out of range: %d at height %d", __func__, chainTotalSupply, pindex->nHeight),
+                        REJECT_INVALID, "bad-chain-total-supply-out-of-range");
                 }
                 chainTotalSupply += chainSupplyDelta;
                 if (!MoneyRange(chainTotalSupply)) {
-                    return error("%s: new total supply out of range: %d at height %d", __func__, chainTotalSupply, pindex->nHeight);
+                    return state.DoS(100, error("%s: new total supply out of range: %d at height %d", __func__, chainTotalSupply, pindex->nHeight),
+                        REJECT_INVALID, "bad-chain-total-supply-out-of-range");
                 }
                 pindex->nChainTotalSupply = chainTotalSupply;
             } else {
@@ -3568,11 +3608,13 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             if (pindex->pprev->nChainTransparentValue) {
                 CAmount chainTransparentValue = pindex->pprev->nChainTransparentValue.value();
                 if (!MoneyRange(chainTransparentValue)) {
-                    return error("%s: previous chain transparent value out of range: %d at height %d", __func__, chainTransparentValue, pindex->nHeight);
+                    return state.DoS(100, error("%s: previous chain transparent value out of range: %d at height %d", __func__, chainTransparentValue, pindex->nHeight),
+                        REJECT_INVALID, "bad-chain-transparent-value-out-of-range");
                 }
                 chainTransparentValue += transparentValueDelta;
                 if (!MoneyRange(chainTransparentValue)) {
-                    return error("%s: new chain transparent value out of range: %d at height %d", __func__, chainTransparentValue, pindex->nHeight);
+                    return state.DoS(100, error("%s: new chain transparent value out of range: %d at height %d", __func__, chainTransparentValue, pindex->nHeight),
+                        REJECT_INVALID, "bad-chain-transparent-value-out-of-range");
                 }
                 pindex->nChainTransparentValue = chainTransparentValue;
             } else {
@@ -3691,7 +3733,14 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     int64_t nTime1 = GetTimeMicros(); nTimeConnect += nTime1 - nTimeStart;
     LogPrint("bench", "      - Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs]\n", (unsigned)block.vtx.size(), 0.001 * (nTime1 - nTimeStart), 0.001 * (nTime1 - nTimeStart) / block.vtx.size(), nInputs <= 1 ? 0 : 0.001 * (nTime1 - nTimeStart) / (nInputs-1), nTimeConnect * 0.000001);
 
-    CAmount cbTotalOutputValue = block.vtx[0].GetValueOut() + pindex->nLockboxValue;
+    CAmount cbTotalOutputValue;
+    try {
+        cbTotalOutputValue = block.vtx[0].GetValueOut();
+    } catch (const std::runtime_error& e) {
+        return state.DoS(100, error("%s: coinbase output value out of range at height %d", __func__, pindex->nHeight),
+            REJECT_INVALID, "bad-cb-output-value-out-of-range");
+    }
+    cbTotalOutputValue += pindex->nLockboxValue;
     if (!MoneyRange(cbTotalOutputValue)) {
         return state.DoS(100, error("%s: coinbase output value out of range at height %d", __func__, pindex->nHeight),
             REJECT_INVALID, "bad-cb-output-value-out-of-range");
@@ -4800,7 +4849,11 @@ bool SetChainPoolValues(
         // For the genesis block only, compute the chain supply delta and the transparent
         // output total.
         if (pindex->pprev == nullptr) {
-            chainSupplyDelta = tx.GetValueOut();
+            try {
+                chainSupplyDelta = tx.GetValueOut();
+            } catch (const std::runtime_error& e) {
+                return error("%s: genesis coinbase output value out of range", __func__);
+            }
             for (const auto& out : tx.vout) {
                 transparentValueDelta += out.nValue;
             }
