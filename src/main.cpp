@@ -4931,6 +4931,9 @@ bool SetChainPoolValues(
     }
     LogPrint("valuepool", "%s: Lockbox value is %d at height %d", __func__, lockboxValue, pindex->nHeight);
 
+    // pindex->pprev is only permitted to be null for the genesis block
+    assert (pindex->pprev || pindex->nHeight == 0);
+
     for (auto tx : block.vtx) {
         // For the genesis block only, compute the chain supply delta and the transparent
         // output total.
