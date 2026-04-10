@@ -3154,6 +3154,36 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         return true;
     }
 
+    // For range and consistency checks that are protocol-level invariants
+    // ensured cryptographically (e.g. by the soundness of the proof systems and
+    // the binding property of commitments), we call `error` and reject the
+    // block, unless the failed check indicates unrecoverable state corruption
+    // in which case we abort.
+    //
+    // We use `assert` for programming assertions that should be tautologies
+    // given what has been checked already. These should be used conservatively
+    // due to the impact of crashing the node.
+
+    // `nChainSaplingValue`, `nChainOrchardValue`, and `nChainLockboxValue` are
+    // always populated at this point:
+    //
+    // - For normal block connection via `ConnectTip`, the block index has been
+    //   through `ReceivedBlockTransactions` which accumulates from `pprev`.
+    // - For `TestNewBlockAtTipValidity`, `SetChainPoolValues` eagerly
+    //   accumulates from `pprev == chainActive.Tip()`, which is always
+    //   populated.
+    // - For `VerifyDB`, the active chain has been fully reconstructed by
+    //   `LoadBlockIndexDB` at startup, which re-accumulates chain values for
+    //   all blocks with parents that have populated values.
+    //
+    // So `nullopt` values here indicate a programming error (independently of
+    // `chainparams.ZIP209Enabled()`).
+    assert(pindex->nChainSaplingValue.has_value());
+    assert(pindex->nChainOrchardValue.has_value());
+    assert(pindex->nChainLockboxValue.has_value());
+
+    // Shielded pool turnstile checks (ZIP 209)
+    //
     // Reject a block that results in a negative shielded value pool balance.
     if (chainparams.ZIP209Enabled()) {
         // Sprout
@@ -3186,42 +3216,25 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         }
 
         // Sapling
-        //
-        // `nChainSaplingValue` is always populated at this point:
-        // - For normal block connection via `ConnectTip`, the block index has
-        //   been through `ReceivedBlockTransactions` which accumulates from
-        //   `pprev`.
-        // - For `TestBlockValidity`, `SetChainPoolValues` eagerly accumulates
-        //   from `pprev == chainActive.Tip()`, which is always populated.
-        // - For `VerifyDB` (level 4 reconnection), the active chain has been
-        //   fully reconstructed by `LoadBlockIndexDB` at startup, which
-        //   re-accumulates chain values for all blocks with parents that have
-        //   populated values.
-        // A null value here indicates a programming error.
-        assert(pindex->nChainSaplingValue.has_value());
         if (pindex->nChainSaplingValue.value() < 0) {
             return state.DoS(100, error("%s: turnstile violation in Sapling shielded value pool", __func__),
                          REJECT_INVALID, "turnstile-violation-sapling-shielded-pool");
         }
 
-        // Orchard (see Sapling comment above)
-        assert(pindex->nChainOrchardValue.has_value());
+        // Orchard
         if (pindex->nChainOrchardValue.value() < 0) {
             return state.DoS(100, error("%s: turnstile violation in Orchard shielded value pool", __func__),
                              REJECT_INVALID, "turnstile-violation-orchard");
         }
     }
 
-    // Lockbox
+    // Lockbox turnstile check (§ 4.17)
     //
     // This check is a necessary consensus rule when transaction-defined
     // lockbox disbursement is present. zcashd will never implement v6
     // transactions, and so this check in practice is defending against
     // a programming error in defining the one-time lockbox disbursement(s).
     //
-    // `nChainLockboxValue` is always populated at this point, for the same
-    // reasons as Sapling/Orchard above.
-    assert(pindex->nChainLockboxValue.has_value());
     if (pindex->nChainLockboxValue.value() < 0) {
         return state.DoS(100, error("%s: invalid lockbox disbursement amount", __func__),
                          REJECT_INVALID, "invalid-lockbox-disbursement-amount");
@@ -3597,6 +3610,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     if (!fJustCheck) {
         // Update pindex with the net change in value and the chain's total value,
         // both for the supply and for the transparent pool.
+        assert(MoneyDeltaRange(chainSupplyDelta));
+        assert(MoneyDeltaRange(transparentValueDelta));
         pindex->nChainSupplyDelta = chainSupplyDelta;
         pindex->nTransparentValue = transparentValueDelta;
         if (pindex->pprev) {
