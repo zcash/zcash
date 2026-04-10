@@ -10,7 +10,7 @@
 
 #include <optional>
 
-extern void SetChainPoolValues(
+extern bool SetChainPoolValues(
     const CChainParams& chainparams,
     const CBlock &block,
     CBlockIndex *pindex);
