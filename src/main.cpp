@@ -5050,7 +5050,7 @@ bool SetChainPoolValues(
     pindex->nChainLockboxValue = std::nullopt;
 
     // Accumulate per-pool chain values from pprev. This makes chain values
-    // available to ConnectBlock in the TestBlockValidity path, where
+    // available to ConnectBlock in the TestNewBlockAtTipValidity path, where
     // ReceivedBlockTransactions is not called.
     if (!AccumulateChainPoolValues(pindex)) {
         return false;
@@ -5661,13 +5661,13 @@ bool ProcessNewBlock(CValidationState& state, const CChainParams& chainparams, c
  * This is only invoked by the miner.
  * The block's proof-of-work is assumed invalid and not checked.
  */
-bool TestBlockValidity(
+bool TestNewBlockAtTipValidity(
     CValidationState& state, const CChainParams& chainparams,
-    const CBlock& block, CBlockIndex* pindexPrev,
-    bool fIsBlockTemplate)
+    const CBlock& block, bool fIsBlockTemplate)
 {
     AssertLockHeld(cs_main);
-    assert(pindexPrev == chainActive.Tip());
+    CBlockIndex* pindexPrev = chainActive.Tip();
+    assert(block.hashPrevBlock == pindexPrev->GetBlockHash());
 
     CCoinsViewCache viewNew(pcoinsTip);
     CBlockIndex indexDummy(block);

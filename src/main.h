@@ -596,10 +596,12 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                   bool fJustCheck = false, CheckAs blockChecks = CheckAs::Block);
 
 /**
- * Check a block is completely valid from start to finish (only works on top
- * of our current best block, with cs_main held)
+ * Check that a block is completely valid from start to finish, as if it were
+ * appended to the current chain tip. Must be called with `cs_main` held. The
+ * block must build directly on the active tip; this is asserted internally
+ * via `block.hashPrevBlock == chainActive.Tip()->GetBlockHash()`.
  */
-bool TestBlockValidity(CValidationState& state, const CChainParams& chainparams, const CBlock& block, CBlockIndex* pindexPrev, bool fIsBlockTemplate);
+bool TestNewBlockAtTipValidity(CValidationState& state, const CChainParams& chainparams, const CBlock& block, bool fIsBlockTemplate);
 
 /**
  * This will clear the subtree database for a given shielded type from the

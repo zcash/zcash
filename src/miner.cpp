@@ -490,8 +490,8 @@ CBlockTemplate* BlockAssembler::CreateNewBlock(
     pblocktemplate->vTxSigOps[0] = GetLegacySigOpCount(pblock->vtx[0]);
 
     CValidationState state;
-    if (!TestBlockValidity(state, chainparams, *pblock, pindexPrev, true)) {
-        throw std::runtime_error(strprintf("%s: TestBlockValidity failed: %s", __func__, FormatStateMessage(state)));
+    if (!TestNewBlockAtTipValidity(state, chainparams, *pblock, true)) {
+        throw std::runtime_error(strprintf("%s: TestNewBlockAtTipValidity failed: %s", __func__, FormatStateMessage(state)));
     }
 
     return pblocktemplate.release();

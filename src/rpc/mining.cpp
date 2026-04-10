@@ -562,13 +562,12 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
                 return "duplicate-inconclusive";
             }
 
-            CBlockIndex* const pindexPrev = chainActive.Tip();
-            // TestBlockValidity only supports blocks built on the current Tip
-            if (block.hashPrevBlock != pindexPrev->GetBlockHash())
+            // TestNewBlockAtTipValidity only supports blocks built on the current Tip
+            if (block.hashPrevBlock != chainActive.Tip()->GetBlockHash())
                 return "inconclusive-not-best-prevblk";
 
             CValidationState state;
-            TestBlockValidity(state, Params(), block, pindexPrev, false);
+            TestNewBlockAtTipValidity(state, Params(), block, false);
             return BIP22ValidationResult(state);
         }
     }
