@@ -3181,10 +3181,14 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     assert(pindex->nChainSaplingValue.has_value());
     assert(pindex->nChainOrchardValue.has_value());
     assert(pindex->nChainLockboxValue.has_value());
+    const CAmount sapling_supply = pindex->nChainSaplingValue.value();
+    const CAmount orchard_supply = pindex->nChainOrchardValue.value();
+    const CAmount lockbox_supply = pindex->nChainLockboxValue.value();
 
     // Shielded pool turnstile checks (ZIP 209)
     //
-    // Reject a block that results in a negative shielded value pool balance.
+    // Reject a block that results in an out-of-range shielded value pool
+    // balance.
     if (chainparams.ZIP209Enabled()) {
         // Sprout
         //
@@ -3210,34 +3214,44 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                   "data that predates Sprout value pool tracking. Please "
                   "restart zcashd with -reindex."));
         }
-        if (pindex->nChainSproutValue.value() < 0) {
-            return state.DoS(100, error("%s: turnstile violation in Sprout shielded value pool", __func__),
-                         REJECT_INVALID, "turnstile-violation-sprout-shielded-pool");
+        if (!MoneyRange(pindex->nChainSproutValue.value())) {
+            return state.DoS(100,
+                error("%s: turnstile violation in Sprout shielded value pool at height %d (sprout=%d, sapling=%d, orchard=%d, lockbox=%d)", __func__,
+                      pindex->nHeight, pindex->nChainSproutValue.value(), sapling_supply, orchard_supply, lockbox_supply),
+                REJECT_INVALID, "turnstile-violation-sprout-shielded-pool");
         }
 
         // Sapling
-        if (pindex->nChainSaplingValue.value() < 0) {
-            return state.DoS(100, error("%s: turnstile violation in Sapling shielded value pool", __func__),
-                         REJECT_INVALID, "turnstile-violation-sapling-shielded-pool");
+        if (!MoneyRange(sapling_supply)) {
+            return state.DoS(100,
+                error("%s: turnstile violation in Sapling shielded value pool at height %d (sprout=%d, sapling=%d, orchard=%d, lockbox=%d)", __func__,
+                      pindex->nHeight, pindex->nChainSproutValue.value(), sapling_supply, orchard_supply, lockbox_supply),
+                REJECT_INVALID, "turnstile-violation-sapling-shielded-pool");
         }
 
         // Orchard
-        if (pindex->nChainOrchardValue.value() < 0) {
-            return state.DoS(100, error("%s: turnstile violation in Orchard shielded value pool", __func__),
-                             REJECT_INVALID, "turnstile-violation-orchard");
+        if (!MoneyRange(orchard_supply)) {
+            return state.DoS(100,
+                error("%s: turnstile violation in Orchard shielded value pool at height %d (sprout=%d, sapling=%d, orchard=%d, lockbox=%d)", __func__,
+                      pindex->nHeight, pindex->nChainSproutValue.value(), sapling_supply, orchard_supply, lockbox_supply),
+                REJECT_INVALID, "turnstile-violation-orchard");
         }
     }
 
     // Lockbox turnstile check (§ 4.17)
     //
-    // This check is a necessary consensus rule when transaction-defined
-    // lockbox disbursement is present. zcashd will never implement v6
-    // transactions, and so this check in practice is defending against
-    // a programming error in defining the one-time lockbox disbursement(s).
-    //
-    if (pindex->nChainLockboxValue.value() < 0) {
-        return state.DoS(100, error("%s: invalid lockbox disbursement amount", __func__),
-                         REJECT_INVALID, "invalid-lockbox-disbursement-amount");
+    // This check is a necessary consensus rule when transaction-defined lockbox
+    // disbursement is present. zcashd will never implement v6 transactions, and
+    // so this check in practice is defending against a protocol specification
+    // error in defining the one-time lockbox disbursement(s). It should not be
+    // conditional on `chainparams.ZIP209Enabled()`.
+    if (!MoneyRange(lockbox_supply)) {
+        return state.DoS(100,
+            error("%s: invalid lockbox disbursement amount at height %d (sprout=%s, sapling=%d, orchard=%d, lockbox=%d)", __func__,
+                  pindex->nHeight,
+                  pindex->nChainSproutValue.has_value() ? strprintf("%d", pindex->nChainSproutValue.value()) : "nullopt",
+                  sapling_supply, orchard_supply, lockbox_supply),
+            REJECT_INVALID, "invalid-lockbox-disbursement-amount");
     }
 
     // Do not allow blocks that contain transactions which 'overwrite' older transactions,
@@ -3651,6 +3665,49 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             pindex->nChainTransparentValue = transparentValueDelta;
         }
 
+        // Ensure that the total chain supply is consistent with the value in each pool.
+        if (chainparams.ZIP209Enabled()) {
+            // These conditions were checked in the turnstile section above.
+            assert(pindex->nChainSproutValue.has_value());
+            const CAmount sprout_supply = pindex->nChainSproutValue.value();
+            assert(MoneyRange(sprout_supply));
+            assert(MoneyRange(sapling_supply));
+            assert(MoneyRange(orchard_supply));
+            assert(MoneyRange(lockbox_supply));
+
+            // `nChainTotalSupply` and `nChainTransparentValue` may be unpopulated
+            // if a parent block index entry was written by a zcashd version older
+            // than `TRANSPARENT_VALUE_VERSION` and so lacks `nChainSupplyDelta`.
+            if (pindex->nChainTotalSupply.has_value() && pindex->nChainTransparentValue.has_value()) {
+                const CAmount transparent_supply = pindex->nChainTransparentValue.value();
+                const CAmount total_supply       = pindex->nChainTotalSupply.value();
+
+                if (!MoneyRange(transparent_supply)) {
+                    return state.DoS(100,
+                        error("%s: turnstile violation in transparent value pool at height %d (sprout=%d, sapling=%d, orchard=%d, lockbox=%d, transparent=%d, total=%d)", __func__,
+                              pindex->nHeight, sprout_supply, sapling_supply, orchard_supply, lockbox_supply, transparent_supply, total_supply),
+                        REJECT_INVALID, "turnstile-violation-transparent");
+                }
+                if (!MoneyRange(total_supply)) {
+                    return state.DoS(100,
+                        error("%s: turnstile violation in total supply at height %d (sprout=%d, sapling=%d, orchard=%d, lockbox=%d, transparent=%d, total=%d)", __func__,
+                              pindex->nHeight, sprout_supply, sapling_supply, orchard_supply, lockbox_supply, transparent_supply, total_supply),
+                        REJECT_INVALID, "turnstile-violation-total");
+                }
+
+                static_assert(MAX_MONEY <= std::numeric_limits<CAmount>::max() / 5, "sum of five MoneyRange CAmounts must fit in CAmount");
+                const CAmount expected_total_supply = transparent_supply + sprout_supply + sapling_supply + orchard_supply + lockbox_supply;
+                if (expected_total_supply != total_supply) {
+                    // This may be added as a rule to ZIP 209 and return a failure in a future soft-fork.
+                    error("%s: chain total supply (%d) does not match sum of pool balances (%d) at height %d", __func__,
+                        total_supply, expected_total_supply, pindex->nHeight);
+                }
+            } else {
+                LogPrintf("%s: skipping chain supply consistency check at height %d because chain supply tracking fields are missing\n", __func__,
+                          pindex->nHeight);
+            }
+        }
+
         pindex->hashFinalSproutRoot = sprout_tree.root();
         // - If this block is before Heartwood activation, then we don't set
         //   hashFinalSaplingRoot here to maintain the invariant documented in
@@ -3792,37 +3849,6 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                 cbTotalInputValue - pindex->nLockboxValue,
                 pindex->nLockboxValue),
             REJECT_INVALID, "bad-cb-not-exact");
-    }
-
-    // Ensure that the total chain supply is consistent with the value in each pool.
-    if (!fJustCheck &&
-            pindex->nChainTotalSupply.has_value() &&
-            pindex->nChainTransparentValue.has_value() &&
-            pindex->nChainSproutValue.has_value() &&
-            pindex->nChainSaplingValue.has_value() &&
-            pindex->nChainOrchardValue.has_value() &&
-            pindex->nChainLockboxValue.has_value())
-    {
-        if (!MoneyRange(pindex->nChainTotalSupply.value()) ||
-            !MoneyRange(pindex->nChainTransparentValue.value()) ||
-            !MoneyRange(pindex->nChainSproutValue.value()) ||
-            !MoneyRange(pindex->nChainSaplingValue.value()) ||
-            !MoneyRange(pindex->nChainOrchardValue.value()) ||
-            !MoneyRange(pindex->nChainLockboxValue.value())) {
-            return state.DoS(100, error("%s: chain accounting value out of range at height %d", __func__, pindex->nHeight),
-                REJECT_INVALID, "bad-chain-supply-out-of-range");
-        }
-        auto expectedChainSupply =
-            pindex->nChainTransparentValue.value() +
-            pindex->nChainSproutValue.value() +
-            pindex->nChainSaplingValue.value() +
-            pindex->nChainOrchardValue.value() +
-            pindex->nChainLockboxValue.value();
-        if (expectedChainSupply != pindex->nChainTotalSupply.value()) {
-            // This may be added as a rule to ZIP 209 and return a failure in a future soft-fork.
-            error("%s: chain total supply (%d) does not match sum of pool balances (%d) at height %d", __func__,
-                    pindex->nChainTotalSupply.value(), expectedChainSupply, pindex->nHeight);
-        }
     }
 
     // Ensure Sapling authorizations are valid (if we are checking them)
