@@ -3629,7 +3629,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         pindex->nChainSupplyDelta = chainSupplyDelta;
         pindex->nTransparentValue = transparentValueDelta;
         if (pindex->pprev) {
-            if (pindex->pprev->nChainTotalSupply) {
+            if (pindex->pprev->nChainTotalSupply.has_value()) {
                 CAmount chainTotalSupply = pindex->pprev->nChainTotalSupply.value();
                 if (!MoneyRange(chainTotalSupply)) {
                     return state.DoS(100, error("%s: previous total supply out of range: %d at height %d", __func__, chainTotalSupply, pindex->nHeight),
@@ -3645,7 +3645,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                 pindex->nChainTotalSupply = std::nullopt;
             }
 
-            if (pindex->pprev->nChainTransparentValue) {
+            if (pindex->pprev->nChainTransparentValue.has_value()) {
                 CAmount chainTransparentValue = pindex->pprev->nChainTransparentValue.value();
                 if (!MoneyRange(chainTransparentValue)) {
                     return state.DoS(100, error("%s: previous chain transparent value out of range: %d at height %d", __func__, chainTransparentValue, pindex->nHeight),
@@ -4848,17 +4848,17 @@ void FallbackSproutValuePoolBalance(
     if (pindex->nHeight == chainparams.SproutValuePoolCheckpointHeight()) {
         if (pindex->GetBlockHash() == chainparams.SproutValuePoolCheckpointBlockHash()) {
             // Are we monitoring the Sprout pool?
-            if (!pindex->nChainSproutValue) {
+            if (!pindex->nChainSproutValue.has_value()) {
                 // Apparently not. Introduce the hardcoded value so we monitor for
                 // this point onwards (assuming the checkpoint is late enough)
                 pindex->nChainSproutValue = chainparams.SproutValuePoolCheckpointBalance();
             } else {
                 // Apparently we have been. So, we should expect the current
                 // value to match the hardcoded one.
-                assert(*pindex->nChainSproutValue == chainparams.SproutValuePoolCheckpointBalance());
+                assert(pindex->nChainSproutValue.value() == chainparams.SproutValuePoolCheckpointBalance());
                 // And we should expect non-nullopt for the delta stored in the block index here,
                 // or the checkpoint is too early.
-                assert(pindex->nSproutValue != std::nullopt);
+                assert(pindex->nSproutValue.has_value());
             }
         } else {
             LogPrintf(
