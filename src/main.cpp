@@ -3698,9 +3698,12 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                 static_assert(MAX_MONEY <= std::numeric_limits<CAmount>::max() / 5, "sum of five MoneyRange CAmounts must fit in CAmount");
                 const CAmount expected_total_supply = transparent_supply + sprout_supply + sapling_supply + orchard_supply + lockbox_supply;
                 if (expected_total_supply != total_supply) {
-                    // This may be added as a rule to ZIP 209 and return a failure in a future soft-fork.
-                    error("%s: chain total supply (%d) does not match sum of pool balances (%d) at height %d", __func__,
-                        total_supply, expected_total_supply, pindex->nHeight);
+                    return AbortNode(
+                        state,
+                        strprintf("%s: chain total supply does not match sum of pool balances at height %d (sprout=%d, sapling=%d, orchard=%d, lockbox=%d, transparent=%d, total=%d)", __func__,
+                                  pindex->nHeight, sprout_supply, sapling_supply, orchard_supply, lockbox_supply, transparent_supply, total_supply),
+                        _("The chain total supply does not match the sum of the pool balances. This indicates a fatal problem with the node's pool accounting. "
+                          "Please restart zcashd with -reindex."));
                 }
             } else {
                 LogPrintf("%s: skipping chain supply consistency check at height %d because chain supply tracking fields are missing\n", __func__,
