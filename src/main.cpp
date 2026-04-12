@@ -5364,6 +5364,16 @@ bool CheckBlockHeader(
     return true;
 }
 
+// Verify that the block's transactions produce the expected Merkle root
+// and that the tree is not malleated (CVE-2012-2459: repeating sequences
+// of transactions can leave the Merkle root unchanged while invalidating
+// the block).
+static bool CheckBlockMerkleRoot(const CBlock& block, bool* mutated)
+{
+    uint256 computedRoot = BlockMerkleRoot(block, mutated);
+    return !*mutated && computedRoot == block.hashMerkleRoot;
+}
+
 bool CheckBlock(const CBlock& block,
                 CValidationState& state,
                 const CChainParams& chainparams,
@@ -5384,18 +5394,16 @@ bool CheckBlock(const CBlock& block,
 
     // Check the merkle root.
     if (fCheckMerkleRoot) {
-        bool mutated;
-        uint256 hashMerkleRoot2 = BlockMerkleRoot(block, &mutated);
-        if (block.hashMerkleRoot != hashMerkleRoot2)
-            return state.DoS(100, error("CheckBlock(): hashMerkleRoot mismatch"),
-                             REJECT_INVALID, "bad-txnmrklroot", true);
-
-        // Check for merkle tree malleability (CVE-2012-2459): repeating sequences
-        // of transactions in a block without affecting the merkle root of a block,
-        // while still invalidating it.
-        if (mutated)
-            return state.DoS(100, error("CheckBlock(): duplicate transaction"),
-                             REJECT_INVALID, "bad-txns-duplicate", true);
+        bool mutated = false;
+        if (!CheckBlockMerkleRoot(block, &mutated)) {
+            if (mutated) {
+                return state.DoS(100, error("CheckBlock(): duplicate transaction"),
+                                 REJECT_INVALID, "bad-txns-duplicate", true);
+            } else {
+                return state.DoS(100, error("CheckBlock(): hashMerkleRoot mismatch"),
+                                 REJECT_INVALID, "bad-txnmrklroot", true);
+            }
+        }
     }
 
     // All potential-corruption validation must be done before we do any
