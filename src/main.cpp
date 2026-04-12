@@ -3712,6 +3712,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             // `nChainTotalSupply` and `nChainTransparentValue` may be unpopulated
             // if a parent block index entry was written by a zcashd version older
             // than `TRANSPARENT_VALUE_VERSION` and so lacks `nChainSupplyDelta`.
+            // This is normally a "reindex required" condition, but on regtest the
+            // `-regtestallowlegacychainsupplydata` flag allows tests that load such
+            // legacy caches to skip the check instead.
             if (pindex->nChainTotalSupply.has_value() && pindex->nChainTransparentValue.has_value()) {
                 const CAmount transparent_supply = pindex->nChainTransparentValue.value();
                 const CAmount total_supply       = pindex->nChainTotalSupply.value();
@@ -3739,9 +3742,14 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                         _("The chain total supply does not match the sum of the pool balances. This indicates a fatal problem with the node's pool accounting. "
                           "Please restart zcashd with -reindex."));
                 }
-            } else {
-                LogPrintf("%s: skipping chain supply consistency check at height %d because chain supply tracking fields are missing\n", __func__,
+            } else if (chainparams.RegTestAllowLegacyChainSupplyData()) {
+                LogPrintf("%s: skipping chain supply consistency check at height %d because chain supply tracking fields are missing (-regtestallowlegacychainsupplydata)\n", __func__,
                           pindex->nHeight);
+            } else if (pindex->nHeight >= chainparams.ChainSupplyCheckpointHeight()) {
+                // The chain supply checkpoint should have injected values at
+                // the checkpoint height. If we're past that height and the
+                // values are still missing, something is wrong.
+                return AbortNode(state, "Chain supply tracking fields are missing; please restart with -reindex to recover.");
             }
         }
 
@@ -4862,10 +4870,7 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block, const Consensus::Params&
     return pindexNew;
 }
 
-void FallbackSproutValuePoolBalance(
-    CBlockIndex *pindex,
-    const CChainParams& chainparams
-)
+void FallbackSproutValuePoolBalance(CBlockIndex *pindex, const CChainParams& chainparams)
 {
     if (!chainparams.ZIP209Enabled()) {
         return;
@@ -4899,6 +4904,66 @@ void FallbackSproutValuePoolBalance(
             );
         }
     }
+}
+
+bool FallbackChainSupplyCheckpoint(CBlockIndex *pindex, const CChainParams& chainparams)
+{
+    // Check if the height of this block matches the chain supply checkpoint
+    if (pindex->nHeight != chainparams.ChainSupplyCheckpointHeight()) {
+        return true;
+    }
+
+    if (!chainparams.ChainSupplyCheckpointBlockHash().IsNull() &&
+        pindex->GetBlockHash() != chainparams.ChainSupplyCheckpointBlockHash()) {
+        return error("%s: checkpoint block hash mismatch at height %d: "
+            "expected %s, got %s",
+            __func__, pindex->nHeight,
+            chainparams.ChainSupplyCheckpointBlockHash().ToString(),
+            pindex->GetBlockHash().ToString());
+    }
+
+    // Verify that the checkpoint pool values sum to the total supply.
+    assert(chainparams.ChainSupplyCheckpointTransparentValue()
+         + chainparams.ChainSupplyCheckpointSproutValue()
+         + chainparams.ChainSupplyCheckpointSaplingValue()
+         + chainparams.ChainSupplyCheckpointOrchardValue()
+         + chainparams.ChainSupplyCheckpointLockboxValue()
+        == chainparams.ChainSupplyCheckpointTotalSupply());
+
+    // Helper: inject a checkpoint value if nullopt, or error if it mismatches.
+    auto applyCheckpoint = [&](const char* fieldName,
+                               std::optional<CAmount>& field,
+                               CAmount expected) -> bool {
+        if (!field.has_value()) {
+            field = expected;
+        } else if (field.value() != expected) {
+            return error("%s: %s mismatch at checkpoint height %d: "
+                "expected %d, got %d. This may indicate chain value corruption; "
+                "please restart with -reindex.",
+                __func__, fieldName, pindex->nHeight,
+                expected, field.value());
+        }
+        return true;
+    };
+
+    return applyCheckpoint("nChainTotalSupply",
+                           pindex->nChainTotalSupply,
+                           chainparams.ChainSupplyCheckpointTotalSupply())
+        && applyCheckpoint("nChainTransparentValue",
+                           pindex->nChainTransparentValue,
+                           chainparams.ChainSupplyCheckpointTransparentValue())
+        && applyCheckpoint("nChainSproutValue",
+                           pindex->nChainSproutValue,
+                           chainparams.ChainSupplyCheckpointSproutValue())
+        && applyCheckpoint("nChainSaplingValue",
+                           pindex->nChainSaplingValue,
+                           chainparams.ChainSupplyCheckpointSaplingValue())
+        && applyCheckpoint("nChainOrchardValue",
+                           pindex->nChainOrchardValue,
+                           chainparams.ChainSupplyCheckpointOrchardValue())
+        && applyCheckpoint("nChainLockboxValue",
+                           pindex->nChainLockboxValue,
+                           chainparams.ChainSupplyCheckpointLockboxValue());
 }
 
 // Set `nChain<pool>Value` fields on `pindex` for Sprout, Sapling, Orchard, and
@@ -5997,9 +6062,16 @@ bool static LoadBlockIndexDB(const CChainParams& chainparams)
             // Fall back to hardcoded Sprout value pool balance
             FallbackSproutValuePoolBalance(pindex, chainparams);
 
+            // Fall back to hardcoded chain supply values, or verify
+            // existing values match the checkpoint.
+            if (!FallbackChainSupplyCheckpoint(pindex, chainparams)) {
+                return false;
+            }
+
             // If developer option -developersetpoolsizezero has been enabled,
-            // override and set the in-memory size of shielded pools to zero.  An unshielding transaction
-            // can then be used to trigger and test the handling of turnstile violations.
+            // override and set the in-memory size of shielded pools to zero.
+            // An unshielding transaction can then be used to trigger and test
+            // the handling of turnstile violations.
             if (fExperimentalDeveloperSetPoolSizeZero) {
                 pindex->nChainSproutValue = 0;
                 pindex->nChainSaplingValue = 0;

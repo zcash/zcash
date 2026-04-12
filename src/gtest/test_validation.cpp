@@ -510,3 +510,143 @@ TEST(Validation, ReceivedBlockTransactions) {
     EnsureUnreferencedAsKeyOfMapBlocksUnlinked(&fakeIndex1);
     EnsureUnreferencedAsKeyOfMapBlocksUnlinked(&fakeIndex2);
 }
+
+extern bool FallbackChainSupplyCheckpoint(CBlockIndex *pindex, const CChainParams& chainparams);
+
+TEST(Validation, FallbackChainSupplyCheckpoint) {
+    // Use mainnet params which have a real checkpoint at NU6.1 activation.
+    const CChainParams& chainparams = Params(CBaseChainParams::MAIN);
+    const int cpHeight = chainparams.ChainSupplyCheckpointHeight();
+    const uint256 cpHash = chainparams.ChainSupplyCheckpointBlockHash();
+    const CAmount cpTotalSupply = chainparams.ChainSupplyCheckpointTotalSupply();
+    const CAmount cpTransparentValue = chainparams.ChainSupplyCheckpointTransparentValue();
+    const CAmount cpSproutValue = chainparams.ChainSupplyCheckpointSproutValue();
+    const CAmount cpSaplingValue = chainparams.ChainSupplyCheckpointSaplingValue();
+    const CAmount cpOrchardValue = chainparams.ChainSupplyCheckpointOrchardValue();
+    const CAmount cpLockboxValue = chainparams.ChainSupplyCheckpointLockboxValue();
+
+    CBlockHeader header;
+
+    // Before the checkpoint, chain values remain nullopt.
+    const uint256 someHash = uint256S("0123456789abcdef");
+    CBlockIndex beforeCheckpoint(header);
+    beforeCheckpoint.nHeight = cpHeight - 1;
+    beforeCheckpoint.phashBlock = &someHash;
+    FallbackChainSupplyCheckpoint(&beforeCheckpoint, chainparams);
+    EXPECT_FALSE(beforeCheckpoint.nChainTotalSupply.has_value());
+    EXPECT_FALSE(beforeCheckpoint.nChainTransparentValue.has_value());
+    EXPECT_FALSE(beforeCheckpoint.nChainSproutValue.has_value());
+    EXPECT_FALSE(beforeCheckpoint.nChainSaplingValue.has_value());
+    EXPECT_FALSE(beforeCheckpoint.nChainOrchardValue.has_value());
+    EXPECT_FALSE(beforeCheckpoint.nChainLockboxValue.has_value());
+
+    // At the checkpoint height with the correct hash, values are injected.
+    CBlockIndex atCheckpoint(header);
+    atCheckpoint.nHeight = cpHeight;
+    atCheckpoint.phashBlock = &cpHash;
+
+    // Initially nullopt.
+    EXPECT_FALSE(atCheckpoint.nChainTotalSupply.has_value());
+    EXPECT_FALSE(atCheckpoint.nChainTransparentValue.has_value());
+    EXPECT_FALSE(atCheckpoint.nChainSproutValue.has_value());
+    EXPECT_FALSE(atCheckpoint.nChainSaplingValue.has_value());
+    EXPECT_FALSE(atCheckpoint.nChainOrchardValue.has_value());
+    EXPECT_FALSE(atCheckpoint.nChainLockboxValue.has_value());
+
+    FallbackChainSupplyCheckpoint(&atCheckpoint, chainparams);
+
+    ASSERT_TRUE(atCheckpoint.nChainTotalSupply.has_value());
+    EXPECT_EQ(atCheckpoint.nChainTotalSupply.value(), cpTotalSupply);
+    ASSERT_TRUE(atCheckpoint.nChainTransparentValue.has_value());
+    EXPECT_EQ(atCheckpoint.nChainTransparentValue.value(), cpTransparentValue);
+    ASSERT_TRUE(atCheckpoint.nChainSproutValue.has_value());
+    EXPECT_EQ(atCheckpoint.nChainSproutValue.value(), cpSproutValue);
+    ASSERT_TRUE(atCheckpoint.nChainSaplingValue.has_value());
+    EXPECT_EQ(atCheckpoint.nChainSaplingValue.value(), cpSaplingValue);
+    ASSERT_TRUE(atCheckpoint.nChainOrchardValue.has_value());
+    EXPECT_EQ(atCheckpoint.nChainOrchardValue.value(), cpOrchardValue);
+    ASSERT_TRUE(atCheckpoint.nChainLockboxValue.has_value());
+    EXPECT_EQ(atCheckpoint.nChainLockboxValue.value(), cpLockboxValue);
+
+    // If values are already set correctly, the fallback should succeed
+    // and not overwrite them.
+    EXPECT_TRUE(FallbackChainSupplyCheckpoint(&atCheckpoint, chainparams));
+    EXPECT_EQ(atCheckpoint.nChainTotalSupply.value(), cpTotalSupply);
+    EXPECT_EQ(atCheckpoint.nChainTransparentValue.value(), cpTransparentValue);
+    EXPECT_EQ(atCheckpoint.nChainSproutValue.value(), cpSproutValue);
+    EXPECT_EQ(atCheckpoint.nChainSaplingValue.value(), cpSaplingValue);
+    EXPECT_EQ(atCheckpoint.nChainOrchardValue.value(), cpOrchardValue);
+    EXPECT_EQ(atCheckpoint.nChainLockboxValue.value(), cpLockboxValue);
+
+    // If values are set but WRONG, the fallback should return false
+    // (indicating corruption).
+    CBlockIndex wrongTotalSupply(header);
+    wrongTotalSupply.nHeight = cpHeight;
+    wrongTotalSupply.phashBlock = &cpHash;
+    wrongTotalSupply.nChainTotalSupply = 12345;
+    EXPECT_FALSE(FallbackChainSupplyCheckpoint(&wrongTotalSupply, chainparams));
+    EXPECT_EQ(wrongTotalSupply.nChainTotalSupply.value(), 12345);
+
+    CBlockIndex wrongTransparentValue(header);
+    wrongTransparentValue.nHeight = cpHeight;
+    wrongTransparentValue.phashBlock = &cpHash;
+    wrongTransparentValue.nChainTotalSupply = cpTotalSupply;
+    wrongTransparentValue.nChainTransparentValue = 67890;
+    EXPECT_FALSE(FallbackChainSupplyCheckpoint(&wrongTransparentValue, chainparams));
+    EXPECT_EQ(wrongTransparentValue.nChainTransparentValue.value(), 67890);
+
+    CBlockIndex wrongSaplingValue(header);
+    wrongSaplingValue.nHeight = cpHeight;
+    wrongSaplingValue.phashBlock = &cpHash;
+    wrongSaplingValue.nChainTotalSupply = cpTotalSupply;
+    wrongSaplingValue.nChainTransparentValue = cpTransparentValue;
+    wrongSaplingValue.nChainSproutValue = cpSproutValue;
+    wrongSaplingValue.nChainSaplingValue = 99999;
+    EXPECT_FALSE(FallbackChainSupplyCheckpoint(&wrongSaplingValue, chainparams));
+    EXPECT_EQ(wrongSaplingValue.nChainSaplingValue.value(), 99999);
+
+    // After the checkpoint, values accumulate from the injected base.
+
+    // Create a child block one height after the checkpoint, with known deltas.
+    CBlockIndex afterCheckpoint(header);
+    afterCheckpoint.nHeight = cpHeight + 1;
+    afterCheckpoint.phashBlock = &someHash;
+    afterCheckpoint.pprev = &atCheckpoint;
+    afterCheckpoint.nChainSupplyDelta = 312500000; // 3.125 ZEC subsidy
+    afterCheckpoint.nTransparentValue = 200000000; // 2 ZEC transparent delta
+
+    // Simulate the accumulation that LoadBlockIndexDB performs:
+    //   nChainTotalSupply = pprev->nChainTotalSupply + nChainSupplyDelta
+    //   nChainTransparentValue = pprev->nChainTransparentValue + nTransparentValue
+    ASSERT_TRUE(afterCheckpoint.pprev->nChainTotalSupply.has_value());
+    ASSERT_TRUE(afterCheckpoint.nChainSupplyDelta.has_value());
+    afterCheckpoint.nChainTotalSupply =
+        afterCheckpoint.pprev->nChainTotalSupply.value() +
+        afterCheckpoint.nChainSupplyDelta.value();
+
+    ASSERT_TRUE(afterCheckpoint.pprev->nChainTransparentValue.has_value());
+    ASSERT_TRUE(afterCheckpoint.nTransparentValue.has_value());
+    afterCheckpoint.nChainTransparentValue =
+        afterCheckpoint.pprev->nChainTransparentValue.value() +
+        afterCheckpoint.nTransparentValue.value();
+
+    ASSERT_TRUE(afterCheckpoint.nChainTotalSupply.has_value());
+    EXPECT_EQ(afterCheckpoint.nChainTotalSupply.value(), cpTotalSupply + 312500000);
+    ASSERT_TRUE(afterCheckpoint.nChainTransparentValue.has_value());
+    EXPECT_EQ(afterCheckpoint.nChainTransparentValue.value(), cpTransparentValue + 200000000);
+
+    // The fallback should NOT inject at this height (it's past the checkpoint).
+    afterCheckpoint.nChainTotalSupply = std::nullopt;
+    afterCheckpoint.nChainTransparentValue = std::nullopt;
+    afterCheckpoint.nChainSproutValue = std::nullopt;
+    afterCheckpoint.nChainSaplingValue = std::nullopt;
+    afterCheckpoint.nChainOrchardValue = std::nullopt;
+    afterCheckpoint.nChainLockboxValue = std::nullopt;
+    FallbackChainSupplyCheckpoint(&afterCheckpoint, chainparams);
+    EXPECT_FALSE(afterCheckpoint.nChainTotalSupply.has_value());
+    EXPECT_FALSE(afterCheckpoint.nChainTransparentValue.has_value());
+    EXPECT_FALSE(afterCheckpoint.nChainSproutValue.has_value());
+    EXPECT_FALSE(afterCheckpoint.nChainSaplingValue.has_value());
+    EXPECT_FALSE(afterCheckpoint.nChainOrchardValue.has_value());
+    EXPECT_FALSE(afterCheckpoint.nChainLockboxValue.has_value());
+}
