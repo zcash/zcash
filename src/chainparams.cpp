@@ -395,7 +395,9 @@ public:
         // This allows nodes with legacy block index data (written by zcashd
         // versions older than 5.4.0, which did not serialize nChainSupplyDelta)
         // to bootstrap nChainTotalSupply and nChainTransparentValue without
-        // requiring a reindex.
+        // requiring a reindex. The other pool balances are included so that
+        // we do not need to trust that the computed values from before the
+        // checkpoint are correct.
         nChainSupplyCheckpointHeight = 3146400;
         nChainSupplyCheckpointTotalSupply = 1640588297804480;
         nChainSupplyCheckpointTransparentValue = 1158133657237751;
