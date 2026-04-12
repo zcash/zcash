@@ -5073,6 +5073,13 @@ bool ReceivedBlockTransactions(
     CBlockIndex *pindexNew,
     const CDiskBlockPos& pos)
 {
+    // Compute per-block pool value deltas first. `SetChainPoolValues` can
+    // fail if the running sum of per-pool values overflows the valid
+    // monetary range. If it does, return without mutating `pindexNew`:
+    // leaving the block index in its prior (header-only) state means
+    // future processing will not consider the block as having data, and
+    // the on-disk block file is harmlessly orphaned (it will be ignored,
+    // or cleaned up by the next reindex).
     if (!SetChainPoolValues(chainparams, block, pindexNew)) {
         return error("ReceivedBlockTransactions(): SetChainPoolValues failed");
     }
