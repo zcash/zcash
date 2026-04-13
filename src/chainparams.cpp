@@ -1028,6 +1028,11 @@ void SelectParams(const std::string& network)
     if (network == CBaseChainParams::REGTEST && mapArgs.count("-regtestchainsupplycheckpoint")) {
         regTestParams.SetRegTestChainSupplyCheckpoint();
     }
+
+    // Enable ZIP 209 enforcement without zeroing shielded pool balances.
+    if (network == CBaseChainParams::REGTEST && mapArgs.count("-regtestenablezip209")) {
+        regTestParams.SetRegTestZIP209Enabled();
+    }
 }
 
 

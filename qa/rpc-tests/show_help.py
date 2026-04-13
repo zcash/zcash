@@ -430,6 +430,10 @@ Debugging/Testing options:
 |       height, to test the checkpoint fallback for legacy block index data
 |       (regtest-only)
 |
+|  -regtestenablezip209
+|       Enable ZIP 209 turnstile enforcement on regtest without zeroing shielded
+|       pool balances (regtest-only)
+|
 |  -fundingstream=streamId:startHeight:endHeight:comma_delimited_addresses
 |       Use given addresses for block subsidy share paid to the funding stream
 |       with id <streamId> (regtest-only)
