@@ -1488,6 +1488,15 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     }
     auto orchard_bundle = tx.GetOrchardBundle();
 
+    // Check Orchard action fields that are not validated by the proof circuit:
+    // - rk must not be the identity (causes a crash in proof verification)
+    // - epk must not be the identity (consensus rule: ephemeralKey must encode
+    //   a non-identity pallas point, per §5.4.9.4 of the protocol spec)
+    if (!orchard_bundle.ValidateWithoutProofVerification()) {
+        return state.DoS(100, error("CheckTransaction(): invalid Orchard action field encoding"),
+                         REJECT_INVALID, "bad-orchard-action-identity-point");
+    }
+
     // Transactions must contain some potential source of funds. This rejects
     // obviously-invalid transaction constructions early, but cannot prevent
     // e.g. a pure Sapling transaction with only dummy spends (which is
@@ -1883,7 +1892,11 @@ bool AcceptToMemoryPool(
         // Bring the best block into scope
         view.GetBestBlock();
 
-        nValueIn = view.GetValueIn(tx);
+        try {
+            nValueIn = view.GetValueIn(tx);
+        } catch (const std::runtime_error& e) {
+            return state.DoS(100, false, REJECT_INVALID, "bad-txns-input-value-out-of-range");
+        }
 
         // we have all inputs cached now, so switch back to dummy
         view.SetBackend(dummy);
@@ -1903,7 +1916,12 @@ bool AcceptToMemoryPool(
             return state.DoS(0, false, REJECT_NONSTANDARD, "bad-txns-too-many-sigops", false,
                 strprintf("%d > %d", nSigOps, MAX_STANDARD_TX_SIGOPS));
 
-        CAmount nValueOut = tx.GetValueOut();
+        CAmount nValueOut;
+        try {
+            nValueOut = tx.GetValueOut();
+        } catch (const std::runtime_error& e) {
+            return state.DoS(100, false, REJECT_INVALID, "bad-txns-output-value-out-of-range");
+        }
         CAmount nFees = nValueIn-nValueOut;
         // nModifiedFees includes any fee deltas from PrioritiseTransaction
         CAmount nModifiedFees = nFees;
@@ -2595,17 +2613,28 @@ bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoins
 
         }
 
-        nValueIn += tx.GetShieldedValueIn();
+        try {
+            nValueIn += tx.GetShieldedValueIn();
+        } catch (const std::runtime_error& e) {
+            return state.DoS(100, false, REJECT_INVALID, "bad-txns-inputvalues-outofrange");
+        }
         if (!MoneyRange(nValueIn))
             return state.DoS(100, error("CheckInputs(): shielded input to transparent value pool out of range"),
                              REJECT_INVALID, "bad-txns-inputvalues-outofrange");
 
-        if (nValueIn < tx.GetValueOut())
+        CAmount nValueOut;
+        try {
+            nValueOut = tx.GetValueOut();
+        } catch (const std::runtime_error& e) {
+            return state.DoS(100, false, REJECT_INVALID, "bad-txns-outputvalues-outofrange");
+        }
+
+        if (nValueIn < nValueOut)
             return state.DoS(100, false, REJECT_INVALID, "bad-txns-in-belowout", false,
-                strprintf("value in (%s) < value out (%s)", FormatMoney(nValueIn), FormatMoney(tx.GetValueOut())));
+                strprintf("value in (%s) < value out (%s)", FormatMoney(nValueIn), FormatMoney(nValueOut)));
 
         // Tally transaction fees
-        CAmount nTxFee = nValueIn - tx.GetValueOut();
+        CAmount nTxFee = nValueIn - nValueOut;
         if (nTxFee < 0)
             return state.DoS(100, false, REJECT_INVALID, "bad-txns-fee-negative");
         nFees += nTxFee;
@@ -3269,6 +3298,10 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     // Initialize the chain supply delta to the value delta of the lockbox for the block,
     // as previously computed using `SetChainPoolValues`.
     CAmount chainSupplyDelta = pindex->nLockboxValue;
+    if (!MoneyDeltaRange(chainSupplyDelta)) {
+        return state.DoS(100, error("%s: chain supply delta out of range: %d at height %d", __func__, chainSupplyDelta, pindex->nHeight),
+            REJECT_INVALID, "bad-chain-supply-delta-out-of-range");
+    }
     CAmount transparentValueDelta = 0;
     size_t total_sapling_tx = 0;
     size_t total_orchard_tx = 0;
@@ -3307,6 +3340,10 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             for (const auto& input : tx.vin) {
                 const auto prevout = view.GetOutputFor(input);
                 transparentValueDelta -= prevout.nValue;
+                if (!MoneyDeltaRange(transparentValueDelta)) {
+                    return state.DoS(100, error("%s: transparent value delta out of range: %d at height %d", __func__, transparentValueDelta, pindex->nHeight),
+                        REJECT_INVALID, "bad-transparent-value-delta-out-of-range");
+                }
                 allPrevOutputs.push_back(prevout);
             }
 
@@ -3372,15 +3409,42 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             //   the subtractions from `nLockboxValue` in `SetChainPoolValues`.
             // - This includes fees, which are then canceled out by the fee subtractions
             //   in the other branch of this conditional.
-            chainSupplyDelta += tx.GetValueOut();
+            try {
+                chainSupplyDelta += tx.GetValueOut();
+            } catch (const std::runtime_error& e) {
+                return state.DoS(100, error("%s: coinbase output value out of range at height %d", __func__, pindex->nHeight),
+                    REJECT_INVALID, "bad-cb-output-value-out-of-range");
+            }
+            if (!MoneyDeltaRange(chainSupplyDelta)) {
+                return state.DoS(100, error("%s: chain supply delta out of range: %d at height %d", __func__, chainSupplyDelta, pindex->nHeight),
+                    REJECT_INVALID, "bad-chain-supply-delta-out-of-range");
+            }
         } else {
-            const auto txFee = view.GetValueIn(tx) - tx.GetValueOut();
+            CAmount txFee;
+            try {
+                txFee = view.GetValueIn(tx) - tx.GetValueOut();
+            } catch (const std::runtime_error& e) {
+                return state.DoS(100, error("%s: tx value out of range at height %d", __func__, pindex->nHeight),
+                    REJECT_INVALID, "bad-txns-value-out-of-range");
+            }
+            if (!MoneyRange(txFee)) {
+                return state.DoS(100, error("%s: transaction fee out of range: %d at height %d", __func__, txFee, pindex->nHeight),
+                    REJECT_INVALID, "bad-txns-fee-out-of-range");
+            }
             nFees += txFee;
+            if (!MoneyRange(nFees)) {
+                return state.DoS(100, error("%s: total fees out of range: %d at height %d", __func__, nFees, pindex->nHeight),
+                    REJECT_INVALID, "bad-txns-total-fees-out-of-range");
+            }
 
             // Fees from a transaction do not go into an output of the transaction,
             // and therefore decrease the chain supply. If the miner claims them,
             // they will be re-added in the other branch of this conditional.
             chainSupplyDelta -= txFee;
+            if (!MoneyDeltaRange(chainSupplyDelta)) {
+                return state.DoS(100, error("%s: chain supply delta out of range: %d at height %d", __func__, chainSupplyDelta, pindex->nHeight),
+                    REJECT_INVALID, "bad-chain-supply-delta-out-of-range");
+            }
 
             std::vector<CScriptCheck> vChecks;
             if (!ContextualCheckInputs(tx, state, view, fExpensiveChecks, flags, fCacheResults, txdata.back(), consensusParams, consensusBranchId, nScriptCheckThreads ? &vChecks : NULL))
@@ -3487,6 +3551,10 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
         for (const auto& out : tx.vout) {
             transparentValueDelta += out.nValue;
+            if (!MoneyDeltaRange(transparentValueDelta)) {
+                return state.DoS(100, error("%s: transparent value delta out of range: %d at height %d", __func__, transparentValueDelta, pindex->nHeight),
+                    REJECT_INVALID, "bad-transparent-value-delta-out-of-range");
+            }
         }
 
         if (tx.GetSaplingBundle().IsPresent()) {
@@ -3522,13 +3590,33 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         pindex->nTransparentValue = transparentValueDelta;
         if (pindex->pprev) {
             if (pindex->pprev->nChainTotalSupply) {
-                pindex->nChainTotalSupply = *pindex->pprev->nChainTotalSupply + chainSupplyDelta;
+                CAmount chainTotalSupply = pindex->pprev->nChainTotalSupply.value();
+                if (!MoneyRange(chainTotalSupply)) {
+                    return state.DoS(100, error("%s: previous total supply out of range: %d at height %d", __func__, chainTotalSupply, pindex->nHeight),
+                        REJECT_INVALID, "bad-chain-total-supply-out-of-range");
+                }
+                chainTotalSupply += chainSupplyDelta;
+                if (!MoneyRange(chainTotalSupply)) {
+                    return state.DoS(100, error("%s: new total supply out of range: %d at height %d", __func__, chainTotalSupply, pindex->nHeight),
+                        REJECT_INVALID, "bad-chain-total-supply-out-of-range");
+                }
+                pindex->nChainTotalSupply = chainTotalSupply;
             } else {
                 pindex->nChainTotalSupply = std::nullopt;
             }
 
             if (pindex->pprev->nChainTransparentValue) {
-                pindex->nChainTransparentValue = *pindex->pprev->nChainTransparentValue + transparentValueDelta;
+                CAmount chainTransparentValue = pindex->pprev->nChainTransparentValue.value();
+                if (!MoneyRange(chainTransparentValue)) {
+                    return state.DoS(100, error("%s: previous chain transparent value out of range: %d at height %d", __func__, chainTransparentValue, pindex->nHeight),
+                        REJECT_INVALID, "bad-chain-transparent-value-out-of-range");
+                }
+                chainTransparentValue += transparentValueDelta;
+                if (!MoneyRange(chainTransparentValue)) {
+                    return state.DoS(100, error("%s: new chain transparent value out of range: %d at height %d", __func__, chainTransparentValue, pindex->nHeight),
+                        REJECT_INVALID, "bad-chain-transparent-value-out-of-range");
+                }
+                pindex->nChainTransparentValue = chainTransparentValue;
             } else {
                 pindex->nChainTransparentValue = std::nullopt;
             }
@@ -3645,8 +3733,23 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     int64_t nTime1 = GetTimeMicros(); nTimeConnect += nTime1 - nTimeStart;
     LogPrint("bench", "      - Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs]\n", (unsigned)block.vtx.size(), 0.001 * (nTime1 - nTimeStart), 0.001 * (nTime1 - nTimeStart) / block.vtx.size(), nInputs <= 1 ? 0 : 0.001 * (nTime1 - nTimeStart) / (nInputs-1), nTimeConnect * 0.000001);
 
-    CAmount cbTotalOutputValue = block.vtx[0].GetValueOut() + pindex->nLockboxValue;
+    CAmount cbTotalOutputValue;
+    try {
+        cbTotalOutputValue = block.vtx[0].GetValueOut();
+    } catch (const std::runtime_error& e) {
+        return state.DoS(100, error("%s: coinbase output value out of range at height %d", __func__, pindex->nHeight),
+            REJECT_INVALID, "bad-cb-output-value-out-of-range");
+    }
+    cbTotalOutputValue += pindex->nLockboxValue;
+    if (!MoneyRange(cbTotalOutputValue)) {
+        return state.DoS(100, error("%s: coinbase output value out of range at height %d", __func__, pindex->nHeight),
+            REJECT_INVALID, "bad-cb-output-value-out-of-range");
+    }
     CAmount cbTotalInputValue = consensusParams.GetBlockSubsidy(pindex->nHeight) + nFees;
+    if (!MoneyRange(cbTotalInputValue)) {
+        return state.DoS(100, error("%s: coinbase input value out of range at height %d", __func__, pindex->nHeight),
+            REJECT_INVALID, "bad-cb-input-value-out-of-range");
+    }
     if (cbTotalOutputValue > cbTotalInputValue) {
         return state.DoS(100,
             error("%s: coinbase pays too much (actual=%d vs limit=%d)", __func__,
@@ -3674,6 +3777,15 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             pindex->nChainOrchardValue.has_value() &&
             pindex->nChainLockboxValue.has_value())
     {
+        if (!MoneyRange(pindex->nChainTotalSupply.value()) ||
+            !MoneyRange(pindex->nChainTransparentValue.value()) ||
+            !MoneyRange(pindex->nChainSproutValue.value()) ||
+            !MoneyRange(pindex->nChainSaplingValue.value()) ||
+            !MoneyRange(pindex->nChainOrchardValue.value()) ||
+            !MoneyRange(pindex->nChainLockboxValue.value())) {
+            return state.DoS(100, error("%s: chain accounting value out of range at height %d", __func__, pindex->nHeight),
+                REJECT_INVALID, "bad-chain-supply-out-of-range");
+        }
         auto expectedChainSupply =
             pindex->nChainTransparentValue.value() +
             pindex->nChainSproutValue.value() +
@@ -4704,7 +4816,10 @@ void FallbackSproutValuePoolBalance(
 
 // Compute the effect of `block` on the chain supply and the value in each value pool.
 // This requires `pindex->nHeight` and `pindex->pprev` to be set, but nothing else.
-void SetChainPoolValues(
+//
+// Returns false if the block's aggregate per-pool value deltas overflow the
+// valid monetary range at any step of the accumulation.
+bool SetChainPoolValues(
     const CChainParams& chainparams,
     const CBlock &block,
     CBlockIndex *pindex)
@@ -4734,7 +4849,11 @@ void SetChainPoolValues(
         // For the genesis block only, compute the chain supply delta and the transparent
         // output total.
         if (pindex->pprev == nullptr) {
-            chainSupplyDelta = tx.GetValueOut();
+            try {
+                chainSupplyDelta = tx.GetValueOut();
+            } catch (const std::runtime_error& e) {
+                return error("%s: genesis coinbase output value out of range", __func__);
+            }
             for (const auto& out : tx.vout) {
                 transparentValueDelta += out.nValue;
             }
@@ -4744,14 +4863,26 @@ void SetChainPoolValues(
         // and adds it to the Sapling value pool. Positive valueBalanceSapling "gives"
         // money to the transparent value pool, removing from the Sapling value
         // pool. So we invert the sign here.
-        saplingValue += -tx.GetValueBalanceSapling();
+        saplingValue -= tx.GetValueBalanceSapling();
+        if (!MoneyDeltaRange(saplingValue)) {
+            return error("%s: sapling value delta out of range: %d at height %d", __func__, saplingValue, pindex->nHeight);
+        }
 
         // valueBalanceOrchard behaves the same way as valueBalanceSapling.
-        orchardValue += -tx.GetOrchardBundle().GetValueBalance();
+        orchardValue -= tx.GetOrchardBundle().GetValueBalance();
+        if (!MoneyDeltaRange(orchardValue)) {
+            return error("%s: orchard value delta out of range: %d at height %d", __func__, orchardValue, pindex->nHeight);
+        }
 
         for (auto js : tx.vJoinSplit) {
             sproutValue += js.vpub_old;
+            if (!MoneyDeltaRange(sproutValue)) {
+                return error("%s: sprout value delta out of range: %d at height %d", __func__, sproutValue, pindex->nHeight);
+            }
             sproutValue -= js.vpub_new;
+            if (!MoneyDeltaRange(sproutValue)) {
+                return error("%s: sprout value delta out of range: %d at height %d", __func__, sproutValue, pindex->nHeight);
+            }
         }
     }
 
@@ -4776,6 +4907,8 @@ void SetChainPoolValues(
     pindex->nChainOrchardValue = std::nullopt;
     pindex->nLockboxValue = lockboxValue;
     pindex->nChainLockboxValue = std::nullopt;
+
+    return true;
 }
 
 /**
@@ -4789,6 +4922,10 @@ bool ReceivedBlockTransactions(
     CBlockIndex *pindexNew,
     const CDiskBlockPos& pos)
 {
+    if (!SetChainPoolValues(chainparams, block, pindexNew)) {
+        return error("ReceivedBlockTransactions(): SetChainPoolValues failed");
+    }
+
     pindexNew->nTx = block.vtx.size();
     pindexNew->nChainTx = 0;
 
@@ -4815,30 +4952,46 @@ bool ReceivedBlockTransactions(
                 // place that we have a valid coins view with which to compute
                 // the transparent input value and fees.
 
-                // Calculate the block's effect on the Sprout chain value pool balance.
-                if (pindex->pprev->nChainSproutValue && pindex->nSproutValue) {
-                    pindex->nChainSproutValue = *pindex->pprev->nChainSproutValue + *pindex->nSproutValue;
+                // Calculate the block's effect on the Sapling chain value pool balance.
+                if (pindex->pprev->nChainSproutValue.has_value() && pindex->nSproutValue.has_value()) {
+                    CAmount chainSproutValue = pindex->pprev->nChainSproutValue.value();
+                    if (!MoneyRange(chainSproutValue) || !MoneyDeltaRange(pindex->nSproutValue.value())) {
+                        return error("%s: previous sprout pool value out of range at height %d", __func__, pindex->nHeight);
+                    }
+                    pindex->nChainSproutValue = chainSproutValue + pindex->nSproutValue.value();
                 } else {
                     pindex->nChainSproutValue = std::nullopt;
                 }
 
                 // Calculate the block's effect on the Sapling chain value pool balance.
-                if (pindex->pprev->nChainSaplingValue) {
-                    pindex->nChainSaplingValue = *pindex->pprev->nChainSaplingValue + pindex->nSaplingValue;
+                if (pindex->pprev->nChainSaplingValue.has_value()) {
+                    CAmount chainSaplingValue = pindex->pprev->nChainSaplingValue.value();
+                    if (!MoneyRange(chainSaplingValue) || !MoneyDeltaRange(pindex->nSaplingValue)) {
+                        return error("%s: previous sapling pool value out of range at height %d", __func__, pindex->nHeight);
+                    }
+                    pindex->nChainSaplingValue = chainSaplingValue + pindex->nSaplingValue;
                 } else {
                     pindex->nChainSaplingValue = std::nullopt;
                 }
 
                 // Calculate the block's effect on the Orchard chain value pool balance.
-                if (pindex->pprev->nChainOrchardValue) {
-                    pindex->nChainOrchardValue = *pindex->pprev->nChainOrchardValue + pindex->nOrchardValue;
+                if (pindex->pprev->nChainOrchardValue.has_value()) {
+                    CAmount chainOrchardValue = pindex->pprev->nChainOrchardValue.value();
+                    if (!MoneyRange(chainOrchardValue) || !MoneyDeltaRange(pindex->nOrchardValue)) {
+                        return error("%s: previous orchard pool value out of range at height %d", __func__, pindex->nHeight);
+                    }
+                    pindex->nChainOrchardValue = chainOrchardValue + pindex->nOrchardValue;
                 } else {
                     pindex->nChainOrchardValue = std::nullopt;
                 }
 
                 // Calculate the block's effect on the Lockbox balance
-                if (pindex->pprev->nChainLockboxValue) {
-                    pindex->nChainLockboxValue = *pindex->pprev->nChainLockboxValue + pindex->nLockboxValue;
+                if (pindex->pprev->nChainLockboxValue.has_value()) {
+                    CAmount chainLockboxValue = pindex->pprev->nChainLockboxValue.value();
+                    if (!MoneyRange(chainLockboxValue) || !MoneyDeltaRange(pindex->nLockboxValue)) {
+                        return error("%s: previous lockbox pool value out of range at height %d", __func__, pindex->nHeight);
+                    }
+                    pindex->nChainLockboxValue = chainLockboxValue + pindex->nLockboxValue;
                 } else {
                     pindex->nChainLockboxValue = std::nullopt;
                 }
@@ -5286,8 +5439,6 @@ static bool AcceptBlock(const CBlock& block, CValidationState& state, const CCha
     if (!AcceptBlockHeader(block, state, chainparams, &pindex))
         return false;
 
-    SetChainPoolValues(chainparams, block, pindex);
-
     // Try to process all requested blocks that we don't have, but only
     // process an unrequested block if it's new and has enough work to
     // advance our tip, and isn't too many blocks ahead.
@@ -5409,7 +5560,9 @@ bool TestBlockValidity(
     CBlockIndex indexDummy(block);
     indexDummy.pprev = pindexPrev;
     indexDummy.nHeight = pindexPrev->nHeight + 1;
-    SetChainPoolValues(chainparams, block, &indexDummy);
+    if (!SetChainPoolValues(chainparams, block, &indexDummy)) {
+        return false;
+    }
 
     // JoinSplit proofs are verified in ConnectBlock
     auto verifier = ProofVerifier::Disabled();
@@ -5629,38 +5782,90 @@ bool static LoadBlockIndexDB(const CChainParams& chainparams)
                 if (pindex->pprev->nChainTx) {
                     pindex->nChainTx = pindex->pprev->nChainTx + pindex->nTx;
 
-                    if (pindex->pprev->nChainTotalSupply && pindex->nChainSupplyDelta) {
-                        pindex->nChainTotalSupply = *pindex->pprev->nChainTotalSupply + *pindex->nChainSupplyDelta;
+                    // Pre-addition range checks to prevent signed integer
+                    // overflow (UB). On-disk per-block deltas could be
+                    // corrupted, so we cannot assume they are in range.
+
+                    if (pindex->pprev->nChainTotalSupply.has_value() && pindex->nChainSupplyDelta.has_value()) {
+                        CAmount chainTotalSupply = pindex->pprev->nChainTotalSupply.value();
+                        if (!MoneyRange(chainTotalSupply) || !MoneyDeltaRange(pindex->nChainSupplyDelta.value())) {
+                            return error("%s: previous total supply value out of range at height %d", __func__, pindex->nHeight);
+                        }
+                        chainTotalSupply += pindex->nChainSupplyDelta.value();
+                        if (!MoneyRange(chainTotalSupply)) {
+                            return error("%s: new total supply value out of range at height %d", __func__, pindex->nHeight);
+                        }
+                        pindex->nChainTotalSupply = chainTotalSupply;
                     } else {
                         pindex->nChainTotalSupply = std::nullopt;
                     }
 
-                    if (pindex->pprev->nChainTransparentValue && pindex->nTransparentValue) {
-                        pindex->nChainTransparentValue = *pindex->pprev->nChainTransparentValue + *pindex->nTransparentValue;
+                    if (pindex->pprev->nChainTransparentValue.has_value() && pindex->nTransparentValue.has_value()) {
+                        CAmount chainTransparentValue = pindex->pprev->nChainTransparentValue.value();
+                        if (!MoneyRange(chainTransparentValue) || !MoneyDeltaRange(pindex->nTransparentValue.value())) {
+                            return error("%s: previous transparent value out of range at height %d", __func__, pindex->nHeight);
+                        }
+                        chainTransparentValue += pindex->nTransparentValue.value();
+                        if (!MoneyRange(chainTransparentValue)) {
+                            return error("%s: new transparent value out of range at height %d", __func__, pindex->nHeight);
+                        }
+                        pindex->nChainTransparentValue = chainTransparentValue;
                     } else {
                         pindex->nChainTransparentValue = std::nullopt;
                     }
 
-                    if (pindex->pprev->nChainSproutValue && pindex->nSproutValue) {
-                        pindex->nChainSproutValue = *pindex->pprev->nChainSproutValue + *pindex->nSproutValue;
+                    if (pindex->pprev->nChainSproutValue.has_value() && pindex->nSproutValue.has_value()) {
+                        CAmount chainSproutValue = pindex->pprev->nChainSproutValue.value();
+                        if (!MoneyRange(chainSproutValue) || !MoneyDeltaRange(pindex->nSproutValue.value())) {
+                            return error("%s: previous sprout value out of range at height %d", __func__, pindex->nHeight);
+                        }
+                        chainSproutValue += pindex->nSproutValue.value();
+                        if (!MoneyRange(chainSproutValue)) {
+                            return error("%s: new sprout value out of range at height %d", __func__, pindex->nHeight);
+                        }
+                        pindex->nChainSproutValue = chainSproutValue;
                     } else {
                         pindex->nChainSproutValue = std::nullopt;
                     }
 
-                    if (pindex->pprev->nChainSaplingValue) {
-                        pindex->nChainSaplingValue = *pindex->pprev->nChainSaplingValue + pindex->nSaplingValue;
+                    if (pindex->pprev->nChainSaplingValue.has_value()) {
+                        CAmount chainSaplingValue = pindex->pprev->nChainSaplingValue.value();
+                        if (!MoneyRange(chainSaplingValue) || !MoneyDeltaRange(pindex->nSaplingValue)) {
+                            return error("%s: previous sapling value out of range at height %d", __func__, pindex->nHeight);
+                        }
+                        chainSaplingValue += pindex->nSaplingValue;
+                        if (!MoneyRange(chainSaplingValue)) {
+                            return error("%s: new sapling value out of range at height %d", __func__, pindex->nHeight);
+                        }
+                        pindex->nChainSaplingValue = chainSaplingValue;
                     } else {
                         pindex->nChainSaplingValue = std::nullopt;
                     }
 
-                    if (pindex->pprev->nChainOrchardValue) {
-                        pindex->nChainOrchardValue = *pindex->pprev->nChainOrchardValue + pindex->nOrchardValue;
+                    if (pindex->pprev->nChainOrchardValue.has_value()) {
+                        CAmount chainOrchardValue = pindex->pprev->nChainOrchardValue.value();
+                        if (!MoneyRange(chainOrchardValue) || !MoneyDeltaRange(pindex->nOrchardValue)) {
+                            return error("%s: previous orchard value out of range at height %d", __func__, pindex->nHeight);
+                        }
+                        chainOrchardValue += pindex->nOrchardValue;
+                        if (!MoneyRange(chainOrchardValue)) {
+                            return error("%s: new orchard value out of range at height %d", __func__, pindex->nHeight);
+                        }
+                        pindex->nChainOrchardValue = chainOrchardValue;
                     } else {
                         pindex->nChainOrchardValue = std::nullopt;
                     }
 
-                    if (pindex->pprev->nChainLockboxValue) {
-                        pindex->nChainLockboxValue = *pindex->pprev->nChainLockboxValue + pindex->nLockboxValue;
+                    if (pindex->pprev->nChainLockboxValue.has_value()) {
+                        CAmount chainLockboxValue = pindex->pprev->nChainLockboxValue.value();
+                        if (!MoneyRange(chainLockboxValue) || !MoneyDeltaRange(pindex->nLockboxValue)) {
+                            return error("%s: previous lockbox value out of range at height %d", __func__, pindex->nHeight);
+                        }
+                        chainLockboxValue += pindex->nLockboxValue;
+                        if (!MoneyRange(chainLockboxValue)) {
+                            return error("%s: new lockbox value out of range at height %d", __func__, pindex->nHeight);
+                        }
+                        pindex->nChainLockboxValue = chainLockboxValue;
                     } else {
                         pindex->nChainLockboxValue = std::nullopt;
                     }
@@ -6388,7 +6593,6 @@ bool InitBlockIndex(const CChainParams& chainparams)
             if (!WriteBlockToDisk(block, blockPos, chainparams.MessageStart()))
                 return error("LoadBlockIndex(): writing genesis block to disk failed");
             CBlockIndex *pindex = AddToBlockIndex(block, chainparams.GetConsensus());
-            SetChainPoolValues(chainparams, block, pindex);
             setDirtyBlockIndex.insert(pindex);
             if (!ReceivedBlockTransactions(block, state, chainparams, pindex, blockPos)) {
                 return error("LoadBlockIndex(): genesis block not accepted");
