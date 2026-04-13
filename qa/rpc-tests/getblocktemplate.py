@@ -45,6 +45,7 @@ class GetBlockTemplateTest(BitcoinTestFramework):
             "-allowdeprecated=getnewaddress",
             "-allowdeprecated=z_getbalance",
             "-allowdeprecated=gbt_oldhashes",
+            "-regtestallowlegacychainsupplydata",
         ]
         self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, [args] * self.num_nodes)
         self.is_network_split = False

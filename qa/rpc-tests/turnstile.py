@@ -45,6 +45,7 @@ from decimal import Decimal
 BASE_ARGS = [
     '-allowdeprecated=z_getnewaddress',
     '-allowdeprecated=z_getbalance',
+    '-regtestallowlegacychainsupplydata',
 ]
 TURNSTILE_ARGS = ['-experimentalfeatures',
                   '-developersetpoolsizezero']
