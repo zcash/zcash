@@ -1902,8 +1902,12 @@ bool AcceptToMemoryPool(
         view.SetBackend(dummy);
 
         // Check for non-standard pay-to-script-hash in inputs
-        if (chainparams.RequireStandard() && !AreInputsStandard(tx, view, consensusBranchId))
-            return state.Invalid(false, REJECT_NONSTANDARD, "bad-txns-nonstandard-inputs");
+        try {
+            if (chainparams.RequireStandard() && !AreInputsStandard(tx, view, consensusBranchId))
+                return state.Invalid(false, REJECT_NONSTANDARD, "bad-txns-nonstandard-inputs");
+        } catch (const std::runtime_error& e) {
+            return state.DoS(100, false, REJECT_INVALID, "bad-txns-input-value-out-of-range");
+        }
 
         // Check that the transaction doesn't have an excessive number of
         // sigops, making it impossible to mine. Since the coinbase transaction
@@ -1911,7 +1915,11 @@ bool AcceptToMemoryPool(
         // MAX_BLOCK_SIGOPS; we still consider this an invalid rather than
         // merely non-standard transaction.
         unsigned int nSigOps = GetLegacySigOpCount(tx);
-        nSigOps += GetP2SHSigOpCount(tx, view);
+        try {
+            nSigOps += GetP2SHSigOpCount(tx, view);
+        } catch (const std::runtime_error& e) {
+            return state.DoS(100, false, REJECT_INVALID, "bad-txns-input-value-out-of-range");
+        }
         if (nSigOps > MAX_STANDARD_TX_SIGOPS)
             return state.DoS(0, false, REJECT_NONSTANDARD, "bad-txns-too-many-sigops", false,
                 strprintf("%d > %d", nSigOps, MAX_STANDARD_TX_SIGOPS));
@@ -1992,8 +2000,12 @@ bool AcceptToMemoryPool(
         // Check against previous transactions
         // This is done near the end to help prevent CPU exhaustion denial-of-service attacks.
         std::vector<CTxOut> allPrevOutputs;
-        for (const auto& input : tx.vin) {
-            allPrevOutputs.push_back(view.GetOutputFor(input));
+        try {
+            for (const auto& input : tx.vin) {
+                allPrevOutputs.push_back(view.GetOutputFor(input));
+            }
+        } catch (const std::runtime_error& e) {
+            return state.DoS(100, false, REJECT_INVALID, "bad-txns-input-value-out-of-range");
         }
         PrecomputedTransactionData txdata(tx, allPrevOutputs);
         if (!ContextualCheckInputs(tx, state, view, true, STANDARD_SCRIPT_VERIFY_FLAGS, true, txdata, chainparams.GetConsensus(), consensusBranchId))
@@ -2054,14 +2066,18 @@ bool AcceptToMemoryPool(
             // Store transaction in memory
             pool.addUnchecked(hash, entry, setAncestors);
 
-            // Add memory address index
-            if (fAddressIndex) {
-                pool.addAddressIndex(entry, view);
-            }
+            try {
+                // Add memory address index
+                if (fAddressIndex) {
+                    pool.addAddressIndex(entry, view);
+                }
 
-            // insightexplorer: Add memory spent index
-            if (fSpentIndex) {
-                pool.addSpentIndex(entry, view);
+                // insightexplorer: Add memory spent index
+                if (fSpentIndex) {
+                    pool.addSpentIndex(entry, view);
+                }
+            } catch (const std::runtime_error& e) {
+                return state.DoS(100, false, REJECT_INVALID, "bad-txns-input-value-out-of-range");
             }
 
             pool.EnsureSizeLimit();
@@ -2920,12 +2936,19 @@ static DisconnectResult DisconnectBlock(const CBlock& block, CValidationState& s
                 // https://github.com/bitpay/bitcoin/commit/017f548ea6d89423ef568117447e61dd5707ec42#diff-7ec3c68a81efff79b6ca22ac1f1eabbaR2304
                 const CTxIn input = tx.vin[j];
                 if (fAddressIndex && updateIndices) {
-                    const CTxOut &prevout = view.GetOutputFor(input);
+                    CTxOut prevout;
+                    try {
+                        prevout = view.GetOutputFor(input);
+                    } catch (const std::runtime_error& e) {
+                        error("DisconnectBlock(): %s", e.what());
+                        return DISCONNECT_FAILED;
+                    }
                     CScript::ScriptType scriptType = prevout.scriptPubKey.GetType();
                     if (scriptType != CScript::UNKNOWN) {
                         uint160 const addrHash = prevout.scriptPubKey.AddressHash();
 
                         // undo spending activity
+                        assert(MoneyRange(prevout.nValue));
                         addressIndex.push_back(make_pair(
                             CAddressIndexKey(scriptType, addrHash, pindex->nHeight, i, hash, j, true),
                             prevout.nValue * -1));
@@ -3376,7 +3399,13 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                                  REJECT_INVALID, "bad-txns-inputs-missingorspent");
 
             for (const auto& input : tx.vin) {
-                const auto prevout = view.GetOutputFor(input);
+                CTxOut prevout;
+                try {
+                    prevout = view.GetOutputFor(input);
+                } catch (const std::runtime_error& e) {
+                    return state.DoS(100, error("%s: %s", __func__, e.what()),
+                        REJECT_INVALID, "bad-txns-input-value-out-of-range");
+                }
                 transparentValueDelta -= prevout.nValue;
                 if (!MoneyDeltaRange(transparentValueDelta)) {
                     return state.DoS(100, error("%s: transparent value delta out of range: %d at height %d", __func__, transparentValueDelta, pindex->nHeight),
@@ -3431,7 +3460,12 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             // Add in sigops done by pay-to-script-hash inputs;
             // this is to prevent a "rogue miner" from creating
             // an incredibly-expensive-to-validate block.
-            nSigOps += GetP2SHSigOpCount(tx, view);
+            try {
+                nSigOps += GetP2SHSigOpCount(tx, view);
+            } catch (const std::runtime_error& e) {
+                return state.DoS(100, error("%s: %s", __func__, e.what()),
+                                 REJECT_INVALID, "bad-txns-input-value-out-of-range");
+            }
             if (nSigOps > MAX_BLOCK_SIGOPS)
                 return state.DoS(100, error("%s: too many sigops", __func__),
                                  REJECT_INVALID, "bad-blk-sigops");
