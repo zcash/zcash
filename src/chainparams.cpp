@@ -313,7 +313,8 @@ public:
         }
 
         // The best chain should have at least this much work.
-        consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000001517f0d837f57259");
+        // From block 3308324, 2026-04-15.
+        consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000000018bd77669ac52c2f");
 
         /**
          * The message start string should be awesome! ⓩ❤
