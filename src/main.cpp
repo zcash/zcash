@@ -3712,6 +3712,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             // `nChainTotalSupply` and `nChainTransparentValue` may be unpopulated
             // if a parent block index entry was written by a zcashd version older
             // than `TRANSPARENT_VALUE_VERSION` and so lacks `nChainSupplyDelta`.
+            // This is normally a "reindex required" condition, but on regtest the
+            // `-regtestallowlegacychainsupplydata` flag allows tests that load such
+            // legacy caches to skip the check instead.
             if (pindex->nChainTotalSupply.has_value() && pindex->nChainTransparentValue.has_value()) {
                 const CAmount transparent_supply = pindex->nChainTransparentValue.value();
                 const CAmount total_supply       = pindex->nChainTotalSupply.value();
@@ -3739,9 +3742,14 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                         _("The chain total supply does not match the sum of the pool balances. This indicates a fatal problem with the node's pool accounting. "
                           "Please restart zcashd with -reindex."));
                 }
-            } else {
-                LogPrintf("%s: skipping chain supply consistency check at height %d because chain supply tracking fields are missing\n", __func__,
+            } else if (chainparams.RegTestAllowLegacyChainSupplyData()) {
+                LogPrintf("%s: skipping chain supply consistency check at height %d because chain supply tracking fields are missing (-regtestallowlegacychainsupplydata)\n", __func__,
                           pindex->nHeight);
+            } else if (pindex->nHeight >= chainparams.ChainSupplyCheckpointHeight()) {
+                // The chain supply checkpoint should have injected values at
+                // the checkpoint height. If we're past that height and the
+                // values are still missing, something is wrong.
+                return AbortNode(state, "Chain supply tracking fields are missing; please restart with -reindex to recover.");
             }
         }
 
@@ -4862,10 +4870,7 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block, const Consensus::Params&
     return pindexNew;
 }
 
-void FallbackSproutValuePoolBalance(
-    CBlockIndex *pindex,
-    const CChainParams& chainparams
-)
+void FallbackSproutValuePoolBalance(CBlockIndex *pindex, const CChainParams& chainparams)
 {
     if (!chainparams.ZIP209Enabled()) {
         return;
@@ -4899,6 +4904,223 @@ void FallbackSproutValuePoolBalance(
             );
         }
     }
+}
+
+static bool CheckBlockMerkleRoot(const CBlock& block, bool* mutated);
+
+// Compute per-block pool value deltas from a block's transactions and
+// consensus rules. Used by both SetChainPoolValues (when a new block is
+// received) and CheckRecomputedPoolDeltas (when verifying persisted
+// deltas on load).
+//
+// `corruptionHint` is appended to any range-error message, and should be
+// either "" (for newly-received blocks where an overflow implies a bug or
+// malformed block) or a hint telling the user to reindex (for the on-load
+// path where an overflow implies persisted-data corruption).
+//
+// On success, sets sproutValue, saplingValue, orchardValue, and lockboxValue
+// to the corresponding per-block deltas, and returns true. Returns false if
+// any running sum goes out of MoneyDeltaRange.
+static bool ComputePoolDeltas(
+    const CBlock& block,
+    const CChainParams& chainparams,
+    int nHeight,
+    const char* corruptionHint,
+    CAmount& sproutValue,
+    CAmount& saplingValue,
+    CAmount& orchardValue,
+    CAmount& lockboxValue)
+{
+    sproutValue = 0;
+    saplingValue = 0;
+    orchardValue = 0;
+
+    // Each lockbox disbursement produces a negative change to the lockbox value.
+    // Each lockbox funding stream produces a positive change to the lockbox value.
+    lockboxValue = 0;
+    for (auto disbursement : chainparams.GetConsensus().GetLockboxDisbursementsForHeight(nHeight)) {
+        lockboxValue -= disbursement.GetAmount();
+        if (!MoneyDeltaRange(lockboxValue)) {
+            return error("%s: lockbox value delta out of range: %d at height %d.%s", __func__,
+                lockboxValue, nHeight, corruptionHint);
+        }
+    }
+    for (auto elem : chainparams.GetConsensus().GetActiveFundingStreamElements(nHeight)) {
+        if (std::holds_alternative<Consensus::Lockbox>(elem.first)) {
+            lockboxValue += elem.second;
+            if (!MoneyDeltaRange(lockboxValue)) {
+                return error("%s: lockbox value delta out of range: %d at height %d.%s", __func__,
+                    lockboxValue, nHeight, corruptionHint);
+            }
+        }
+    }
+
+    for (const auto& tx : block.vtx) {
+        // Negative valueBalanceSapling "takes" money from the transparent value pool
+        // and adds it to the Sapling value pool. Positive valueBalanceSapling "gives"
+        // money to the transparent value pool, removing from the Sapling value
+        // pool. So we invert the sign here.
+        saplingValue -= tx.GetValueBalanceSapling();
+        if (!MoneyDeltaRange(saplingValue)) {
+            return error("%s: sapling value delta out of range: %d at height %d.%s", __func__,
+                saplingValue, nHeight, corruptionHint);
+        }
+
+        // valueBalanceOrchard behaves the same way as valueBalanceSapling.
+        orchardValue -= tx.GetOrchardBundle().GetValueBalance();
+        if (!MoneyDeltaRange(orchardValue)) {
+            return error("%s: orchard value delta out of range: %d at height %d.%s", __func__,
+                orchardValue, nHeight, corruptionHint);
+        }
+
+        for (const auto& js : tx.vJoinSplit) {
+            sproutValue += js.vpub_old;
+            if (!MoneyDeltaRange(sproutValue)) {
+                return error("%s: sprout value delta out of range: %d at height %d.%s", __func__,
+                    sproutValue, nHeight, corruptionHint);
+            }
+            sproutValue -= js.vpub_new;
+            if (!MoneyDeltaRange(sproutValue)) {
+                return error("%s: sprout value delta out of range: %d at height %d.%s", __func__,
+                    sproutValue, nHeight, corruptionHint);
+            }
+        }
+    }
+
+    return true;
+}
+
+// Recompute shielded pool per-block deltas from the actual block data on
+// disk, returning false if they are inconsistent with the persisted values
+// on `pindex`. This is used during LoadBlockIndexDB for blocks at or after
+// the chain supply checkpoint to ensure that corrupted persisted deltas
+// cannot propagate wrong chain values.
+//
+// The Merkle root is verified against the header (which has already been
+// validated by PoW) to ensure the transactions have not been tampered with
+// on disk. Proofs are NOT re-verified — only pool deltas are recomputed.
+//
+// If fHavePruned is set (indicating intentional pruning), tolerate the
+// block data being missing.
+//
+// Returns false on error or if an inconsistency is detected.
+static bool CheckRecomputedPoolDeltas(const CBlockIndex* pindex, const CChainParams& chainparams, bool fHavePruned)
+{
+    CBlock block;
+    if (!ReadBlockFromDisk(block, pindex, chainparams.GetConsensus())) {
+        if (fHavePruned) {
+            // We cannot check the pool deltas but this is likely because of
+            // intentional pruning. Just trust the persisted deltas in this case.
+            return true;
+        } else {
+            return error("%s: failed to read block at height %d from disk. "
+                "This may indicate on-disk corruption; please restart with -reindex.", __func__,
+                pindex->nHeight);
+        }
+    }
+
+    // Verify that the transactions match the header's Merkle root.
+    bool mutated = false;
+    if (!CheckBlockMerkleRoot(block, &mutated)) {
+        return error("%s: Merkle root check failed at height %d (mutated=%s). "
+            "This may indicate on-disk corruption; please restart with -reindex.", __func__,
+            pindex->nHeight, mutated ? "true" : "false");
+    }
+
+    // Recompute pool deltas from the block data. If an overflow is detected
+    // here, it indicates persisted-deltas corruption (since the same block
+    // was accepted at tip previously), so hint at reindexing.
+    CAmount sproutValue, saplingValue, orchardValue, lockboxValue;
+    if (!ComputePoolDeltas(block, chainparams, pindex->nHeight,
+                           " This may indicate on-disk corruption; please restart with -reindex.",
+                           sproutValue, saplingValue, orchardValue, lockboxValue)) {
+        return false;
+    }
+
+    // Abort if (non-nullopt) persisted differs from recomputed, since that indicates corruption.
+    auto checkDelta = [&](const char* name, CAmount persisted, CAmount recomputed) -> bool {
+        if (persisted != recomputed) {
+            return error("%s: %s mismatch at height %d: persisted %d, recomputed %d. "
+                "This may indicate on-disk corruption; please restart with -reindex.", __func__,
+                name, pindex->nHeight, persisted, recomputed);
+        }
+        return true;
+    };
+
+    // Check recomputed deltas against persisted values.
+    //
+    // nSproutValue may be nullopt on legacy block indexes written before SPROUT_VALUE_VERSION,
+    // but this should not occur at heights >= the chain supply checkpoint.
+    if (!pindex->nSproutValue.has_value()) {
+        return error("%s: Sprout value is nullopt at height %d, which should not occur "
+            "after the chain supply checkpoint at height %d. "
+            "This may indicate on-disk corruption; please restart with -reindex.", __func__,
+            pindex->nHeight, chainparams.ChainSupplyCheckpointHeight());
+    }
+    return checkDelta("nSproutValue", pindex->nSproutValue.value(), sproutValue)
+        && checkDelta("nSaplingValue", pindex->nSaplingValue, saplingValue)
+        && checkDelta("nOrchardValue", pindex->nOrchardValue, orchardValue)
+        && checkDelta("nLockboxValue", pindex->nLockboxValue, lockboxValue);
+}
+
+bool FallbackChainSupplyCheckpoint(CBlockIndex *pindex, const CChainParams& chainparams)
+{
+    // Check if the height of this block matches the chain supply checkpoint
+    if (pindex->nHeight != chainparams.ChainSupplyCheckpointHeight()) {
+        return true;
+    }
+
+    if (!chainparams.ChainSupplyCheckpointBlockHash().IsNull() &&
+        pindex->GetBlockHash() != chainparams.ChainSupplyCheckpointBlockHash()) {
+        return error("%s: checkpoint block hash mismatch at height %d: "
+            "expected %s, got %s",
+            __func__, pindex->nHeight,
+            chainparams.ChainSupplyCheckpointBlockHash().ToString(),
+            pindex->GetBlockHash().ToString());
+    }
+
+    // Verify that the checkpoint pool values sum to the total supply.
+    assert(chainparams.ChainSupplyCheckpointTransparentValue()
+         + chainparams.ChainSupplyCheckpointSproutValue()
+         + chainparams.ChainSupplyCheckpointSaplingValue()
+         + chainparams.ChainSupplyCheckpointOrchardValue()
+         + chainparams.ChainSupplyCheckpointLockboxValue()
+        == chainparams.ChainSupplyCheckpointTotalSupply());
+
+    // Helper: inject a checkpoint value if nullopt, or error if it mismatches.
+    auto applyCheckpoint = [&](const char* fieldName,
+                               std::optional<CAmount>& field,
+                               CAmount expected) -> bool {
+        if (!field.has_value()) {
+            field = expected;
+        } else if (field.value() != expected) {
+            return error("%s: %s mismatch at checkpoint height %d: "
+                "expected %d, got %d. This may indicate chain value corruption; "
+                "please restart with -reindex.",
+                __func__, fieldName, pindex->nHeight,
+                expected, field.value());
+        }
+        return true;
+    };
+
+    return applyCheckpoint("nChainTotalSupply",
+                           pindex->nChainTotalSupply,
+                           chainparams.ChainSupplyCheckpointTotalSupply())
+        && applyCheckpoint("nChainTransparentValue",
+                           pindex->nChainTransparentValue,
+                           chainparams.ChainSupplyCheckpointTransparentValue())
+        && applyCheckpoint("nChainSproutValue",
+                           pindex->nChainSproutValue,
+                           chainparams.ChainSupplyCheckpointSproutValue())
+        && applyCheckpoint("nChainSaplingValue",
+                           pindex->nChainSaplingValue,
+                           chainparams.ChainSupplyCheckpointSaplingValue())
+        && applyCheckpoint("nChainOrchardValue",
+                           pindex->nChainOrchardValue,
+                           chainparams.ChainSupplyCheckpointOrchardValue())
+        && applyCheckpoint("nChainLockboxValue",
+                           pindex->nChainLockboxValue,
+                           chainparams.ChainSupplyCheckpointLockboxValue());
 }
 
 // Set `nChain<pool>Value` fields on `pindex` for Sprout, Sapling, Orchard, and
@@ -4997,34 +5219,22 @@ bool SetChainPoolValues(
     const CBlock &block,
     CBlockIndex *pindex)
 {
-    // the following values are computed here only for the genesis block
-    CAmount chainSupplyDelta = 0;
-    CAmount transparentValueDelta = 0;
-
-    CAmount sproutValue = 0;
-    CAmount saplingValue = 0;
-    CAmount orchardValue = 0;
-
-    // Each lockbox disbursement produces a negative change to the lockbox value.
-    // Each lockbox funding stream produces a positive change to the lockbox value.
-    CAmount lockboxValue = 0;
-    for (auto disbursement : chainparams.GetConsensus().GetLockboxDisbursementsForHeight(pindex->nHeight)) {
-        lockboxValue -= disbursement.GetAmount();
-    }
-    for (auto elem : chainparams.GetConsensus().GetActiveFundingStreamElements(pindex->nHeight)) {
-        if (std::holds_alternative<Consensus::Lockbox>(elem.first)) {
-            lockboxValue += elem.second;
-        }
-    }
-    LogPrint("valuepool", "%s: Lockbox value is %d at height %d", __func__, lockboxValue, pindex->nHeight);
-
     // pindex->pprev is only permitted to be null for the genesis block
     assert (pindex->pprev || pindex->nHeight == 0);
 
-    for (auto tx : block.vtx) {
-        // For the genesis block only, compute the chain supply delta and the transparent
-        // output total.
-        if (pindex->pprev == nullptr) {
+    CAmount sproutValue, saplingValue, orchardValue, lockboxValue;
+    if (!ComputePoolDeltas(block, chainparams, pindex->nHeight, "",
+                           sproutValue, saplingValue, orchardValue, lockboxValue)) {
+        return false;
+    }
+    LogPrint("valuepool", "%s: Lockbox value is %d at height %d", __func__, lockboxValue, pindex->nHeight);
+
+    // These values can only be computed here for the genesis block.
+    // For all other blocks, we update them in ConnectBlock instead.
+    if (pindex->pprev == nullptr) {
+        CAmount chainSupplyDelta = 0;
+        CAmount transparentValueDelta = 0;
+        for (const auto& tx : block.vtx) {
             try {
                 chainSupplyDelta = tx.GetValueOut();
             } catch (const std::runtime_error& e) {
@@ -5034,37 +5244,6 @@ bool SetChainPoolValues(
                 transparentValueDelta += out.nValue;
             }
         }
-
-        // Negative valueBalanceSapling "takes" money from the transparent value pool
-        // and adds it to the Sapling value pool. Positive valueBalanceSapling "gives"
-        // money to the transparent value pool, removing from the Sapling value
-        // pool. So we invert the sign here.
-        saplingValue -= tx.GetValueBalanceSapling();
-        if (!MoneyDeltaRange(saplingValue)) {
-            return error("%s: sapling value delta out of range: %d at height %d", __func__, saplingValue, pindex->nHeight);
-        }
-
-        // valueBalanceOrchard behaves the same way as valueBalanceSapling.
-        orchardValue -= tx.GetOrchardBundle().GetValueBalance();
-        if (!MoneyDeltaRange(orchardValue)) {
-            return error("%s: orchard value delta out of range: %d at height %d", __func__, orchardValue, pindex->nHeight);
-        }
-
-        for (auto js : tx.vJoinSplit) {
-            sproutValue += js.vpub_old;
-            if (!MoneyDeltaRange(sproutValue)) {
-                return error("%s: sprout value delta out of range: %d at height %d", __func__, sproutValue, pindex->nHeight);
-            }
-            sproutValue -= js.vpub_new;
-            if (!MoneyDeltaRange(sproutValue)) {
-                return error("%s: sprout value delta out of range: %d at height %d", __func__, sproutValue, pindex->nHeight);
-            }
-        }
-    }
-
-    // These values can only be computed here for the genesis block.
-    // For all other blocks, we update them in ConnectBlock instead.
-    if (pindex->pprev == nullptr) {
         pindex->nChainSupplyDelta = chainSupplyDelta;
         pindex->nTransparentValue = transparentValueDelta;
     } else {
@@ -5299,6 +5478,16 @@ bool CheckBlockHeader(
     return true;
 }
 
+// Verify that the block's transactions produce the expected Merkle root
+// and that the tree is not malleated (CVE-2012-2459: repeating sequences
+// of transactions can leave the Merkle root unchanged while invalidating
+// the block).
+static bool CheckBlockMerkleRoot(const CBlock& block, bool* mutated)
+{
+    uint256 computedRoot = BlockMerkleRoot(block, mutated);
+    return !*mutated && computedRoot == block.hashMerkleRoot;
+}
+
 bool CheckBlock(const CBlock& block,
                 CValidationState& state,
                 const CChainParams& chainparams,
@@ -5319,18 +5508,16 @@ bool CheckBlock(const CBlock& block,
 
     // Check the merkle root.
     if (fCheckMerkleRoot) {
-        bool mutated;
-        uint256 hashMerkleRoot2 = BlockMerkleRoot(block, &mutated);
-        if (block.hashMerkleRoot != hashMerkleRoot2)
-            return state.DoS(100, error("CheckBlock(): hashMerkleRoot mismatch"),
-                             REJECT_INVALID, "bad-txnmrklroot", true);
-
-        // Check for merkle tree malleability (CVE-2012-2459): repeating sequences
-        // of transactions in a block without affecting the merkle root of a block,
-        // while still invalidating it.
-        if (mutated)
-            return state.DoS(100, error("CheckBlock(): duplicate transaction"),
-                             REJECT_INVALID, "bad-txns-duplicate", true);
+        bool mutated = false;
+        if (!CheckBlockMerkleRoot(block, &mutated)) {
+            if (mutated) {
+                return state.DoS(100, error("CheckBlock(): duplicate transaction"),
+                                 REJECT_INVALID, "bad-txns-duplicate", true);
+            } else {
+                return state.DoS(100, error("CheckBlock(): hashMerkleRoot mismatch"),
+                                 REJECT_INVALID, "bad-txnmrklroot", true);
+            }
+        }
     }
 
     // All potential-corruption validation must be done before we do any
@@ -5914,6 +6101,12 @@ bool static LoadBlockIndexDB(const CChainParams& chainparams)
     if (!pblocktree->LoadBlockIndexGuts(InsertBlockIndex, chainparams))
         return false;
 
+    // Check whether we have ever pruned block & undo files
+    pblocktree->ReadFlag("prunedblockfiles", fHavePruned);
+    if (fHavePruned) {
+        LogPrintf("LoadBlockIndexDB(): Block files have previously been pruned\n");
+    }
+
     // Calculate nChainWork
     vector<pair<int, CBlockIndex*> > vSortedByHeight;
     vSortedByHeight.reserve(mapBlockIndex.size());
@@ -5927,6 +6120,25 @@ bool static LoadBlockIndexDB(const CChainParams& chainparams)
     {
         CBlockIndex* pindex = item.second;
         pindex->nChainWork = (pindex->pprev ? pindex->pprev->nChainWork : 0) + GetBlockProof(*pindex);
+
+        if (pindex->nTx == 0 && pindex->IsValid(BLOCK_PARTIALLY_VALID_TRANSACTIONS)
+                && pindex->nHeight >= chainparams.ChainSupplyCheckpointHeight() && !fHavePruned) {
+            // We want to avoid CheckRecomputedPoolDeltas below being
+            // incorrectly skipped in the `pindex->nTx == 0` case.
+            //
+            // nTx and BLOCK_PARTIALLY_VALID_TRANSACTIONS are set together
+            // in ReceivedBlockTransactions, and neither is ever cleared.
+            // So IsValid(BLOCK_PARTIALLY_VALID_TRANSACTIONS) with nTx == 0
+            // can only arise from block index corruption, not from normal
+            // operation. The !fHavePruned guard is consistent with the fact
+            // that we don't guarantee delta checking on a pruned node.
+
+            return error("%s: block at height %d was previously validated "
+                "but has no transaction data; cannot verify pool deltas. "
+                "Please restart with -reindex.",
+                __func__, pindex->nHeight);
+        }
+
         // We can link the chain of blocks for which we've received transactions at some point.
         // Pruned nodes may have deleted the block.
         if (pindex->nTx > 0) {
@@ -5981,6 +6193,16 @@ bool static LoadBlockIndexDB(const CChainParams& chainparams)
                 pindex->nChainTransparentValue = pindex->nTransparentValue;
             }
 
+            // For blocks at or after the chain supply checkpoint, recompute the
+            // shielded pool deltas from the actual block data on disk and check
+            // the persisted values against them. This protects against corrupted
+            // deltas from the duplicate-header clobbering bug or other on-disk
+            // corruption.
+            if (pindex->nHeight >= chainparams.ChainSupplyCheckpointHeight()
+                    && !CheckRecomputedPoolDeltas(pindex, chainparams, fHavePruned)) {
+                return false;
+            }
+
             // Accumulate per-pool chain values. For blocks with a parent
             // whose nChainTx is zero (unlinked), the chain pool values
             // were already set to nullopt above and AccumulateChainPoolValues
@@ -5997,9 +6219,16 @@ bool static LoadBlockIndexDB(const CChainParams& chainparams)
             // Fall back to hardcoded Sprout value pool balance
             FallbackSproutValuePoolBalance(pindex, chainparams);
 
+            // Fall back to hardcoded chain supply values, or verify
+            // existing values match the checkpoint.
+            if (!FallbackChainSupplyCheckpoint(pindex, chainparams)) {
+                return false;
+            }
+
             // If developer option -developersetpoolsizezero has been enabled,
-            // override and set the in-memory size of shielded pools to zero.  An unshielding transaction
-            // can then be used to trigger and test the handling of turnstile violations.
+            // override and set the in-memory size of shielded pools to zero.
+            // An unshielding transaction can then be used to trigger and test
+            // the handling of turnstile violations.
             if (fExperimentalDeveloperSetPoolSizeZero) {
                 pindex->nChainSproutValue = 0;
                 pindex->nChainSaplingValue = 0;
@@ -6063,11 +6292,6 @@ bool static LoadBlockIndexDB(const CChainParams& chainparams)
             return false;
         }
     }
-
-    // Check whether we have ever pruned block & undo files
-    pblocktree->ReadFlag("prunedblockfiles", fHavePruned);
-    if (fHavePruned)
-        LogPrintf("LoadBlockIndexDB(): Block files have previously been pruned\n");
 
     // Check whether we need to continue reindexing
     bool fReindexing = false;

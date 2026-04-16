@@ -34,6 +34,7 @@ class WalletZSendmanyTest(BitcoinTestFramework):
             '-allowdeprecated=z_getnewaddress',
             '-allowdeprecated=z_getbalance',
             '-allowdeprecated=z_gettotalbalance',
+            '-regtestallowlegacychainsupplydata',
         ]] * self.num_nodes)
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)

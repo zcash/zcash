@@ -51,6 +51,7 @@ class Zip239Test(BitcoinTestFramework):
             nuparams(NU5_BRANCH_ID, 210),
             "-allowdeprecated=getnewaddress",
             "-allowdeprecated=z_getbalance",
+            "-regtestallowlegacychainsupplydata",
         ]] * self.num_nodes)
 
     def cinv_for(self, txid, authDigest=None):

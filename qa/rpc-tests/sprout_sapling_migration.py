@@ -59,6 +59,7 @@ class SproutSaplingMigration(BitcoinTestFramework):
         extra_args = [[
             '-allowdeprecated=z_getnewaddress',
             '-allowdeprecated=z_getbalance',
+            '-regtestallowlegacychainsupplydata',
         ]] * self.num_nodes
         # Add migration parameters to nodes[0]
         extra_args[0] = extra_args[0] + [
@@ -66,8 +67,8 @@ class SproutSaplingMigration(BitcoinTestFramework):
             '-migrationdestaddress=' + SAPLING_ADDR,
             '-debug=zrpcunsafe'
         ]
-        assert_equal(5, len(extra_args[0]))
-        assert_equal(2, len(extra_args[1]))
+        assert_equal(6, len(extra_args[0]))
+        assert_equal(3, len(extra_args[1]))
         return start_nodes(self.num_nodes, self.options.tmpdir, extra_args)
 
     def run_migration_test(self, node, sproutAddr, saplingAddr, target_height, sprout_initial_balance):

@@ -168,10 +168,6 @@ class DuplicateBlockClobbersChainValueTest(BitcoinTestFramework):
     def __init__(self):
         super().__init__()
         self.num_nodes = 1
-        # Use the 'sprout' cache: it provides 200 pre-mined blocks with
-        # matured coinbases, so we can do an Orchard shielding without
-        # waiting for coinbase maturity.
-        self.cache_behavior = 'sprout'
 
     def setup_network(self, split=False):
         self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[
