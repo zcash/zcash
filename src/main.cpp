@@ -4906,6 +4906,68 @@ void FallbackSproutValuePoolBalance(CBlockIndex *pindex, const CChainParams& cha
     }
 }
 
+// Compute per-block shielded pool deltas (Sprout, Sapling, Orchard, lockbox)
+// for `block` at `nHeight` from its transactions and consensus rules.
+//
+// On success, sets sproutValue, saplingValue, orchardValue, and lockboxValue
+// to the corresponding per-block deltas, and returns true. Returns false if
+// any running Sprout/Sapling/Orchard sum goes out of MoneyDeltaRange.
+static bool ComputePoolDeltas(
+    const CBlock& block,
+    const CChainParams& chainparams,
+    int nHeight,
+    CAmount& sproutValue,
+    CAmount& saplingValue,
+    CAmount& orchardValue,
+    CAmount& lockboxValue)
+{
+    sproutValue = 0;
+    saplingValue = 0;
+    orchardValue = 0;
+
+    // Each lockbox disbursement produces a negative change to the lockbox value.
+    // Each lockbox funding stream produces a positive change to the lockbox value.
+    lockboxValue = 0;
+    for (auto disbursement : chainparams.GetConsensus().GetLockboxDisbursementsForHeight(nHeight)) {
+        lockboxValue -= disbursement.GetAmount();
+    }
+    for (auto elem : chainparams.GetConsensus().GetActiveFundingStreamElements(nHeight)) {
+        if (std::holds_alternative<Consensus::Lockbox>(elem.first)) {
+            lockboxValue += elem.second;
+        }
+    }
+
+    for (const auto& tx : block.vtx) {
+        // Negative valueBalanceSapling "takes" money from the transparent value pool
+        // and adds it to the Sapling value pool. Positive valueBalanceSapling "gives"
+        // money to the transparent value pool, removing from the Sapling value
+        // pool. So we invert the sign here.
+        saplingValue -= tx.GetValueBalanceSapling();
+        if (!MoneyDeltaRange(saplingValue)) {
+            return error("%s: sapling value delta out of range: %d at height %d", __func__, saplingValue, nHeight);
+        }
+
+        // valueBalanceOrchard behaves the same way as valueBalanceSapling.
+        orchardValue -= tx.GetOrchardBundle().GetValueBalance();
+        if (!MoneyDeltaRange(orchardValue)) {
+            return error("%s: orchard value delta out of range: %d at height %d", __func__, orchardValue, nHeight);
+        }
+
+        for (const auto& js : tx.vJoinSplit) {
+            sproutValue += js.vpub_old;
+            if (!MoneyDeltaRange(sproutValue)) {
+                return error("%s: sprout value delta out of range: %d at height %d", __func__, sproutValue, nHeight);
+            }
+            sproutValue -= js.vpub_new;
+            if (!MoneyDeltaRange(sproutValue)) {
+                return error("%s: sprout value delta out of range: %d at height %d", __func__, sproutValue, nHeight);
+            }
+        }
+    }
+
+    return true;
+}
+
 bool FallbackChainSupplyCheckpoint(CBlockIndex *pindex, const CChainParams& chainparams)
 {
     // Check if the height of this block matches the chain supply checkpoint
@@ -5062,34 +5124,22 @@ bool SetChainPoolValues(
     const CBlock &block,
     CBlockIndex *pindex)
 {
-    // the following values are computed here only for the genesis block
-    CAmount chainSupplyDelta = 0;
-    CAmount transparentValueDelta = 0;
-
-    CAmount sproutValue = 0;
-    CAmount saplingValue = 0;
-    CAmount orchardValue = 0;
-
-    // Each lockbox disbursement produces a negative change to the lockbox value.
-    // Each lockbox funding stream produces a positive change to the lockbox value.
-    CAmount lockboxValue = 0;
-    for (auto disbursement : chainparams.GetConsensus().GetLockboxDisbursementsForHeight(pindex->nHeight)) {
-        lockboxValue -= disbursement.GetAmount();
-    }
-    for (auto elem : chainparams.GetConsensus().GetActiveFundingStreamElements(pindex->nHeight)) {
-        if (std::holds_alternative<Consensus::Lockbox>(elem.first)) {
-            lockboxValue += elem.second;
-        }
-    }
-    LogPrint("valuepool", "%s: Lockbox value is %d at height %d", __func__, lockboxValue, pindex->nHeight);
-
     // pindex->pprev is only permitted to be null for the genesis block
     assert (pindex->pprev || pindex->nHeight == 0);
 
-    for (auto tx : block.vtx) {
-        // For the genesis block only, compute the chain supply delta and the transparent
-        // output total.
-        if (pindex->pprev == nullptr) {
+    CAmount sproutValue, saplingValue, orchardValue, lockboxValue;
+    if (!ComputePoolDeltas(block, chainparams, pindex->nHeight,
+                           sproutValue, saplingValue, orchardValue, lockboxValue)) {
+        return false;
+    }
+    LogPrint("valuepool", "%s: Lockbox value is %d at height %d", __func__, lockboxValue, pindex->nHeight);
+
+    // These values can only be computed here for the genesis block.
+    // For all other blocks, we update them in ConnectBlock instead.
+    if (pindex->pprev == nullptr) {
+        CAmount chainSupplyDelta = 0;
+        CAmount transparentValueDelta = 0;
+        for (const auto& tx : block.vtx) {
             try {
                 chainSupplyDelta = tx.GetValueOut();
             } catch (const std::runtime_error& e) {
@@ -5099,37 +5149,6 @@ bool SetChainPoolValues(
                 transparentValueDelta += out.nValue;
             }
         }
-
-        // Negative valueBalanceSapling "takes" money from the transparent value pool
-        // and adds it to the Sapling value pool. Positive valueBalanceSapling "gives"
-        // money to the transparent value pool, removing from the Sapling value
-        // pool. So we invert the sign here.
-        saplingValue -= tx.GetValueBalanceSapling();
-        if (!MoneyDeltaRange(saplingValue)) {
-            return error("%s: sapling value delta out of range: %d at height %d", __func__, saplingValue, pindex->nHeight);
-        }
-
-        // valueBalanceOrchard behaves the same way as valueBalanceSapling.
-        orchardValue -= tx.GetOrchardBundle().GetValueBalance();
-        if (!MoneyDeltaRange(orchardValue)) {
-            return error("%s: orchard value delta out of range: %d at height %d", __func__, orchardValue, pindex->nHeight);
-        }
-
-        for (auto js : tx.vJoinSplit) {
-            sproutValue += js.vpub_old;
-            if (!MoneyDeltaRange(sproutValue)) {
-                return error("%s: sprout value delta out of range: %d at height %d", __func__, sproutValue, pindex->nHeight);
-            }
-            sproutValue -= js.vpub_new;
-            if (!MoneyDeltaRange(sproutValue)) {
-                return error("%s: sprout value delta out of range: %d at height %d", __func__, sproutValue, pindex->nHeight);
-            }
-        }
-    }
-
-    // These values can only be computed here for the genesis block.
-    // For all other blocks, we update them in ConnectBlock instead.
-    if (pindex->pprev == nullptr) {
         pindex->nChainSupplyDelta = chainSupplyDelta;
         pindex->nTransparentValue = transparentValueDelta;
     } else {
