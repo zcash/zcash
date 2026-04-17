@@ -132,10 +132,16 @@ public:
         return inner->enable_spends();
     }
 
+    /// Validates bundle fields that are not checked during proof verification but
+    /// could cause crashes if malformed or violate consensus rules not enforced
+    /// by the proof circuit. Returns true if all checks pass.
+    bool ValidateWithoutProofVerification() const {
+        return inner->validate_action_encodings();
+    }
+
     bool CoinbaseOutputsAreValid() const {
         return inner->coinbase_outputs_are_valid();
     }
 };
 
 #endif // ZCASH_PRIMITIVES_ORCHARD_H
-

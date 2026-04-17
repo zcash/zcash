@@ -10,7 +10,7 @@
 
 #include <optional>
 
-extern void SetChainPoolValues(
+extern bool SetChainPoolValues(
     const CChainParams& chainparams,
     const CBlock &block,
     CBlockIndex *pindex);
@@ -322,6 +322,63 @@ TEST(Validation, ContextualCheckInputsDetectsOldBranchId) {
     RegtestDeactivateBlossom();
 }
 
+TEST(Validation, SetChainPoolValuesAccumulatesWhenParentIsPopulated) {
+    SelectParams(CBaseChainParams::REGTEST);
+    const auto chainParams = Params();
+    const auto sk = libzcash::SproutSpendingKey::random();
+
+    // Create a fake genesis block
+    CBlock block1;
+    block1.vtx.push_back(GetValidSproutReceive(sk, 5, true));
+    block1.hashMerkleRoot = BlockMerkleRoot(block1);
+    CBlockIndex fakeIndex1 {block1};
+
+    // Create a fake child block
+    CBlock block2;
+    block2.hashPrevBlock = block1.GetHash();
+    block2.vtx.push_back(GetValidSproutReceive(sk, 10, true));
+    block2.hashMerkleRoot = BlockMerkleRoot(block2);
+    CBlockIndex fakeIndex2 {block2};
+    fakeIndex2.pprev = &fakeIndex1;
+
+    CDiskBlockPos pos1;
+    ASSERT_TRUE(fakeIndex1.RaiseValidity(BLOCK_VALID_TREE));
+    ASSERT_TRUE(fakeIndex2.RaiseValidity(BLOCK_VALID_TREE));
+
+    // Fully process the genesis block so it has populated chain values.
+    CValidationState state;
+    {
+        LOCK(cs_main);
+        EXPECT_TRUE(SetChainPoolValues(chainParams, block1, &fakeIndex1));
+        EXPECT_TRUE(ReceivedBlockTransactions(block1, state, chainParams, &fakeIndex1, pos1));
+    }
+
+    // Sanity-check that genesis now has chain values populated.
+    { SCOPED_TRACE("genesis sprout"); ExpectAmount(10, fakeIndex1.nChainSproutValue); }
+    { SCOPED_TRACE("genesis sapling"); ExpectAmount(0, fakeIndex1.nChainSaplingValue); }
+    { SCOPED_TRACE("genesis orchard"); ExpectAmount(0, fakeIndex1.nChainOrchardValue); }
+    { SCOPED_TRACE("genesis lockbox"); ExpectAmount(0, fakeIndex1.nChainLockboxValue); }
+
+    // Call SetChainPoolValues on the child. With the eager accumulation,
+    // the child's chain pool values should be populated immediately, without
+    // needing a subsequent call to ReceivedBlockTransactions.
+    {
+        LOCK(cs_main);
+        EXPECT_TRUE(SetChainPoolValues(chainParams, block2, &fakeIndex2));
+    }
+
+    { SCOPED_TRACE("child sprout"); ExpectAmount(30, fakeIndex2.nChainSproutValue); }
+    { SCOPED_TRACE("child sapling"); ExpectAmount(0, fakeIndex2.nChainSaplingValue); }
+    { SCOPED_TRACE("child orchard"); ExpectAmount(0, fakeIndex2.nChainOrchardValue); }
+    { SCOPED_TRACE("child lockbox"); ExpectAmount(0, fakeIndex2.nChainLockboxValue); }
+
+    // Clean up: ensure that the fake CBlockIndex objects aren't still
+    // referenced by mapBlocksUnlinked (fakeIndex2 was never inserted, but
+    // fakeIndex1 may have been during its own ReceivedBlockTransactions call).
+    EnsureUnreferencedAsKeyOfMapBlocksUnlinked(&fakeIndex1);
+    EnsureUnreferencedAsKeyOfMapBlocksUnlinked(&fakeIndex2);
+}
+
 TEST(Validation, ReceivedBlockTransactions) {
     SelectParams(CBaseChainParams::REGTEST);
     const auto chainParams = Params();
@@ -349,8 +406,8 @@ TEST(Validation, ReceivedBlockTransactions) {
     ASSERT_TRUE(fakeIndex2.RaiseValidity(BLOCK_VALID_TREE));
     EXPECT_TRUE(fakeIndex1.IsValid(BLOCK_VALID_TREE));
     EXPECT_TRUE(fakeIndex2.IsValid(BLOCK_VALID_TREE));
-    EXPECT_FALSE(fakeIndex1.IsValid(BLOCK_VALID_TRANSACTIONS));
-    EXPECT_FALSE(fakeIndex2.IsValid(BLOCK_VALID_TRANSACTIONS));
+    EXPECT_FALSE(fakeIndex1.IsValid(BLOCK_PARTIALLY_VALID_TRANSACTIONS));
+    EXPECT_FALSE(fakeIndex2.IsValid(BLOCK_PARTIALLY_VALID_TRANSACTIONS));
 
     // Sprout pool values should not be set
     EXPECT_FALSE(fakeIndex1.nSproutValue.has_value());
@@ -381,12 +438,12 @@ TEST(Validation, ReceivedBlockTransactions) {
     {
         // Taking cs_main is required even when working on a fake index.
         LOCK(cs_main);
-        SetChainPoolValues(chainParams, block2, &fakeIndex2);
+        EXPECT_TRUE(SetChainPoolValues(chainParams, block2, &fakeIndex2));
         EXPECT_TRUE(ReceivedBlockTransactions(block2, state, chainParams, &fakeIndex2, pos2));
     }
 
-    EXPECT_FALSE(fakeIndex1.IsValid(BLOCK_VALID_TRANSACTIONS));
-    EXPECT_TRUE(fakeIndex2.IsValid(BLOCK_VALID_TRANSACTIONS));
+    EXPECT_FALSE(fakeIndex1.IsValid(BLOCK_PARTIALLY_VALID_TRANSACTIONS));
+    EXPECT_TRUE(fakeIndex2.IsValid(BLOCK_PARTIALLY_VALID_TRANSACTIONS));
 
     // Sprout pool value delta should now be set for the second block,
     // but not any chain totals
@@ -417,11 +474,11 @@ TEST(Validation, ReceivedBlockTransactions) {
     {
         // Taking cs_main is required even when working on a fake index.
         LOCK(cs_main);
-        SetChainPoolValues(chainParams, block1, &fakeIndex1);
+        EXPECT_TRUE(SetChainPoolValues(chainParams, block1, &fakeIndex1));
         EXPECT_TRUE(ReceivedBlockTransactions(block1, state, chainParams, &fakeIndex1, pos1));
     }
-    EXPECT_TRUE(fakeIndex1.IsValid(BLOCK_VALID_TRANSACTIONS));
-    EXPECT_TRUE(fakeIndex2.IsValid(BLOCK_VALID_TRANSACTIONS));
+    EXPECT_TRUE(fakeIndex1.IsValid(BLOCK_PARTIALLY_VALID_TRANSACTIONS));
+    EXPECT_TRUE(fakeIndex2.IsValid(BLOCK_PARTIALLY_VALID_TRANSACTIONS));
 
     // Sprout pool values should now be set for both blocks
     { SCOPED_TRACE("ExpectAmount"); ExpectAmount(10, fakeIndex1.nSproutValue); }
@@ -452,4 +509,144 @@ TEST(Validation, ReceivedBlockTransactions) {
     // first call to ReceivedBlockTransactions, which is removed by the second call.)
     EnsureUnreferencedAsKeyOfMapBlocksUnlinked(&fakeIndex1);
     EnsureUnreferencedAsKeyOfMapBlocksUnlinked(&fakeIndex2);
+}
+
+extern bool FallbackChainSupplyCheckpoint(CBlockIndex *pindex, const CChainParams& chainparams);
+
+TEST(Validation, FallbackChainSupplyCheckpoint) {
+    // Use mainnet params which have a real checkpoint at NU6.1 activation.
+    const CChainParams& chainparams = Params(CBaseChainParams::MAIN);
+    const int cpHeight = chainparams.ChainSupplyCheckpointHeight();
+    const uint256 cpHash = chainparams.ChainSupplyCheckpointBlockHash();
+    const CAmount cpTotalSupply = chainparams.ChainSupplyCheckpointTotalSupply();
+    const CAmount cpTransparentValue = chainparams.ChainSupplyCheckpointTransparentValue();
+    const CAmount cpSproutValue = chainparams.ChainSupplyCheckpointSproutValue();
+    const CAmount cpSaplingValue = chainparams.ChainSupplyCheckpointSaplingValue();
+    const CAmount cpOrchardValue = chainparams.ChainSupplyCheckpointOrchardValue();
+    const CAmount cpLockboxValue = chainparams.ChainSupplyCheckpointLockboxValue();
+
+    CBlockHeader header;
+
+    // Before the checkpoint, chain values remain nullopt.
+    const uint256 someHash = uint256S("0123456789abcdef");
+    CBlockIndex beforeCheckpoint(header);
+    beforeCheckpoint.nHeight = cpHeight - 1;
+    beforeCheckpoint.phashBlock = &someHash;
+    FallbackChainSupplyCheckpoint(&beforeCheckpoint, chainparams);
+    EXPECT_FALSE(beforeCheckpoint.nChainTotalSupply.has_value());
+    EXPECT_FALSE(beforeCheckpoint.nChainTransparentValue.has_value());
+    EXPECT_FALSE(beforeCheckpoint.nChainSproutValue.has_value());
+    EXPECT_FALSE(beforeCheckpoint.nChainSaplingValue.has_value());
+    EXPECT_FALSE(beforeCheckpoint.nChainOrchardValue.has_value());
+    EXPECT_FALSE(beforeCheckpoint.nChainLockboxValue.has_value());
+
+    // At the checkpoint height with the correct hash, values are injected.
+    CBlockIndex atCheckpoint(header);
+    atCheckpoint.nHeight = cpHeight;
+    atCheckpoint.phashBlock = &cpHash;
+
+    // Initially nullopt.
+    EXPECT_FALSE(atCheckpoint.nChainTotalSupply.has_value());
+    EXPECT_FALSE(atCheckpoint.nChainTransparentValue.has_value());
+    EXPECT_FALSE(atCheckpoint.nChainSproutValue.has_value());
+    EXPECT_FALSE(atCheckpoint.nChainSaplingValue.has_value());
+    EXPECT_FALSE(atCheckpoint.nChainOrchardValue.has_value());
+    EXPECT_FALSE(atCheckpoint.nChainLockboxValue.has_value());
+
+    FallbackChainSupplyCheckpoint(&atCheckpoint, chainparams);
+
+    ASSERT_TRUE(atCheckpoint.nChainTotalSupply.has_value());
+    EXPECT_EQ(atCheckpoint.nChainTotalSupply.value(), cpTotalSupply);
+    ASSERT_TRUE(atCheckpoint.nChainTransparentValue.has_value());
+    EXPECT_EQ(atCheckpoint.nChainTransparentValue.value(), cpTransparentValue);
+    ASSERT_TRUE(atCheckpoint.nChainSproutValue.has_value());
+    EXPECT_EQ(atCheckpoint.nChainSproutValue.value(), cpSproutValue);
+    ASSERT_TRUE(atCheckpoint.nChainSaplingValue.has_value());
+    EXPECT_EQ(atCheckpoint.nChainSaplingValue.value(), cpSaplingValue);
+    ASSERT_TRUE(atCheckpoint.nChainOrchardValue.has_value());
+    EXPECT_EQ(atCheckpoint.nChainOrchardValue.value(), cpOrchardValue);
+    ASSERT_TRUE(atCheckpoint.nChainLockboxValue.has_value());
+    EXPECT_EQ(atCheckpoint.nChainLockboxValue.value(), cpLockboxValue);
+
+    // If values are already set correctly, the fallback should succeed
+    // and not overwrite them.
+    EXPECT_TRUE(FallbackChainSupplyCheckpoint(&atCheckpoint, chainparams));
+    EXPECT_EQ(atCheckpoint.nChainTotalSupply.value(), cpTotalSupply);
+    EXPECT_EQ(atCheckpoint.nChainTransparentValue.value(), cpTransparentValue);
+    EXPECT_EQ(atCheckpoint.nChainSproutValue.value(), cpSproutValue);
+    EXPECT_EQ(atCheckpoint.nChainSaplingValue.value(), cpSaplingValue);
+    EXPECT_EQ(atCheckpoint.nChainOrchardValue.value(), cpOrchardValue);
+    EXPECT_EQ(atCheckpoint.nChainLockboxValue.value(), cpLockboxValue);
+
+    // If values are set but WRONG, the fallback should return false
+    // (indicating corruption).
+    CBlockIndex wrongTotalSupply(header);
+    wrongTotalSupply.nHeight = cpHeight;
+    wrongTotalSupply.phashBlock = &cpHash;
+    wrongTotalSupply.nChainTotalSupply = 12345;
+    EXPECT_FALSE(FallbackChainSupplyCheckpoint(&wrongTotalSupply, chainparams));
+    EXPECT_EQ(wrongTotalSupply.nChainTotalSupply.value(), 12345);
+
+    CBlockIndex wrongTransparentValue(header);
+    wrongTransparentValue.nHeight = cpHeight;
+    wrongTransparentValue.phashBlock = &cpHash;
+    wrongTransparentValue.nChainTotalSupply = cpTotalSupply;
+    wrongTransparentValue.nChainTransparentValue = 67890;
+    EXPECT_FALSE(FallbackChainSupplyCheckpoint(&wrongTransparentValue, chainparams));
+    EXPECT_EQ(wrongTransparentValue.nChainTransparentValue.value(), 67890);
+
+    CBlockIndex wrongSaplingValue(header);
+    wrongSaplingValue.nHeight = cpHeight;
+    wrongSaplingValue.phashBlock = &cpHash;
+    wrongSaplingValue.nChainTotalSupply = cpTotalSupply;
+    wrongSaplingValue.nChainTransparentValue = cpTransparentValue;
+    wrongSaplingValue.nChainSproutValue = cpSproutValue;
+    wrongSaplingValue.nChainSaplingValue = 99999;
+    EXPECT_FALSE(FallbackChainSupplyCheckpoint(&wrongSaplingValue, chainparams));
+    EXPECT_EQ(wrongSaplingValue.nChainSaplingValue.value(), 99999);
+
+    // After the checkpoint, values accumulate from the injected base.
+
+    // Create a child block one height after the checkpoint, with known deltas.
+    CBlockIndex afterCheckpoint(header);
+    afterCheckpoint.nHeight = cpHeight + 1;
+    afterCheckpoint.phashBlock = &someHash;
+    afterCheckpoint.pprev = &atCheckpoint;
+    afterCheckpoint.nChainSupplyDelta = 312500000; // 3.125 ZEC subsidy
+    afterCheckpoint.nTransparentValue = 200000000; // 2 ZEC transparent delta
+
+    // Simulate the accumulation that LoadBlockIndexDB performs:
+    //   nChainTotalSupply = pprev->nChainTotalSupply + nChainSupplyDelta
+    //   nChainTransparentValue = pprev->nChainTransparentValue + nTransparentValue
+    ASSERT_TRUE(afterCheckpoint.pprev->nChainTotalSupply.has_value());
+    ASSERT_TRUE(afterCheckpoint.nChainSupplyDelta.has_value());
+    afterCheckpoint.nChainTotalSupply =
+        afterCheckpoint.pprev->nChainTotalSupply.value() +
+        afterCheckpoint.nChainSupplyDelta.value();
+
+    ASSERT_TRUE(afterCheckpoint.pprev->nChainTransparentValue.has_value());
+    ASSERT_TRUE(afterCheckpoint.nTransparentValue.has_value());
+    afterCheckpoint.nChainTransparentValue =
+        afterCheckpoint.pprev->nChainTransparentValue.value() +
+        afterCheckpoint.nTransparentValue.value();
+
+    ASSERT_TRUE(afterCheckpoint.nChainTotalSupply.has_value());
+    EXPECT_EQ(afterCheckpoint.nChainTotalSupply.value(), cpTotalSupply + 312500000);
+    ASSERT_TRUE(afterCheckpoint.nChainTransparentValue.has_value());
+    EXPECT_EQ(afterCheckpoint.nChainTransparentValue.value(), cpTransparentValue + 200000000);
+
+    // The fallback should NOT inject at this height (it's past the checkpoint).
+    afterCheckpoint.nChainTotalSupply = std::nullopt;
+    afterCheckpoint.nChainTransparentValue = std::nullopt;
+    afterCheckpoint.nChainSproutValue = std::nullopt;
+    afterCheckpoint.nChainSaplingValue = std::nullopt;
+    afterCheckpoint.nChainOrchardValue = std::nullopt;
+    afterCheckpoint.nChainLockboxValue = std::nullopt;
+    FallbackChainSupplyCheckpoint(&afterCheckpoint, chainparams);
+    EXPECT_FALSE(afterCheckpoint.nChainTotalSupply.has_value());
+    EXPECT_FALSE(afterCheckpoint.nChainTransparentValue.has_value());
+    EXPECT_FALSE(afterCheckpoint.nChainSproutValue.has_value());
+    EXPECT_FALSE(afterCheckpoint.nChainSaplingValue.has_value());
+    EXPECT_FALSE(afterCheckpoint.nChainOrchardValue.has_value());
+    EXPECT_FALSE(afterCheckpoint.nChainLockboxValue.has_value());
 }

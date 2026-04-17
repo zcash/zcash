@@ -341,7 +341,6 @@ void BlockAssembler::resetBlock(const MinerAddress& minerAddress)
     sproutValue = 0;
     saplingValue = 0;
     orchardValue = 0;
-    monitoring_pool_balances = true;
 
     lastFewTxs = 0;
     blockFinished = false;
@@ -393,28 +392,28 @@ CBlockTemplate* BlockAssembler::CreateNewBlock(
                        ? nMedianTimePast
                        : pblock->GetBlockTime();
 
-    // We want to track the value pool, but if the miner gets
-    // invoked on an old block before the hardcoded fallback
-    // is active we don't want to trip up any assertions. So,
-    // we only adhere to the turnstile (as a miner) if we
-    // actually have all of the information necessary to do
-    // so.
+    // Track the chain pool value pool balances for turnstile enforcement.
+    //
+    // `pindexPrev` is `chainActive.Tip()` (set above), and the active tip is
+    // guaranteed to have populated chain pool values:
+    //
+    // - For Sapling and Orchard, `ConnectBlock` asserts via
+    //   `assert(pindex->nChain*Value.has_value())` that these are populated;
+    //   the active tip could not have been set otherwise.
+    // - For Sprout, `ConnectBlock` halts with a "reindex required" message
+    //   via `AbortNode` if `nChainSproutValue` is missing (which only
+    //   happens with legacy block index data written by clients older than
+    //   `SPROUT_VALUE_VERSION`); the active tip could not have been
+    //   advanced past such a state without the user reindexing first.
+    //
+    // Therefore the assertions below cannot fail in any reachable state.
     if (chainparams.ZIP209Enabled()) {
-        if (pindexPrev->nChainSproutValue) {
-            sproutValue = *pindexPrev->nChainSproutValue;
-        } else {
-            monitoring_pool_balances = false;
-        }
-        if (pindexPrev->nChainSaplingValue) {
-            saplingValue = *pindexPrev->nChainSaplingValue;
-        } else {
-            monitoring_pool_balances = false;
-        }
-        if (pindexPrev->nChainOrchardValue) {
-            orchardValue = *pindexPrev->nChainOrchardValue;
-        } else {
-            monitoring_pool_balances = false;
-        }
+        assert(pindexPrev->nChainSproutValue.has_value());
+        assert(pindexPrev->nChainSaplingValue.has_value());
+        assert(pindexPrev->nChainOrchardValue.has_value());
+        sproutValue = pindexPrev->nChainSproutValue.value();
+        saplingValue = pindexPrev->nChainSaplingValue.value();
+        orchardValue = pindexPrev->nChainOrchardValue.value();
     }
 
     constructZIP317BlockTemplate();
@@ -491,8 +490,8 @@ CBlockTemplate* BlockAssembler::CreateNewBlock(
     pblocktemplate->vTxSigOps[0] = GetLegacySigOpCount(pblock->vtx[0]);
 
     CValidationState state;
-    if (!TestBlockValidity(state, chainparams, *pblock, pindexPrev, true)) {
-        throw std::runtime_error(strprintf("%s: TestBlockValidity failed: %s", __func__, FormatStateMessage(state)));
+    if (!TestNewBlockAtTipValidity(state, chainparams, *pblock, true)) {
+        throw std::runtime_error(strprintf("%s: TestNewBlockAtTipValidity failed: %s", __func__, FormatStateMessage(state)));
     }
 
     return pblocktemplate.release();
@@ -559,7 +558,7 @@ bool BlockAssembler::TestForBlock(CTxMemPool::txiter iter)
     if (IsExpiredTx(iter->GetTx(), nHeight))
         return false;
 
-    if (chainparams.ZIP209Enabled() && monitoring_pool_balances) {
+    if (chainparams.ZIP209Enabled()) {
         // Does this transaction lead to a turnstile violation?
 
         CAmount sproutValueDummy = sproutValue;

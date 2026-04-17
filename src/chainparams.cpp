@@ -392,6 +392,22 @@ public:
         fZIP209Enabled = true;
         hashSproutValuePoolCheckpointBlock = uint256S("0000000000c7b46b6bc04b4cbf87d8bb08722aebd51232619b214f7273f8460e");
 
+        // Chain supply checkpoint at NU6.1 activation (height 3146400).
+        // This allows nodes with legacy block index data (written by zcashd
+        // versions older than 5.4.0, which did not serialize nChainSupplyDelta)
+        // to bootstrap nChainTotalSupply and nChainTransparentValue without
+        // requiring a reindex. The other pool balances are included so that
+        // we do not need to trust that the computed values from before the
+        // checkpoint are correct.
+        nChainSupplyCheckpointHeight = 3146400;
+        nChainSupplyCheckpointTotalSupply = 1640588297804480;
+        nChainSupplyCheckpointTransparentValue = 1158133657237751;
+        nChainSupplyCheckpointSproutValue = 2562695744028;
+        nChainSupplyCheckpointSaplingValue = 64691367655556;
+        nChainSupplyCheckpointOrchardValue = 415200558417145;
+        nChainSupplyCheckpointLockboxValue = 18750000;
+        hashChainSupplyCheckpointBlock = uint256S("0000000000b98a7d8f390793fa113bf6755935f0c14ea817af07d2c16f2c3ef4");
+
         // Founders reward script expects a vector of 2-of-3 multisig addresses
         vFoundersRewardAddress = {
             "t3Vz22vK5z2LcKEdg16Yv4FFneEL1zg9ojd", /* main-index: 0*/
@@ -755,6 +771,16 @@ public:
         fZIP209Enabled = true;
         hashSproutValuePoolCheckpointBlock = uint256S("000a95d08ba5dcbabe881fc6471d11807bcca7df5f1795c99f3ec4580db4279b");
 
+        // Chain supply checkpoint at NU6.1 activation (height 3536500).
+        nChainSupplyCheckpointHeight = 3536500;
+        nChainSupplyCheckpointTotalSupply = 1690647512835043;
+        nChainSupplyCheckpointTransparentValue = 1499728640946163;
+        nChainSupplyCheckpointSproutValue = 42832983037484;
+        nChainSupplyCheckpointSaplingValue = 140562922195481;
+        nChainSupplyCheckpointOrchardValue = 7522947905915;
+        nChainSupplyCheckpointLockboxValue = 18750000;
+        hashChainSupplyCheckpointBlock = uint256S("01b947c7556b23040dc6840e9d3e4c6d9478c67a87b9737a83be848729d6e0af");
+
         // Founders reward script expects a vector of 2-of-3 multisig addresses
         vFoundersRewardAddress = {
             "t2UNzUUx8mWBCRYPRezvA363EYXyEpHokyi", "t2N9PH9Wk9xjqYg9iin1Ua3aekJqfAtE543", "t2NGQjYMQhFndDHguvUw4wZdNdsssA6K7x2", "t2ENg7hHVqqs9JwU5cgjvSbxnT2a9USNfhy",
@@ -939,6 +965,26 @@ public:
     void SetRegTestZIP209Enabled() {
         fZIP209Enabled = true;
     }
+
+    void SetRegTestAllowLegacyChainSupplyData() {
+        fRegTestAllowLegacyChainSupplyData = true;
+    }
+
+    void SetRegTestChainSupplyCheckpoint() {
+        // Hardcoded checkpoint at height 200 (the tip of the regtest caches).
+        // The block hash is left null; FallbackChainSupplyCheckpoint
+        // skips the hash check when it is null.
+        // Values from the sprout regtest cache at height 200.
+        // The sprout cache has 4 × 50 ZEC = 200 ZEC shielded into Sprout.
+        nChainSupplyCheckpointHeight = 200;
+        nChainSupplyCheckpointTotalSupply = 214375000000;
+        nChainSupplyCheckpointTransparentValue = 194375000000;
+        nChainSupplyCheckpointSproutValue = 20000000000;
+        nChainSupplyCheckpointSaplingValue = 0;
+        nChainSupplyCheckpointOrchardValue = 0;
+        nChainSupplyCheckpointLockboxValue = 0;
+        hashChainSupplyCheckpointBlock.SetNull();
+    }
 };
 static CRegTestParams regTestParams;
 
@@ -973,6 +1019,21 @@ void SelectParams(const std::string& network)
 
     // When a developer is debugging turnstile violations in regtest mode, enable ZIP209
     if (network == CBaseChainParams::REGTEST && mapArgs.count("-developersetpoolsizezero")) {
+        regTestParams.SetRegTestZIP209Enabled();
+    }
+
+    // Allow regtest tests that use legacy block index data (lacking nChainSupplyDelta)
+    // to skip the supply consistency check rather than aborting the node.
+    if (network == CBaseChainParams::REGTEST && mapArgs.count("-regtestallowlegacychainsupplydata")) {
+        regTestParams.SetRegTestAllowLegacyChainSupplyData();
+    }
+
+    if (network == CBaseChainParams::REGTEST && mapArgs.count("-regtestchainsupplycheckpoint")) {
+        regTestParams.SetRegTestChainSupplyCheckpoint();
+    }
+
+    // Enable ZIP 209 enforcement without zeroing shielded pool balances.
+    if (network == CBaseChainParams::REGTEST && mapArgs.count("-regtestenablezip209")) {
         regTestParams.SetRegTestZIP209Enabled();
     }
 }

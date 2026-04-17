@@ -25,6 +25,7 @@ class MergeToAddressMixedNotes(BitcoinTestFramework):
             '-allowdeprecated=z_getnewaddress',
             '-allowdeprecated=z_getbalance',
             '-allowdeprecated=z_gettotalbalance',
+            '-regtestallowlegacychainsupplydata',
         ]] * self.num_nodes)
 
     def run_test(self):

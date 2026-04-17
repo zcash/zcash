@@ -31,6 +31,7 @@ extern const std::string MINOR_CURRENCY_UNIT;
  * */
 static const CAmount MAX_MONEY = 21000000 * COIN;
 inline bool MoneyRange(const CAmount& nValue) { return (nValue >= 0 && nValue <= MAX_MONEY); }
+inline bool MoneyDeltaRange(const CAmount& nValue) { return (nValue >= -MAX_MONEY && nValue <= MAX_MONEY); }
 
 /** The legacy default fee that was defined in ZIP 313. */
 static const CAmount LEGACY_DEFAULT_FEE = 1000;

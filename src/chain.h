@@ -157,22 +157,32 @@ enum BlockStatus: uint32_t {
     BLOCK_VALID_TREE         =    2,
 
     /**
-     * Only first tx is coinbase, 2 <= coinbase input script length <= 100, transactions valid, no duplicate txids,
-     * sigops, size, merkle root. Implies all parents are at least TREE but not necessarily TRANSACTIONS. When all
-     * parent blocks also have TRANSACTIONS, CBlockIndex::nChainTx will be set.
+     * Only first tx is coinbase, 2 <= coinbase input script length <= 100, transactions partially valid (see
+     * below), no duplicate txids, sigops, size, merkle root. Implies all parents are at least TREE but not
+     * necessarily PARTIALLY_VALID_TRANSACTIONS. When all parent blocks also have PARTIALLY_VALID_TRANSACTIONS,
+     * CBlockIndex::nChainTx will be set.
+     *
+     * "Partially valid" means that the non-contextual checks performed by `CheckBlock` have passed, but
+     * shielded proofs (Sprout JoinSplit, Sapling Spend/Output, Orchard Action) and signatures have NOT yet
+     * been verified at this validity level. Those are deferred to `ConnectBlock` (which raises validity to
+     * `BLOCK_VALID_CONSENSUS`) for performance reasons (so that proofs are verified at most once, just
+     * before the block is connected to the active chain).
      */
-    BLOCK_VALID_TRANSACTIONS =    3,
+    BLOCK_PARTIALLY_VALID_TRANSACTIONS = 3,
 
     //! Outputs do not overspend inputs, no double spends, coinbase output ok, no immature coinbase spends, BIP30.
     //! Implies all parents are also at least CHAIN.
     BLOCK_VALID_CHAIN        =    4,
 
-    //! Scripts & signatures ok. Implies all parents are also at least SCRIPTS.
-    BLOCK_VALID_SCRIPTS      =    5,
+    //! All consensus rules satisfied: transparent script execution, shielded proofs (Sprout JoinSplit,
+    //! Sapling Spend/Output, Orchard Action), shielded signatures, turnstile/lockbox checks, and all
+    //! other consensus checks performed in `ConnectBlock`. Implies all parents are also at least
+    //! CONSENSUS.
+    BLOCK_VALID_CONSENSUS    =    5,
 
     //! All validity bits.
-    BLOCK_VALID_MASK         =   BLOCK_VALID_HEADER | BLOCK_VALID_TREE | BLOCK_VALID_TRANSACTIONS |
-                                 BLOCK_VALID_CHAIN | BLOCK_VALID_SCRIPTS,
+    BLOCK_VALID_MASK         =   BLOCK_VALID_HEADER | BLOCK_VALID_TREE | BLOCK_PARTIALLY_VALID_TRANSACTIONS |
+                                 BLOCK_VALID_CHAIN | BLOCK_VALID_CONSENSUS,
 
     BLOCK_HAVE_DATA          =    8, //! full block available in blk*.dat
     BLOCK_HAVE_UNDO          =   16, //! undo data available in rev*.dat
@@ -184,10 +194,6 @@ enum BlockStatus: uint32_t {
 
     BLOCK_ACTIVATES_UPGRADE  =   128, //! block activates a network upgrade
 };
-
-//! Short-hand for the highest consensus validity we implement.
-//! Blocks with this validity are assumed to satisfy all consensus rules.
-static const BlockStatus BLOCK_VALID_CONSENSUS = BLOCK_VALID_SCRIPTS;
 
 /** The block chain is a tree shaped structure starting with the
  * genesis block at the root, with each block potentially having multiple
@@ -488,7 +494,7 @@ public:
     }
 
     //! Check whether this block index entry is valid up to the passed validity level.
-    bool IsValid(enum BlockStatus nUpTo = BLOCK_VALID_TRANSACTIONS) const
+    bool IsValid(enum BlockStatus nUpTo = BLOCK_PARTIALLY_VALID_TRANSACTIONS) const
     {
         assert(!(nUpTo & ~BLOCK_VALID_MASK)); // Only validity flags allowed.
         if (nStatus & BLOCK_FAILED_MASK)

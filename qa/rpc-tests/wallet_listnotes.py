@@ -29,6 +29,7 @@ class WalletListNotes(BitcoinTestFramework):
             '-allowdeprecated=z_getnewaddress',
             '-allowdeprecated=z_getbalance',
             '-allowdeprecated=z_gettotalbalance',
+            '-regtestallowlegacychainsupplydata',
         ]] * 4)
 
     def run_test(self):
