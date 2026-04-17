@@ -1027,16 +1027,28 @@ unsigned int CCoinsViewCache::GetCacheSize() const {
     return cacheCoins.size();
 }
 
+// The returned CTxOut has nValue in MoneyRange. This is guaranteed by
+// CheckTransaction for outputs that entered the UTXO set through normal
+// block connection, and re-validated here to defend against on-disk
+// corruption of the chainstate database.
 const CTxOut &CCoinsViewCache::GetOutputFor(const CTxIn& input) const
 {
     const CCoins* coins = AccessCoins(input.prevout.hash);
     assert(coins && coins->IsAvailable(input.prevout.n));
-    return coins->vout[input.prevout.n];
+    const CTxOut& out = coins->vout[input.prevout.n];
+    if (!MoneyRange(out.nValue)) {
+        throw std::runtime_error("CCoinsViewCache::GetOutputFor(): output value out of range");
+    }
+    return out;
 }
 
 CAmount CCoinsViewCache::GetValueIn(const CTransaction& tx) const
 {
-    return GetTransparentValueIn(tx) + tx.GetShieldedValueIn();
+    CAmount nResult = GetTransparentValueIn(tx) + tx.GetShieldedValueIn();
+    if (!MoneyRange(nResult)) {
+        throw std::runtime_error("CCoinsViewCache::GetValueIn(): nResult out of range");
+    }
+    return nResult;
 }
 
 CAmount CCoinsViewCache::GetTransparentValueIn(const CTransaction& tx) const
@@ -1045,8 +1057,12 @@ CAmount CCoinsViewCache::GetTransparentValueIn(const CTransaction& tx) const
         return 0;
 
     CAmount nResult = 0;
-    for (unsigned int i = 0; i < tx.vin.size(); i++)
+    for (unsigned int i = 0; i < tx.vin.size(); i++) {
         nResult += GetOutputFor(tx.vin[i]).nValue;
+        if (!MoneyRange(nResult)) {
+            throw std::runtime_error("CCoinsViewCache::GetTransparentValueIn(): nResult out of range");
+        }
+    }
 
     return nResult;
 }

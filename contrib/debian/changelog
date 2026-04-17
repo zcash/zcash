@@ -1,3 +1,9 @@
+zcash (6.12.1) stable; urgency=high
+
+  * 6.12.1 release.
+
+ -- Zcash Open Development Lab <team@zodl.com>  Fri, 17 Apr 2026 10:32:00 -0600
+
 zcash (6.12.0) stable; urgency=medium
 
   * 6.12.0 release.

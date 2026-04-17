@@ -1282,7 +1282,7 @@ UniValue getchaintips(const UniValue& params, bool fHelp)
         } else if (block->nChainTx == 0) {
             // This block cannot be connected because full block data for it or one of its parents is missing.
             status = "headers-only";
-        } else if (block->IsValid(BLOCK_VALID_SCRIPTS)) {
+        } else if (block->IsValid(BLOCK_VALID_CONSENSUS)) {
             // This block is fully validated, but no longer part of the active chain. It was probably the active block once, but was reorganized.
             status = "valid-fork";
         } else if (block->IsValid(BLOCK_VALID_TREE)) {

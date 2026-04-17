@@ -203,6 +203,25 @@ impl Bundle {
             .into()
     }
 
+    /// Checks action fields that are not validated by the proof circuit:
+    /// - rk must not be the identity (causes a crash in proof verification)
+    /// - epk must not be the identity (consensus rule: ephemeralKey must encode
+    ///   a non-identity pallas point, per protocol spec §5.4.9.4)
+    pub(crate) fn validate_action_encodings(&self) -> bool {
+        if let Some(bundle) = self.inner() {
+            for action in bundle.actions() {
+                let rk_bytes: [u8; 32] = action.rk().into();
+                if rk_bytes == [0u8; 32] {
+                    return false;
+                }
+                if action.encrypted_note().epk_bytes == [0u8; 32] {
+                    return false;
+                }
+            }
+        }
+        true
+    }
+
     /// Returns whether all actions contained in the Orchard bundle can be decrypted with
     /// the all-zeros OVK.
     ///

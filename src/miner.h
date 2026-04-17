@@ -122,7 +122,6 @@ private:
     CAmount sproutValue;
     CAmount saplingValue;
     CAmount orchardValue;
-    bool monitoring_pool_balances;
 
     // Chain context for the block
     int nHeight;

@@ -31,6 +31,7 @@ HAS_CANOPY = [
     '-allowdeprecated=getnewaddress',
     '-allowdeprecated=z_getnewaddress',
     '-allowdeprecated=z_getbalance',
+    '-regtestallowlegacychainsupplydata',
 ]
 
 class RemoveSproutShieldingTest (BitcoinTestFramework):

@@ -227,7 +227,7 @@ CAmount CTransaction::GetValueOut() const
     auto valueBalanceSapling = saplingBundle.GetValueBalance();
     if (valueBalanceSapling <= 0) {
         // NB: negative valueBalanceSapling "takes" money from the transparent value pool just as outputs do
-        if (valueBalanceSapling < -MAX_MONEY) {
+        if (!MoneyDeltaRange(valueBalanceSapling)) {
             throw std::runtime_error("CTransaction::GetValueOut(): valueBalanceSapling out of range");
         }
         nValueOut += -valueBalanceSapling;
@@ -240,7 +240,7 @@ CAmount CTransaction::GetValueOut() const
     auto valueBalanceOrchard = orchardBundle.GetValueBalance();
     if (valueBalanceOrchard <= 0) {
         // NB: negative valueBalanceOrchard "takes" money from the transparent value pool just as outputs do
-        if (valueBalanceOrchard < -MAX_MONEY) {
+        if (!MoneyDeltaRange(valueBalanceOrchard)) {
             throw std::runtime_error("CTransaction::GetValueOut(): valueBalanceOrchard out of range");
         }
         nValueOut += -valueBalanceOrchard;

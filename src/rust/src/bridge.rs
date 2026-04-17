@@ -300,6 +300,7 @@ pub(crate) mod ffi {
         fn anchor(self: &Bundle) -> [u8; 32];
         fn proof(self: &Bundle) -> Vec<u8>;
         fn binding_sig(self: &Bundle) -> [u8; 64];
+        fn validate_action_encodings(self: &Bundle) -> bool;
         fn coinbase_outputs_are_valid(self: &Bundle) -> bool;
     }
 
