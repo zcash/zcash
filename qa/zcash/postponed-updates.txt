@@ -107,6 +107,7 @@ native_rust 1.93.0 2026-07-15
 native_rust 1.93.1 2026-07-15
 native_rust 1.94.0 2026-07-15
 native_rust 1.94.1 2026-07-15
+native_rust 1.95.0 2026-07-15
 
 # Requires MSRV 1.82
 native_cxxbridge 1.0.187 2026-07-15
