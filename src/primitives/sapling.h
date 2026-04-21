@@ -6,6 +6,7 @@
 #define ZCASH_PRIMITIVES_SAPLING_H
 
 #include "amount.h"
+#include "consensus/validation.h"
 #include "streams.h"
 #include "streams_rust.h"
 
@@ -140,7 +141,13 @@ public:
         try {
             inner = sapling::parse_v4_components(*ToRustStream(s), hasSapling);
         } catch (const std::exception& e) {
-            throw std::ios_base::failure(e.what());
+            // All errors from `parse_v4_components` (both the wire-format
+            // parser's I/O errors and the `valueBalanceSapling` consensus
+            // check) are consensus rule violations: the input bytes do not
+            // encode a valid Sapling v4 bundle. Throw `consensus_rule_failure`
+            // so that P2P handlers can distinguish and apply DoS scoring
+            // accordingly.
+            throw consensus_rule_failure(e.what());
         }
     }
 

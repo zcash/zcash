@@ -126,11 +126,13 @@ class SaplingV4ValueBalanceTest(BitcoinTestFramework):
             print("Malformed: valueBalanceSapling = %d must be rejected" % bad_value)
             malformed_hex = bytes_to_hex_str(build_minimal_v4_tx(bad_value))
 
-            # decoderawtransaction must reject. DecodeHexTx swallows the
-            # specific Rust error message and reports "TX decode failed".
+            # decoderawtransaction must reject. The specific Rust error
+            # message propagates as a consensus_rule_failure exception
+            # through DecodeHexTx; its what() is included in the
+            # JSONRPCError.
             assert_raises_message(
                 JSONRPCException,
-                "TX decode failed",
+                "nonzero valueBalanceSapling has no sources or sinks",
                 node.decoderawtransaction,
                 malformed_hex,
             )
@@ -139,7 +141,7 @@ class SaplingV4ValueBalanceTest(BitcoinTestFramework):
             # reject before any consensus check runs.
             assert_raises_message(
                 JSONRPCException,
-                "TX decode failed",
+                "nonzero valueBalanceSapling has no sources or sinks",
                 node.sendrawtransaction,
                 malformed_hex,
             )

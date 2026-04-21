@@ -18,7 +18,23 @@ class UniValue;
 // core_read.cpp
 extern CScript ParseScript(const std::string& s);
 extern std::string ScriptToAsmStr(const CScript& script, const bool fAttemptSighashDecode = false);
-extern bool DecodeHexTx(CTransaction& tx, const std::string& strHexTx);
+
+/**
+ * Deserialize a transaction from a hex string.
+ *
+ * On success, populates `tx`. On failure, throws an exception:
+ *   - `consensus_rule_failure` if the input bytes violate a consensus rule
+ *     (e.g. a structural/type violation enforced at the parsing layer).
+ *     Callers with peer context (i.e. P2P handlers) SHOULD treat this as
+ *     grounds for `Misbehaving(pnode, 100)`.
+ *   - `std::ios_base::failure` for other deserialization failures (not a
+ *     valid hex string, unexpected end of stream, etc.).
+ *
+ * Note: the P2P `tx` and `block` message handlers do not go through this
+ * function; they read directly from a `CDataStream` and must apply the same
+ * policy themselves via a try/catch around the read.
+ */
+extern void DecodeHexTx(CTransaction& tx, const std::string& strHexTx);
 extern bool DecodeHexBlk(CBlock&, const std::string& strHexBlk);
 extern uint256 ParseHashUV(const UniValue& v, const std::string& strName);
 extern uint256 ParseHashStr(const std::string&, const std::string& strName);

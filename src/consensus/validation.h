@@ -7,7 +7,28 @@
 #ifndef BITCOIN_CONSENSUS_VALIDATION_H
 #define BITCOIN_CONSENSUS_VALIDATION_H
 
+#include <ios>
 #include <string>
+
+/**
+ * Exception thrown by deserializers when the input bytes violate a consensus
+ * rule (a structural/type violation enforced at the parsing layer, e.g. a
+ * rule like "Elements of a Spend description MUST be valid encodings of the
+ * types given above" that the spec enforces on well-formedness of the wire
+ * format).
+ *
+ * This is distinct from other `std::ios_base::failure` throws (unexpected
+ * end of stream, resource exhaustion, etc.) that are not consensus rule
+ * violations and therefore do not warrant the same treatment.
+ *
+ * Callers with peer context (i.e. P2P message handlers) SHOULD catch this
+ * specifically and apply `Misbehaving(pnode, 100)`; other parse failures
+ * may be handled more leniently.
+ */
+class consensus_rule_failure : public std::ios_base::failure {
+public:
+    using std::ios_base::failure::failure;
+};
 
 /** "reject" message codes */
 static const unsigned char REJECT_MALFORMED = 0x01;
