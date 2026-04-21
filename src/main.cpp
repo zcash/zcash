@@ -6100,6 +6100,7 @@ bool static LoadBlockIndexDB(const CChainParams& chainparams)
 {
     if (!pblocktree->LoadBlockIndexGuts(InsertBlockIndex, chainparams))
         return false;
+    if (ShutdownRequested()) return true;
 
     // Check whether we have ever pruned block & undo files
     pblocktree->ReadFlag("prunedblockfiles", fHavePruned);
