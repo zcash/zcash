@@ -126,10 +126,10 @@ class SaplingV4Reader
 {
 private:
     rust::Box<sapling::BundleAssembler> inner;
-    bool hasSapling;
+    bool txVersionHasSapling;
 public:
-    SaplingV4Reader(bool hasSapling) :
-        inner(sapling::new_bundle_assembler()), hasSapling(hasSapling) {}
+    SaplingV4Reader(bool txVersionHasSapling) :
+        inner(sapling::new_bundle_assembler()), txVersionHasSapling(txVersionHasSapling) {}
 
     template<typename Stream>
     void Serialize(Stream& s) const {
@@ -139,7 +139,7 @@ public:
     template<typename Stream>
     void Unserialize(Stream& s) {
         try {
-            inner = sapling::parse_v4_components(*ToRustStream(s), hasSapling);
+            inner = sapling::parse_v4_components(*ToRustStream(s), txVersionHasSapling);
         } catch (const std::exception& e) {
             // All errors from `parse_v4_components` (both the wire-format
             // parser's I/O errors and the `valueBalanceSapling` consensus
@@ -169,15 +169,15 @@ class SaplingV4Writer
 {
 private:
     const SaplingBundle& bundle;
-    bool hasSapling;
+    bool txVersionHasSapling;
 public:
-    SaplingV4Writer(const SaplingBundle& bundle, bool hasSapling) :
-        bundle(bundle), hasSapling(hasSapling) {}
+    SaplingV4Writer(const SaplingBundle& bundle, bool txVersionHasSapling) :
+        bundle(bundle), txVersionHasSapling(txVersionHasSapling) {}
 
     template<typename Stream>
     void Serialize(Stream& s) const {
         try {
-            bundle.GetDetails().serialize_v4_components(*ToRustStream(s), hasSapling);
+            bundle.GetDetails().serialize_v4_components(*ToRustStream(s), txVersionHasSapling);
         } catch (const std::exception& e) {
             throw std::ios_base::failure(e.what());
         }
