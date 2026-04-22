@@ -1,0 +1,15 @@
+# Build output
+output/
+artifacts/
+
+# Python
+__pycache__/
+*.pyc
+
+# Docker
+.docker/
+
+# Editor
+*.swp
+*.swo
+*~
