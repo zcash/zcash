@@ -146,6 +146,7 @@ BASE_SCRIPTS= [
     'feature_zip221.py',
     'feature_zip239.py',
     'feature_zip244_blockcommitments.py',
+    'nu5_block_body_poisoning.py',
     'upgrade_golden.py',
     'nuparams.py',
     'post_heartwood_rollback.py',
