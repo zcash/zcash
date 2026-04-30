@@ -5756,6 +5756,66 @@ static bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state
 }
 
 /**
+ * Pre-check that the block's `hashBlockCommitments` is consistent with the
+ * received body's authorizing data, to catch NU5+ body-poisoning attacks
+ * before the body is persisted. This duplicates only the NU5+ branch of
+ * the full `hashBlockCommitments` validation in `ConnectBlock`, which
+ * remains the authoritative check (and the only place pre-NU5 cases
+ * —Heartwood-activation null check, Heartwood-active chain-history-root
+ * check, Sapling tree root check— are validated). Pre-NU5 blocks aren't
+ * body-poisoning vulnerable: those commitments are either independent of
+ * the current block body (Heartwood-activation, Heartwood-active) or
+ * commit to body data (Sapling tree root) that is also covered by
+ * `hashMerkleRoot`.
+ *
+ * `view` must be a coins view positioned at the chain state up to and
+ * including `pindexPrev`. The current caller (`AcceptBlock`) only invokes
+ * this when `pindexPrev == chainActive.Tip()`, so passing `*pcoinsTip`
+ * satisfies the requirement. Reconstructing the chain-history MMR state
+ * at an arbitrary `pindexPrev` would require disconnecting and
+ * reconnecting blocks, so for sidechain blocks the same check fires
+ * later in `ConnectBlock`; the body-replaceable failure path then cleans
+ * up persisted body data for the affected block index entry so that a
+ * different body for the same header can still be accepted.
+ *
+ * On mismatch, returns `state.DoS(100, ..., corruptionIn=true)` so that
+ * `InvalidBlockFound` and `ActivateBestChainStep` do not cache the failure
+ * as permanent header invalidity.
+ */
+static bool CheckBlockBodyAuthCommitment(
+    const CBlock& block,
+    const CBlockIndex* pindexPrev,
+    const CCoinsViewCache& view,
+    const Consensus::Params& consensusParams,
+    CValidationState& state)
+{
+    // Reachable at genesis during a reindex when both `pindexPrev` and
+    // `chainActive.Tip()` are null. NU5 cannot be active at height 0,
+    // so this should be a no-op.
+    if (pindexPrev == nullptr) {
+        return true;
+    }
+
+    int nHeight = pindexPrev->nHeight + 1;
+    if (!consensusParams.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU5)) {
+        return true;
+    }
+
+    auto prevConsensusBranchId = CurrentEpochBranchId(pindexPrev->nHeight, consensusParams);
+    uint256 hashAuthDataRoot = block.BuildAuthDataMerkleTree();
+    uint256 hashChainHistoryRoot = view.GetHistoryRoot(prevConsensusBranchId);
+    uint256 hashBlockCommitments = DeriveBlockCommitmentsHash(
+        hashChainHistoryRoot,
+        hashAuthDataRoot);
+    if (block.hashBlockCommitments != hashBlockCommitments) {
+        return state.DoS(100,
+            error("%s: block's hashBlockCommitments is incorrect (should be ZIP 244 block commitment)", __func__),
+            REJECT_INVALID, "bad-block-commitments-hash", true /* corruptionIn */);
+    }
+    return true;
+}
+
+/**
  * Store block on disk.
  * If dbp is non-NULL, the file is known to already reside on disk.
  *
@@ -5810,6 +5870,20 @@ static bool AcceptBlock(const CBlock& block, CValidationState& state, const CCha
             setDirtyBlockIndex.insert(pindex);
         }
         return false;
+    }
+
+    // Body-vs-header commitment pre-check for active-tip extensions: catches
+    // NU5+ body-poisoning attacks before the body is persisted to disk and
+    // BLOCK_HAVE_DATA is set on the index entry. For sidechain blocks the
+    // check has to wait until ConnectBlock (since reconstructing the chain
+    // history MMR at an arbitrary `pprev` is infeasible); the body-replaceable
+    // failure path in ConnectTip / InvalidBlockFound then cleans up persisted
+    // body data so that a subsequent matching body can still be accepted.
+    if (pindex->pprev == chainActive.Tip()) {
+        if (!CheckBlockBodyAuthCommitment(block, pindex->pprev, *pcoinsTip,
+                                          chainparams.GetConsensus(), state)) {
+            return false;
+        }
     }
 
     int nHeight = pindex->nHeight;
