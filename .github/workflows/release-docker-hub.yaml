@@ -34,7 +34,7 @@ jobs:
         username: ${{ secrets.ZODLINC_DOCKERHUB_USERNAME }}
         password: ${{ secrets.ZODLINC_DOCKERHUB_PASSWORD }}
 
-    - name: Build and push to zodlinc
+    - name: Build and push to zodlinc (zcashd + zcash mirror)
       uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
       with:
         context: ./contrib/docker/
@@ -42,6 +42,8 @@ jobs:
         build-args: |
           ZCASH_VERSION=${{ steps.version.outputs.version }}
         tags: |
+          zodlinc/zcashd:${{ steps.version.outputs.tag }}
+          zodlinc/zcashd:latest
           zodlinc/zcash:${{ steps.version.outputs.tag }}
           zodlinc/zcash:latest
 
@@ -51,12 +53,14 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-    - name: Copy to electriccoinco
+    - name: Copy to electriccoinco (zcashd + zcash mirror)
       run: |
         TAG="${{ steps.version.outputs.tag }}"
-        docker buildx imagetools create \
-          --tag electriccoinco/zcash:${TAG} \
-          zodlinc/zcash:${TAG}
-        docker buildx imagetools create \
-          --tag electriccoinco/zcash:latest \
-          zodlinc/zcash:latest
+        for NAME in zcashd zcash; do
+          docker buildx imagetools create \
+            --tag "electriccoinco/${NAME}:${TAG}" \
+            "zodlinc/zcashd:${TAG}"
+          docker buildx imagetools create \
+            --tag "electriccoinco/${NAME}:latest" \
+            "zodlinc/zcashd:latest"
+        done
