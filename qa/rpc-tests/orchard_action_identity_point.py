@@ -109,6 +109,17 @@ class OrchardActionIdentityPointTest(BitcoinTestFramework):
         super().__init__()
         self.num_nodes = 2
 
+    def add_options(self, parser):
+        # Allow running an individual scenario without editing the test, e.g.
+        # for re-verifying that each scenario fails independently against a
+        # pre-fix binary.
+        parser.add_option("--only-rk", dest="only_rk", default=False, action="store_true",
+                          help="Run only the identity rk test.")
+        parser.add_option("--only-epk", dest="only_epk", default=False, action="store_true",
+                          help="Run only the identity epk test.")
+        parser.add_option("--only-both", dest="only_both", default=False, action="store_true",
+                          help="Run only the identity rk + epk test.")
+
     def setup_nodes(self):
         return start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[
             nuparams(NU5_BRANCH_ID, 210),
@@ -168,54 +179,49 @@ class OrchardActionIdentityPointTest(BitcoinTestFramework):
         assert_equal(get_rk(tx_untampered, action_pos), rk_untampered_decoded)
         assert_equal(get_epk(tx_untampered, action_pos), epk_untampered_decoded)
 
-        # Test 1: Transaction with identity rk should be rejected
-        print("Testing identity rk rejection...")
-        tx_tamperedrk = tamper_rk(tx_untampered, action_pos)
-        tx_tamperedrk_hex = bytes_to_hex_str(tx_tamperedrk)
+        if not self.options.only_epk and not self.options.only_both:
+            self.test_identity_rk(tx_untampered, action_pos)
+        if not self.options.only_rk and not self.options.only_both:
+            self.test_identity_epk(tx_untampered, action_pos)
+        if not self.options.only_rk and not self.options.only_epk:
+            self.test_identity_both(tx_untampered, action_pos)
 
-        # Verify the tampered data has zeros at the rk position and decode it
-        rk_tamperedrk = get_rk(tx_tamperedrk, action_pos)
-        assert_equal(rk_tamperedrk, IDENTITY_BYTES, "rk was not zeroed")
+    def _test_identity_case(self, name, tx_untampered, action_pos,
+                            rk_identity=False, epk_identity=False):
+        print("Testing identity %s rejection..." % name)
 
-        # Decode the tampered tx to see if zcashd parses the zero rk
-        action_tamperedrk_decoded = self.nodes[0].decoderawtransaction(tx_tamperedrk_hex)['orchard']['actions'][0]
-        rk_tamperedrk_decoded = hex_str_to_bytes(action_tamperedrk_decoded['rk'])
-        assert_equal(rk_tamperedrk_decoded, IDENTITY_BYTES)
+        tx = tx_untampered
+        if rk_identity:
+            tx = tamper_rk(tx, action_pos)
+        if epk_identity:
+            tx = tamper_epk(tx, action_pos)
+        tx_hex = bytes_to_hex_str(tx)
 
-        assert_raises_message(
-            JSONRPCException, "bad-orchard-action-identity-point",
-            self.nodes[0].sendrawtransaction, tx_tamperedrk_hex,
-        )
-        print("  PASS: identity rk correctly rejected")
-
-        # Test 2: Transaction with identity epk should be rejected
-        print("Testing identity epk rejection...")
-        tx_tamperedepk = tamper_epk(tx_untampered, action_pos)
-        tx_tamperedepk_hex = bytes_to_hex_str(tx_tamperedepk)
-
-        # Verify the tampered data has zeros at the epk position and decode it
-        epk_tamperedepk = get_epk(tx_tamperedepk, action_pos)
-        assert_equal(epk_tamperedepk, IDENTITY_BYTES, "epk was not zeroed")
-
-        # Decode the tampered tx to see if zcashd parses the zero epk
-        action_tamperedepk_decoded = self.nodes[0].decoderawtransaction(tx_tamperedepk_hex)['orchard']['actions'][0]
-        epk_tamperedepk_decoded = hex_str_to_bytes(action_tamperedepk_decoded['ephemeralKey'])
-        assert_equal(epk_tamperedepk_decoded, IDENTITY_BYTES)
+        # Sanity check: the tampered byte ranges read as identity directly
+        # and via decoderawtransaction (validates the byte-offset arithmetic).
+        action_decoded = self.nodes[0].decoderawtransaction(tx_hex)['orchard']['actions'][0]
+        if rk_identity:
+            assert_equal(get_rk(tx, action_pos), IDENTITY_BYTES)
+            assert_equal(hex_str_to_bytes(action_decoded['rk']), IDENTITY_BYTES)
+        if epk_identity:
+            assert_equal(get_epk(tx, action_pos), IDENTITY_BYTES)
+            assert_equal(hex_str_to_bytes(action_decoded['ephemeralKey']), IDENTITY_BYTES)
 
         assert_raises_message(
             JSONRPCException, "bad-orchard-action-identity-point",
-            self.nodes[0].sendrawtransaction, tx_tamperedepk_hex,
+            self.nodes[0].sendrawtransaction, tx_hex,
         )
-        print("  PASS: identity epk correctly rejected")
+        print("  PASS: identity %s correctly rejected" % name)
 
-        # Test 3: Both rk and epk set to identity should also be rejected
-        print("Testing identity rk+epk rejection...")
-        tx_tamperedboth = tamper_epk(tx_tamperedrk, action_pos)
-        assert_raises_message(
-            JSONRPCException, "bad-orchard-action-identity-point",
-            self.nodes[0].sendrawtransaction, bytes_to_hex_str(tx_tamperedboth),
-        )
-        print("  PASS: identity rk+epk correctly rejected")
+    def test_identity_rk(self, tx_untampered, action_pos):
+        self._test_identity_case('rk', tx_untampered, action_pos, rk_identity=True)
+
+    def test_identity_epk(self, tx_untampered, action_pos):
+        self._test_identity_case('epk', tx_untampered, action_pos, epk_identity=True)
+
+    def test_identity_both(self, tx_untampered, action_pos):
+        self._test_identity_case('rk+epk', tx_untampered, action_pos,
+                                 rk_identity=True, epk_identity=True)
 
 if __name__ == '__main__':
     OrchardActionIdentityPointTest().main()
