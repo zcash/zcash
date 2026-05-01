@@ -147,7 +147,6 @@ def assert_pool_monitored(node, pool_name):
             return
     assert False, "pool named %r not found" % pool_name
 
-
 def get_block_pool_state(node, block_hash):
     """Return a dict mapping pool id to (monitored, chainValueZat, valueDeltaZat)
     for the given block. Used to detect mutation of per-block deltas across a
@@ -162,12 +161,31 @@ def get_block_pool_state(node, block_hash):
         )
     return state
 
+def fresh_target_block(node, target_hash):
+    # Get the targeted block as raw hex and deserialize a fresh copy of it.
+    target_hex = node.getblock(target_hash, 0)
+    b = CBlock()
+    b.deserialize(BytesIO(hex_str_to_bytes(target_hex)))
+    b.calc_sha256()
+    return b
+
 
 class DuplicateBlockClobbersChainValueTest(BitcoinTestFramework):
 
     def __init__(self):
         super().__init__()
         self.num_nodes = 1
+
+    def add_options(self, parser):
+        # Allow running an individual scenario without editing the test, e.g.
+        # for re-verifying that each scenario fails independently against a
+        # pre-fix binary.
+        parser.add_option("--only-a", dest="only_a", default=False, action="store_true",
+                          help="Run only Scenario A (unmodified replay).")
+        parser.add_option("--only-b", dest="only_b", default=False, action="store_true",
+                          help="Run only Scenario B (replay with different body).")
+        parser.add_option("--only-c", dest="only_c", default=False, action="store_true",
+                          help="Run only Scenario C (persistence across restart).")
 
     def setup_network(self, split=False):
         self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[
@@ -226,16 +244,6 @@ class DuplicateBlockClobbersChainValueTest(BitcoinTestFramework):
         assert_pool_monitored(node, 'sapling')
         assert_pool_monitored(node, 'orchard')
 
-        # Get the targeted block as raw hex and define a helper to
-        # deserialize fresh copies of it.
-        target_hex = node.getblock(target_hash, 0)
-
-        def fresh_target_block():
-            b = CBlock()
-            b.deserialize(BytesIO(hex_str_to_bytes(target_hex)))
-            b.calc_sha256()
-            return b
-
         # Connect a single p2p peer; we will use it for all scenarios.
         # Use NU5_PROTO_VERSION because the running zcashd is past NU5
         # activation height (we activated NU5 at height 210 above) and
@@ -247,6 +255,17 @@ class DuplicateBlockClobbersChainValueTest(BitcoinTestFramework):
         NetworkThread().start()
         test_node.wait_for_verack()
 
+        if not self.options.only_b and not self.options.only_c:
+            self.test_a_unmodified_replay(node, test_node, target_hash, target_state_before)
+
+        if not self.options.only_a:
+            self.send_corrupted_block(node, test_node, target_hash)
+            if not self.options.only_c:
+                self.test_b_replay_with_different_body(node, test_node, target_hash, target_state_before)
+            if not self.options.only_b:
+                self.test_c_persistence_across_restart(node, test_node, conn, target_hash, target_state_before)
+
+    def test_a_unmodified_replay(self, node, test_node, target_hash, target_state_before):
         # Scenario A: unmodified replay
         #
         # Send the targeted block again as-is. This exercises the case
@@ -255,8 +274,9 @@ class DuplicateBlockClobbersChainValueTest(BitcoinTestFramework):
         # existing index entry, clobbering chain values to nullopt and
         # re-setting the per-block deltas (with the same values, in this
         # case, since the block is unchanged).
+
         print("Testing Scenario A: target block pool state unchanged after unmodified replay")
-        scenario_a_block = fresh_target_block()
+        scenario_a_block = fresh_target_block(node, target_hash)
         test_node.send_message(msg_block(scenario_a_block))
         test_node.sync_with_ping()
 
@@ -267,7 +287,8 @@ class DuplicateBlockClobbersChainValueTest(BitcoinTestFramework):
         assert_pool_monitored(node, 'orchard')
         print("Scenario A prevented")
 
-        # Scenario B: replay with different transactions
+    def send_corrupted_block(self, node, test_node, target_hash):
+        # Set-up for scenarios B and C
         #
         # Construct a block with the same header as the targeted block
         # but a different body, by appending a duplicate of the Orchard
@@ -291,22 +312,27 @@ class DuplicateBlockClobbersChainValueTest(BitcoinTestFramework):
         # would recompute `hashMerkleRoot` and change the block hash,
         # giving the receiving node a different header that wouldn't
         # collide with the existing index entry.
-        print("Testing Scenario B: target block pool state unchanged after replay with different body")
-        scenario_b_block = fresh_target_block()
+
+        print("Creating and sending corrupted block")
+        corrupted_block = fresh_target_block(node, target_hash)
 
         # The targeted block has at least 2 transactions: the coinbase
         # at index 0, and the Orchard shielding transaction at index 1
         # (or later). We duplicate the shielding transaction (the last
         # one), which has non-zero Orchard valueBalance.
-        assert len(scenario_b_block.vtx) >= 2
-        scenario_b_block.vtx.append(scenario_b_block.vtx[-1])
+        assert len(corrupted_block.vtx) >= 2
+        corrupted_block.vtx.append(corrupted_block.vtx[-1])
 
         # The header (and therefore the block hash) is unchanged from
         # the targeted block. Verify this invariant before sending.
-        assert_equal(scenario_b_block.sha256, int(target_hash, 16))
+        assert_equal(corrupted_block.sha256, int(target_hash, 16))
 
-        test_node.send_message(msg_block(scenario_b_block))
+        test_node.send_message(msg_block(corrupted_block))
         test_node.sync_with_ping()
+
+    def test_b_replay_with_different_body(self, node, test_node, target_hash, target_state_before):
+        # Scenario B: replay with different transactions
+        print("Testing Scenario B: target block pool state unchanged after replay with different body")
 
         # The targeted block's pool state must STILL be unchanged.
         # Under the buggy code:
@@ -322,9 +348,10 @@ class DuplicateBlockClobbersChainValueTest(BitcoinTestFramework):
         assert_pool_monitored(node, 'orchard')
         print("Scenario B prevented")
 
+    def test_c_persistence_across_restart(self, node, test_node, conn, target_hash, target_state_before):
         # Scenario C: persistence of corruption across restart
         #
-        # Under the buggy code, the in-memory corruption from Scenario B
+        # Pre-fix, the in-memory corruption from `send_corrupted_block`
         # is normally only in memory: `SetChainPoolValues` mutates
         # `pindex` but `AcceptBlock` returns early via `fAlreadyHave`
         # without adding the block index entry to `setDirtyBlockIndex`.
@@ -347,8 +374,8 @@ class DuplicateBlockClobbersChainValueTest(BitcoinTestFramework):
         # This scenario verifies that the fix prevents the in-memory
         # corruption in the first place, so there is nothing to flush
         # and the post-restart state matches the pre-attack state.
-
         print("Testing Scenario C: target block pool state unchanged after flush + restart")
+
         # Force the corrupted pindex to be marked dirty by performing a
         # disconnect/reconnect cycle on the target. We use
         # `invalidateblock` followed by `reconsiderblock`:
@@ -395,6 +422,8 @@ class DuplicateBlockClobbersChainValueTest(BitcoinTestFramework):
         # values for the index entry, so we can compare directly.
         target_state_after_restart = get_block_pool_state(node, target_hash)
         assert_equal(target_state_before, target_state_after_restart)
+        assert_pool_monitored(node, 'sapling')
+        assert_pool_monitored(node, 'orchard')
         print("Scenario C prevented")
 
 
