@@ -124,6 +124,7 @@ def sync_blocks(rpc_connections, wait=0.125, timeout=60, allow_different_tips=Fa
     the same block count.
     """
     while timeout > 0:
+        assert_bitcoinds_alive()
         if allow_different_tips:
             tips = [ x.getblockcount() for x in rpc_connections ]
         else:
@@ -136,6 +137,7 @@ def sync_blocks(rpc_connections, wait=0.125, timeout=60, allow_different_tips=Fa
     # Now that the block counts are in sync, wait for the internal
     # notifications to finish
     while timeout > 0:
+        assert_bitcoinds_alive()
         notified = [ x.getblockchaininfo()['fullyNotified'] for x in rpc_connections ]
         if notified == [ True ] * len(notified):
             return True
@@ -150,6 +152,7 @@ def sync_mempools(rpc_connections, wait=0.5, timeout=60):
     pools, and has notified all internal listeners of them
     """
     while timeout > 0:
+        assert_bitcoinds_alive()
         pool = set(rpc_connections[0].getrawmempool())
         num_match = 1
         for i in range(1, len(rpc_connections)):
@@ -163,6 +166,7 @@ def sync_mempools(rpc_connections, wait=0.5, timeout=60):
     # Now that the mempools are in sync, wait for the internal
     # notifications to finish
     while timeout > 0:
+        assert_bitcoinds_alive()
         notified = [ x.getmempoolinfo()['fullyNotified'] for x in rpc_connections ]
         if notified == [ True ] * len(notified):
             return True
@@ -172,6 +176,23 @@ def sync_mempools(rpc_connections, wait=0.5, timeout=60):
     raise AssertionError("Mempool sync failed")
 
 bitcoind_processes = {}
+
+
+def assert_bitcoinds_alive():
+    """Raise if any node tracked in `bitcoind_processes` has exited.
+
+    `bitcoind_processes` only contains nodes the framework currently expects
+    to be running: `start_node` adds, `stop_node`/`stop_nodes` remove. So a
+    non-None `poll()` here means a node died on its own (crash, OOM, signal),
+    and any polling loop that calls this helper will fail fast instead of
+    spinning forever against a dead daemon.
+    """
+    for i, proc in bitcoind_processes.items():
+        rc = proc.poll()
+        if rc is not None:
+            raise AssertionError(
+                "node %d (%s, pid %d) exited unexpectedly with returncode %s"
+                % (i, zcashd_binary(), proc.pid, rc))
 
 def initialize_datadir(dirname, n, clock_offset=0):
     datadir = os.path.join(dirname, "node"+str(n))
@@ -692,6 +713,7 @@ def wait_and_assert_operationid_status_result(node, myopid, in_status='success',
     print('waiting for async operation {}'.format(myopid))
     result = None
     for _ in range(1, timeout):
+        assert_bitcoinds_alive()
         results = node.z_getoperationresult([myopid])
         if len(results) > 0:
             result = results[0]
