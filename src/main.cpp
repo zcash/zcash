@@ -2491,6 +2491,33 @@ void static InvalidChainFound(CBlockIndex* pindexNew, const CChainParams& chainP
 }
 
 /**
+ * Return whether `pindex` has any direct child in `mapBlockIndex` with
+ * `nChainTx > 0`. By the invariant established in `ReceivedBlockTransactions`
+ * (`nChainTx` is only assigned from `pprev->nChainTx + nTx` once the parent's
+ * `nChainTx` is non-zero), `nChainTx > 0` propagates strictly from parent to
+ * descendant: any descendant with `nChainTx > 0` has all ancestors with
+ * `nChainTx > 0` too. So checking immediate children of `pindex` is
+ * equivalent to checking the entire descendant subtree.
+ *
+ * Used to verify the precondition of `CBlockIndex::ResetBodyState`:
+ * zeroing `nChainTx` on a block with descendants whose `nChainTx > 0`
+ * would break `CheckBlockIndex`'s `pindexFirstNeverProcessed` invariant
+ * and can cause `FindMostWorkChain` to assert in the
+ * `pindexTest->nChainTx || pindexTest->nHeight == 0` walk.
+ */
+static bool HasChildWithChainTx(const CBlockIndex* pindex)
+{
+    AssertLockHeld(cs_main);
+    for (const auto& entry : mapBlockIndex) {
+        const CBlockIndex* p = entry.second;
+        if (p->pprev == pindex && p->nChainTx > 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
  * Reset body state on `root` and every descendant of `root` in
  * `mapBlockIndex`, post-order so that each descendant's `nChainTx` is
  * cleared before its parent's. Caller must hold `cs_main`. Used by
@@ -2504,9 +2531,8 @@ void static InvalidChainFound(CBlockIndex* pindexNew, const CChainParams& chainP
 static void ResetBodyStateForSubtree(CBlockIndex* root)
 {
     AssertLockHeld(cs_main);
-    // Collect the subtree rooted at `root` in BFS order (parents before
-    // children), iterating once so we don't re-scan `mapBlockIndex` per
-    // depth level.
+    // Collect the subtree rooted at `root`, ancestors before descendants,
+    // iterating once so we don't re-scan `mapBlockIndex` per depth level.
     std::vector<CBlockIndex*> subtree = {root};
     for (size_t i = 0; i < subtree.size(); ++i) {
         CBlockIndex* p = subtree[i];
@@ -2516,9 +2542,9 @@ static void ResetBodyStateForSubtree(CBlockIndex* root)
             }
         }
     }
-    // Reset in reverse BFS order: descendants first, so by the time each
-    // ancestor is reset its `HasChildWithChainTx`-equivalent precondition
-    // already holds.
+    // Reset in post-order: descendants first, so by the time each ancestor
+    // is reset its `HasChildWithChainTx`-equivalent precondition already
+    // holds.
     for (auto it = subtree.rbegin(); it != subtree.rend(); ++it) {
         CBlockIndex* p = *it;
         // Erase from `setBlockIndexCandidates` *before* `ResetBodyState`
@@ -2526,6 +2552,18 @@ static void ResetBodyStateForSubtree(CBlockIndex* root)
         // `(nChainWork, nSequenceId, ptr)` per `CBlockIndexWorkComparator`;
         // erasing after the mutation would fail to find `p`.
         setBlockIndexCandidates.erase(p);
+        // Enforce `ResetBodyState`'s documented preconditions before the
+        // call rather than after the resulting index corruption surfaces
+        // (e.g. as the `pindexTest->nChainTx || pindexTest->nHeight == 0`
+        // assertion in `FindMostWorkChain`):
+        //   1. `p` is not in `setBlockIndexCandidates` (just erased above).
+        //   2. No descendant of `p` has `nChainTx > 0`. By the
+        //      `ReceivedBlockTransactions` propagation invariant this is
+        //      equivalent to "no direct child has `nChainTx > 0`", and the
+        //      post-order walk above has already cleared every descendant
+        //      of `p` before we reach `p` itself.
+        assert(setBlockIndexCandidates.count(p) == 0);
+        assert(!HasChildWithChainTx(p));
         p->ResetBodyState();
         setDirtyBlockIndex.insert(p);
     }
