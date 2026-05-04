@@ -374,8 +374,15 @@ def run_tests(test_handler, test_list, src_dir, build_dir, exeext, jobs=1, enabl
             results.append(new_result)
     except (InterruptedError, KeyboardInterrupt):
         print('\nThe following tests were running when interrupted:')
+        now = time.time()
         for j in job_queue.jobs:
-            print("•", j[0])
+            (name, time0, _proc, _log_out, _log_err) = j
+            print("•", name)
+            total_count += 1
+            new_result = "%s | %s" % (name.ljust(max_len_name), "INTR".ljust(6))
+            if not deterministic:
+                new_result += (" | %s s" % (int(now - time0),))
+            results.append(new_result)
         print('\n', end='')
 
     all_passed = passed_count == total_count
