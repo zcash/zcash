@@ -1,13 +1,18 @@
 #include <bits/stdc++.h>
 #include <string>
 
-extern bool DecodeHexTx(CTransaction& tx, const std::string& strHexTx);
+extern void DecodeHexTx(CTransaction& tx, const std::string& strHexTx);
 
 // actual fuzzer
 
 bool fuzz_DecodeHexTxFunction (const std::string& strHexTx) {
         CTransaction tx;
-        return DecodeHexTx(tx, strHexTx);
+        try {
+            DecodeHexTx(tx, strHexTx);
+            return true;
+        } catch (const std::exception&) {
+            return false;
+        }
 }
 
 #ifdef FUZZ_WITH_AFL

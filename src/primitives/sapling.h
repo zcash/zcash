@@ -6,6 +6,7 @@
 #define ZCASH_PRIMITIVES_SAPLING_H
 
 #include "amount.h"
+#include "consensus/validation.h"
 #include "streams.h"
 #include "streams_rust.h"
 
@@ -125,10 +126,10 @@ class SaplingV4Reader
 {
 private:
     rust::Box<sapling::BundleAssembler> inner;
-    bool hasSapling;
+    bool txVersionHasSapling;
 public:
-    SaplingV4Reader(bool hasSapling) :
-        inner(sapling::new_bundle_assembler()), hasSapling(hasSapling) {}
+    SaplingV4Reader(bool txVersionHasSapling) :
+        inner(sapling::new_bundle_assembler()), txVersionHasSapling(txVersionHasSapling) {}
 
     template<typename Stream>
     void Serialize(Stream& s) const {
@@ -138,9 +139,15 @@ public:
     template<typename Stream>
     void Unserialize(Stream& s) {
         try {
-            inner = sapling::parse_v4_components(*ToRustStream(s), hasSapling);
+            inner = sapling::parse_v4_components(*ToRustStream(s), txVersionHasSapling);
         } catch (const std::exception& e) {
-            throw std::ios_base::failure(e.what());
+            // All errors from `parse_v4_components` (both the wire-format
+            // parser's I/O errors and the `valueBalanceSapling` consensus
+            // check) are consensus rule violations: the input bytes do not
+            // encode a valid Sapling v4 bundle. Throw `consensus_rule_failure`
+            // so that P2P handlers can distinguish and apply DoS scoring
+            // accordingly.
+            throw consensus_rule_failure(e.what());
         }
     }
 
@@ -162,15 +169,15 @@ class SaplingV4Writer
 {
 private:
     const SaplingBundle& bundle;
-    bool hasSapling;
+    bool txVersionHasSapling;
 public:
-    SaplingV4Writer(const SaplingBundle& bundle, bool hasSapling) :
-        bundle(bundle), hasSapling(hasSapling) {}
+    SaplingV4Writer(const SaplingBundle& bundle, bool txVersionHasSapling) :
+        bundle(bundle), txVersionHasSapling(txVersionHasSapling) {}
 
     template<typename Stream>
     void Serialize(Stream& s) const {
         try {
-            bundle.GetDetails().serialize_v4_components(*ToRustStream(s), hasSapling);
+            bundle.GetDetails().serialize_v4_components(*ToRustStream(s), txVersionHasSapling);
         } catch (const std::exception& e) {
             throw std::ios_base::failure(e.what());
         }

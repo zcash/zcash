@@ -625,8 +625,11 @@ static int CommandLineRawTx(int argc, char* argv[])
             if (strHexTx == "-")                 // "-" implies standard input
                 strHexTx = readStdin();
 
-            if (!DecodeHexTx(txDecodeTmp, strHexTx))
-                throw std::runtime_error("invalid transaction encoding");
+            try {
+                DecodeHexTx(txDecodeTmp, strHexTx);
+            } catch (const std::exception& e) {
+                throw std::runtime_error(std::string("invalid transaction encoding: ") + e.what());
+            }
 
             startArg = 2;
         } else
