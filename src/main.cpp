@@ -42,6 +42,7 @@
 #include <algorithm>
 #include <atomic>
 #include <sstream>
+#include <unordered_map>
 #include <variant>
 
 #include <boost/algorithm/string/replace.hpp>
@@ -2491,33 +2492,6 @@ void static InvalidChainFound(CBlockIndex* pindexNew, const CChainParams& chainP
 }
 
 /**
- * Return whether `pindex` has any direct child in `mapBlockIndex` with
- * `nChainTx > 0`. By the invariant established in `ReceivedBlockTransactions`
- * (`nChainTx` is only assigned from `pprev->nChainTx + nTx` once the parent's
- * `nChainTx` is non-zero), `nChainTx > 0` propagates strictly from parent to
- * descendant: any descendant with `nChainTx > 0` has all ancestors with
- * `nChainTx > 0` too. So checking immediate children of `pindex` is
- * equivalent to checking the entire descendant subtree.
- *
- * Used to verify the precondition of `CBlockIndex::ResetBodyState`:
- * zeroing `nChainTx` on a block with descendants whose `nChainTx > 0`
- * would break `CheckBlockIndex`'s `pindexFirstNeverProcessed` invariant
- * and can cause `FindMostWorkChain` to assert in the
- * `pindexTest->nChainTx || pindexTest->nHeight == 0` walk.
- */
-static bool HasChildWithChainTx(const CBlockIndex* pindex)
-{
-    AssertLockHeld(cs_main);
-    for (const auto& entry : mapBlockIndex) {
-        const CBlockIndex* p = entry.second;
-        if (p->pprev == pindex && p->nChainTx > 0) {
-            return true;
-        }
-    }
-    return false;
-}
-
-/**
  * Reset body state on `root` and every descendant of `root` in
  * `mapBlockIndex`, post-order so that each descendant's `nChainTx` is
  * cleared before its parent's. Caller must hold `cs_main`. Used by
@@ -2527,24 +2501,41 @@ static bool HasChildWithChainTx(const CBlockIndex* pindex)
  * is zero would violate `CheckBlockIndex`'s `pindexFirstNeverProcessed`
  * invariant on each such descendant, and let `FindMostWorkChain` walk
  * through the stranded subtree.
+ *
+ * Runs in O(n + m), where n = |mapBlockIndex| and m = |subtree|, by
+ * precomputing a parent -> children map once. A naive per-node
+ * `mapBlockIndex` scan would be O(n * m); on a large adversary-grown
+ * header tree under `root` that becomes a quadratic-cost path under
+ * `cs_main`.
  */
 static void ResetBodyStateForSubtree(CBlockIndex* root)
 {
     AssertLockHeld(cs_main);
-    // Collect the subtree rooted at `root`, ancestors before descendants,
-    // iterating once so we don't re-scan `mapBlockIndex` per depth level.
-    std::vector<CBlockIndex*> subtree = {root};
-    for (size_t i = 0; i < subtree.size(); ++i) {
-        CBlockIndex* p = subtree[i];
-        for (const auto& entry : mapBlockIndex) {
-            if (entry.second->pprev == p) {
-                subtree.push_back(entry.second);
-            }
+
+    // Build a parent -> children map once over `mapBlockIndex`. Subsequent
+    // subtree traversal and per-node descendant checks are then O(1) per
+    // edge.
+    std::unordered_map<const CBlockIndex*, std::vector<CBlockIndex*>> children;
+    children.reserve(mapBlockIndex.size());
+    for (const auto& entry : mapBlockIndex) {
+        CBlockIndex* p = entry.second;
+        if (p->pprev != nullptr) {
+            children[p->pprev].push_back(p);
         }
     }
+
+    // Collect the subtree rooted at `root`, ancestors before descendants,
+    // walking children directly via the precomputed map.
+    std::vector<CBlockIndex*> subtree = {root};
+    for (size_t i = 0; i < subtree.size(); ++i) {
+        const auto cit = children.find(subtree[i]);
+        if (cit != children.end()) {
+            subtree.insert(subtree.end(), cit->second.begin(), cit->second.end());
+        }
+    }
+
     // Reset in post-order: descendants first, so by the time each ancestor
-    // is reset its `HasChildWithChainTx`-equivalent precondition already
-    // holds.
+    // is reset, the no-descendant-`nChainTx > 0` precondition already holds.
     for (auto it = subtree.rbegin(); it != subtree.rend(); ++it) {
         CBlockIndex* p = *it;
         // Erase from `setBlockIndexCandidates` *before* `ResetBodyState`
@@ -2557,13 +2548,21 @@ static void ResetBodyStateForSubtree(CBlockIndex* root)
         // (e.g. as the `pindexTest->nChainTx || pindexTest->nHeight == 0`
         // assertion in `FindMostWorkChain`):
         //   1. `p` is not in `setBlockIndexCandidates` (just erased above).
-        //   2. No descendant of `p` has `nChainTx > 0`. By the
-        //      `ReceivedBlockTransactions` propagation invariant this is
-        //      equivalent to "no direct child has `nChainTx > 0`", and the
+        //   2. No direct child of `p` has `nChainTx > 0`. By the
+        //      `ReceivedBlockTransactions` propagation invariant
+        //      (`nChainTx` is only assigned from `pprev->nChainTx + nTx`
+        //      once the parent's `nChainTx` is non-zero), `nChainTx > 0`
+        //      propagates strictly from parent to descendant, so this is
+        //      equivalent to "no descendant has `nChainTx > 0`". The
         //      post-order walk above has already cleared every descendant
         //      of `p` before we reach `p` itself.
         assert(setBlockIndexCandidates.count(p) == 0);
-        assert(!HasChildWithChainTx(p));
+        const auto cit = children.find(p);
+        if (cit != children.end()) {
+            for (const CBlockIndex* c : cit->second) {
+                assert(c->nChainTx == 0);
+            }
+        }
         p->ResetBodyState();
         setDirtyBlockIndex.insert(p);
     }
