@@ -88,6 +88,25 @@ double timer_stop(timeval &tv_start)
     return elapsed;
 }
 
+// Override `block.hashBlockCommitments` so the NU5+ check inside
+// `ConnectBlock` passes against a synthetic `FakeCoinsViewDB`-backed
+// view, which does not reproduce the chain-history MMR state at the
+// benchmark height. No-op for pre-NU5 blocks. Callers should invoke
+// outside the timed region.
+static void recompute_hash_block_commitments(
+    CBlock& block,
+    const CBlockIndex& index,
+    const CCoinsViewCache& view)
+{
+    const auto& consensusParams = Params().GetConsensus();
+    if (consensusParams.NetworkUpgradeActive(index.nHeight, Consensus::UPGRADE_NU5)) {
+        auto prevBranch = CurrentEpochBranchId(index.nHeight - 1, consensusParams);
+        block.hashBlockCommitments = DeriveBlockCommitmentsHash(
+            view.GetHistoryRoot(prevBranch),
+            block.BuildAuthDataMerkleTree());
+    }
+}
+
 double benchmark_sleep()
 {
     struct timeval tv_start;
@@ -608,6 +627,8 @@ double benchmark_connectblock_slow()
     index.nChainOrchardValue = MAX_MONEY;
     index.nChainLockboxValue = MAX_MONEY;
 
+    recompute_hash_block_commitments(block, index, view);
+
     CValidationState state;
     struct timeval tv_start;
     timer_start(tv_start);
@@ -669,6 +690,8 @@ double benchmark_connectblock_sapling()
     index.nChainOrchardValue = MAX_MONEY;
     index.nChainLockboxValue = MAX_MONEY;
 
+    recompute_hash_block_commitments(block, index, view);
+
     CValidationState state;
     struct timeval tv_start;
     timer_start(tv_start);
@@ -724,6 +747,8 @@ double benchmark_connectblock_orchard()
     index.nChainSaplingValue = MAX_MONEY;
     index.nChainOrchardValue = MAX_MONEY;
     index.nChainLockboxValue = MAX_MONEY;
+
+    recompute_hash_block_commitments(block, index, view);
 
     CValidationState state;
     struct timeval tv_start;

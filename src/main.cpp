@@ -3206,7 +3206,6 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
     auto consensusParams = chainparams.GetConsensus();
 
-    bool fCheckAuthDataRoot = true;
     bool fExpensiveChecks = true;
 
     switch (blockChecks) {
@@ -3217,10 +3216,11 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         // checking them twice for transactions that were already checked when
         // added to the mempool.
         fExpensiveChecks = false;
+        break;
     case CheckAs::SlowBenchmark:
-        // Disable checking the authDataRoot for block templates and slow block
-        // benchmarks.
-        fCheckAuthDataRoot = false;
+        // This case does not disable any verification work. It is retained
+        // because it disables `fCacheResults` below, so that per-tx
+        // verification results are not cached across benchmark runs.
         break;
     default:
         assert(false);
@@ -3269,7 +3269,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         auto prevConsensusBranchId = CurrentEpochBranchId(pindex->nHeight - 1, consensusParams);
         hashChainHistoryRoot = view.GetHistoryRoot(prevConsensusBranchId);
     }
-    if (consensusParams.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5) && fCheckAuthDataRoot) {
+    if (consensusParams.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
         // For NU5+ blocks, block.hashBlockCommitments must be the top digest
         // of the ZIP 244 block commitments linked list.
         // https://zips.z.cash/zip-0244#block-header-changes
