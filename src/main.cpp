@@ -3198,6 +3198,15 @@ static bool ShouldCheckTransactions(const CChainParams& chainparams, const CBloc
              && Checkpoints::IsAncestorOfLastCheckpoint(chainparams.Checkpoints(), pindex));
 }
 
+static bool CheckBlockBodyAuthCommitment(
+    const CBlock& block,
+    int nHeight,
+    const CCoinsViewCache& view,
+    const Consensus::Params& consensusParams,
+    CValidationState& state,
+    std::optional<uint256>& hashAuthDataRoot,
+    std::optional<uint256>& hashChainHistoryRoot);
+
 bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex,
                   CCoinsViewCache& view, const CChainParams& chainparams,
                   bool fJustCheck, CheckAs blockChecks)
@@ -3255,32 +3264,16 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         return false;
     }
 
-    // Compute hashAuthDataRoot and hashChainHistoryRoot here, ahead of the
-    // per-tx loop, so the NU5+ hashBlockCommitments check below runs first.
+    // Compute hashAuthDataRoot and hashChainHistoryRoot and perform the
+    // NU5+ hashBlockCommitments check here, ahead of the per-tx loop.
     // See `corruptionPossible` in `consensus/validation.h` — checking
     // hashBlockCommitments first means any later per-tx auth-data failure
     // is not body-replaceable.
     std::optional<uint256> hashAuthDataRoot;
     std::optional<uint256> hashChainHistoryRoot;
-    if (consensusParams.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
-        hashAuthDataRoot = block.BuildAuthDataMerkleTree();
-    }
-    if (consensusParams.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
-        auto prevConsensusBranchId = CurrentEpochBranchId(pindex->nHeight - 1, consensusParams);
-        hashChainHistoryRoot = view.GetHistoryRoot(prevConsensusBranchId);
-    }
-    if (consensusParams.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
-        // For NU5+ blocks, block.hashBlockCommitments must be the top digest
-        // of the ZIP 244 block commitments linked list.
-        // https://zips.z.cash/zip-0244#block-header-changes
-        uint256 hashBlockCommitments = DeriveBlockCommitmentsHash(
-            hashChainHistoryRoot.value(),
-            hashAuthDataRoot.value());
-        if (block.hashBlockCommitments != hashBlockCommitments) {
-            return state.DoS(100,
-                error("%s: block's hashBlockCommitments is incorrect (should be ZIP 244 block commitment)", __func__),
-                REJECT_INVALID, "bad-block-commitments-hash", true /*corruptionIn*/);
-        }
+    if (!CheckBlockBodyAuthCommitment(block, pindex->nHeight, view, consensusParams,
+                                      state, hashAuthDataRoot, hashChainHistoryRoot)) {
+        return false;
     }
 
     // verify that the view's current state corresponds to the previous block
@@ -3887,6 +3880,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         //   to ConnectBlock (and thus never on the main chain) will stay with
         //   these set to null.
         if (consensusParams.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
+            assert(hashAuthDataRoot.has_value());
+            assert(hashChainHistoryRoot.has_value());
             pindex->hashAuthDataRoot = hashAuthDataRoot.value();
             pindex->hashFinalOrchardRoot = orchard_tree.root();
             pindex->hashChainHistoryRoot = hashChainHistoryRoot.value();
@@ -3914,6 +3909,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         // - If the previous block is in this epoch, this block would affect
         //   this epoch's tree root, but as we haven't updated the tree for this
         //   block yet, view.GetHistoryRoot() returns the root we need.
+        assert(hashChainHistoryRoot.has_value());
         if (block.hashBlockCommitments != hashChainHistoryRoot.value()) {
             return state.DoS(100,
                 error("%s: block's hashBlockCommitments is incorrect (should be history tree root)", __func__),
@@ -5885,33 +5881,31 @@ static bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state
  */
 static bool CheckBlockBodyAuthCommitment(
     const CBlock& block,
-    const CBlockIndex* pindexPrev,
+    int nHeight,
     const CCoinsViewCache& view,
     const Consensus::Params& consensusParams,
-    CValidationState& state)
+    CValidationState& state,
+    std::optional<uint256>& hashAuthDataRoot,
+    std::optional<uint256>& hashChainHistoryRoot)
 {
-    // Reachable at genesis during a reindex when both `pindexPrev` and
-    // `chainActive.Tip()` are null. NU5 cannot be active at height 0,
-    // so this should be a no-op.
-    if (pindexPrev == nullptr) {
-        return true;
-    }
+    if (consensusParams.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_HEARTWOOD)) {
+        auto prevConsensusBranchId = CurrentEpochBranchId(nHeight - 1, consensusParams);
+        hashChainHistoryRoot = view.GetHistoryRoot(prevConsensusBranchId);
 
-    int nHeight = pindexPrev->nHeight + 1;
-    if (!consensusParams.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU5)) {
-        return true;
-    }
-
-    auto prevConsensusBranchId = CurrentEpochBranchId(pindexPrev->nHeight, consensusParams);
-    uint256 hashAuthDataRoot = block.BuildAuthDataMerkleTree();
-    uint256 hashChainHistoryRoot = view.GetHistoryRoot(prevConsensusBranchId);
-    uint256 hashBlockCommitments = DeriveBlockCommitmentsHash(
-        hashChainHistoryRoot,
-        hashAuthDataRoot);
-    if (block.hashBlockCommitments != hashBlockCommitments) {
-        return state.DoS(100,
-            error("%s: block's hashBlockCommitments is incorrect (should be ZIP 244 block commitment)", __func__),
-            REJECT_INVALID, "bad-block-commitments-hash", true /* corruptionIn */);
+        if (consensusParams.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU5)) {
+            hashAuthDataRoot = block.BuildAuthDataMerkleTree();
+            // For NU5+ blocks, block.hashBlockCommitments must be the top digest
+            // of the ZIP 244 block commitments linked list.
+            // https://zips.z.cash/zip-0244#block-header-changes
+            uint256 hashBlockCommitments = DeriveBlockCommitmentsHash(
+                hashChainHistoryRoot.value(),
+                hashAuthDataRoot.value());
+            if (block.hashBlockCommitments != hashBlockCommitments) {
+                return state.DoS(100,
+                    error("%s: block's hashBlockCommitments is incorrect (should be ZIP 244 block commitment)", __func__),
+                    REJECT_INVALID, "bad-block-commitments-hash", true /* corruptionIn */);
+            }
+        }
     }
     return true;
 }
@@ -5973,6 +5967,8 @@ static bool AcceptBlock(const CBlock& block, CValidationState& state, const CCha
         return false;
     }
 
+    int nHeight = pindex->nHeight;
+
     // Body-vs-header commitment pre-check for active-tip extensions: catches
     // NU5+ body-poisoning attacks before the body is persisted to disk and
     // BLOCK_HAVE_DATA is set on the index entry. For sidechain blocks the
@@ -5980,14 +5976,15 @@ static bool AcceptBlock(const CBlock& block, CValidationState& state, const CCha
     // history MMR at an arbitrary `pprev` is infeasible); the body-replaceable
     // failure path in ConnectTip / InvalidBlockFound then cleans up persisted
     // body data so that a subsequent matching body can still be accepted.
-    if (pindex->pprev == chainActive.Tip()) {
-        if (!CheckBlockBodyAuthCommitment(block, pindex->pprev, *pcoinsTip,
-                                          chainparams.GetConsensus(), state)) {
+    //
+    // Null `pindex->pprev` can only occur at genesis during a reindex.
+    if (pindex->pprev != nullptr && pindex->pprev == chainActive.Tip()) {
+        std::optional<uint256> hashAuthDataRoot_, hashChainHistoryRoot_;
+        if (!CheckBlockBodyAuthCommitment(block, nHeight, *pcoinsTip, chainparams.GetConsensus(),
+                                          state, hashAuthDataRoot_, hashChainHistoryRoot_)) {
             return false;
         }
     }
-
-    int nHeight = pindex->nHeight;
 
     // Write block to history file
     try {
