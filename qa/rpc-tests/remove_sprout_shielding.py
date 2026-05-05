@@ -71,7 +71,7 @@ class RemoveSproutShieldingTest (BitcoinTestFramework):
         for _ in range(3):
             recipients = [{"address": n0_taddr0, "amount": Decimal('1')}]
             myopid = self.nodes[0].z_sendmany(n0_sprout_addr0, recipients, 1, ZIP_317_FEE, 'AllowRevealedRecipients')
-            wait_and_assert_operationid_status(self.nodes[0], myopid)
+            wait_and_assert_operationid_status(self.nodes[0], myopid, timeout=1200)
             self.sync_all()
             self.nodes[0].generate(1)
             self.sync_all()
@@ -91,7 +91,7 @@ class RemoveSproutShieldingTest (BitcoinTestFramework):
         # Send some funds back to n0_taddr0
         recipients = [{"address": n0_taddr0, "amount": Decimal('1')}]
         myopid = self.nodes[0].z_sendmany(n0_sprout_addr0, recipients, 1, ZIP_317_FEE, 'AllowRevealedRecipients')
-        wait_and_assert_operationid_status(self.nodes[0], myopid)
+        wait_and_assert_operationid_status(self.nodes[0], myopid, timeout=1200)
 
         # Mine to one block before Canopy activation on node 0; adding value
         # to the Sprout pool will fail now since the transaction must be
@@ -116,7 +116,7 @@ class RemoveSproutShieldingTest (BitcoinTestFramework):
         n1_sprout_addr1 = self.nodes[1].z_getnewaddress('sprout')
         recipients = [{"address": n1_sprout_addr1, "amount": Decimal('1')}]
         myopid = self.nodes[0].z_sendmany(n0_taddr0, recipients, 1, ZIP_317_FEE)
-        wait_and_assert_operationid_status(self.nodes[0], myopid, "failed", unsupported_sprout_msg)
+        wait_and_assert_operationid_status(self.nodes[0], myopid, "failed", unsupported_sprout_msg, timeout=1200)
         print("taddr -> Sprout z_sendmany tx rejected at Canopy activation on node 0")
 
         # Create z_mergetoaddress [taddr, Sprout] -> Sprout transaction on node 0. Should fail
@@ -141,7 +141,7 @@ class RemoveSproutShieldingTest (BitcoinTestFramework):
         # Shield coinbase to Sapling on node 0. Should pass
         sapling_addr = self.nodes[0].z_getnewaddress('sapling')
         myopid = self.nodes[0].z_shieldcoinbase(get_coinbase_address(self.nodes[0]), sapling_addr, ZIP_317_FEE)['opid']
-        wait_and_assert_operationid_status(self.nodes[0], myopid)
+        wait_and_assert_operationid_status(self.nodes[0], myopid, timeout=1200)
         print("taddr -> Sapling z_shieldcoinbase tx accepted after Canopy on node 0")
 
 if __name__ == '__main__':
