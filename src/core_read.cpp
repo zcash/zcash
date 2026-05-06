@@ -89,21 +89,15 @@ CScript ParseScript(const std::string& s)
     return result;
 }
 
-bool DecodeHexTx(CTransaction& tx, const std::string& strHexTx)
+void DecodeHexTx(CTransaction& tx, const std::string& strHexTx)
 {
-    if (!IsHex(strHexTx))
-        return false;
+    if (!IsHex(strHexTx)) {
+        throw std::ios_base::failure("not a valid hex string");
+    }
 
     std::vector<unsigned char> txData(ParseHex(strHexTx));
     CDataStream ssData(txData, SER_NETWORK, PROTOCOL_VERSION);
-    try {
-        ssData >> tx;
-    }
-    catch (const std::exception&) {
-        return false;
-    }
-
-    return true;
+    ssData >> tx;
 }
 
 bool DecodeHexBlk(CBlock& block, const std::string& strHexBlk)

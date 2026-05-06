@@ -2995,8 +2995,11 @@ UniValue fundrawtransaction(const UniValue& params, bool fHelp)
 
     // parse hex string from parameter
     CTransaction origTx;
-    if (!DecodeHexTx(origTx, params[0].get_str()))
-        throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "TX decode failed");
+    try {
+        DecodeHexTx(origTx, params[0].get_str());
+    } catch (const std::exception& e) {
+        throw JSONRPCError(RPC_DESERIALIZATION_ERROR, std::string("TX decode failed: ") + e.what());
+    }
 
     bool includeWatching = false;
     if (params.size() > 1)

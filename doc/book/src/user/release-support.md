@@ -42,7 +42,7 @@ time, and may shift due to changes in network solution power.
 <!-- RELEASE_SCRIPT_START_MARKER - If you make changes here, check make-release.py -->
 | `zcashd` version | Release date | Halt height | End of Support |
 | ---------------- | ------------ | ----------- | -------------- |
-| 6.11.0 | 2026-01-08 | 3327100 | 2026-04-30 |
 | 6.12.0 | 2026-03-27 | 3417100 | 2026-07-17 |
 | 6.12.1 | 2026-04-17 | 3417100 | 2026-07-17 |
+| 6.12.2 | 2026-05-06 | 3417100 | 2026-07-15 |
 <!-- RELEASE_SCRIPT_END_MARKER -->
