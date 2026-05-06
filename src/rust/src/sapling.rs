@@ -276,16 +276,29 @@ pub(crate) fn parse_v4_sapling_components(
 impl BundleAssembler {
     pub(crate) fn parse_v4_components(
         reader: &mut CppStream<'_>,
-        has_sapling: bool,
+        tx_version_has_sapling: bool,
     ) -> io::Result<Box<Self>> {
         let (value_balance, shielded_spends, shielded_outputs) =
-            sapling_serialization::temporary_zcashd_read_v4_components(reader, has_sapling)?;
+            sapling_serialization::temporary_zcashd_read_v4_components(
+                reader,
+                tx_version_has_sapling,
+            )?;
 
-        Ok(Box::new(Self {
-            value_balance,
-            shielded_spends,
-            shielded_outputs,
-        }))
+        if shielded_spends.is_empty()
+            && shielded_outputs.is_empty()
+            && value_balance != ZatBalance::zero()
+        {
+            Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "nonzero valueBalanceSapling has no sources or sinks",
+            ))
+        } else {
+            Ok(Box::new(Self {
+                value_balance,
+                shielded_spends,
+                shielded_outputs,
+            }))
+        }
     }
 
     pub(crate) fn have_actions(&self) -> bool {

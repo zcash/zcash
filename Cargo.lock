@@ -1265,6 +1265,7 @@ dependencies = [
  "metrics-util",
  "nonempty",
  "orchard",
+ "pasta_curves",
  "proptest",
  "rand",
  "rand_core",

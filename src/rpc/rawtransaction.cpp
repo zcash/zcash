@@ -887,8 +887,11 @@ UniValue decoderawtransaction(const UniValue& params, bool fHelp)
 
     CTransaction tx;
 
-    if (!DecodeHexTx(tx, params[0].get_str()))
-        throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "TX decode failed");
+    try {
+        DecodeHexTx(tx, params[0].get_str());
+    } catch (const std::exception& e) {
+        throw JSONRPCError(RPC_DESERIALIZATION_ERROR, std::string("TX decode failed: ") + e.what());
+    }
 
     UniValue result(UniValue::VOBJ);
     TxToJSON(tx, uint256(), result);
@@ -1264,8 +1267,11 @@ UniValue sendrawtransaction(const UniValue& params, bool fHelp)
 
     // parse hex string from parameter
     CTransaction tx;
-    if (!DecodeHexTx(tx, params[0].get_str()))
-        throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "TX decode failed");
+    try {
+        DecodeHexTx(tx, params[0].get_str());
+    } catch (const std::exception& e) {
+        throw JSONRPCError(RPC_DESERIALIZATION_ERROR, std::string("TX decode failed: ") + e.what());
+    }
     uint256 hashTx = tx.GetHash();
 
     auto chainparams = Params();

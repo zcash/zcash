@@ -414,6 +414,61 @@ public:
         nSolution.clear();
     }
 
+    //! Reset all body-related state on this block index entry, leaving header
+    //! and tree-position fields (`phashBlock`, `pprev`, `pskip`, `nHeight`,
+    //! `nChainWork`, `nCachedBranchId`, the deserialized header) intact.
+    //! Lowers the validity ladder back to `BLOCK_VALID_TREE` to reflect that
+    //! the body data is gone but the header remains validated up to where
+    //! `AcceptBlockHeader` left it. Used by `InvalidBlockFound` when
+    //! `CValidationState::CorruptionPossible()` is set, to discard body data
+    //! persisted from a body/header mismatch so that a subsequent submission
+    //! of a matching body for the same header can be processed normally.
+    //!
+    //! Preconditions, enforced by callers:
+    //!
+    //!   - Validity is at least `BLOCK_VALID_TREE`.
+    //!   - This entry is not in `setBlockIndexCandidates`.
+    //!   - No descendant of this entry has `nChainTx > 0`. Setting
+    //!     `nChainTx` to 0 here while a descendant retains `nChainTx > 0`
+    //!     would violate `CheckBlockIndex`'s `pindexFirstNeverProcessed`
+    //!     invariant on each such descendant: after the reset, the
+    //!     descendant's walk-tracker becomes set to this entry (because we
+    //!     now have `nTx == 0`), but the descendant's own `nChainTx` is
+    //!     still nonzero, breaking the equivalence between
+    //!     `pindexFirstNeverProcessed != NULL` and `nChainTx == 0`. Callers
+    //!     that may have such descendants must reset the descendant subtree
+    //!     (post-order) before this entry.
+    void ResetBodyState()
+    {
+        assert((nStatus & BLOCK_VALID_MASK) >= BLOCK_VALID_TREE);
+        nStatus = (nStatus & ~(BLOCK_VALID_MASK | BLOCK_HAVE_DATA | BLOCK_HAVE_UNDO)) | BLOCK_VALID_TREE;
+        nFile = 0;
+        nDataPos = 0;
+        nUndoPos = 0;
+        nTx = 0;
+        nChainTx = 0;
+        // `CheckBlockIndex` invariant: `nChainTx == 0` implies `nSequenceId == 0`.
+        nSequenceId = 0;
+        nChainSupplyDelta = std::nullopt;
+        nTransparentValue = std::nullopt;
+        nChainTotalSupply = std::nullopt;
+        nChainTransparentValue = std::nullopt;
+        nSproutValue = std::nullopt;
+        nChainSproutValue = std::nullopt;
+        nSaplingValue = 0;
+        nChainSaplingValue = std::nullopt;
+        nOrchardValue = 0;
+        nChainOrchardValue = std::nullopt;
+        nLockboxValue = 0;
+        nChainLockboxValue = std::nullopt;
+        hashSproutAnchor = uint256();
+        hashFinalSproutRoot = uint256();
+        hashFinalSaplingRoot = uint256();
+        hashAuthDataRoot = uint256();
+        hashFinalOrchardRoot = uint256();
+        hashChainHistoryRoot = uint256();
+    }
+
     CBlockIndex()
     {
         SetNull();

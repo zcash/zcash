@@ -70,6 +70,7 @@ BASE_SCRIPTS= [
     'wallet_tarnished_5_6_0.py',
     # vv Tests less than 60s vv
     'orchard_action_identity_point.py',
+    'sapling_v4_value_balance.py',
     'orchard_reorg.py',
     'fundrawtransaction.py',
     'reorg_limit.py',
@@ -146,6 +147,7 @@ BASE_SCRIPTS= [
     'feature_zip221.py',
     'feature_zip239.py',
     'feature_zip244_blockcommitments.py',
+    'nu5_block_body_poisoning.py',
     'upgrade_golden.py',
     'nuparams.py',
     'post_heartwood_rollback.py',
@@ -373,8 +375,15 @@ def run_tests(test_handler, test_list, src_dir, build_dir, exeext, jobs=1, enabl
             results.append(new_result)
     except (InterruptedError, KeyboardInterrupt):
         print('\nThe following tests were running when interrupted:')
+        now = time.time()
         for j in job_queue.jobs:
-            print("•", j[0])
+            (name, time0, _proc, _log_out, _log_err) = j
+            print("•", name)
+            total_count += 1
+            new_result = "%s | %s" % (name.ljust(max_len_name), "INTR".ljust(6))
+            if not deterministic:
+                new_result += (" | %s s" % (int(now - time0),))
+            results.append(new_result)
         print('\n', end='')
 
     all_passed = passed_count == total_count
