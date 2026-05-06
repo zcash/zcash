@@ -21,7 +21,7 @@ from .mininode import (
     NodeConn,
     NodeConnCB,
 )
-from .util import p2p_port
+from .util import assert_bitcoinds_alive, p2p_port
 
 import time
 
@@ -49,6 +49,7 @@ def wait_until(predicate, attempts=float('inf'), timeout=float('inf')):
     elapsed = 0
 
     while attempt < attempts and elapsed < timeout:
+        assert_bitcoinds_alive()
         with mininode_lock:
             if predicate():
                 return True

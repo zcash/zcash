@@ -42,6 +42,7 @@
 #include <algorithm>
 #include <atomic>
 #include <sstream>
+#include <unordered_map>
 #include <variant>
 
 #include <boost/algorithm/string/replace.hpp>
@@ -2490,6 +2491,83 @@ void static InvalidChainFound(CBlockIndex* pindexNew, const CChainParams& chainP
     CheckForkWarningConditions(chainParams.GetConsensus());
 }
 
+/**
+ * Reset body state on `root` and every descendant of `root` in
+ * `mapBlockIndex`, post-order so that each descendant's `nChainTx` is
+ * cleared before its parent's. Caller must hold `cs_main`. Used by
+ * `InvalidBlockFound` to handle a body-replaceable failure on a block
+ * that may have descendants with their own bodies (the sidechain
+ * case): leaving descendant `nChainTx > 0` while the root's `nChainTx`
+ * is zero would violate `CheckBlockIndex`'s `pindexFirstNeverProcessed`
+ * invariant on each such descendant, and let `FindMostWorkChain` walk
+ * through the stranded subtree.
+ *
+ * Runs in O(n + m), where n = |mapBlockIndex| and m = |subtree|, by
+ * precomputing a parent -> children map once. A naive per-node
+ * `mapBlockIndex` scan would be O(n * m); on a large adversary-grown
+ * header tree under `root` that becomes a quadratic-cost path under
+ * `cs_main`.
+ */
+static void ResetBodyStateForSubtree(CBlockIndex* root)
+{
+    AssertLockHeld(cs_main);
+
+    // Build a parent -> children map once over `mapBlockIndex`. Subsequent
+    // subtree traversal and per-node descendant checks are then O(1) per
+    // edge.
+    std::unordered_map<const CBlockIndex*, std::vector<CBlockIndex*>> children;
+    children.reserve(mapBlockIndex.size());
+    for (const auto& entry : mapBlockIndex) {
+        CBlockIndex* p = entry.second;
+        if (p->pprev != nullptr) {
+            children[p->pprev].push_back(p);
+        }
+    }
+
+    // Collect the subtree rooted at `root`, ancestors before descendants,
+    // walking children directly via the precomputed map.
+    std::vector<CBlockIndex*> subtree = {root};
+    for (size_t i = 0; i < subtree.size(); ++i) {
+        const auto cit = children.find(subtree[i]);
+        if (cit != children.end()) {
+            subtree.insert(subtree.end(), cit->second.begin(), cit->second.end());
+        }
+    }
+
+    // Reset in post-order: descendants first, so by the time each ancestor
+    // is reset, the no-descendant-`nChainTx > 0` precondition already holds.
+    for (auto it = subtree.rbegin(); it != subtree.rend(); ++it) {
+        CBlockIndex* p = *it;
+        // Erase from `setBlockIndexCandidates` *before* `ResetBodyState`
+        // mutates `nSequenceId`. The set is ordered by
+        // `(nChainWork, nSequenceId, ptr)` per `CBlockIndexWorkComparator`;
+        // erasing after the mutation would fail to find `p`.
+        setBlockIndexCandidates.erase(p);
+        // Enforce `ResetBodyState`'s documented preconditions before the
+        // call rather than after the resulting index corruption surfaces
+        // (e.g. as the `pindexTest->nChainTx || pindexTest->nHeight == 0`
+        // assertion in `FindMostWorkChain`):
+        //   1. `p` is not in `setBlockIndexCandidates` (just erased above).
+        //   2. No direct child of `p` has `nChainTx > 0`. By the
+        //      `ReceivedBlockTransactions` propagation invariant
+        //      (`nChainTx` is only assigned from `pprev->nChainTx + nTx`
+        //      once the parent's `nChainTx` is non-zero), `nChainTx > 0`
+        //      propagates strictly from parent to descendant, so this is
+        //      equivalent to "no descendant has `nChainTx > 0`". The
+        //      post-order walk above has already cleared every descendant
+        //      of `p` before we reach `p` itself.
+        assert(setBlockIndexCandidates.count(p) == 0);
+        const auto cit = children.find(p);
+        if (cit != children.end()) {
+            for (const CBlockIndex* c : cit->second) {
+                assert(c->nChainTx == 0);
+            }
+        }
+        p->ResetBodyState();
+        setDirtyBlockIndex.insert(p);
+    }
+}
+
 void static InvalidBlockFound(CBlockIndex *pindex, const CValidationState &state, const CChainParams& chainParams) {
     int nDoS = 0;
     if (state.IsInvalid(nDoS)) {
@@ -2502,12 +2580,29 @@ void static InvalidBlockFound(CBlockIndex *pindex, const CValidationState &state
                 Misbehaving(it->second, nDoS);
         }
     }
-    if (!state.CorruptionPossible()) {
+
+    if (state.CorruptionPossible()) {
+        // Body-replaceable failure: discard persisted body data and disk
+        // pointers for `pindex` and its descendants, so a subsequent
+        // submission of a matching body for the same header can be
+        // processed normally. Do NOT mark BLOCK_FAILED_VALID, which would
+        // permanently reject the header and prevent the canonical body
+        // from ever replacing the mismatched one. The helper handles
+        // `setBlockIndexCandidates.erase` and `setDirtyBlockIndex.insert`
+        // for each node it resets, including `pindex`.
+        ResetBodyStateForSubtree(pindex);
+    } else {
         pindex->nStatus |= BLOCK_FAILED_VALID;
         setDirtyBlockIndex.insert(pindex);
         setBlockIndexCandidates.erase(pindex);
-        InvalidChainFound(pindex, chainParams);
     }
+
+    // Run `InvalidChainFound` regardless of `CorruptionPossible()`, so
+    // that operators see the invalid-block log lines and so that
+    // `pindexBestInvalid` / `CheckForkWarningConditions` always track
+    // adversarial chains. The 6-block threshold in
+    // `CheckForkWarningConditions` filters out non-fork incidents.
+    InvalidChainFound(pindex, chainParams);
 }
 
 void UpdateCoins(const CTransaction& tx, CCoinsViewCache& inputs, CTxUndo &txundo, int nHeight)
@@ -3102,6 +3197,15 @@ static bool ShouldCheckTransactions(const CChainParams& chainparams, const CBloc
              && Checkpoints::IsAncestorOfLastCheckpoint(chainparams.Checkpoints(), pindex));
 }
 
+static bool CheckBlockBodyAuthCommitment(
+    const CBlock& block,
+    int nHeight,
+    const CCoinsViewCache& view,
+    const Consensus::Params& consensusParams,
+    CValidationState& state,
+    std::optional<uint256>& hashAuthDataRoot,
+    std::optional<uint256>& hashChainHistoryRoot);
+
 bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex,
                   CCoinsViewCache& view, const CChainParams& chainparams,
                   bool fJustCheck, CheckAs blockChecks)
@@ -3110,7 +3214,6 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
     auto consensusParams = chainparams.GetConsensus();
 
-    bool fCheckAuthDataRoot = true;
     bool fExpensiveChecks = true;
 
     switch (blockChecks) {
@@ -3121,10 +3224,11 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         // checking them twice for transactions that were already checked when
         // added to the mempool.
         fExpensiveChecks = false;
+        break;
     case CheckAs::SlowBenchmark:
-        // Disable checking the authDataRoot for block templates and slow block
-        // benchmarks.
-        fCheckAuthDataRoot = false;
+        // This case does not disable any verification work. It is retained
+        // because it disables `fCacheResults` below, so that per-tx
+        // verification results are not cached across benchmark runs.
         break;
     default:
         assert(false);
@@ -3156,6 +3260,18 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     if (!CheckBlock(block, state, chainparams, verifier,
         !fJustCheck, !fJustCheck, fCheckTransactions))
     {
+        return false;
+    }
+
+    // Compute hashAuthDataRoot and hashChainHistoryRoot and perform the
+    // NU5+ hashBlockCommitments check here, ahead of the per-tx loop.
+    // See `corruptionPossible` in `consensus/validation.h` — checking
+    // hashBlockCommitments first means any later per-tx auth-data failure
+    // is not body-replaceable.
+    std::optional<uint256> hashAuthDataRoot;
+    std::optional<uint256> hashChainHistoryRoot;
+    if (!CheckBlockBodyAuthCommitment(block, pindex->nHeight, view, consensusParams,
+                                      state, hashAuthDataRoot, hashChainHistoryRoot)) {
         return false;
     }
 
@@ -3352,9 +3468,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     bool fUpdateSaplingSubtrees = fExperimentalLightWalletd && (view.CurrentSubtreeIndex(SAPLING) == sapling_tree.current_subtree_index());
     bool fUpdateOrchardSubtrees = fExperimentalLightWalletd && (view.CurrentSubtreeIndex(ORCHARD) == orchard_tree.current_subtree_index());
 
-    // Grab the consensus branch ID for this block and its parent
+    // Grab the consensus branch ID for this block.
     auto consensusBranchId = CurrentEpochBranchId(pindex->nHeight, consensusParams);
-    auto prevConsensusBranchId = CurrentEpochBranchId(pindex->nHeight - 1, consensusParams);
 
     // Initialize the chain supply delta to the value delta of the lockbox for the block,
     // as previously computed using `SetChainPoolValues`.
@@ -3641,17 +3756,6 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         pos.nTxOffset += ::GetSerializeSize(tx, SER_DISK, CLIENT_VERSION);
     }
 
-    // Derive the various block commitments.
-    // We only derive them if they will be used for this block.
-    std::optional<uint256> hashAuthDataRoot;
-    std::optional<uint256> hashChainHistoryRoot;
-    if (consensusParams.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
-        hashAuthDataRoot = block.BuildAuthDataMerkleTree();
-    }
-    if (consensusParams.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
-        hashChainHistoryRoot = view.GetHistoryRoot(prevConsensusBranchId);
-    }
-
     view.PushAnchor(sprout_tree);
     view.PushAnchor(sapling_tree);
     view.PushAnchor(orchard_tree);
@@ -3775,6 +3879,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         //   to ConnectBlock (and thus never on the main chain) will stay with
         //   these set to null.
         if (consensusParams.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
+            assert(hashAuthDataRoot.has_value());
+            assert(hashChainHistoryRoot.has_value());
             pindex->hashAuthDataRoot = hashAuthDataRoot.value();
             pindex->hashFinalOrchardRoot = orchard_tree.root();
             pindex->hashChainHistoryRoot = hashChainHistoryRoot.value();
@@ -3783,19 +3889,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     blockundo.old_sprout_tree_root = old_sprout_tree_root;
 
     if (consensusParams.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
-        if (fCheckAuthDataRoot) {
-            // If NU5 is active, block.hashBlockCommitments must be the top digest
-            // of the ZIP 244 block commitments linked list.
-            // https://zips.z.cash/zip-0244#block-header-changes
-            uint256 hashBlockCommitments = DeriveBlockCommitmentsHash(
-                hashChainHistoryRoot.value(),
-                hashAuthDataRoot.value());
-            if (block.hashBlockCommitments != hashBlockCommitments) {
-                return state.DoS(100,
-                    error("%s: block's hashBlockCommitments is incorrect (should be ZIP 244 block commitment)", __func__),
-                    REJECT_INVALID, "bad-block-commitments-hash");
-            }
-        }
+        // NU5+ hashBlockCommitments was checked earlier in ConnectBlock,
+        // before per-tx verification.
     } else if (IsActivationHeight(pindex->nHeight, consensusParams, Consensus::UPGRADE_HEARTWOOD)) {
         // In the block that activates ZIP 221, block.hashBlockCommitments MUST
         // be set to all zero bytes.
@@ -3813,6 +3908,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         // - If the previous block is in this epoch, this block would affect
         //   this epoch's tree root, but as we haven't updated the tree for this
         //   block yet, view.GetHistoryRoot() returns the root we need.
+        assert(hashChainHistoryRoot.has_value());
         if (block.hashBlockCommitments != hashChainHistoryRoot.value()) {
             return state.DoS(100,
                 error("%s: block's hashBlockCommitments is incorrect (should be history tree root)", __func__),
@@ -5555,7 +5651,7 @@ bool CheckBlock(const CBlock& block,
     }
     if (nSigOps > MAX_BLOCK_SIGOPS)
         return state.DoS(100, error("CheckBlock(): out-of-bounds SigOpCount"),
-                         REJECT_INVALID, "bad-blk-sigops", true);
+                         REJECT_INVALID, "bad-blk-sigops");
 
     if (fCheckPOW && fCheckMerkleRoot && verifier.IsStrict())
         block.fChecked = true;
@@ -5756,6 +5852,64 @@ static bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state
 }
 
 /**
+ * Pre-check that the block's `hashBlockCommitments` is consistent with the
+ * received body's authorizing data, to catch NU5+ body-poisoning attacks
+ * before the body is persisted. This duplicates only the NU5+ branch of
+ * the full `hashBlockCommitments` validation in `ConnectBlock`, which
+ * remains the authoritative check (and the only place pre-NU5 cases
+ * —Heartwood-activation null check, Heartwood-active chain-history-root
+ * check, Sapling tree root check— are validated). Pre-NU5 blocks aren't
+ * body-poisoning vulnerable: those commitments are either independent of
+ * the current block body (Heartwood-activation, Heartwood-active) or
+ * commit to body data (Sapling tree root) that is also covered by
+ * `hashMerkleRoot`.
+ *
+ * `view` must be a coins view positioned at the chain state up to and
+ * including `pindexPrev`. The current caller (`AcceptBlock`) only invokes
+ * this when `pindexPrev == chainActive.Tip()`, so passing `*pcoinsTip`
+ * satisfies the requirement. Reconstructing the chain-history MMR state
+ * at an arbitrary `pindexPrev` would require disconnecting and
+ * reconnecting blocks, so for sidechain blocks the same check fires
+ * later in `ConnectBlock`; the body-replaceable failure path then cleans
+ * up persisted body data for the affected block index entry so that a
+ * different body for the same header can still be accepted.
+ *
+ * On mismatch, returns `state.DoS(100, ..., corruptionIn=true)` so that
+ * `InvalidBlockFound` and `ActivateBestChainStep` do not cache the failure
+ * as permanent header invalidity.
+ */
+static bool CheckBlockBodyAuthCommitment(
+    const CBlock& block,
+    int nHeight,
+    const CCoinsViewCache& view,
+    const Consensus::Params& consensusParams,
+    CValidationState& state,
+    std::optional<uint256>& hashAuthDataRoot,
+    std::optional<uint256>& hashChainHistoryRoot)
+{
+    if (consensusParams.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_HEARTWOOD)) {
+        auto prevConsensusBranchId = CurrentEpochBranchId(nHeight - 1, consensusParams);
+        hashChainHistoryRoot = view.GetHistoryRoot(prevConsensusBranchId);
+
+        if (consensusParams.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU5)) {
+            hashAuthDataRoot = block.BuildAuthDataMerkleTree();
+            // For NU5+ blocks, block.hashBlockCommitments must be the top digest
+            // of the ZIP 244 block commitments linked list.
+            // https://zips.z.cash/zip-0244#block-header-changes
+            uint256 hashBlockCommitments = DeriveBlockCommitmentsHash(
+                hashChainHistoryRoot.value(),
+                hashAuthDataRoot.value());
+            if (block.hashBlockCommitments != hashBlockCommitments) {
+                return state.DoS(100,
+                    error("%s: block's hashBlockCommitments is incorrect (should be ZIP 244 block commitment)", __func__),
+                    REJECT_INVALID, "bad-block-commitments-hash", true /* corruptionIn */);
+            }
+        }
+    }
+    return true;
+}
+
+/**
  * Store block on disk.
  * If dbp is non-NULL, the file is known to already reside on disk.
  *
@@ -5813,6 +5967,23 @@ static bool AcceptBlock(const CBlock& block, CValidationState& state, const CCha
     }
 
     int nHeight = pindex->nHeight;
+
+    // Body-vs-header commitment pre-check for active-tip extensions: catches
+    // NU5+ body-poisoning attacks before the body is persisted to disk and
+    // BLOCK_HAVE_DATA is set on the index entry. For sidechain blocks the
+    // check has to wait until ConnectBlock (since reconstructing the chain
+    // history MMR at an arbitrary `pprev` is infeasible); the body-replaceable
+    // failure path in ConnectTip / InvalidBlockFound then cleans up persisted
+    // body data so that a subsequent matching body can still be accepted.
+    //
+    // Null `pindex->pprev` can only occur at genesis during a reindex.
+    if (pindex->pprev != nullptr && pindex->pprev == chainActive.Tip()) {
+        std::optional<uint256> hashAuthDataRoot_, hashChainHistoryRoot_;
+        if (!CheckBlockBodyAuthCommitment(block, nHeight, *pcoinsTip, chainparams.GetConsensus(),
+                                          state, hashAuthDataRoot_, hashChainHistoryRoot_)) {
+            return false;
+        }
+    }
 
     // Write block to history file
     try {
