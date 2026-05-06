@@ -63,6 +63,7 @@ libcxx 22.1.1 2026-07-15
 libcxx 22.1.2 2026-07-15
 libcxx 22.1.3 2026-07-15
 libcxx 22.1.4 2026-07-15
+libcxx 22.1.5 2026-07-15
 native_clang 19.1.0 2026-07-15
 native_clang 19.1.1 2026-07-15
 native_clang 19.1.2 2026-07-15
@@ -94,6 +95,7 @@ native_clang 22.1.1 2026-07-15
 native_clang 22.1.2 2026-07-15
 native_clang 22.1.3 2026-07-15
 native_clang 22.1.4 2026-07-15
+native_clang 22.1.5 2026-07-15
 native_cmake 4.3.0 2026-07-15
 native_cmake 4.3.1 2026-07-15
 native_cmake 4.3.2 2026-07-15
