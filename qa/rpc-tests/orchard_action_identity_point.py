@@ -4,21 +4,31 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #
-# Regression test for the Orchard identity-point bugs:
+# Regression tests for Orchard action field validity checks performed by
+# CheckTransactionWithoutProofVerification:
 #
 # 1. An Orchard action with rk encoding the Pallas identity point (all zeros)
-#    would cause a crash in proof verification. This is now rejected by
-#    CheckTransactionWithoutProofVerification before proofs are checked.
+#    would cause a crash in proof verification. This is now rejected before
+#    proofs are checked.
 #
 # 2. The Zcash protocol specification (section 5.4.9.4) requires that the
 #    ephemeral public key (epk) in each Orchard action encode a non-identity
 #    Pallas point. Zebra enforced this but zcashd did not, creating a potential
-#    consensus split. This is now also rejected by
-#    CheckTransactionWithoutProofVerification.
+#    consensus split. There are three categories of byte strings that fail to
+#    encode a valid non-identity Pallas point, all of which must be rejected:
+#
+#      a. Non-canonical x (x >= q_P, the Pallas base field modulus): the
+#         from_repr step fails the borrow-subtract against MODULUS, so
+#         pallas::Point::from_bytes returns None.
+#      b. Off-curve canonical x: x is in [0, q_P) but (x^3 + 5) is a
+#         non-residue mod q_P, so the sqrt step in from_bytes returns None.
+#      c. The identity point (all-zeros encoding): from_bytes returns the
+#         identity, which the explicit is_identity() check then rejects.
 #
 # The test creates a valid Orchard transaction, locates the rk and epk fields
-# by byte offset in the serialized v5 format (ZIP 225), zeroes them out, and
-# verifies that the modified transaction is rejected with the expected error.
+# by byte offset in the serialized v5 format (ZIP 225), substitutes each of
+# these invalid byte strings, and verifies that the modified transaction is
+# rejected with the expected error.
 
 from test_framework.authproxy import JSONRPCException
 from test_framework.test_framework import BitcoinTestFramework
@@ -38,7 +48,17 @@ import struct
 #   cv(32) + nullifier(32) + rk(32) + cmx(32) + ephemeralKey(32) + encCiphertext(580) + outCiphertext(80)
 RK_OFFSET_IN_ACTION = 64     # cv(32) + nullifier(32)
 EPK_OFFSET_IN_ACTION = 128   # cv(32) + nullifier(32) + rk(32) + cmx(32)
+
+# Encodings of byte strings that do not represent valid non-identity Pallas
+# curve points (used to test epk validation). See the file-level comment for
+# the categorisation.
 IDENTITY_BYTES = b'\x00' * 32
+# x = 2^255 - 1 (sign bit cleared by from_bytes), which exceeds the Pallas
+# base field modulus q_P, so from_bytes rejects it as non-canonical.
+NON_CANONICAL_X_BYTES = b'\xff' * 32
+# x = 2 (canonical, in [0, q_P)) with the sign bit clear; (2^3 + 5) = 13 is
+# a quadratic non-residue mod q_P, so this x is not on the Pallas curve.
+OFF_CURVE_X_BYTES = b'\x02' + b'\x00' * 31
 
 
 def read_compact_size(data, pos):
@@ -77,25 +97,26 @@ def find_orchard_actions_offset(tx):
     return read_compact_size(tx, pos)
 
 
-def tamper_field(tx, offset):
-    return tx[:offset] + IDENTITY_BYTES + tx[offset + 32:]
+def replace_field(tx, offset, value):
+    assert len(value) == 32
+    return tx[:offset] + value + tx[offset + 32:]
 
 def get_field(tx, offset):
     return tx[offset:offset + 32]
 
-def rk_offset(action_offset): 
+def rk_offset(action_offset):
     return action_offset + RK_OFFSET_IN_ACTION
 
 def epk_offset(action_offset):
     return action_offset + EPK_OFFSET_IN_ACTION
 
-def tamper_rk(tx, action_offset):
-    """Set the rk field of an Orchard action to all zeros."""
-    return tamper_field(tx, rk_offset(action_offset))
+def tamper_rk(tx, action_offset, value=IDENTITY_BYTES):
+    """Replace the rk field of an Orchard action with `value` (32 bytes)."""
+    return replace_field(tx, rk_offset(action_offset), value)
 
-def tamper_epk(tx, action_offset):
-    """Set the epk field of an Orchard action to all zeros."""
-    return tamper_field(tx, epk_offset(action_offset))
+def tamper_epk(tx, action_offset, value=IDENTITY_BYTES):
+    """Replace the epk field of an Orchard action with `value` (32 bytes)."""
+    return replace_field(tx, epk_offset(action_offset), value)
 
 def get_rk(tx, action_offset):
     return get_field(tx, rk_offset(action_offset))
@@ -216,6 +237,34 @@ class OrchardActionIdentityPointTest(BitcoinTestFramework):
             self.nodes[0].sendrawtransaction, bytes_to_hex_str(tx_tamperedboth),
         )
         print("  PASS: identity rk+epk correctly rejected")
+
+        # Tests 4 and 5: epk byte strings that do not encode any valid Pallas
+        # point (rather than encoding the identity) must also be rejected.
+        for (label, bad_epk) in [
+            ("non-canonical x (x >= q_P)", NON_CANONICAL_X_BYTES),
+            ("off-curve canonical x (x=2)", OFF_CURVE_X_BYTES),
+        ]:
+            print("Testing invalid epk rejection: %s..." % label)
+            tx_tamperedepk = tamper_epk(tx_untampered, action_pos, bad_epk)
+            tx_tamperedepk_hex = bytes_to_hex_str(tx_tamperedepk)
+
+            # Sanity-check that the substitution landed at the expected offset.
+            assert_equal(get_epk(tx_tamperedepk, action_pos), bad_epk,
+                         "epk was not replaced")
+
+            # The serialization is purely byte-level, so decoderawtransaction
+            # should round-trip the tampered bytes regardless of curve validity.
+            action_tamperedepk_decoded = self.nodes[0].decoderawtransaction(
+                tx_tamperedepk_hex)['orchard']['actions'][0]
+            epk_tamperedepk_decoded = hex_str_to_bytes(
+                action_tamperedepk_decoded['ephemeralKey'])
+            assert_equal(epk_tamperedepk_decoded, bad_epk)
+
+            assert_raises_message(
+                JSONRPCException, "bad-orchard-action-identity-point",
+                self.nodes[0].sendrawtransaction, tx_tamperedepk_hex,
+            )
+            print("  PASS: %s correctly rejected" % label)
 
 if __name__ == '__main__':
     OrchardActionIdentityPointTest().main()
