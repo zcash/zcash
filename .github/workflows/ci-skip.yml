@@ -96,7 +96,7 @@ jobs:
 
       - name: Submit required-passed status
         if: ${{ !cancelled() && steps.no-ci-required.outputs.result == 'verified' }}
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.request("POST /repos/{owner}/{repo}/statuses/{sha}", {
