@@ -1491,8 +1491,10 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
 
     // Check Orchard action fields that are not validated by the proof circuit:
     // - rk must not be the identity (causes a crash in proof verification)
-    // - epk must not be the identity (consensus rule: ephemeralKey must encode
-    //   a non-identity pallas point, per §5.4.9.4 of the protocol spec)
+    // - epk must encode a valid, non-identity Pallas curve point (consensus
+    //   rule per §5.4.9.4 of the protocol spec); this rejects the all-zeros
+    //   identity encoding, non-canonical x (x >= q_P), and canonical x for
+    //   which no curve point exists.
     if (!orchard_bundle.ValidateWithoutProofVerification()) {
         return state.DoS(100, error("CheckTransaction(): invalid Orchard action field encoding"),
                          REJECT_INVALID, "bad-orchard-action-identity-point");
