@@ -1,5 +1,6 @@
 use std::{mem, ptr};
 
+use group::{Group as _, GroupEncoding as _};
 use memuse::DynamicUsage;
 use orchard::{
     bundle::Authorized,
@@ -7,6 +8,7 @@ use orchard::{
     note_encryption::OrchardDomain,
     primitives::redpallas::{Signature, SpendAuth},
 };
+use pasta_curves::pallas;
 use zcash_note_encryption::try_output_recovery_with_ovk;
 use zcash_primitives::transaction::components::orchard as orchard_serialization;
 use zcash_protocol::value::ZatBalance;
@@ -205,8 +207,10 @@ impl Bundle {
 
     /// Checks action fields that are not validated by the proof circuit:
     /// - rk must not be the identity (causes a crash in proof verification)
-    /// - epk must not be the identity (consensus rule: ephemeralKey must encode
-    ///   a non-identity pallas point, per protocol spec §5.4.9.4)
+    /// - epk must encode a valid, non-identity Pallas curve point (consensus
+    ///   rule per protocol spec §5.4.9.4); this rejects the all-zeros identity
+    ///   encoding, non-canonical x (x >= q_P), and canonical x for which no
+    ///   curve point exists.
     pub(crate) fn validate_action_encodings(&self) -> bool {
         if let Some(bundle) = self.inner() {
             for action in bundle.actions() {
@@ -214,7 +218,11 @@ impl Bundle {
                 if rk_bytes == [0u8; 32] {
                     return false;
                 }
-                if action.encrypted_note().epk_bytes == [0u8; 32] {
+                if pallas::Point::from_bytes(&action.encrypted_note().epk_bytes)
+                    .into_option()
+                    .into_iter()
+                    .all(|p| p.is_identity().into())
+                {
                     return false;
                 }
             }
