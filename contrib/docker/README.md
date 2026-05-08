@@ -1,8 +1,8 @@
 # zcash Dockerfile
 
-This is an example Dockerfile to run the zcashd daemon in a containerized Debian base OS. The image pulls the apt package built by Electric Coin Company.
+This is an example Dockerfile to run the zcashd daemon in a containerized Debian base OS. The image pulls the apt package built by Zcash Open Development Lab.
 
-The output of building this image should be accessible at https://hub.docker.com/r/electriccoinco/zcashd
+The output of building this image should be accessible at https://hub.docker.com/r/zodlinc/zcashd
 
 ## Defaults
 
@@ -78,7 +78,7 @@ docker run -d --name my_zcashd \
   -v $(pwd)/zcash-data-dir:/srv/zcashd/.zcash \
   -v $(pwd)/zcash-params-dir:/srv/zcashd/.zcash-params \
   electriccoinco/zcashd
-```  
+```
 
 Follow the logs to see its activity.
 

@@ -38,7 +38,7 @@ jobs:
 
     steps:
       - name: Check out the base branch
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.0.2
         with:
           # We fetch the entire repository to ensure we have the common ancestor
           # of the base branch and the PR branch.
@@ -96,7 +96,7 @@ jobs:
 
       - name: Submit required-passed status
         if: ${{ !cancelled() && steps.no-ci-required.outputs.result == 'verified' }}
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             await github.request("POST /repos/{owner}/{repo}/statuses/{sha}", {

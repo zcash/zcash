@@ -29,8 +29,8 @@ reject comments, commits, code, wiki edits, issues, and other contributions
 that are not aligned to this Code of Conduct, or to ban temporarily or
 permanently any contributor for other behaviors that they deem inappropriate,
 threatening, offensive, or harmful. Note that contributors may be volunteers
-who do not represent Electric Coin Company. They are free to express their own
-opinions so long as they adhere to these guidelines.
+who do not represent Zcash Open Development Lab. They are free to express their
+own opinions so long as they adhere to these guidelines.
 
 By adopting this Code of Conduct, project maintainers commit themselves to
 fairly and consistently applying these principles to every aspect of managing
