@@ -2,7 +2,7 @@ Zcash Contributors
 ==================
 
 * Jack Grigg (2253)
-* Kris Nuttycombe (794)
+* Kris Nuttycombe (797)
 * Daira-Emma Hopwood (570)
 * Simon Liu (464)
 * Sean Bowe (413)
