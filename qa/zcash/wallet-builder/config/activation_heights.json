@@ -1,0 +1,31 @@
+{
+  "_comment": [
+    "Regtest activation heights for each network upgrade.",
+    "",
+    "SPACING RATIONALE:",
+    "Heights are spaced 150-200 blocks apart. This is tight because the",
+    "regtest halving interval is ~150 blocks, which rapidly reduces coinbase",
+    "rewards. Tighter spacing means more of each phase's coinbase is at the",
+    "higher reward level. See the 'Critical Constraint' section in the plan.",
+    "",
+    "Each phase needs enough blocks for:",
+    "  1. Mining ~110 blocks (coinbase creation)",
+    "  2. Waiting 100 blocks for coinbase maturity",
+    "  3. ~50 blocks for transaction operations and confirmations",
+    "  4. Mining to the next activation height",
+    "",
+    "BRANCH IDs are from the Zcash protocol specification, section 3.12:",
+    "  https://zips.z.cash/protocol/protocol.pdf"
+  ],
+  "activations": {
+    "sprout":     { "height": 0,    "branch_id": null },
+    "overwinter": { "height": 200,  "branch_id": "5ba81b19" },
+    "sapling":    { "height": 350,  "branch_id": "76b809bb" },
+    "blossom":    { "height": 500,  "branch_id": "2bb40e60" },
+    "heartwood":  { "height": 700,  "branch_id": "f5b9230b" },
+    "canopy":     { "height": 850,  "branch_id": "e9ff75a6" },
+    "nu5":        { "height": 1000, "branch_id": "c2d6d0b4" },
+    "nu6":        { "height": 1200, "branch_id": "c8e71055" },
+    "nu6_1":      { "height": 1400, "branch_id": "4dec4df0" }
+  }
+}

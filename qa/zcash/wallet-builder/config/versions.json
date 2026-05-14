@@ -1,0 +1,132 @@
+{
+  "_comment": [
+    "Version matrix for the regtest chain builder.",
+    "Each entry maps a network upgrade to the zcashd version used for that phase.",
+    "",
+    "VERSION SELECTION RULE: For each NU, use the latest zcashd release that",
+    "(a) supports that NU's consensus rules and (b) was released before the",
+    "NU activated on mainnet. This simulates the real-world wallet upgrade path.",
+    "",
+    "VERIFIED: All versions and download URLs confirmed against",
+    "https://github.com/zcash/zcash/releases and https://download.z.cash/downloads/",
+    "",
+    "WALLET FORMAT: All versions use Berkeley DB for wallet.dat (ZIP 400).",
+    "There is no SQLite migration within zcashd.",
+    "",
+    "DOWNLOAD URL PATTERNS:",
+    "  v1.0.x - v2.0.x: zcash-{VERSION}-linux64.tar.gz (no distro suffix)",
+    "  v2.1.0-1 - v4.1.1: zcash-{VERSION}-linux64-debian-stretch.tar.gz",
+    "  v5.0.0: zcash-{VERSION}-linux64-debian-buster.tar.gz",
+    "  v6.0.0+: zcash-{VERSION}-linux64-debian-bullseye.tar.gz or -bookworm"
+  ],
+  "phases": [
+    {
+      "phase": 0,
+      "network_upgrade": "sprout",
+      "name": "Sprout",
+      "zcashd_version": "2.1.0-1",
+      "original_target": "1.0.15",
+      "original_commit": "93332d6e84590cdcb8c64282f9b525152c3f1b2f",
+      "mainnet_activation": "2016-10-28",
+      "download_url": "https://download.z.cash/downloads/zcash-2.1.0-1-linux64-debian-stretch.tar.gz",
+      "known_nus": [],
+      "notes": "SUBSTITUTION: v1.0.15 requires sprout-proving.key (BCTV14, ~900MB) which is no longer available from z.cash CDN or IPFS. v2.1.0-1 is the oldest version that runs without it, using sprout-groth16.params instead. Wallet records are identical; only the proof system differs."
+    },
+    {
+      "phase": 1,
+      "network_upgrade": "overwinter",
+      "name": "Overwinter",
+      "zcashd_version": "2.1.0-1",
+      "original_target": "1.1.1",
+      "original_commit": "047b0bf94a2018a5f842219d3d5cdc157f9a52da",
+      "mainnet_activation": "2018-06-25",
+      "download_url": "https://download.z.cash/downloads/zcash-2.1.0-1-linux64-debian-stretch.tar.gz",
+      "known_nus": ["overwinter"],
+      "notes": "SUBSTITUTION: v1.1.1 requires sprout-proving.key. Using v2.1.0-1 instead."
+    },
+    {
+      "phase": 2,
+      "network_upgrade": "sapling",
+      "name": "Sapling",
+      "zcashd_version": "2.1.0-1",
+      "original_target": "2.0.1",
+      "original_commit": "e8f5e592b864b341391c9becf80bbe3e0e930a33",
+      "mainnet_activation": "2018-10-28",
+      "download_url": "https://download.z.cash/downloads/zcash-2.1.0-1-linux64-debian-stretch.tar.gz",
+      "known_nus": ["overwinter", "sapling"],
+      "notes": "SUBSTITUTION: v2.0.1 requires sprout-proving.key. Using v2.1.0-1 instead."
+    },
+    {
+      "phase": 3,
+      "network_upgrade": "blossom",
+      "name": "Blossom",
+      "zcashd_version": "2.1.0-1",
+      "git_commit": "253fcaa997d3d5e30c3789c825a82e1ed3e7a3fe",
+      "release_date": "2019-11-12",
+      "mainnet_activation": "2019-12-11",
+      "download_url": "https://download.z.cash/downloads/zcash-2.1.0-1-linux64-debian-stretch.tar.gz",
+      "known_nus": ["overwinter", "sapling", "blossom"],
+      "notes": "Security hotfix for CVE-2017-18350. v2.1.0 has no downloadable binary; only v2.1.0-1 is available."
+    },
+    {
+      "phase": 4,
+      "network_upgrade": "heartwood",
+      "name": "Heartwood",
+      "zcashd_version": "3.0.0",
+      "git_commit": "de2e1160db45fe3f6c252b699cf56000c9104d76",
+      "release_date": "2020-05-27",
+      "mainnet_activation": "2020-07-16",
+      "download_url": "https://download.z.cash/downloads/zcash-3.0.0-linux64-debian-stretch.tar.gz",
+      "known_nus": ["overwinter", "sapling", "blossom", "heartwood"],
+      "notes": "Adds shielded coinbase (ZIP 213) and FlyClient (ZIP 221). v3.1.0 was released AFTER activation."
+    },
+    {
+      "phase": 5,
+      "network_upgrade": "canopy",
+      "name": "Canopy",
+      "zcashd_version": "4.1.1",
+      "git_commit": "6d856869e9c4cb9e6f3332db6fb04b956bb9fd3d",
+      "release_date": "2020-11-17",
+      "mainnet_activation": "2020-11-18",
+      "download_url": "https://download.z.cash/downloads/zcash-4.1.1-linux64-debian-stretch.tar.gz",
+      "known_nus": ["overwinter", "sapling", "blossom", "heartwood", "canopy"],
+      "notes": "Hotfix for performance regression. Released just 1 day before Canopy activation. Disables Sprout deposits (ZIP 211)."
+    },
+    {
+      "phase": 6,
+      "network_upgrade": "nu5",
+      "name": "NU5",
+      "zcashd_version": "5.0.0",
+      "git_commit": "16b49eadd56086aae10f2907e5b8e77b773f1813",
+      "release_date": "2022-05-11",
+      "mainnet_activation": "2022-05-31",
+      "download_url": "https://download.z.cash/downloads/zcash-5.0.0-linux64-debian-buster.tar.gz",
+      "known_nus": ["overwinter", "sapling", "blossom", "heartwood", "canopy", "nu5"],
+      "notes": "Adds Orchard shielded protocol (ZIP 224), v5 tx format (ZIP 225). Introduces zcashd-wallet-tool binary. Many RPCs deprecated."
+    },
+    {
+      "phase": 7,
+      "network_upgrade": "nu6",
+      "name": "NU6",
+      "zcashd_version": "6.0.0",
+      "git_commit": "c61e5473ae1fee18ac57e14123d3943323f0f04c",
+      "release_date": "2024-10-04",
+      "mainnet_activation": "2024-11-23",
+      "download_url": "https://download.z.cash/downloads/zcash-6.0.0-linux64-debian-bullseye.tar.gz",
+      "known_nus": ["overwinter", "sapling", "blossom", "heartwood", "canopy", "nu5", "nu6"],
+      "notes": "Implements lockbox funding streams (ZIP 2001)."
+    },
+    {
+      "phase": 8,
+      "network_upgrade": "nu6_1",
+      "name": "NU6.1",
+      "zcashd_version": "6.10.0",
+      "git_commit": "385c6d907cc09e4f21e2d5ad2d1ce4ce14d05aa0",
+      "release_date": "2025-10-04",
+      "mainnet_activation": "2025-11-24",
+      "download_url": "https://download.z.cash/downloads/zcash-6.10.0-linux64-debian-bookworm.tar.gz",
+      "known_nus": ["overwinter", "sapling", "blossom", "heartwood", "canopy", "nu5", "nu6", "nu6_1"],
+      "notes": "Implements deferred lockbox disbursement (ZIP 271). v6.3.0 also supports NU6.1 on testnet."
+    }
+  ]
+}
