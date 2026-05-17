@@ -556,18 +556,19 @@ TransactionBuilderResult TransactionBuilder::Build()
     // Empty output script.
     uint256 dataToBeSigned;
     try {
-        if (mtx.fOverwintered) {
+        CTransaction ctx(mtx);
+        if (ctx.fOverwintered) {
             // ProduceShieldedSignatureHash is only usable with v3+ transactions.
             dataToBeSigned = ProduceShieldedSignatureHash(
                 consensusBranchId,
-                mtx,
+                ctx,
                 tIns,
                 *saplingBundle,
                 orchardBundle);
         } else {
             CScript scriptCode;
-            const PrecomputedTransactionData txdata(mtx, tIns);
-            dataToBeSigned = SignatureHash(scriptCode, mtx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId, txdata);
+            const PrecomputedTransactionData txdata(ctx, tIns);
+            dataToBeSigned = SignatureHash(scriptCode, ctx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId, txdata);
         }
     } catch (std::ios_base::failure ex) {
         return TransactionBuilderResult("Could not construct signature hash: " + std::string(ex.what()));

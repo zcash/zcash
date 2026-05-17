@@ -107,7 +107,8 @@ std::uniform_int_distribution<int> sapling_version_dist(
     CTransaction::SAPLING_MIN_CURRENT_VERSION,
     CTransaction::SAPLING_MAX_CURRENT_VERSION);
 
-void static RandomTransaction(CMutableTransaction &tx, bool fSingle, uint32_t consensusBranchId) {
+CTransaction static RandomTransaction(bool fSingle, uint32_t consensusBranchId) {
+    CMutableTransaction tx;
     tx.fOverwintered = InsecureRandBool();
     if (tx.fOverwintered) {
         if (InsecureRandBool()) {
@@ -192,6 +193,8 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle, uint32_t co
             {dataToBeSigned.begin(), 32},
             tx.joinSplitSig);
     }
+
+    return CTransaction(tx);
 }
 
 BOOST_FIXTURE_TEST_SUITE(sighash_tests, BasicTestingSetup)
@@ -214,8 +217,7 @@ BOOST_AUTO_TEST_CASE(sighash_test)
         int nHashType = InsecureRand32();
         // Exclude ZFUTURE as its branch ID can't be represented as a JSON int32
         uint32_t consensusBranchId = NetworkUpgradeInfo[InsecureRandRange(Consensus::MAX_NETWORK_UPGRADES - 1)].nBranchId;
-        CMutableTransaction txTo;
-        RandomTransaction(txTo, (nHashType & 0x1f) == SIGHASH_SINGLE, consensusBranchId);
+        CTransaction txTo = RandomTransaction((nHashType & 0x1f) == SIGHASH_SINGLE, consensusBranchId);
         CScript scriptCode;
         RandomScript(scriptCode);
         int nIn = InsecureRandRange(txTo.vin.size());

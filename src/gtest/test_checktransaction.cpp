@@ -38,7 +38,7 @@ TEST(ChecktransactionTests, CheckVpubNotBothNonzero) {
         jsdesc->vpub_old = 1;
         jsdesc->vpub_new = 1;
 
-        EXPECT_FALSE(CheckTransactionWithoutProofVerification(newTx, state));
+        EXPECT_FALSE(CheckTransactionWithoutProofVerification(CTransaction(newTx), state));
         EXPECT_EQ(state.GetRejectReason(), "bad-txns-vpubs-both-nonzero");
     }
 }

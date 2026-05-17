@@ -165,7 +165,7 @@ TEST_F(ContextualCheckBlockTest, BadCoinbaseHeight) {
     mtx.vout.pop_back(); // remove the FR output
 
     CBlock block;
-    block.vtx.push_back(mtx);
+    block.vtx.emplace_back(mtx);
 
     // Treating block as genesis should pass
     MockCValidationState state;
