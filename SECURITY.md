@@ -3,25 +3,77 @@ conform to this standard: https://github.com/RD-Crypto-Spec/Responsible-Disclosu
 
 # Security Disclosures
 
+## Vulnerability Categorization
+
+The Zcash maintainers have defined the following categories for vulnerabilities.
+
+### Critical
+
+* Violations of the monetary base
+* Violations of consensus rules that result in consensus-invalid transactions
+  being accepted by network full nodes.
+* Remotely-exploitable vulnerabilities that may result in individual user loss
+  of funds or compromise of their devices without user interaction. Think on
+  the order of vulnerabilities that might result in remote code execution or
+  remote key extraction.
+* Vulnerabilities that could result in network-wide deanonyimization or
+  exposure of the shielded transaction graph.
+
+### High
+
+* All other forms of remotely-triggered consensus divergence or network split.
+* DoS vulnerabilities affecting full node or light client server software.
+* Other vulnerabilities that might result in remotely-triggered individual user
+  loss of funds. This does not include vulnerabilities resulting from careless
+  or intentional API misuse by wallet software.
+
+### Moderate
+
+* Other vulnerabilities that might result in individual user loss of funds.
+
+### Low
+
+* Individual user wallet DoS.
+
+### Not Vulnerability
+
+The following categories of problems are explicitly not considered vulnerabilities.
+
+* Bugs that may cause temporary unavailability of funds which can be resolved,
+  in the limit, by a wallet re-scan or importing keys into another wallet.
+* Behavior that is explicitly or implicitly acknowledged in the
+  [light wallet threat model](https://zcash.readthedocs.io/en/latest/rtd_pages/wallet_threat_model.html).
+  Light wallet servers are considered explicitly trusted for the correctness of
+  the data that they return to users, and misbehavior arising from processing
+  maliciously-crafted compact block or transaction data returned from light wallet
+  servers is not considered a vulnerability unless its processing results
+  in a compromise that risks loss of funds or deanonyimization beyond what
+  is acknowledged by the light wallet threat model.
+
 ## Receiving Disclosures
 
-The Zcash maintainers are committed to working with researchers who submit
-security vulnerability notifications to us to resolve those issues on an
-appropriate timeline and perform a coordinated release, giving credit to the
-reporter if they would like.
+We have no email address to report security issues; email is not suitable for
+this purpose for both reliability and security reasons (even if encryption is
+used).
 
-Please submit issues via Signal. We have no email address to report security
-issues; email is not suitable for this purpose for both reliability and
-security reasons (even if encryption is used).
-
-Please create a Signal group with the following users to report a security
-issue. Do not reuse a previous group for a new issue.
+For critical vulnerabilities, please create a Signal group with the following
+users to report a security issue. Do not reuse a previous group for a new
+issue.
 
 ```
 dairaemma.31
-nuttycom.01
 pilizcash.01
+nuttycom.01
 ```
+
+For all other vulnerabilities, please use the GitHub "Report a Vulnerability"
+feature, available at https://github.com/zcash/zcash/security/advisories.
+
+WARNING: overstating the severity of any reported vulnerability, according
+to the rubric presented above, WILL MAKE THE REPORTER INELIGIBLE FOR
+COMPENSATION UNDER ANY BUG BOUNTY PROGRAM. The Zcash maintainers are currently
+experiencing a large number of spurious issues being incorrectly reported as
+critical vulnerabilities. Choose wisely.
 
 ## Sending Disclosures
 
