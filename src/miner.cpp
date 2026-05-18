@@ -179,25 +179,21 @@ public:
 
         // Empty output script.
         uint256 dataToBeSigned;
-        try {
-            if (mtx.fOverwintered) {
-                // ProduceShieldedSignatureHash is only usable with v3+ transactions.
-                dataToBeSigned = ProduceShieldedSignatureHash(
-                    consensusBranchId,
-                    mtx,
-                    {},
-                    *saplingBundle,
-                    orchardBundle);
-            } else {
-                CScript scriptCode;
-                PrecomputedTransactionData txdata(mtx, {});
-                dataToBeSigned = SignatureHash(
-                    scriptCode, mtx, NOT_AN_INPUT, SIGHASH_ALL, 0,
-                    consensusBranchId,
-                    txdata);
-            }
-        } catch (std::logic_error ex) {
-            throw ex;
+        if (mtx.fOverwintered) {
+            // ProduceShieldedSignatureHash is only usable with v3+ transactions.
+            dataToBeSigned = ProduceShieldedSignatureHash(
+                consensusBranchId,
+                mtx,
+                {},
+                *saplingBundle,
+                orchardBundle);
+        } else {
+            CScript scriptCode;
+            PrecomputedTransactionData txdata(mtx, {});
+            dataToBeSigned = SignatureHash(
+                scriptCode, mtx, NOT_AN_INPUT, SIGHASH_ALL, 0,
+                consensusBranchId,
+                txdata);
         }
 
         if (orchardBundle.has_value()) {
@@ -205,7 +201,7 @@ public:
             if (authorizedBundle.has_value()) {
                 mtx.orchardBundle = authorizedBundle.value();
             } else {
-                throw new std::runtime_error("Failed to create Orchard proof or signatures");
+                throw std::runtime_error("Failed to create Orchard proof or signatures");
             }
         }
 
@@ -244,7 +240,7 @@ public:
 
         auto bundle = builder.Build();
         if (!bundle.has_value()) {
-            throw new std::runtime_error("Failed to create shielded output for miner");
+            throw std::runtime_error("Failed to create shielded output for miner");
         }
 
         ComputeBindingSig(std::move(saplingBuilder), std::move(bundle));
