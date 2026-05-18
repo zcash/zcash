@@ -44,7 +44,7 @@ void pre_wallet_load()
 {
     LogPrintf("%s: In progress...\n", __func__);
     if (ShutdownRequested())
-        throw new std::runtime_error("The node is shutting down");
+        throw std::runtime_error("The node is shutting down");
 
     if (pwalletMain)
         pwalletMain->Flush(false);
@@ -557,7 +557,7 @@ public:
             case ORCHARD:
                 return orchardTrees[0].root();
             default:
-                throw new std::runtime_error("Unknown shielded type");
+                throw std::runtime_error("Unknown shielded type");
         }
     }
 
@@ -598,7 +598,7 @@ double benchmark_connectblock_slow()
     SelectParams(CBaseChainParams::MAIN);
     CBlock block;
     FILE* fp = fsbridge::fopen(GetDataDir() / "benchmark/block-107134.dat", "rb");
-    if (!fp) throw new std::runtime_error("Failed to open block data file");
+    if (!fp) throw std::runtime_error("Failed to open block data file");
     CAutoFile blkFile(fp, SER_DISK, CLIENT_VERSION);
     blkFile >> block;
     blkFile.fclose();
@@ -648,7 +648,7 @@ double benchmark_connectblock_sapling()
     SelectParams(CBaseChainParams::MAIN);
     CBlock block;
     FILE* fp = fsbridge::fopen(GetDataDir() / "benchmark/block-1723244.dat", "rb");
-    if (!fp) throw new std::runtime_error("Failed to open block data file");
+    if (!fp) throw std::runtime_error("Failed to open block data file");
     CAutoFile blkFile(fp, SER_DISK, CLIENT_VERSION);
     blkFile >> block;
     blkFile.fclose();
@@ -711,7 +711,7 @@ double benchmark_connectblock_orchard()
     SelectParams(CBaseChainParams::MAIN);
     CBlock block;
     FILE* fp = fsbridge::fopen(GetDataDir() / "benchmark/block-1708048.dat", "rb");
-    if (!fp) throw new std::runtime_error("Failed to open block data file");
+    if (!fp) throw std::runtime_error("Failed to open block data file");
     CAutoFile blkFile(fp, SER_DISK, CLIENT_VERSION);
     blkFile >> block;
     blkFile.fclose();
