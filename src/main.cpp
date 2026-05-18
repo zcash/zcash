@@ -9211,7 +9211,7 @@ CMutableTransaction CreateNewContextualCMutableTransaction(
 
         // mtx.nExpiryHeight == 0 is valid for coinbase transactions
         if (mtx.nExpiryHeight <= 0 || mtx.nExpiryHeight >= TX_EXPIRY_HEIGHT_THRESHOLD) {
-            throw new std::runtime_error("CreateNewContextualCMutableTransaction: invalid expiry height");
+            throw std::runtime_error("CreateNewContextualCMutableTransaction: invalid expiry height");
         }
 
         // NOTE: If the expiry height crosses into an incompatible consensus epoch, and it is changed to the last block
