@@ -11,7 +11,7 @@ on:
       - '.github/workflows/book.yml'
       - '.github/workflows/ci-skip.yml'
       - '.github/workflows/lints.yml'
-      - '.github/workflows/release-docker-hub.yml'
+      - '.github/workflows/release-docker-hub.yaml'
       # Documentation.
       - 'contrib/debian/copyright'
       - 'doc/**'
@@ -29,7 +29,7 @@ on:
       - '.github/workflows/book.yml'
       - '.github/workflows/ci-skip.yml'
       - '.github/workflows/lints.yml'
-      - '.github/workflows/release-docker-hub.yml'
+      - '.github/workflows/release-docker-hub.yaml'
       # Documentation.
       - 'contrib/debian/copyright'
       - 'doc/**'

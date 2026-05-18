@@ -19,7 +19,7 @@ on:
       - '.github/workflows/book.yml'
       - '.github/workflows/ci-skip.yml'
       - '.github/workflows/lints.yml'
-      - '.github/workflows/release-docker-hub.yml'
+      - '.github/workflows/release-docker-hub.yaml'
       # Documentation.
       - 'contrib/debian/copyright'
       - 'doc/**'
@@ -65,7 +65,7 @@ jobs:
               r'^\.github/workflows/book\.yml$',
               r'^\.github/workflows/ci-skip\.yml$',
               r'^\.github/workflows/lints\.yml$',
-              r'^\.github/workflows/release-docker-hub\.yml$',
+              r'^\.github/workflows/release-docker-hub\.yaml$',
               r'^contrib/debian/copyright$',
               r'^doc/.*',
               r'.*\.md$',
