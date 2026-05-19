@@ -1,4 +1,4 @@
-linux_CFLAGS=-pipe
+linux_CFLAGS=-pipe -flto=thin
 linux_CXXFLAGS=$(linux_CFLAGS)
 
 linux_release_CFLAGS=-O3
@@ -9,7 +9,7 @@ linux_debug_CXXFLAGS=$(linux_debug_CFLAGS)
 
 linux_debug_CPPFLAGS=-D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC
 
-linux_LDFLAGS?=-fuse-ld=lld
+linux_LDFLAGS?=-fuse-ld=lld -flto=thin
 
 i686_linux_CC=$(default_host_CC) -m32
 i686_linux_CXX=$(default_host_CXX) -m32
