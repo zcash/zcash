@@ -22,7 +22,10 @@ The Zcash maintainers have defined the following categories for vulnerabilities.
 ### High
 
 * All other forms of remotely-triggered consensus divergence or network split.
-* DoS vulnerabilities affecting full node or light client server software.
+* DoS vulnerabilities against full node or light client server software that
+  enable sustained service denial, unbounded resource consumption, or that
+  bypass existing peer-management protections (e.g. `Misbehaving`-based
+  banning).
 * Other vulnerabilities that might result in remotely-triggered individual user
   loss of funds. This does not include vulnerabilities resulting from careless
   or intentional API misuse by wallet software.
@@ -34,6 +37,8 @@ The Zcash maintainers have defined the following categories for vulnerabilities.
 ### Low
 
 * Individual user wallet DoS.
+* Bounded resource-consumption amplifications against full nodes where total
+  per-attacker impact is capped by existing peer-management protections.
 
 ### Not Vulnerability
 
