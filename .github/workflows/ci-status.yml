@@ -30,8 +30,10 @@ jobs:
             return statuses
 
       - name: Determine whether all required-pass steps succeeded
+        env:
+          STATUSES: ${{ steps.fetch-statuses.outputs.result }}
         run: |
-          echo '${{ steps.fetch-statuses.outputs.result }}' | jq -e '[ .[] | select(.name | test("(Build tier [12])|(Boost.Test tier 1)|(GoogleTest tier 1)|(Rust test tier 1)|(secp256k1 tier 1)|(univalue tier 1)|(util-test tier 1)|(no-dot-so tier 1)|(sec-hard tier 1)|(RPC tests tier 1 .* shard-)")) | .conclusion == "success" ] | all'
+          printf '%s' "$STATUSES" | jq -e '[ .[] | select(.name | test("(Build tier [12])|(Boost.Test tier 1)|(GoogleTest tier 1)|(Rust test tier 1)|(secp256k1 tier 1)|(univalue tier 1)|(util-test tier 1)|(no-dot-so tier 1)|(sec-hard tier 1)|(RPC tests tier 1 .* shard-)")) | .conclusion == "success" ] | all'
 
       - name: Submit required-passed status
         if: ${{ !cancelled() }}
