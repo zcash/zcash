@@ -146,6 +146,8 @@ jobs:
           jq -r -n 'env.CFG | fromjson | [.data[] | select(.test_os and .tier == 1) | .name] | @json "rpc_test_names=\(.)"' >> $GITHUB_OUTPUT
 
       - id: set-rpc-tests
+        env:
+          RPC_TEST_MATRIX: ${{ steps.set-matrices.outputs.rpc_test_matrix }}
         run: |
           cat <<EOF > ./subclass.py
           import importlib
@@ -184,10 +186,9 @@ jobs:
 
           print(json.dumps(test_list))
           EOF
-          RPC_MATRIX_JSON=$(echo '${{ steps.set-matrices.outputs.rpc_test_matrix }}')
           RPC_SHARDS_JSON=$(SRC_DIR=$(pwd) python3 ./subclass.py)
           echo "$RPC_SHARDS_JSON" | jq -r '[.[] | .shard] | @json "rpc_test_shards=\(.)"' >> $GITHUB_OUTPUT
-          echo -e "$RPC_MATRIX_JSON\n$RPC_SHARDS_JSON" | jq -r -s 'add | @json "rpc_test_shards_matrix=\(.)"' >> $GITHUB_OUTPUT
+          printf '%s\n%s\n' "$RPC_TEST_MATRIX" "$RPC_SHARDS_JSON" | jq -r -s 'add | @json "rpc_test_shards_matrix=\(.)"' >> $GITHUB_OUTPUT
 
       - name: Cache Sprout parameters
         uses: actions/cache@v5
