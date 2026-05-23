@@ -5,7 +5,10 @@ conform to this standard: https://github.com/RD-Crypto-Spec/Responsible-Disclosu
 
 ## Vulnerability Categorization
 
-The Zcash maintainers have defined the following categories for vulnerabilities.
+The Zcash maintainers have defined the following categories for
+vulnerabilities. This vulnerability scoring is used by the maintainers to
+prioritize how urgently each potential vulnerability needs to be fixed; it's
+not a metric to be gamed for payouts from any bounty program.
 
 ### Critical
 
@@ -74,11 +77,11 @@ nuttycom.01
 For all other vulnerabilities, please use the GitHub "Report a Vulnerability"
 feature, available at https://github.com/zcash/zcash/security/advisories.
 
-WARNING: overstating the severity of any reported vulnerability, according
-to the rubric presented above, WILL MAKE THE REPORTER INELIGIBLE FOR
-COMPENSATION UNDER ANY BUG BOUNTY PROGRAM. The Zcash maintainers are currently
-experiencing a large number of spurious issues being incorrectly reported as
-critical vulnerabilities. Choose wisely.
+WARNING: The Zcash maintainers are currently experiencing a large number of
+spurious or low-severity issues being incorrectly reported as critical
+vulnerabilities. Overstating the severity of any reported vulnerability,
+according to the rubric presented above, MAY MAKE THE REPORTER INELIGIBLE FOR
+COMPENSATION UNDER ANY BUG BOUNTY PROGRAM.
 
 ## Sending Disclosures
 
