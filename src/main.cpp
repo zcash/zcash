@@ -5968,25 +5968,33 @@ static bool AcceptBlock(const CBlock& block, CValidationState& state, const CCha
     // See method docstring for why these are always disabled.
     auto verifier = ProofVerifier::Disabled();
 
-    bool fCheckTransactions = ShouldCheckTransactions(chainparams, pindex);
-    if ((!CheckBlock(block, state, chainparams, verifier, true, true, fCheckTransactions)) ||
-         !ContextualCheckBlock(block, state, chainparams, pindex->pprev, fCheckTransactions)) {
-        if (state.IsInvalid() && !state.CorruptionPossible()) {
-            pindex->nStatus |= BLOCK_FAILED_VALID;
-            setDirtyBlockIndex.insert(pindex);
-        }
-        return false;
-    }
-
     int nHeight = pindex->nHeight;
 
-    // Body-vs-header commitment pre-check for active-tip extensions: catches
-    // NU5+ body-poisoning attacks before the body is persisted to disk and
-    // BLOCK_HAVE_DATA is set on the index entry. For sidechain blocks the
-    // check has to wait until ConnectBlock (since reconstructing the chain
-    // history MMR at an arbitrary `pprev` is infeasible); the body-replaceable
-    // failure path in ConnectTip / InvalidBlockFound then cleans up persisted
-    // body data so that a subsequent matching body can still be accepted.
+    // Body-vs-header commitment pre-check for active-tip extensions.
+    // This runs BEFORE CheckBlock / ContextualCheckBlock, so that any
+    // body-mutable rejection downstream (one whose triggering field is
+    // bound by `hashAuthDataRoot` rather than `hashMerkleRoot` — e.g.
+    // per-block sigop count, transparent script verification, Sapling /
+    // Orchard proof and signature verification) cannot fire on a body
+    // whose `hashAuthDataRoot` does not match what the header committed to.
+    //
+    // This closes the GHSA-rpcw-q5mr-gq35 / GHSA-qvwc-hc2r-82qv /
+    // GHSA-382w-958v-m5jr class of NU5+ block-body poisoning structurally:
+    // the body is verified against the header's commitments before any
+    // body-mutable consensus check has the chance to mark the shared
+    // header `BLOCK_FAILED_VALID` based on a mutated body. The check also
+    // runs before the body is persisted to disk and `BLOCK_HAVE_DATA` is
+    // set on the index entry.
+    //
+    // For sidechain blocks, the check has to wait until ConnectBlock
+    // (reconstructing the chain history MMR at an arbitrary `pprev` is
+    // infeasible); the body-replaceable failure path in ConnectTip /
+    // InvalidBlockFound then cleans up persisted body data so that a
+    // subsequent matching body can still be accepted. Sidechain
+    // body-mutable rejections in CheckBlock therefore continue to need
+    // `corruptionIn=true` set on each rejection that depends on a field
+    // bound by `hashAuthDataRoot`, to avoid the same header-poisoning
+    // failure mode in the sidechain case.
     //
     // Null `pindex->pprev` can only occur at genesis during a reindex.
     if (pindex->pprev != nullptr && pindex->pprev == chainActive.Tip()) {
@@ -5995,6 +6003,16 @@ static bool AcceptBlock(const CBlock& block, CValidationState& state, const CCha
                                           state, hashAuthDataRoot_, hashChainHistoryRoot_)) {
             return false;
         }
+    }
+
+    bool fCheckTransactions = ShouldCheckTransactions(chainparams, pindex);
+    if ((!CheckBlock(block, state, chainparams, verifier, true, true, fCheckTransactions)) ||
+         !ContextualCheckBlock(block, state, chainparams, pindex->pprev, fCheckTransactions)) {
+        if (state.IsInvalid() && !state.CorruptionPossible()) {
+            pindex->nStatus |= BLOCK_FAILED_VALID;
+            setDirtyBlockIndex.insert(pindex);
+        }
+        return false;
     }
 
     // Write block to history file
