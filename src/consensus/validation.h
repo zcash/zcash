@@ -40,6 +40,37 @@ static const unsigned char REJECT_DUST = 0x41;
 static const unsigned char REJECT_INSUFFICIENTFEE = 0x42;
 static const unsigned char REJECT_CHECKPOINT = 0x43;
 
+/**
+ * Classifies a validation failure by how it relates to the block body, which
+ * determines whether the failure may be cached as permanent header invalidity.
+ * Passed to `CValidationState::DoS`; see `CValidationState::corruptionPossible`
+ * and the `hash*Checked` commitment-tracking flags for the underlying mechanism.
+ */
+enum class BodyCorruption {
+    /**
+     * The failure is body-replaceable: a different body matching the same
+     * header could exist and pass, so the failure must NOT be cached as
+     * permanent header invalidity. Use when the triggering field is bound only
+     * by a header-to-body commitment that has not yet been verified at the
+     * point of rejection (e.g. an authdata-bound field, before
+     * `CheckBlockBodyAuthCommitment` has run).
+     */
+    Possible,
+    /**
+     * Defer to the commitment-tracking flags: the failure is body-replaceable
+     * if and only if the body is not yet fully pinned to the header (i.e. if
+     * `!(hashMerkleRootChecked && hashBlockCommitmentsChecked)`). This is the
+     * default for body-derived checks.
+     */
+    Default,
+    /**
+     * The failure depends only on the header and chain context, never on the
+     * body — proof of work, difficulty, timestamp, version, prev-block. A
+     * different body cannot fix it, so it is never body-replaceable.
+     */
+    HeaderOnly,
+};
+
 /** Capture information about block/transaction validation */
 class CValidationState {
 private:
@@ -63,50 +94,78 @@ private:
      *     subsequent submission of a matching body for the same header can
      *     be processed.
      *
-     * For a failure to be body-replaceable, the failing field must not be
-     * pinned by either of the two header-to-body commitments:
+     * A failure is body-replaceable if it depends on fields that might not
+     * have been pinned by a header-to-body commitment *that we have checked*:
      *
      *   - `hashMerkleRoot` pins everything in `txid_digest`: vin prevouts,
      *     vout values, value balances, anchors, nullifiers, expiry, locktime,
      *     and (for pre-v5 transactions) `scriptSig` and Sapling sig/proof
      *     material.
-     *   - `hashBlockCommitments` (NU5+) commits to `hashAuthDataRoot`, which
-     *     covers the v5+ auth-data fields (`scriptSig`, `bindingSig`,
+     *   - in NU5 onward, `hashBlockCommitments` commits to `hashAuthDataRoot`,
+     *     which covers the v5+ auth-data fields (`scriptSig`, `bindingSig`,
      *     `spendAuthSig`, proofs) that `txid_digest` deliberately excludes.
      *
-     * Together these pin the entire block body, so the only failure modes
-     * not pinned by `hashMerkleRoot` alone are `hashBlockCommitments`
-     * itself and the two `CheckBlock` Merkle-root cases. Set
-     * `corruptionIn=true` at exactly those sites:
-     *
-     *   - `bad-txnmrklroot` and `bad-txns-duplicate` in `CheckBlock`. The
-     *     given body's txids do not reconstruct `hashMerkleRoot`, so the
-     *     body is malformed; a different body matching the header could
-     *     exist (`bad-txns-duplicate` is the CVE-2012-2459 Merkle padding
-     *     ambiguity).
-     *   - `bad-block-commitments-hash` (NU5+ only) in `ConnectBlock` and
-     *     in the `CheckBlockBodyAuthCommitment` active-tip pre-check. The
-     *     body's auth-data does not match the header's `hashAuthDataRoot`.
-     *
-     * Every other `ConnectBlock` failure is pinned by `hashMerkleRoot`
-     * (`bad-txns-inputs-missingorspent`, `bad-cb-amount`, BIP30, sigops,
-     * turnstile, etc.) and is therefore not body-replaceable. Per-tx
-     * NU5+ auth-data verification (proofs, binding signatures) is not
-     * body-replaceable either, because `ConnectBlock` checks
-     * `hashBlockCommitments` first, pinning the auth-data via
-     * `hashAuthDataRoot` before per-tx verification runs.
+     * In practice we are conservative and treat most consensus failures (that
+     * pass `BodyCorruption::Default`) as potentially body-replaceable unless
+     * the block body is "fully pinned" as defined below.
      */
     bool corruptionPossible;
+    /**
+     * Tracking flags for the two header-to-body commitments. A block body is
+     * "fully pinned" to its header only once BOTH applicable commitments have
+     * been verified against the received body:
+     *
+     *   - `hashMerkleRootChecked` — set once `CheckBlock`'s Merkle-root check
+     *     has confirmed that body's txids reconstruct `hashMerkleRoot`.
+     *   - `hashBlockCommitmentsChecked` — set once `CheckBlockBodyAuthCommitment`
+     *     has run. For NU5+ this checks `hashBlockCommitments` and
+     *     `hashAuthDataRoot`; pre-NU5 it is vacuously satisfied, because the
+     *     body is fully pinned by `hashMerkleRoot` alone.
+     *
+     * Until both are set, a rejection whose triggering field is body-derived
+     * could in principle come from a poisoned body that doesn't match what
+     * the header committed to — so `DoS` classifies it as `corruptionPossible`
+     * automatically. This is the structural fix for the GHSA-rpcw-q5mr-gq35 /
+     * GHSA-qvwc-hc2r-82qv / GHSA-wmwc-773c-qcvv / GHSA-382w-958v-m5jr class
+     * of block-body poisoning vulnerabilities: it avoids needing to pass
+     * the correct argument to set `corruptionPossible` on every
+     * authdata-bound rejection.
+     *
+     * These flags are per-block-body and must be reset at the entry of each
+     * block-validation pass (`AcceptBlock`, `ConnectBlock`), because a single
+     * `CValidationState` is reused across successive block connections in
+     * `ActivateBestChainStep`. They are NOT reset in `CheckBlock`, because the
+     * active-tip auth-commitment pre-check sets `hashBlockCommitmentsChecked`
+     * before `CheckBlock` runs.
+     *
+     * Header-only rejections (PoW, difficulty, timestamp, version, prev-block)
+     * are not body-replaceable regardless of these flags — a different body
+     * cannot fix a bad header — so `DoS` exempts them via the `HeaderOnly`
+     * value of its `bodyCorruption` argument.
+     */
+    bool hashMerkleRootChecked;
+    bool hashBlockCommitmentsChecked;
     std::string strDebugMessage;
 public:
-    CValidationState() : mode(MODE_VALID), nDoS(0), chRejectCode(0), corruptionPossible(false) {}
+    CValidationState() : mode(MODE_VALID), nDoS(0), chRejectCode(0), corruptionPossible(false),
+                         hashMerkleRootChecked(false), hashBlockCommitmentsChecked(false) {}
     virtual bool DoS(int level, bool ret = false,
              unsigned int chRejectCodeIn=0, const std::string &strRejectReasonIn="",
-             bool corruptionIn=false,
+             BodyCorruption bodyCorruption=BodyCorruption::Default,
              const std::string &strDebugMessageIn="") {
         chRejectCode = chRejectCodeIn;
         strRejectReason = strRejectReasonIn;
-        corruptionPossible = corruptionIn;
+        // Classify whether this rejection is body-replaceable (`corruptionPossible`).
+        // `Default` defers to the commitment-tracking flags: a body-derived check
+        // raised before the body is fully pinned to the header by both commitments
+        // is considered body-replaceable.
+        switch (bodyCorruption) {
+            case BodyCorruption::Possible:   corruptionPossible = true; break;
+            case BodyCorruption::HeaderOnly: corruptionPossible = false; break;
+            case BodyCorruption::Default:
+                corruptionPossible = !(hashMerkleRootChecked && hashBlockCommitmentsChecked);
+                break;
+        }
         strDebugMessage = strDebugMessageIn;
         if (mode == MODE_ERROR)
             return ret;
@@ -114,10 +173,19 @@ public:
         mode = MODE_INVALID;
         return ret;
     }
+    // Reset both commitment-tracking flags at the start of a block-validation
+    // pass. See the flags' documentation for why this is per-pass and why it
+    // belongs in `AcceptBlock` / `ConnectBlock` rather than `CheckBlock`.
+    virtual void ResetBodyCommitmentChecks() {
+        hashMerkleRootChecked = false;
+        hashBlockCommitmentsChecked = false;
+    }
+    virtual void SetMerkleRootChecked() { hashMerkleRootChecked = true; }
+    virtual void SetBlockCommitmentsChecked() { hashBlockCommitmentsChecked = true; }
     virtual bool Invalid(bool ret = false,
                  unsigned int _chRejectCode=0, const std::string &_strRejectReason="",
                  const std::string &_strDebugMessage="") {
-        return DoS(0, ret, _chRejectCode, _strRejectReason, false, _strDebugMessage);
+        return DoS(0, ret, _chRejectCode, _strRejectReason, BodyCorruption::Default, _strDebugMessage);
     }
     virtual bool Error(const std::string& strRejectReasonIn) {
         if (mode == MODE_VALID)

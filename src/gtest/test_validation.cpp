@@ -138,7 +138,7 @@ class MockCValidationState : public CValidationState {
 public:
     MOCK_METHOD6(DoS, bool(int level, bool ret,
              unsigned int chRejectCodeIn, const std::string strRejectReasonIn,
-             bool corruptionIn,
+             BodyCorruption bodyCorruption,
              const std::string &strDebugMessageIn));
     MOCK_METHOD4(Invalid, bool(bool ret,
                  unsigned int _chRejectCode, const std::string _strRejectReason,
@@ -153,6 +153,89 @@ public:
     MOCK_CONST_METHOD0(GetRejectReason, std::string());
     MOCK_CONST_METHOD0(GetDebugMessage, std::string());
 };
+
+// Directly exercises the `CValidationState::DoS` classification logic that the
+// `MockCValidationState` in this and the other gtest files necessarily bypasses:
+// the mock overrides `DoS`, so the `BodyCorruption` switch and the
+// `Default` -> `!(hashMerkleRootChecked && hashBlockCommitmentsChecked)` rule that
+// underpin the GHSA-rpcw-q5mr-gq35 / GHSA-qvwc-hc2r-82qv / GHSA-wmwc-773c-qcvv /
+// GHSA-382w-958v-m5jr body-poisoning fixes are never run there.
+TEST(Validation, BodyCorruptionClassification) {
+    // `Possible`: always corruption-possible, regardless of commitment flags.
+    {
+        CValidationState s;
+        s.DoS(100, false, REJECT_INVALID, "x", BodyCorruption::Possible);
+        EXPECT_TRUE(s.CorruptionPossible());
+    }
+    {
+        // Even when the body is fully pinned, `Possible` forces corruption-possible.
+        CValidationState s;
+        s.SetMerkleRootChecked();
+        s.SetBlockCommitmentsChecked();
+        s.DoS(100, false, REJECT_INVALID, "x", BodyCorruption::Possible);
+        EXPECT_TRUE(s.CorruptionPossible());
+    }
+
+    // `HeaderOnly`: never corruption-possible, regardless of commitment flags.
+    {
+        CValidationState s;
+        s.DoS(100, false, REJECT_INVALID, "x", BodyCorruption::HeaderOnly);
+        EXPECT_FALSE(s.CorruptionPossible());
+    }
+    {
+        CValidationState s;
+        s.SetMerkleRootChecked();
+        s.SetBlockCommitmentsChecked();
+        s.DoS(100, false, REJECT_INVALID, "x", BodyCorruption::HeaderOnly);
+        EXPECT_FALSE(s.CorruptionPossible());
+    }
+
+    // `Default`: corruption-possible iff NOT (merkle && commitments) both checked.
+    {
+        CValidationState s; // (merkle=F, commitments=F)
+        s.DoS(100, false, REJECT_INVALID, "x", BodyCorruption::Default);
+        EXPECT_TRUE(s.CorruptionPossible());
+    }
+    {
+        CValidationState s; // (merkle=T, commitments=F)
+        s.SetMerkleRootChecked();
+        s.DoS(100, false, REJECT_INVALID, "x", BodyCorruption::Default);
+        EXPECT_TRUE(s.CorruptionPossible());
+    }
+    {
+        CValidationState s; // (merkle=F, commitments=T)
+        s.SetBlockCommitmentsChecked();
+        s.DoS(100, false, REJECT_INVALID, "x", BodyCorruption::Default);
+        EXPECT_TRUE(s.CorruptionPossible());
+    }
+    {
+        CValidationState s; // (merkle=T, commitments=T) -> fully pinned
+        s.SetMerkleRootChecked();
+        s.SetBlockCommitmentsChecked();
+        s.DoS(100, false, REJECT_INVALID, "x", BodyCorruption::Default);
+        EXPECT_FALSE(s.CorruptionPossible());
+    }
+
+    // `ResetBodyCommitmentChecks` clears both flags, so a subsequent `Default`
+    // rejection is classified corruption-possible again. (This reset runs at the
+    // start of each block-validation pass because a single `CValidationState` is
+    // reused across successive block connections.)
+    {
+        CValidationState s;
+        s.SetMerkleRootChecked();
+        s.SetBlockCommitmentsChecked();
+        s.ResetBodyCommitmentChecks();
+        s.DoS(100, false, REJECT_INVALID, "x", BodyCorruption::Default);
+        EXPECT_TRUE(s.CorruptionPossible());
+    }
+
+    // `Invalid()` defaults to `Default` classification.
+    {
+        CValidationState s;
+        s.Invalid(false, REJECT_INVALID, "x");
+        EXPECT_TRUE(s.CorruptionPossible());
+    }
+}
 
 TEST(Validation, ContextualCheckInputsPassesWithCoinbase) {
     // Create fake coinbase transaction
@@ -249,7 +332,7 @@ TEST(Validation, ContextualCheckInputsDetectsOldBranchId) {
             strprintf("old-consensus-branch-id (Expected %s, found %s)",
                 HexInt(saplingBranchId),
                 HexInt(overwinterBranchId)),
-            false, "")).Times(1);
+            BodyCorruption::Default, "")).Times(1);
         EXPECT_FALSE(ContextualCheckInputs(
             tx, mockState, view, true, 0, false, txdata,
             consensusParams, saplingBranchId));
@@ -260,7 +343,7 @@ TEST(Validation, ContextualCheckInputsDetectsOldBranchId) {
         EXPECT_CALL(mockState, DoS(
             100, false, REJECT_INVALID,
             "mandatory-script-verify-flag-failed (Script evaluated without error but finished with a false/empty top stack element)",
-            false, "")).Times(1);
+            BodyCorruption::Default, "")).Times(1);
         EXPECT_FALSE(ContextualCheckInputs(
             tx, mockState, view, true, 0, false, txdata,
             consensusParams, blossomBranchId));
@@ -294,7 +377,7 @@ TEST(Validation, ContextualCheckInputsDetectsOldBranchId) {
             strprintf("old-consensus-branch-id (Expected %s, found %s)",
                 HexInt(penultimateBranchId),
                 HexInt(antepenultimateBranchId)),
-            false, "")).Times(1);
+            BodyCorruption::Default, "")).Times(1);
         EXPECT_FALSE(ContextualCheckInputs(
             tx, mockState, view, true, 0, false, txdata,
             consensusParams, penultimateBranchId));
@@ -305,7 +388,7 @@ TEST(Validation, ContextualCheckInputsDetectsOldBranchId) {
         EXPECT_CALL(mockState, DoS(
             100, false, REJECT_INVALID,
             "mandatory-script-verify-flag-failed (Script evaluated without error but finished with a false/empty top stack element)",
-            false, "")).Times(1);
+            BodyCorruption::Default, "")).Times(1);
         EXPECT_FALSE(ContextualCheckInputs(
             tx, mockState, view, true, 0, false, txdata,
             consensusParams, lastBranchId));
