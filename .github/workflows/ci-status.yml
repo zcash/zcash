@@ -6,6 +6,12 @@ on:
     types: [completed]
 
 permissions:
+  # Required for the `fetch-statuses` step below, which calls
+  # `GET /repos/{owner}/{repo}/actions/runs/{run_id}/jobs`. Declaring a
+  # `permissions` block replaces the default token scopes, so without this
+  # the call fails with 403 "Resource not accessible by integration" and the
+  # gate posts `failure` before the success-determination jq ever runs.
+  actions: read
   contents: read
   statuses: write
 
