@@ -176,6 +176,10 @@ class Nu5BlockBodyPoisoningTest(BitcoinTestFramework):
         accepted normally.
         """
         node = self.node
+
+        # Wait for the wallet to finish processing any prior chain extension.
+        self.sync_all()
+
         block_good, block_bad = self.build_poisoned_pair()
         good_hex = block_good.serialize().hex()
         bad_hex = block_bad.serialize().hex()
@@ -218,6 +222,9 @@ class Nu5BlockBodyPoisoningTest(BitcoinTestFramework):
         can subsequently be accepted.
         """
         node = self.node
+
+        # Wait for the wallet to finish processing any prior chain extension.
+        self.sync_all()
 
         # Build the sidechain blocks, with `pprev` at the current tip.
         sidechain_good, sidechain_bad = self.build_poisoned_pair()
