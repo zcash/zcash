@@ -11,7 +11,7 @@ class MockCValidationState : public CValidationState {
 public:
     MOCK_METHOD6(DoS, bool(int level, bool ret,
              unsigned int chRejectCodeIn, const std::string &strRejectReasonIn,
-             bool corruptionIn,
+             BodyCorruption bodyCorruption,
              const std::string &strDebugMessageIn));
     MOCK_METHOD4(Invalid, bool(bool ret,
                  unsigned int _chRejectCode, const std::string _strRejectReason,
@@ -37,7 +37,7 @@ TEST(CheckBlock, VersionTooLow) {
 
     SelectParams(CBaseChainParams::MAIN);
 
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "version-too-low", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "version-too-low", BodyCorruption::HeaderOnly, "")).Times(1);
     EXPECT_FALSE(CheckBlock(block, state, Params(), verifier, false, false, true));
 }
 
@@ -79,7 +79,124 @@ TEST(CheckBlock, BlockSproutRejectsBadVersion) {
 
     auto verifier = ProofVerifier::Strict();
 
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-version-too-low", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-version-too-low", BodyCorruption::Default, "")).Times(1);
+    EXPECT_FALSE(CheckBlock(block, state, Params(), verifier, false, false, true));
+}
+
+
+// The following five tests pin the `BodyCorruption` argument that `CheckBlock`'s
+// own body-derived rejections pass to `state.DoS`. The classification mechanism
+// itself is covered by `Validation.BodyCorruptionClassification`; these tests
+// guard the *wiring* — that each rejection passes the intended value.
+//
+// For the three `Possible` rejections the explicit argument is defence in depth:
+// the commitment-tracking flags on `CValidationState` and the active-tip
+// auth-commitment pre-check in `AcceptBlock` already classify these rejections
+// correctly without it. These tests verify that the defence-in-depth argument is
+// actually present, so it is not dropped inadvertently; whether dropping it would
+// in fact re-open the GHSA-rpcw-q5mr-gq35 / GHSA-qvwc-hc2r-82qv /
+// GHSA-wmwc-773c-qcvv / GHSA-382w-958v-m5jr block-body-poisoning class would
+// depend on the refactor.
+//
+// The Merkle-derived rejections (`bad-txns-duplicate`, `bad-txnmrklroot`) are
+// `Possible` because they fire before `hashMerkleRoot` is pinned; the block-size
+// rejection (`bad-blk-length`) is `Possible` because the serialized size includes
+// v5 authdata. The two coinbase-shape rejections (`bad-cb-missing`,
+// `bad-cb-multiple`) are `Default`: coinbase-ness is determined by `vin[0].prevout`,
+// which is pinned by `hashMerkleRoot`.
+
+namespace {
+// A minimal valid coinbase transaction (one null-prevout input, one output).
+CTransaction MakeCoinbaseTx() {
+    CMutableTransaction mtx;
+    mtx.fOverwintered = false;
+    mtx.nVersion = 1;
+    mtx.vin.resize(1);
+    mtx.vin[0].prevout.SetNull();
+    mtx.vin[0].scriptSig = CScript() << 1 << OP_0;
+    mtx.vout.resize(1);
+    mtx.vout[0].scriptPubKey = CScript() << OP_TRUE;
+    mtx.vout[0].nValue = 0;
+    return CTransaction(mtx);
+}
+
+// A minimal non-coinbase transaction (one non-null-prevout input).
+CTransaction MakeNonCoinbaseTx() {
+    CMutableTransaction mtx;
+    mtx.fOverwintered = false;
+    mtx.nVersion = 1;
+    mtx.vin.resize(1);
+    mtx.vin[0].prevout = COutPoint(uint256S("01"), 0);
+    mtx.vout.resize(1);
+    mtx.vout[0].scriptPubKey = CScript() << OP_TRUE;
+    mtx.vout[0].nValue = 0;
+    return CTransaction(mtx);
+}
+} // namespace
+
+// An empty block hits the `block.vtx.empty()` arm of the size-limit check, the
+// cheapest way to reach `bad-blk-length` (which is `BodyCorruption::Possible`).
+TEST(CheckBlock, SizeLimitsBadBlockLength) {
+    SelectParams(CBaseChainParams::MAIN);
+    auto verifier = ProofVerifier::Strict();
+    CBlock block; // no transactions
+    MockCValidationState state;
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-blk-length", BodyCorruption::Possible, "")).Times(1);
+    // fCheckMerkleRoot=false so we reach the size check directly.
+    EXPECT_FALSE(CheckBlock(block, state, Params(), verifier, false, false, true));
+}
+
+// A Merkle root that does not match the (un-malleated) transaction set is
+// rejected as `bad-txnmrklroot` (`BodyCorruption::Possible`).
+TEST(CheckBlock, MerkleRootMismatch) {
+    SelectParams(CBaseChainParams::MAIN);
+    auto verifier = ProofVerifier::Strict();
+    CBlock block;
+    block.vtx.push_back(MakeCoinbaseTx());
+    // Leave hashMerkleRoot at its null default; the real root is nonzero.
+    MockCValidationState state;
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txnmrklroot", BodyCorruption::Possible, "")).Times(1);
+    EXPECT_FALSE(CheckBlock(block, state, Params(), verifier, false, true, true));
+}
+
+// Two identical transactions make the Merkle tree malleable (CVE-2012-2459):
+// the mutation flag is set, yielding `bad-txns-duplicate` (`BodyCorruption::Possible`).
+TEST(CheckBlock, DuplicateTransactions) {
+    SelectParams(CBaseChainParams::MAIN);
+    auto verifier = ProofVerifier::Strict();
+    CBlock block;
+    auto cb = MakeCoinbaseTx();
+    block.vtx.push_back(cb);
+    block.vtx.push_back(cb); // adjacent equal leaves -> mutation
+    MockCValidationState state;
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-duplicate", BodyCorruption::Possible, "")).Times(1);
+    EXPECT_FALSE(CheckBlock(block, state, Params(), verifier, false, true, true));
+}
+
+// A block whose first transaction is not a coinbase is rejected as
+// `bad-cb-missing` (`BodyCorruption::Default`).
+TEST(CheckBlock, FirstTxNotCoinbase) {
+    SelectParams(CBaseChainParams::MAIN);
+    auto verifier = ProofVerifier::Strict();
+    CBlock block;
+    block.vtx.push_back(MakeNonCoinbaseTx());
+    MockCValidationState state;
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-missing", BodyCorruption::Default, "")).Times(1);
+    EXPECT_FALSE(CheckBlock(block, state, Params(), verifier, false, false, true));
+}
+
+// A block with more than one coinbase is rejected as `bad-cb-multiple`
+// (`BodyCorruption::Default`).
+TEST(CheckBlock, MultipleCoinbase) {
+    SelectParams(CBaseChainParams::MAIN);
+    auto verifier = ProofVerifier::Strict();
+    CBlock block;
+    block.vtx.push_back(MakeCoinbaseTx());
+    block.vtx.push_back(MakeCoinbaseTx());
+    MockCValidationState state;
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-multiple", BodyCorruption::Default, "")).Times(1);
+    // fCheckMerkleRoot=false so identical-leaf mutation does not pre-empt the
+    // coinbase-shape check.
     EXPECT_FALSE(CheckBlock(block, state, Params(), verifier, false, false, true));
 }
 
@@ -151,7 +268,7 @@ protected:
 
         // We now expect this to be an invalid block, for the given reason.
         MockCValidationState state;
-        EXPECT_CALL(state, DoS(level, false, REJECT_INVALID, reason, false, "")).Times(1);
+        EXPECT_CALL(state, DoS(level, false, REJECT_INVALID, reason, BodyCorruption::Default, "")).Times(1);
         EXPECT_FALSE(ContextualCheckBlock(block, state, Params(), &indexPrev, true));
     }
 
@@ -182,14 +299,14 @@ TEST_F(ContextualCheckBlockTest, BadCoinbaseHeight) {
     CBlock prev;
     CBlockIndex indexPrev {prev};
     indexPrev.nHeight = 0;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-height", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-height", BodyCorruption::Default, "")).Times(1);
     EXPECT_FALSE(ContextualCheckBlock(block, state, Params(), &indexPrev, true));
 
     // Setting to an incorrect height should fail
     mtx.vin[0].scriptSig = CScript() << 2 << OP_0;
     CTransaction tx3 {mtx};
     block.vtx[0] = tx3;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-height", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-height", BodyCorruption::Default, "")).Times(1);
     EXPECT_FALSE(ContextualCheckBlock(block, state, Params(), &indexPrev, true));
 
     // After correcting the scriptSig, should pass

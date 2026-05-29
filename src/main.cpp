@@ -1907,7 +1907,7 @@ bool AcceptToMemoryPool(
         // Check for non-standard pay-to-script-hash in inputs
         try {
             if (chainparams.RequireStandard() && !AreInputsStandard(tx, view, consensusBranchId))
-                return state.Invalid(false, REJECT_NONSTANDARD, "bad-txns-nonstandard-inputs");
+                return state.DoS(0, false, REJECT_NONSTANDARD, "bad-txns-nonstandard-inputs", BodyCorruption::Possible);
         } catch (const std::runtime_error& e) {
             return state.DoS(100, false, REJECT_INVALID, "bad-txns-input-value-out-of-range");
         }
@@ -1924,7 +1924,7 @@ bool AcceptToMemoryPool(
             return state.DoS(100, false, REJECT_INVALID, "bad-txns-input-value-out-of-range");
         }
         if (nSigOps > MAX_STANDARD_TX_SIGOPS)
-            return state.DoS(0, false, REJECT_NONSTANDARD, "bad-txns-too-many-sigops", false,
+            return state.DoS(0, false, REJECT_NONSTANDARD, "bad-txns-too-many-sigops", BodyCorruption::Possible,
                 strprintf("%d > %d", nSigOps, MAX_STANDARD_TX_SIGOPS));
 
         CAmount nValueOut;
@@ -1997,7 +1997,7 @@ bool AcceptToMemoryPool(
         size_t nLimitDescendantSize = GetArg("-limitdescendantsize", DEFAULT_DESCENDANT_SIZE_LIMIT)*1000;
         std::string errString;
         if (!pool.CalculateMemPoolAncestors(entry, setAncestors, nLimitAncestors, nLimitAncestorSize, nLimitDescendants, nLimitDescendantSize, errString)) {
-            return state.DoS(0, false, REJECT_NONSTANDARD, "too-long-mempool-chain", false, errString);
+            return state.DoS(0, false, REJECT_NONSTANDARD, "too-long-mempool-chain", BodyCorruption::Default, errString);
         }
 
         // Check against previous transactions
@@ -2743,7 +2743,7 @@ bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoins
         }
 
         if (nValueIn < nValueOut)
-            return state.DoS(100, false, REJECT_INVALID, "bad-txns-in-belowout", false,
+            return state.DoS(100, false, REJECT_INVALID, "bad-txns-in-belowout", BodyCorruption::Default,
                 strprintf("value in (%s) < value out (%s)", FormatMoney(nValueIn), FormatMoney(nValueOut)));
 
         // Tally transaction fees
@@ -3213,6 +3213,16 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                   bool fJustCheck, CheckAs blockChecks)
 {
     AssertLockHeld(cs_main);
+
+    // The block body has been received but has NOT yet been verified against the
+    // header's commitments. This reset is per-block: a single `CValidationState`
+    // is reused across successive connections in `ActivateBestChainStep`, so the
+    // flags must start false here regardless of any prior block's checks.
+    // There are two flags set by `CheckBlock` and `CheckBlockBodyAuthCommitment`
+    // (called below); until both are set, body-derived rejections are classified
+    // `corruptionPossible`. This is the sidechain counterpart to `AcceptBlock`'s
+    // active-tip pre-check. See `consensus/validation.h`.
+    state.ResetBodyCommitmentChecks();
 
     auto consensusParams = chainparams.GetConsensus();
 
@@ -5568,20 +5578,24 @@ bool CheckBlockHeader(
     const CChainParams& chainparams,
     bool fCheckPOW)
 {
+    // All checks here are header-only (PoW, solution, version): they depend
+    // solely on the header bytes, never on the block body, so failures are not
+    // body-replaceable and pass `BodyCorruption::HeaderOnly`.
+
     // Check block version
     if (block.nVersion < MIN_BLOCK_VERSION)
         return state.DoS(100, error("CheckBlockHeader(): block version too low"),
-                         REJECT_INVALID, "version-too-low");
+                         REJECT_INVALID, "version-too-low", BodyCorruption::HeaderOnly);
 
     // Check Equihash solution is valid
     if (fCheckPOW && !CheckEquihashSolution(&block, chainparams.GetConsensus()))
         return state.DoS(100, error("CheckBlockHeader(): Equihash solution invalid"),
-                         REJECT_INVALID, "invalid-solution");
+                         REJECT_INVALID, "invalid-solution", BodyCorruption::HeaderOnly);
 
     // Check proof of work matches claimed amount
     if (fCheckPOW && !CheckProofOfWork(block.GetHash(), block.nBits, chainparams.GetConsensus()))
         return state.DoS(50, error("CheckBlockHeader(): proof of work failed"),
-                         REJECT_INVALID, "high-hash");
+                         REJECT_INVALID, "high-hash", BodyCorruption::HeaderOnly);
 
     return true;
 }
@@ -5614,30 +5628,63 @@ bool CheckBlock(const CBlock& block,
     if (!CheckBlockHeader(block, state, chainparams, fCheckPOW))
         return false;
 
-    // Check the merkle root.
+    // Check the Merkle root. On success this pins the body's txids to the
+    // header's `hashMerkleRoot` (the `txid_digest` side of the body
+    // commitment); record that so `DoS` stops treating txid-pinned
+    // rejections below as body-replaceable. The two failure cases here ARE
+    // body-replaceable (a different body could reconstruct the committed
+    // Merkle root), and are flagged `BodyCorruption::Possible` since
+    // `hashMerkleRootChecked` is not yet set when they fire.
     if (fCheckMerkleRoot) {
         bool mutated = false;
         if (!CheckBlockMerkleRoot(block, &mutated)) {
             if (mutated) {
                 return state.DoS(100, error("CheckBlock(): duplicate transaction"),
-                                 REJECT_INVALID, "bad-txns-duplicate", true);
+                                 REJECT_INVALID, "bad-txns-duplicate", BodyCorruption::Possible);
             } else {
                 return state.DoS(100, error("CheckBlock(): hashMerkleRoot mismatch"),
-                                 REJECT_INVALID, "bad-txnmrklroot", true);
+                                 REJECT_INVALID, "bad-txnmrklroot", BodyCorruption::Possible);
             }
         }
+        state.SetMerkleRootChecked();
     }
 
     // All potential-corruption validation must be done before we do any
     // transaction validation, as otherwise we may mark the header as invalid
-    // because we receive the wrong transactions for it.
+    // because we receive the wrong transactions for it. For NU5+ blocks the
+    // auth-data side of the body is not pinned until
+    // `CheckBlockBodyAuthCommitment` has run; until then the commitment-tracking
+    // flags in `state` keep body-derived rejections classified as
+    // corruption-possible via `BodyCorruption::Default`.
+    //
+    // Two rejections below carry an explicit `BodyCorruption::Possible` because
+    // they depend on fields that are authdata-bound rather than txid-bound, so
+    // they remain body-mutable even after `hashMerkleRoot` has been pinned by
+    // `SetMerkleRootChecked` above:
+    //   - `bad-blk-length`: the serialized block size includes v5 `scriptSig`
+    //     bytes, which are in `auth_digest`, not `txid_digest`.
+    //   - `bad-blk-sigops`: the sigop count walks `scriptSig`, same reason.
+    //
+    // The explicit `Possible` is defence-in-depth, not load-bearing: on both
+    // paths `BodyCorruption::Default` already yields the correct classification.
+    // On the sidechain path `hashBlockCommitmentsChecked` is still unset, so
+    // `Default` resolves to corruption-possible. On the active-tip path a body
+    // that reaches these checks has already passed `CheckBlockBodyAuthCommitment`
+    // (which set `hashBlockCommitmentsChecked`) and is therefore fully pinned to
+    // the header, so a genuine failure here is correctly *not* corruption-
+    // possible. We keep the explicit `Possible` as defence in depth against a
+    // commitment-flag logic error or a future reordering of these checks
+    // relative to the auth-commitment pre-check (cf. the matching rationale at
+    // the sidechain pre-check below).
 
     // Size limits
     if (block.vtx.empty() || block.vtx.size() > MAX_BLOCK_SIZE || ::GetSerializeSize(block, SER_NETWORK, PROTOCOL_VERSION) > MAX_BLOCK_SIZE)
         return state.DoS(100, error("CheckBlock(): size limits failed"),
-                         REJECT_INVALID, "bad-blk-length");
+                         REJECT_INVALID, "bad-blk-length", BodyCorruption::Possible);
 
-    // First transaction must be coinbase, the rest must not be
+    // First transaction must be coinbase, the rest must not be. Coinbase-ness
+    // is determined by `vin[0].prevout`, which is pinned by `hashMerkleRoot`,
+    // so `BodyCorruption::Default` correctly classifies these post-Merkle-check.
     if (block.vtx.empty() || !block.vtx[0].IsCoinBase())
         return state.DoS(100, error("CheckBlock(): first tx is not coinbase"),
                          REJECT_INVALID, "bad-cb-missing");
@@ -5663,7 +5710,7 @@ bool CheckBlock(const CBlock& block,
     }
     if (nSigOps > MAX_BLOCK_SIGOPS)
         return state.DoS(100, error("CheckBlock(): out-of-bounds SigOpCount"),
-                         REJECT_INVALID, "bad-blk-sigops");
+                         REJECT_INVALID, "bad-blk-sigops", BodyCorruption::Possible);
 
     if (fCheckPOW && fCheckMerkleRoot && verifier.IsStrict())
         block.fChecked = true;
@@ -5685,18 +5732,23 @@ bool ContextualCheckBlockHeader(
 
     int nHeight = pindexPrev->nHeight+1;
 
+    // All checks here are header-only (difficulty, timestamp, checkpoint
+    // position, version): they depend on the header and chain context, never
+    // on the block body, so failures are not body-replaceable and pass
+    // `BodyCorruption::HeaderOnly`.
+
     // Check proof of work
     if (block.nBits != GetNextWorkRequired(pindexPrev, &block, consensusParams)) {
         return state.DoS(100, error("%s: incorrect proof of work", __func__),
-                         REJECT_INVALID, "bad-diffbits");
+                         REJECT_INVALID, "bad-diffbits", BodyCorruption::HeaderOnly);
     }
 
     // Check timestamp against prev
     auto medianTimePast = pindexPrev->GetMedianTimePast();
     if (block.GetBlockTime() <= medianTimePast) {
-        return state.Invalid(error("%s: block at height %d, timestamp %d is not later than median-time-past %d",
-                                   __func__, nHeight, block.GetBlockTime(), medianTimePast),
-                             REJECT_INVALID, "time-too-old");
+        return state.DoS(0, error("%s: block at height %d, timestamp %d is not later than median-time-past %d",
+                                  __func__, nHeight, block.GetBlockTime(), medianTimePast),
+                         REJECT_INVALID, "time-too-old", BodyCorruption::HeaderOnly);
     }
 
     // Check future timestamp soft fork rule introduced in v2.1.1-1.
@@ -5707,31 +5759,32 @@ bool ContextualCheckBlockHeader(
     //
     if (consensusParams.FutureTimestampSoftForkActive(nHeight) &&
           block.GetBlockTime() > medianTimePast + MAX_FUTURE_BLOCK_TIME_MTP) {
-        return state.Invalid(error("%s: block at height %d, timestamp %d is too far ahead of median-time-past, limit is %d",
-                                   __func__, nHeight, block.GetBlockTime(), medianTimePast + MAX_FUTURE_BLOCK_TIME_MTP),
-                             REJECT_INVALID, "time-too-far-ahead-of-mtp");
+        return state.DoS(0, error("%s: block at height %d, timestamp %d is too far ahead of median-time-past, limit is %d",
+                                  __func__, nHeight, block.GetBlockTime(), medianTimePast + MAX_FUTURE_BLOCK_TIME_MTP),
+                         REJECT_INVALID, "time-too-far-ahead-of-mtp", BodyCorruption::HeaderOnly);
     }
 
     // Check timestamp
     auto nTimeLimit = GetTime() + MAX_FUTURE_BLOCK_TIME_LOCAL;
     if (block.GetBlockTime() > nTimeLimit) {
-        return state.Invalid(error("%s: block at height %d, timestamp %d is too far ahead of local time, limit is %d",
-                                   __func__, nHeight, block.GetBlockTime(), nTimeLimit),
-                             REJECT_INVALID, "time-too-new");
+        return state.DoS(0, error("%s: block at height %d, timestamp %d is too far ahead of local time, limit is %d",
+                                  __func__, nHeight, block.GetBlockTime(), nTimeLimit),
+                         REJECT_INVALID, "time-too-new", BodyCorruption::HeaderOnly);
     }
 
     if (fCheckpointsEnabled) {
         // Don't accept any forks from the main chain prior to last checkpoint
         CBlockIndex* pcheckpoint = Checkpoints::GetLastCheckpoint(chainParams.Checkpoints());
         if (pcheckpoint && nHeight < pcheckpoint->nHeight) {
-            return state.DoS(100, error("%s: forked chain older than last checkpoint (height %d)", __func__, nHeight));
+            return state.DoS(100, error("%s: forked chain older than last checkpoint (height %d)", __func__, nHeight),
+                             0, "", BodyCorruption::HeaderOnly);
         }
     }
 
     // Reject block.nVersion < 4 blocks
     if (block.nVersion < 4) {
-        return state.Invalid(error("%s : rejected nVersion<4 block", __func__),
-                             REJECT_OBSOLETE, "bad-version");
+        return state.DoS(0, error("%s : rejected nVersion<4 block", __func__),
+                         REJECT_OBSOLETE, "bad-version", BodyCorruption::HeaderOnly);
     }
 
     return true;
@@ -5845,10 +5898,10 @@ static bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state
     if (hash != chainparams.GetConsensus().hashGenesisBlock) {
         BlockMap::iterator mi = mapBlockIndex.find(block.hashPrevBlock);
         if (mi == mapBlockIndex.end())
-            return state.DoS(10, error("%s: prev block not found", __func__), 0, "bad-prevblk");
+            return state.DoS(10, error("%s: prev block not found", __func__), 0, "bad-prevblk", BodyCorruption::HeaderOnly);
         pindexPrev = (*mi).second;
         if (pindexPrev->nStatus & BLOCK_FAILED_MASK)
-            return state.DoS(100, error("%s: prev block invalid", __func__), REJECT_INVALID, "bad-prevblk");
+            return state.DoS(100, error("%s: prev block invalid", __func__), REJECT_INVALID, "bad-prevblk", BodyCorruption::HeaderOnly);
     }
 
     if (!ContextualCheckBlockHeader(block, state, chainparams, pindexPrev))
@@ -5866,15 +5919,28 @@ static bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state
 /**
  * Pre-check that the block's `hashBlockCommitments` is consistent with the
  * received body's authorizing data, to catch NU5+ body-poisoning attacks
- * before the body is persisted. This duplicates only the NU5+ branch of
- * the full `hashBlockCommitments` validation in `ConnectBlock`, which
- * remains the authoritative check (and the only place pre-NU5 cases
- * —Heartwood-activation null check, Heartwood-active chain-history-root
- * check, Sapling tree root check— are validated). Pre-NU5 blocks aren't
- * body-poisoning vulnerable: those commitments are either independent of
- * the current block body (Heartwood-activation, Heartwood-active) or
- * commit to body data (Sapling tree root) that is also covered by
- * `hashMerkleRoot`.
+ * before the body is persisted. This also sets
+ * `state.hashBlockCommitmentsChecked`, so that once the corresponding
+ * `state.hashMerkleRootChecked` has also been set, subsequent
+ * `BodyCorruption::Default` rejections on the same `state` are no longer
+ * classified body-replaceable.
+ *
+ * The two flags are independent: this function may be called either
+ * before or after `hashMerkleRoot` has been checked, and the
+ * body-replaceable-suppression effect only takes hold once both flags
+ * are set. The active-tip pre-check in `AcceptBlock` calls this before
+ * `CheckBlock` runs the Merkle check; the sidechain path in
+ * `ConnectBlock` calls it after.
+ *
+ * This duplicates only the NU5+ branch of the full `hashBlockCommitments`
+ * validation in `ConnectBlock`, which remains the authoritative check
+ * (and the only place pre-NU5 cases —Heartwood-activation null check,
+ * Heartwood-active chain-history-root check, Sapling tree root check—
+ * are validated). Pre-NU5 blocks aren't vulnerable to body poisoning due
+ * to failing to check the auth commitments: those commitments are either
+ * independent of the current block body (Heartwood-activation,
+ * Heartwood-active) or commit to body data (Sapling tree root) that is
+ * also covered by `hashMerkleRoot`.
  *
  * `view` must be a coins view positioned at the chain state up to and
  * including `pindexPrev`. The current caller (`AcceptBlock`) only invokes
@@ -5886,9 +5952,9 @@ static bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state
  * up persisted body data for the affected block index entry so that a
  * different body for the same header can still be accepted.
  *
- * On mismatch, returns `state.DoS(100, ..., corruptionIn=true)` so that
- * `InvalidBlockFound` and `ActivateBestChainStep` do not cache the failure
- * as permanent header invalidity.
+ * On mismatch, `corruptionPossible` will be set so that `InvalidBlockFound`
+ * and `ActivateBestChainStep` do not cache the failure as permanent header
+ * invalidity.
  */
 static bool CheckBlockBodyAuthCommitment(
     const CBlock& block,
@@ -5912,12 +5978,22 @@ static bool CheckBlockBodyAuthCommitment(
                 hashChainHistoryRoot.value(),
                 hashAuthDataRoot.value());
             if (block.hashBlockCommitments != hashBlockCommitments) {
+                // The body's hashAuthDataRoot doesn't match what the header committed to.
+                // We pass `BodyCorruption::Possible` for defence in depth (the auth-commitment
+                // flag below is not set on this failure path, so the body is not fully pinned).
                 return state.DoS(100,
                     error("%s: block's hashBlockCommitments is incorrect (should be ZIP 244 block commitment)", __func__),
-                    REJECT_INVALID, "bad-block-commitments-hash", true /* corruptionIn */);
+                    REJECT_INVALID, "bad-block-commitments-hash", BodyCorruption::Possible);
             }
         }
     }
+    // The auth-data side of the body is now verified against the header's
+    // `hashBlockCommitments` (or, pre-NU5, there is no such commitment and
+    // this is vacuously satisfied). Record it. Once `hashMerkleRootChecked`
+    // is also set (by `CheckBlock`), the body is fully pinned to the header
+    // and subsequent `state.DoS` rejections are classified as
+    // non-corruption-possible by default.
+    state.SetBlockCommitmentsChecked();
     return true;
 }
 
@@ -5944,6 +6020,13 @@ static bool AcceptBlock(const CBlock& block, CValidationState& state, const CCha
     if (!AcceptBlockHeader(block, state, chainparams, &pindex))
         return false;
 
+    // The block body has been received but has NOT yet been verified against the
+    // header's commitments. This reset is per-block: a single `CValidationState`
+    // is reused across successive connections in `ActivateBestChainStep`, so the
+    // flags must start false here regardless of any prior block's checks. See
+    // `consensus/validation.h` for the structural argument.
+    state.ResetBodyCommitmentChecks();
+
     // Try to process all requested blocks that we don't have, but only
     // process an unrequested block if it's new and has enough work to
     // advance our tip, and isn't too many blocks ahead.
@@ -5968,25 +6051,34 @@ static bool AcceptBlock(const CBlock& block, CValidationState& state, const CCha
     // See method docstring for why these are always disabled.
     auto verifier = ProofVerifier::Disabled();
 
-    bool fCheckTransactions = ShouldCheckTransactions(chainparams, pindex);
-    if ((!CheckBlock(block, state, chainparams, verifier, true, true, fCheckTransactions)) ||
-         !ContextualCheckBlock(block, state, chainparams, pindex->pprev, fCheckTransactions)) {
-        if (state.IsInvalid() && !state.CorruptionPossible()) {
-            pindex->nStatus |= BLOCK_FAILED_VALID;
-            setDirtyBlockIndex.insert(pindex);
-        }
-        return false;
-    }
-
     int nHeight = pindex->nHeight;
 
-    // Body-vs-header commitment pre-check for active-tip extensions: catches
-    // NU5+ body-poisoning attacks before the body is persisted to disk and
-    // BLOCK_HAVE_DATA is set on the index entry. For sidechain blocks the
-    // check has to wait until ConnectBlock (since reconstructing the chain
-    // history MMR at an arbitrary `pprev` is infeasible); the body-replaceable
-    // failure path in ConnectTip / InvalidBlockFound then cleans up persisted
-    // body data so that a subsequent matching body can still be accepted.
+    // Body-vs-header commitment pre-check for active-tip extensions.
+    // This runs BEFORE CheckBlock / ContextualCheckBlock, so that any
+    // body-mutable rejection downstream (one whose triggering field is
+    // bound by `hashAuthDataRoot` rather than `hashMerkleRoot` — e.g.
+    // per-block sigop count, transparent script verification, Sapling /
+    // Orchard proof and signature verification) cannot fire on a body
+    // whose `hashAuthDataRoot` does not match what the header committed to.
+    //
+    // This closes the GHSA-rpcw-q5mr-gq35 / GHSA-qvwc-hc2r-82qv /
+    // GHSA-382w-958v-m5jr class of NU5+ block-body poisoning structurally:
+    // the body is verified against the header's commitments before any
+    // body-mutable consensus check has the chance to mark the shared
+    // header `BLOCK_FAILED_VALID` based on a mutated body. The check also
+    // runs before the body is persisted to disk and `BLOCK_HAVE_DATA` is
+    // set on the index entry.
+    //
+    // For sidechain blocks, the check has to wait until ConnectBlock
+    // (reconstructing the chain history MMR at an arbitrary `pprev` is
+    // infeasible); the body-replaceable failure path in ConnectTip /
+    // InvalidBlockFound then cleans up persisted body data so that a
+    // subsequent matching body can still be accepted. Sidechain
+    // body-mutable rejections in CheckBlock therefore continue to pass
+    // `BodyCorruption::Possible` on each rejection that depends on a
+    // field bound by `hashAuthDataRoot`. This provides defence in depth
+    // in case of any problem with the `hashMerkleRootChecked` /
+    // `hashBlockCommitmentChecks` logic used by `BodyCorruption::Default`.
     //
     // Null `pindex->pprev` can only occur at genesis during a reindex.
     if (pindex->pprev != nullptr && pindex->pprev == chainActive.Tip()) {
@@ -5995,6 +6087,16 @@ static bool AcceptBlock(const CBlock& block, CValidationState& state, const CCha
                                           state, hashAuthDataRoot_, hashChainHistoryRoot_)) {
             return false;
         }
+    }
+
+    bool fCheckTransactions = ShouldCheckTransactions(chainparams, pindex);
+    if ((!CheckBlock(block, state, chainparams, verifier, true, true, fCheckTransactions)) ||
+         !ContextualCheckBlock(block, state, chainparams, pindex->pprev, fCheckTransactions)) {
+        if (state.IsInvalid() && !state.CorruptionPossible()) {
+            pindex->nStatus |= BLOCK_FAILED_VALID;
+            setDirtyBlockIndex.insert(pindex);
+        }
+        return false;
     }
 
     // Write block to history file
@@ -6077,6 +6179,15 @@ bool TestNewBlockAtTipValidity(
     AssertLockHeld(cs_main);
     CBlockIndex* pindexPrev = chainActive.Tip();
     assert(block.hashPrevBlock == pindexPrev->GetBlockHash());
+
+    // The body hasn't been verified against the header's commitments yet.
+    // Reset the commitment-tracking flags here for the same reason as in
+    // `AcceptBlock` / `ConnectBlock`. For the miner-constructed-block case the
+    // resulting `corruptionPossible` classification doesn't affect behaviour
+    // (the temporary state never reaches `BLOCK_FAILED_VALID` propagation),
+    // but keeping the flags consistent helps debugging and lets us treat
+    // body-mutable rejection codes uniformly without per-call-site exceptions.
+    state.ResetBodyCommitmentChecks();
 
     CCoinsViewCache viewNew(pcoinsTip);
     CBlockIndex indexDummy(block);
