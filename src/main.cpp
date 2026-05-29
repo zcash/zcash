@@ -5406,13 +5406,18 @@ bool ReceivedBlockTransactions(
 {
     // Compute per-block pool value deltas first. `SetChainPoolValues` can
     // fail if the running sum of per-pool values overflows the valid
-    // monetary range. If it does, return without mutating `pindexNew`:
-    // leaving the block index in its prior (header-only) state means
-    // future processing will not consider the block as having data, and
-    // the on-disk block file is harmlessly orphaned (it will be ignored,
-    // or cleaned up by the next reindex).
+    // monetary range. On failure `pindexNew` is left in its prior
+    // (header-only) state and the sending peer is banned (see below).
     if (!SetChainPoolValues(chainparams, block, pindexNew)) {
-        return error("ReceivedBlockTransactions(): SetChainPoolValues failed");
+        // The aggregate pool-value delta is outside the valid monetary range.
+        // This is a deterministic property of the block (ComputePoolDeltas reads
+        // only `block`, `chainparams`, and `nHeight`), so every honest node
+        // rejects the same block and the sending peer can safely be banned.
+        // The DoS score is what bounds the otherwise-unbounded re-write replay
+        // (GHSA-78pp-mc9g-g4mw).
+        return state.DoS(100,
+            error("ReceivedBlockTransactions(): SetChainPoolValues failed"),
+            REJECT_INVALID, "bad-blk-pool-value-out-of-range");
     }
 
     pindexNew->nTx = block.vtx.size();
@@ -5450,7 +5455,18 @@ bool ReceivedBlockTransactions(
             // block reception can defer the parent's chain values becoming
             // available until after `SetChainPoolValues` was called.
             if (!AccumulateChainPoolValues(pindex)) {
-                return error("ReceivedBlockTransactions(): AccumulateChainPoolValues failed at height %d", pindex->nHeight);
+                error("ReceivedBlockTransactions(): AccumulateChainPoolValues failed at height %d", pindex->nHeight);
+                // A cumulative pool value is out of range: a deterministic
+                // consensus failure. `state` belongs to `pindexNew`, so only
+                // its own failure can be recorded through it. A descendant
+                // (linked in from `mapBlocksUnlinked`, possibly from another
+                // peer) is left for `ConnectBlock` to reject, to avoid
+                // mis-attributing the ban.
+                if (pindex == pindexNew) {
+                    return state.DoS(100, false, REJECT_INVALID,
+                        "bad-blk-pool-value-out-of-range");
+                }
+                return false;
             }
 
             // Fall back to hardcoded Sprout value pool balance
