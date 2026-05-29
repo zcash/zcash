@@ -20,7 +20,7 @@ shared header `BLOCK_FAILED_VALID` based on the poisoned body, after which
 the canonical body for the same hash was rejected as `duplicate-invalid`,
 permanently stalling the targeted node on the canonical chain at that height.
 
-This test exercises three known trigger paths:
+This test exercises four known trigger paths:
 
   - **commitments**: a minimal `scriptSig` mutation that does not change
     any other consensus property; the rejection is `bad-block-commitments-hash`
@@ -56,8 +56,19 @@ This test exercises three known trigger paths:
     which resolves to corruption-possible while
     `hashBlockCommitmentsChecked` is unset).
 
+  - **blk-length**: an even larger `scriptSig` mutation that pads with
+    arbitrary non-opcode-sigop bytes so the serialized block size
+    exceeds `MAX_BLOCK_SIZE = 2_000_000`. This is the GHSA-382w-958v-m5jr
+    trigger path; on the sidechain path it is structurally closed by the
+    commitment-tracking mechanism in `CValidationState` (the `bad-blk-length`
+    rejection inside `CheckBlock` is classified `BodyCorruption::Default`,
+    which resolves to corruption-possible whenever
+    `hashBlockCommitmentsChecked` has not yet been set). The
+    `BodyCorruption::Possible` annotation on the rejection itself is
+    defence in depth.
+
 For each trigger path, scenarios cover both an active-tip extension and a
-sidechain extension. The six scenarios are individually runnable via
+sidechain extension. The eight scenarios are individually runnable via
 `--only-<name>` flags.
 """
 
@@ -84,6 +95,16 @@ from test_framework.util import (
 # does not export it.
 COINBASE_MATURITY = 100
 
+# Mirrors `src/consensus/consensus.h:MAX_BLOCK_SIZE`.
+MAX_BLOCK_SIZE = 2_000_000
+
+# Scenarios that require a non-coinbase transparent v5 transaction in the
+# block template (which in turn requires a spendable mature coinbase, hence
+# a 100-block COINBASE_MATURITY generate before the scenario runs).
+SCENARIOS_NEEDING_TRANSPARENT_TX = {
+    'blk-sigops-active', 'blk-sigops-sidechain',
+    'blk-length-active', 'blk-length-sidechain',
+}
 
 SCENARIOS = [
     ('commitments-active',    'commitments-hash poisoning, active-tip submission'),
@@ -92,6 +113,8 @@ SCENARIOS = [
     ('blk-sigops-sidechain',  'bad-blk-sigops poisoning, sidechain submission + reorg'),
     ('cb-length-active',      'bad-cb-length poisoning, active-tip submission'),
     ('cb-length-sidechain',   'bad-cb-length poisoning, sidechain submission + reorg'),
+    ('blk-length-active',     'bad-blk-length poisoning, active-tip submission'),
+    ('blk-length-sidechain',  'bad-blk-length poisoning, sidechain submission + reorg'),
 ]
 
 
@@ -252,8 +275,8 @@ class Nu5BlockBodyPoisoningTest(BitcoinTestFramework):
         and the test pads past 100 bytes by appending `(100 - baseline + 1)`
         bytes, putting `block_bad` exactly one byte past the cap.
 
-        Unlike `build_poisoned_pair_via_blk_sigops`, this targets the
-        coinbase, which is always present in the template, so no
+        Unlike `build_poisoned_pair_via_{blk_sigops,blk_length}`, this targets
+        the coinbase, which is always present in the template, so no
         `sendtoaddress` priming is required and no mature coinbase is
         needed beforehand.
 
@@ -287,6 +310,63 @@ class Nu5BlockBodyPoisoningTest(BitcoinTestFramework):
         assert len(block_good.vtx[0].vin[0].scriptSig) <= 100
         return block_good, block_bad
 
+    def build_poisoned_pair_via_blk_length(self):
+        """
+        Build (block_good, block_bad) extending the current tip, where
+        `block_bad` shares the same hash as `block_good` but the non-coinbase
+        v5 transparent transaction in `block_bad` has its `scriptSig` padded
+        with `OP_1NEGATE` (0x4f) bytes so that the serialized block size
+        exceeds `MAX_BLOCK_SIZE = 2_000_000`.
+
+        Padding-byte choice: `OP_1NEGATE` contributes 0 sigops to
+        `GetLegacySigOpCount` (only `OP_CHECKSIG` and `OP_CHECKMULTISIG` are
+        counted), so the `bad-blk-length` rejection at the size step fires
+        cleanly without colliding with the downstream `bad-blk-sigops`
+        rejection. Using an all-zero pattern is avoided per the general
+        rule against zero-byte test dummies.
+
+        Like `build_poisoned_pair_via_blk_sigops`, this targets `vtx[1]`,
+        which the caller must have arranged via a transparent v5 broadcast
+        before calling. Coinbase `scriptSig` is capped at 100 bytes by
+        `bad-cb-length` and so cannot carry the ~2 MB padding needed to
+        cross `MAX_BLOCK_SIZE`.
+
+        Like the other helpers, the mutation:
+          - changes the per-tx `auth_digest` and hence `hashAuthDataRoot`;
+          - does NOT change any txid, `hashMerkleRoot`, the header, or the
+            block hash.
+        """
+        block_good = self.build_block_from_template()
+        assert len(block_good.vtx) >= 2, (
+            "expected a non-coinbase transparent v5 tx in the block template; "
+            "the caller must broadcast one to the mempool before calling")
+
+        block_bad = copy.deepcopy(block_good)
+        target = block_bad.vtx[1]
+
+        # Pad just past `MAX_BLOCK_SIZE`. The +8 buffer covers the CompactSize
+        # length-prefix expansion when `scriptSig` grows from a small number
+        # of bytes to ~2 MB (the per-input CompactSize encoding for sizes
+        # >= 65536 takes 5 bytes vs. 1 byte for sizes < 253, so the
+        # serialized block grows by a few bytes more than just `num_bytes`).
+        baseline_size = len(block_good.serialize())
+        num_bytes = MAX_BLOCK_SIZE - baseline_size + 8
+        target.vin[0].scriptSig = bytes(target.vin[0].scriptSig) + b'\x4f' * num_bytes
+        target.rehash()
+
+        # Wire bytes differ; header (and block hash) unchanged; v5 txid
+        # (which excludes scriptSig per ZIP 244) unchanged; auth digest differs.
+        assert block_bad.serialize() != block_good.serialize()
+        assert_equal(block_bad.hash, block_good.hash)
+        assert_equal(block_bad.vtx[1].hash, block_good.vtx[1].hash)
+        assert block_bad.vtx[1].auth_digest != block_good.vtx[1].auth_digest
+
+        # The size step at `CheckBlock` would fire on `block_bad` but not on
+        # `block_good`.
+        assert len(block_bad.serialize()) > MAX_BLOCK_SIZE
+        assert len(block_good.serialize()) <= MAX_BLOCK_SIZE
+        return block_good, block_bad
+
     def run_test(self):
         node = self.node
 
@@ -302,12 +382,12 @@ class Nu5BlockBodyPoisoningTest(BitcoinTestFramework):
             node.getblockchaininfo()['upgrades'][nustr(NU5_BRANCH_ID)]['status'],
             'active')
 
-        # blk-sigops scenarios need a spendable mature coinbase so the wallet
-        # can produce a non-coinbase transparent v5 tx for the next block
-        # template. Defer the 100-block COINBASE_MATURITY generate until a
-        # blk-sigops scenario is actually selected, so commitments-only runs
-        # stay fast.
-        if to_run & {'blk-sigops-active', 'blk-sigops-sidechain'}:
+        # The blk-sigops and blk-length scenarios need a spendable mature
+        # coinbase so the wallet can produce a non-coinbase transparent v5
+        # tx for the next block template. Defer the 100-block
+        # COINBASE_MATURITY generate until a transparent-tx-needing scenario
+        # is actually selected, so commitments-only runs stay fast.
+        if to_run & SCENARIOS_NEEDING_TRANSPARENT_TX:
             node.generate(COINBASE_MATURITY)
 
         if 'commitments-active' in to_run:
@@ -322,6 +402,10 @@ class Nu5BlockBodyPoisoningTest(BitcoinTestFramework):
             self.test_active_tip_poisoning_via_cb_length()
         if 'cb-length-sidechain' in to_run:
             self.test_sidechain_poisoning_via_cb_length()
+        if 'blk-length-active' in to_run:
+            self.test_active_tip_poisoning_via_blk_length()
+        if 'blk-length-sidechain' in to_run:
+            self.test_sidechain_poisoning_via_blk_length()
 
     def test_active_tip_poisoning_via_commitments(self):
         """
@@ -369,12 +453,12 @@ class Nu5BlockBodyPoisoningTest(BitcoinTestFramework):
         Sidechain block: the active-tip pre-check is skipped (because
         `pprev != chainActive.Tip()`), so the poisoned body is persisted to
         disk. A subsequent reorg attempt invokes `ConnectBlock` against the
-        poisoned body, which fails. At that point the class-wide cleanup
-        (`ConnectTip` calls `state.MarkCorruptionPossible()`,
-        `InvalidBlockFound` calls `CBlockIndex::ResetBodyState()`) must
-        result in discarding the body without setting `BLOCK_FAILED_VALID`
-        on the header, so that the canonical body for the same block hash
-        can subsequently be accepted.
+        poisoned body, which fails with `BodyCorruption::Possible`. The
+        cleanup path (`InvalidBlockFound` -> `ResetBodyStateForSubtree` ->
+        `CBlockIndex::ResetBodyState`) must result in discarding the body
+        without setting `BLOCK_FAILED_VALID` on the header, so that the
+        canonical body for the same block hash can subsequently be
+        accepted.
         """
         node = self.node
 
@@ -411,10 +495,10 @@ class Nu5BlockBodyPoisoningTest(BitcoinTestFramework):
         # the sidechain block as the next candidate and calls `ConnectBlock`
         # against its (poisoned) body. The body's `hashAuthDataRoot` doesn't
         # match the header's `hashBlockCommitments`, so `ConnectBlock`
-        # fails with `bad-block-commitments-hash`. The cleanup path
-        # (`ConnectTip` -> `MarkCorruptionPossible` -> `InvalidBlockFound`
-        # -> `ResetBodyState`) must discard the body without permanently
-        # marking the sidechain header invalid.
+        # fails with `bad-block-commitments-hash` raised as
+        # `BodyCorruption::Possible`. The cleanup path (`InvalidBlockFound`
+        # -> `ResetBodyStateForSubtree` -> `ResetBodyState`) must discard
+        # the body without permanently marking the sidechain header invalid.
         node.invalidateblock(mined_hash)
 
         # The chain falls back one height (the mined tip is now invalid;
@@ -450,13 +534,15 @@ class Nu5BlockBodyPoisoningTest(BitcoinTestFramework):
         `OP_CHECKMULTISIG` bytes so that the block's total sigop count
         exceeds `MAX_BLOCK_SIGOPS = 20000`.
 
-        The mutation simultaneously breaks `hashAuthDataRoot` AND inflates
-        the sigop count. At the time of writing, the rejection that fires
-        is `bad-blk-sigops` (the sigop check is sequenced ahead of the
-        auth-commitment check); a future reordering could change which
-        of the two body-mutable rejections fires first for this body.
-        Either way, the invariant under test is the same: such a
-        rejection must leave the shared header reusable.
+        The mutation simultaneously breaks `hashAuthDataRoot` AND
+        inflates the sigop count. At the time of writing, the active-tip
+        auth-commitment pre-check in `AcceptBlock` is sequenced ahead of
+        `CheckBlock`, so the rejection that fires is
+        `bad-block-commitments-hash`; the downstream `bad-blk-sigops`
+        check inside `CheckBlock` is never reached for this body.
+        A future reordering of the body-mutable rejections relative to the
+        auth-commitment check could change which rejection fires first.
+        Either way, such a rejection must leave the shared header reusable.
 
         Pre-fix (commit `98f3cfaf`, which dropped `corruptionIn=true`
         from the `bad-blk-sigops` rejection on the incorrect reasoning
@@ -485,11 +571,15 @@ class Nu5BlockBodyPoisoningTest(BitcoinTestFramework):
         height_before = node.getblockcount()
         best_before = node.getbestblockhash()
 
-        # First submission of the poisoned body: rejected by `CheckBlock`
-        # as `bad-blk-sigops`. The body is never persisted (the rejection
-        # is upstream of `WriteBlockToDisk`), so there is no body cleanup
-        # to verify; the relevant invariant is on the header's index
-        # entry state.
+        # First submission of the poisoned body. The active-tip
+        # auth-commitment pre-check fires first, rejecting with
+        # `bad-block-commitments-hash`; the mutated `scriptSig` produces a
+        # different `hashAuthDataRoot`, which no longer matches the
+        # header's `hashBlockCommitments`. The downstream `bad-blk-sigops`
+        # rejection inside `CheckBlock` is never reached for this body. The
+        # body is never persisted (the rejection is upstream of
+        # `WriteBlockToDisk`), so there is no body cleanup to verify; the
+        # relevant invariant is on the header's index entry state.
         reason = node.submitblock(bad_hex)
         assert reason in ("bad-block-commitments-hash", "bad-blk-sigops"), reason
         assert_equal(node.getblockcount(), height_before)
@@ -681,6 +771,136 @@ class Nu5BlockBodyPoisoningTest(BitcoinTestFramework):
         # `BLOCK_FAILED_VALID`; post-fix it remains reusable.
         reason = node.submitblock(sidechain_bad_hex)
         assert reason in ("bad-cb-length", "bad-block-commitments-hash"), reason
+        assert_equal(node.getbestblockhash(), mined_hash)
+        assert_equal(node.getblockcount(), mined_height)
+
+        # Submit the canonical sidechain body. Post-fix: the header is in
+        # the index from the prior rejected submission but not failed; the
+        # good body passes `CheckBlock` and `ContextualCheckBlock`.
+        # `CheckBlockBodyAuthCommitment` is skipped (`pprev !=
+        # chainActive.Tip()`). The body is persisted; the chain doesn't
+        # switch (same work as the mined tip), so `submitblock` returns
+        # `duplicate-inconclusive`. Pre-fix this was `duplicate-invalid`.
+        assert_equal(node.submitblock(sidechain_good_hex), "duplicate-inconclusive")
+        assert_equal(node.getbestblockhash(), mined_hash)
+        assert_equal(node.getblockcount(), mined_height)
+
+        # Force a reorg attempt: `invalidateblock` marks the mined tip
+        # `BLOCK_FAILED_VALID` and re-runs `ActivateBestChain`, which
+        # now picks `sidechain_good`. `ConnectBlock` succeeds, so the
+        # chain advances to it.
+        node.invalidateblock(mined_hash)
+        assert_equal(node.getblockcount(), mined_height)
+        assert_equal(node.getbestblockhash(), sidechain_good.hash)
+
+    def test_active_tip_poisoning_via_blk_length(self):
+        """
+        Active-tip extension, GHSA-382w-958v-m5jr trigger path: a non-coinbase
+        v5 transparent transaction's `scriptSig` is padded with arbitrary bytes
+        so that the serialized block size exceeds `MAX_BLOCK_SIZE = 2_000_000`.
+
+        The mutation simultaneously breaks `hashAuthDataRoot` AND pushes the
+        serialized body over `MAX_BLOCK_SIZE`. At the time of writing the
+        active-tip path runs `CheckBlockBodyAuthCommitment` (the pre-check)
+        before `CheckBlock`, so the rejection that fires is
+        `bad-block-commitments-hash` rather than `bad-blk-length`. A future
+        reordering of the two checks could change which one fires first;
+        either way, the invariant under test is that such a rejection must
+        leave the shared header reusable so that the genuine body can
+        subsequently be accepted.
+
+        Pre-fix (specifically: pre the active-tip auth-commitment pre-check
+        in `AcceptBlock`), `CheckBlock`'s `bad-blk-length` would fire first
+        with `corruptionPossible = false`, mark the shared index entry
+        `BLOCK_FAILED_VALID`, and the canonical body would be rejected as
+        `duplicate-invalid`.
+        """
+        node = self.node
+
+        # Wait for the wallet to finish processing any prior chain extension.
+        self.sync_all()
+
+        # Broadcast a transparent v5 tx so the next `getblocktemplate`
+        # includes a non-coinbase target for the `scriptSig` padding.
+        node.sendtoaddress(node.getnewaddress(), 1)
+
+        block_good, block_bad = self.build_poisoned_pair_via_blk_length()
+        good_hex = block_good.serialize().hex()
+        bad_hex = block_bad.serialize().hex()
+
+        height_before = node.getblockcount()
+        best_before = node.getbestblockhash()
+
+        # First submission of the poisoned body: the active-tip
+        # auth-commitment pre-check fires first, rejecting with
+        # `bad-block-commitments-hash`. The body is never persisted (the
+        # rejection is upstream of `WriteBlockToDisk`).
+        reason = node.submitblock(bad_hex)
+        assert reason in ("bad-block-commitments-hash", "bad-blk-length"), reason
+        assert_equal(node.getblockcount(), height_before)
+        assert_equal(node.getbestblockhash(), best_before)
+
+        # Resubmission of the poisoned body: post-fix the header is in
+        # the index but not `BLOCK_FAILED_VALID`, so `submitblock` returns
+        # `duplicate`. Pre-fix this would have been `duplicate-invalid`.
+        assert_equal(node.submitblock(bad_hex), "duplicate")
+
+        # Submit the canonical body for the same hash. Post-fix the header
+        # is reusable, the good body passes `CheckBlock` (including the size
+        # step), `ContextualCheckBlock`, and `CheckBlockBodyAuthCommitment`,
+        # and the chain advances. Pre-fix the header was `BLOCK_FAILED_VALID`
+        # and this was rejected as `duplicate-invalid`.
+        assert_equal(node.submitblock(good_hex), "duplicate")
+        assert_equal(node.getblockcount(), height_before + 1)
+        assert_equal(node.getbestblockhash(), block_good.hash)
+
+    def test_sidechain_poisoning_via_blk_length(self):
+        """
+        Sidechain extension, GHSA-382w-958v-m5jr trigger path: same
+        `scriptSig` padding mutation as the active-tip scenario, but
+        submitted as a sidechain block.
+
+        On the sidechain path the active-tip pre-check is skipped (because
+        `pprev != chainActive.Tip()`), so `CheckBlock` runs first and the
+        size step (`bad-blk-length`) fires. The rejection is upstream of
+        `WriteBlockToDisk`, so the poisoned body is never persisted; the
+        invariant to verify is that the shared header's index entry is not
+        permanently marked `BLOCK_FAILED_VALID`, so the canonical body for
+        the same hash can subsequently be accepted.
+
+        Pre-fix (specifically: pre the structural commitment-tracking
+        mechanism on `CValidationState`), the `BodyCorruption::Default`
+        classification at the rejection site would resolve to
+        non-corruption-possible on the sidechain path, the header would
+        be marked `BLOCK_FAILED_VALID`, and the canonical body would be
+        rejected as `duplicate-invalid`.
+        """
+        node = self.node
+
+        # Wait for the wallet to finish processing any prior chain extension.
+        self.sync_all()
+
+        # Broadcast a fresh transparent v5 tx.
+        node.sendtoaddress(node.getnewaddress(), 1)
+
+        sidechain_good, sidechain_bad = self.build_poisoned_pair_via_blk_length()
+        sidechain_good_hex = sidechain_good.serialize().hex()
+        sidechain_bad_hex = sidechain_bad.serialize().hex()
+
+        # Mine another block at the same height to push our hand-built
+        # blocks off the active tip. This also confirms the wallet tx
+        # we just broadcast.
+        node.generate(1)
+        mined_hash = node.getbestblockhash()
+        mined_height = node.getblockcount()
+        assert mined_hash != sidechain_good.hash, \
+            "mined block coincided with our hand-built block"
+
+        # Submit the poisoned sidechain block. `CheckBlock` fires
+        # `bad-blk-length`. Pre-fix the shared header was marked
+        # `BLOCK_FAILED_VALID`; post-fix it remains reusable.
+        reason = node.submitblock(sidechain_bad_hex)
+        assert reason in ("bad-blk-length", "bad-block-commitments-hash"), reason
         assert_equal(node.getbestblockhash(), mined_hash)
         assert_equal(node.getblockcount(), mined_height)
 
