@@ -1,27 +1,29 @@
 FROM debian:12
 
 RUN apt-get update \
-  && apt-get install -y gnupg2 apt-transport-https curl
+  && apt-get install -y --no-install-recommends ca-certificates curl gnupg2 \
+  && rm -rf /var/lib/apt/lists/*
 
-ARG ZCASH_SIGNING_KEY_ID=1D05FDC66B372CFE
+RUN curl -fsSL https://apt.z.cash/zcash.asc \
+  | gpg --dearmor -o /usr/share/keyrings/zcash-keyring.gpg \
+  && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/zcash-keyring.gpg] https://apt.z.cash/ bookworm main" \
+     > /etc/apt/sources.list.d/zcash.list \
+  && apt-get update
 
 ARG ZCASH_VERSION=
 # The empty string for ZCASH_VERSION will install the apt default version,
 # which should be the latest stable release. To install a specific
 # version, pass `--build-arg 'ZCASH_VERSION=<version>'` to `docker build`.
 
-ARG ZCASHD_USER=zcashd
-ARG ZCASHD_UID=2001
-
-RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys $ZCASH_SIGNING_KEY_ID \
-  && echo "deb [arch=amd64] https://apt.z.cash/ bookworm main" > /etc/apt/sources.list.d/zcash.list \
-  && apt-get update
-
 RUN if [ -z "$ZCASH_VERSION" ]; \
     then apt-get install -y zcash; \
     else apt-get install -y zcash=$ZCASH_VERSION; \
-    fi; \
-    zcashd --version
+    fi \
+  && zcashd --version \
+  && rm -rf /var/lib/apt/lists/*
+
+ARG ZCASHD_USER=zcashd
+ARG ZCASHD_UID=2001
 
 RUN useradd --home-dir "/srv/$ZCASHD_USER" \
             --shell /bin/bash \
@@ -36,5 +38,6 @@ RUN mkdir -p "/srv/$ZCASHD_USER/.zcash/" \
 WORKDIR "/srv/$ZCASHD_USER"
 ENV HOME="/srv/$ZCASHD_USER"
 
-ADD entrypoint.sh /entrypoint.sh
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]

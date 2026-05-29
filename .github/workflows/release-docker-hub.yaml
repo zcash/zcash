@@ -1,35 +1,66 @@
 name: Build and Push Docker Image to Docker Hub
 
 on:
-  push:
-    tags:
-      - "v*.*.*"
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Zcash version (e.g. 6.12.1)'
+        required: true
+
+permissions:
+  contents: read
 
 jobs:
-  set_env:
-    name: Create version tag
+  docker:
     runs-on: ubuntu-latest
-    outputs:
-      tags: ${{ steps.version_step.outputs.tags }}
-      zcash_version: ${{ steps.version_step.outputs.zcash_version }}
     steps:
-    - id: version_step
-      run:  |
-        echo "tags=latest,${{ github.ref_name }},${{ github.sha }}" >> $GITHUB_OUTPUT
-        echo "zcash_version=$(echo ${{ github.ref_name }} | sed 's/v//g')" >> $GITHUB_OUTPUT
+    - name: Checkout
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-  build_push:
-    uses: zcash/.github/.github/workflows/build-and-push-docker-hub.yaml@main
-    needs: set_env
-    with:
-      image_name: zcashd
-      image_tags: ${{ needs.set_env.outputs.tags }}
-      dockerfile: ./contrib/docker/Dockerfile
-      context: ./contrib/docker/
-      build-args: |
-        ZCASH_VERSION=${{ needs.set_env.outputs.zcash_version }}
-    secrets:
-      dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}
-      dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
-      dockerhub_registry: ${{ secrets.DOCKERHUB_REGISTRY }}
+    - name: Set version
+      id: version
+      run: |
+        VERSION="${{ inputs.version }}"
+        echo "tag=v${VERSION}" >> "$GITHUB_OUTPUT"
+        echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+        echo "Building Docker image for zcash ${VERSION}"
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+    - name: Log in to Docker Hub (zodlinc)
+      uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+      with:
+        username: ${{ secrets.ZODLINC_DOCKERHUB_USERNAME }}
+        password: ${{ secrets.ZODLINC_DOCKERHUB_PASSWORD }}
+
+    - name: Build and push to zodlinc (zcashd + zcash mirror)
+      uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
+      with:
+        context: ./contrib/docker/
+        push: true
+        build-args: |
+          ZCASH_VERSION=${{ steps.version.outputs.version }}
+        tags: |
+          zodlinc/zcashd:${{ steps.version.outputs.tag }}
+          zodlinc/zcashd:latest
+          zodlinc/zcash:${{ steps.version.outputs.tag }}
+          zodlinc/zcash:latest
+
+    - name: Log in to Docker Hub (electriccoinco)
+      uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+    - name: Copy to electriccoinco (zcashd + zcash mirror)
+      run: |
+        TAG="${{ steps.version.outputs.tag }}"
+        for NAME in zcashd zcash; do
+          docker buildx imagetools create \
+            --tag "electriccoinco/${NAME}:${TAG}" \
+            "zodlinc/zcashd:${TAG}"
+          docker buildx imagetools create \
+            --tag "electriccoinco/${NAME}:latest" \
+            "zodlinc/zcashd:latest"
+        done

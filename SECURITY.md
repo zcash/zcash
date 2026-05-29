@@ -5,6 +5,7 @@ conform to this standard: https://github.com/RD-Crypto-Spec/Responsible-Disclosu
 
 ## Vulnerability Categorization
 
+
 The Zcash maintainers have defined the following categories for
 vulnerabilities. This vulnerability scoring is used by the maintainers to
 prioritize how urgently each potential vulnerability needs to be fixed; it's

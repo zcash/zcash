@@ -122,7 +122,7 @@ jobs:
       rpc_test_shards_matrix: ${{ steps.set-rpc-tests.outputs.rpc_test_shards_matrix }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
       # Configure the build and test matrices. Notes:
       # - The `*_names` lists of platforms are combined with job-specific lists to build
@@ -146,6 +146,8 @@ jobs:
           jq -r -n 'env.CFG | fromjson | [.data[] | select(.test_os and .tier == 1) | .name] | @json "rpc_test_names=\(.)"' >> $GITHUB_OUTPUT
 
       - id: set-rpc-tests
+        env:
+          RPC_TEST_MATRIX: ${{ steps.set-matrices.outputs.rpc_test_matrix }}
         run: |
           cat <<EOF > ./subclass.py
           import importlib
@@ -184,10 +186,9 @@ jobs:
 
           print(json.dumps(test_list))
           EOF
-          RPC_MATRIX_JSON=$(echo '${{ steps.set-matrices.outputs.rpc_test_matrix }}')
           RPC_SHARDS_JSON=$(SRC_DIR=$(pwd) python3 ./subclass.py)
           echo "$RPC_SHARDS_JSON" | jq -r '[.[] | .shard] | @json "rpc_test_shards=\(.)"' >> $GITHUB_OUTPUT
-          echo -e "$RPC_MATRIX_JSON\n$RPC_SHARDS_JSON" | jq -r -s 'add | @json "rpc_test_shards_matrix=\(.)"' >> $GITHUB_OUTPUT
+          printf '%s\n%s\n' "$RPC_TEST_MATRIX" "$RPC_SHARDS_JSON" | jq -r -s 'add | @json "rpc_test_shards_matrix=\(.)"' >> $GITHUB_OUTPUT
 
       - name: Cache Sprout parameters
         uses: actions/cache@v5
@@ -219,7 +220,7 @@ jobs:
         include: ${{ fromJson(needs.setup.outputs.build_matrix) }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
       - name: Install Homebrew build dependencies
         if: matrix.brew_deps != ''
@@ -270,7 +271,7 @@ jobs:
           -j"${{ steps.nproc.outputs.count }}"
 
       - name: Upload zcashd and related executables (src)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: zcashd-${{ matrix.name }}
           path: |
@@ -284,25 +285,25 @@ jobs:
               ${{ format('./src/bench/bench_bitcoin{0}', matrix.file_ext) }}
 
       - name: Upload src/secp256k1
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: secp256k1-${{ matrix.name }}
           path: ./src/secp256k1
 
       - name: Upload src/univalue
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: univalue-${{ matrix.name }}
           path: ./src/univalue
 
       - name: Upload depends/${{ matrix.host }}/native/bin as depends-native-bin artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: depends-native-bin-${{ matrix.name }}
           path: ./depends/${{ matrix.host }}/native/bin
 
       - name: Upload depends/${{ matrix.host }}/lib as depends-lib artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: depends-lib-${{ matrix.name }}
           path: ./depends/${{ matrix.host }}/lib
@@ -327,7 +328,7 @@ jobs:
         include: ${{ fromJson(needs.setup.outputs.build_matrix) }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
       - name: Install Homebrew build dependencies
         if: matrix.brew_deps != ''
@@ -391,10 +392,10 @@ jobs:
       matrix:
         include: ${{ fromJson(needs.setup.outputs.test_matrix) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
       - name: Download src artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: zcashd-${{ matrix.name }}
           path: ./src
@@ -422,10 +423,10 @@ jobs:
         shard_index: [0, 1]
         include: ${{ fromJson(needs.setup.outputs.test_matrix) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
       - name: Download src artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: zcashd-${{ matrix.name }}
           path: ./src
@@ -481,7 +482,7 @@ jobs:
         include: ${{ fromJson(needs.setup.outputs.test_matrix) }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
       - name: Run Rust tests
         run: cargo test
 
@@ -500,14 +501,14 @@ jobs:
       matrix:
         include: ${{ fromJson(needs.setup.outputs.unix_test_matrix) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
       - name: Install Homebrew build dependencies
         if: matrix.brew_deps != ''
         run: brew install ${{ matrix.brew_deps }}
 
       - name: Download src/secp256k1 artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: secp256k1-${{ matrix.name }}
           path: ./src/secp256k1
@@ -533,20 +534,20 @@ jobs:
       matrix:
         include: ${{ fromJson(needs.setup.outputs.unix_test_matrix) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
       - name: Install Homebrew build dependencies
         if: matrix.brew_deps != ''
         run: brew install ${{ matrix.brew_deps }}
 
       - name: Download native/bin artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: depends-native-bin-${{ matrix.name }}
           path: ./depends/${{ matrix.host }}/
 
       - name: Download src/univalue artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: univalue-${{ matrix.name }}
           path: ./src/univalue
@@ -577,10 +578,10 @@ jobs:
         include: ${{ fromJson(needs.setup.outputs.unix_test_matrix) }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
       - name: Download src artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: zcashd-${{ matrix.name }}
           path: ./src
@@ -610,10 +611,10 @@ jobs:
         include: ${{ fromJson(needs.setup.outputs.test_matrix) }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
       - name: Download depends/${{ matrix.host }}/lib
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: depends-lib-${{ matrix.name }}
           path: ./depends/${{ matrix.host }}/lib
@@ -640,10 +641,10 @@ jobs:
         include: ${{ fromJson(needs.setup.outputs.unix_test_matrix) }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
       - name: Download src artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: zcashd-${{ matrix.name }}
           path: ./src
@@ -712,7 +713,7 @@ jobs:
         include: ${{ fromJson(needs.setup.outputs.rpc_test_shards_matrix) }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
       - name: Cache Python dependencies for RPC tests
         uses: actions/cache@v5
@@ -728,7 +729,7 @@ jobs:
           pip install zmq asyncio base58
 
       - name: Download src artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: zcashd-${{ matrix.name }}
           path: ./src
