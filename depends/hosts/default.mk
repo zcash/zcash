@@ -5,15 +5,15 @@
 #         Explicitly point to our binaries (e.g. cctools) so that they are
 #         ensured to be found and preferred over other possibilities.
 #
-default_host_CC = clang -target $(host) -B$(build_prefix)/bin
-default_host_CXX = clang++ -target $(host) -B$(build_prefix)/bin -stdlib=libc++
-default_host_AR = llvm-ar
-default_host_RANLIB = llvm-ranlib
-default_host_STRIP = llvm-strip
+default_host_CC = $(build_prefix)/bin/clang -target $(host) -B$(build_prefix)/bin
+default_host_CXX = $(build_prefix)/bin/clang++ -target $(host) -B$(build_prefix)/bin -stdlib=libc++
+default_host_AR = $(build_prefix)/bin/llvm-ar
+default_host_RANLIB = $(build_prefix)/bin/llvm-ranlib
+default_host_STRIP = $(build_prefix)/bin/llvm-strip
 default_host_LIBTOOL = $(host_toolchain)libtool
 default_host_INSTALL_NAME_TOOL = $(host_toolchain)install_name_tool
 default_host_OTOOL = $(host_toolchain)otool
-default_host_NM = llvm-nm
+default_host_NM = $(build_prefix)/bin/llvm-nm
 
 $(host_os)_native_binutils?=native_clang
 $(host_os)_native_toolchain?=native_clang
