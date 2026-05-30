@@ -38,9 +38,6 @@ libcxx 22.1.5 2026-07-15
 native_clang 22.1.3 2026-07-15
 native_clang 22.1.4 2026-07-15
 native_clang 22.1.5 2026-07-15
-native_cmake 4.3.0 2026-07-15
-native_cmake 4.3.1 2026-07-15
-native_cmake 4.3.2 2026-07-15
 
 # Requires MSRV 1.82
 native_cxxbridge 1.0.187 2026-07-15
@@ -69,3 +66,6 @@ bdb 18.1.40 2027-03-01
 # Postponed due to proximity to the release
 libsodium 1.0.21 2026-07-15
 libsodium 1.0.22 2026-07-15
+native_cmake 4.3.0 2026-07-15
+native_cmake 4.3.1 2026-07-15
+native_cmake 4.3.2 2026-07-15
