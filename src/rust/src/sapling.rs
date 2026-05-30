@@ -349,7 +349,8 @@ impl SpendProver for StaticTxProver {
     }
 
     fn create_proof<R: RngCore>(&self, circuit: circuit::Spend, rng: &mut R) -> Self::Proof {
-        unsafe { SAPLING_SPEND_PARAMS.as_ref() }
+        SAPLING_SPEND_PARAMS
+            .get()
             .expect("Parameters not loaded: SAPLING_SPEND_PARAMS should have been initialized")
             .create_proof(circuit, rng)
     }
@@ -373,7 +374,8 @@ impl OutputProver for StaticTxProver {
     }
 
     fn create_proof<R: RngCore>(&self, circuit: circuit::Output, rng: &mut R) -> Self::Proof {
-        unsafe { SAPLING_OUTPUT_PARAMS.as_ref() }
+        SAPLING_OUTPUT_PARAMS
+            .get()
             .expect("Parameters not loaded: SAPLING_OUTPUT_PARAMS should have been initialized")
             .create_proof(circuit, rng)
     }
@@ -578,7 +580,8 @@ impl Verifier {
             sighash_value,
             spend_auth_sig,
             zkproof,
-            &unsafe { SAPLING_SPEND_VK.as_ref() }
+            &SAPLING_SPEND_VK
+                .get()
                 .expect("Parameters not loaded: SAPLING_SPEND_VK should have been initialized")
                 .prepare(),
         )
@@ -620,7 +623,8 @@ impl Verifier {
             cmu,
             epk,
             zkproof,
-            &unsafe { SAPLING_OUTPUT_VK.as_ref() }
+            &SAPLING_OUTPUT_VK
+                .get()
                 .expect("Parameters not loaded: SAPLING_OUTPUT_VK should have been initialized")
                 .prepare(),
         )
@@ -728,9 +732,10 @@ impl BatchValidator {
     pub(crate) fn validate(&mut self) -> bool {
         if let Some(inner) = self.0.take() {
             if inner.validator.validate(
-                unsafe { SAPLING_SPEND_VK.as_ref() }
+                SAPLING_SPEND_VK
+                    .get()
                     .expect("Parameters not loaded: SAPLING_SPEND_VK should have been initialized"),
-                unsafe { SAPLING_OUTPUT_VK.as_ref() }.expect(
+                SAPLING_OUTPUT_VK.get().expect(
                     "Parameters not loaded: SAPLING_OUTPUT_VK should have been initialized",
                 ),
                 OsRng,
