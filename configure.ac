@@ -360,7 +360,8 @@ DISABLED_WARNING_CXXFLAGS="\
   -Wno-implicit-fallthrough -Wno-implicit-int-conversion -Wno-implicit-int-float-conversion \
   -Wno-inconsistent-missing-destructor-override -Wno-logical-op-parentheses \
   -Wno-misleading-indentation -Wno-mismatched-tags -Wno-missing-noreturn -Wno-missing-prototypes \
-  -Wno-missing-variable-declarations -Wno-newline-eof -Wno-non-virtual-dtor -Wno-old-style-cast \
+  -Wno-missing-variable-declarations -Wno-newline-eof -Wno-non-virtual-dtor \
+  -Wno-nrvo -Wno-old-style-cast \
   -Wno-overloaded-virtual -Wno-padded -Wno-pedantic -Wno-range-loop-construct \
   -Wno-redundant-parens -Wno-reorder-ctor -Wno-reserved-id-macro -Wno-reserved-identifier \
   -Wno-return-type -Wno-shadow -Wno-shadow-field -Wno-shadow-field-in-constructor \
@@ -384,7 +385,7 @@ REENABLED_WARNING_CXXFLAGS="\
   -Wc++14-binary-literal -Wc++17-attribute-extensions -Wc++20-attribute-extensions \
   -Wc11-extensions -Wcomplex-component-init -Wdelimited-escape-sequence-extension \
   -Wdocumentation-deprecated-sync -Wdocumentation-html -Wembedded-directive -Wempty-init-stmt \
-  -Wempty-translation-unit -Wfixed-enum-extension -Wflexible-array-extensions \
+  -Wempty-translation-unit -Wflexible-array-extensions \
   -Wfloat-overflow-conversion -Wfloat-zero-conversion -Wfuture-attribute-extensions \
   -Wgnu-auto-type -Wgnu-binary-literal -Wgnu-case-range -Wgnu-complex-integer \
   -Wgnu-compound-literal-initializer -Wgnu-conditional-omitted-operand -Wgnu-empty-initializer \
