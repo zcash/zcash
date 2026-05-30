@@ -304,7 +304,7 @@ where
         );
 
         for (decryption_result, OutputReplier(replier)) in
-            decryption_results.into_iter().zip(repliers.into_iter())
+            decryption_results.into_iter().zip(repliers)
         {
             // If `decryption_result` is `None` then we will just drop `replier`,
             // indicating to the parent `BatchRunner` that this output was not for us.
@@ -379,7 +379,7 @@ impl<A, D: Domain> DynamicUsage for BatchReceiver<A, D> {
         // linked list. `crossbeam_channel` allocates memory for the linked list in blocks
         // of 31 items.
         const ITEMS_PER_BLOCK: usize = 31;
-        let num_blocks = (num_items + ITEMS_PER_BLOCK - 1) / ITEMS_PER_BLOCK;
+        let num_blocks = num_items.div_ceil(ITEMS_PER_BLOCK);
 
         // The structure of a block is:
         // - A pointer to the next block.

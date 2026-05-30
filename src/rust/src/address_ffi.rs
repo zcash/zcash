@@ -77,46 +77,36 @@ impl UnifiedAddressHelper {
             return false;
         }
 
-        self.ua
-            .items()
-            .into_iter()
-            .map(|receiver| match receiver {
-                unified::Receiver::Orchard(data) => {
-                    // ZIP 316: Consumers MUST reject Unified Addresses/Viewing Keys in
-                    // which any constituent Item does not meet the validation
-                    // requirements of its encoding.
-                    let addr = orchard::Address::from_raw_address_bytes(&data);
-                    if addr.is_none().into() {
-                        tracing::error!("Unified Address contains invalid Orchard receiver");
-                        false
-                    } else {
-                        unsafe {
-                            (orchard_cb.unwrap())(ua_obj, Box::into_raw(Box::new(addr.unwrap())))
-                        }
-                    }
+        self.ua.items().into_iter().all(|receiver| match receiver {
+            unified::Receiver::Orchard(data) => {
+                // ZIP 316: Consumers MUST reject Unified Addresses/Viewing Keys in
+                // which any constituent Item does not meet the validation
+                // requirements of its encoding.
+                let addr = orchard::Address::from_raw_address_bytes(&data);
+                if addr.is_none().into() {
+                    tracing::error!("Unified Address contains invalid Orchard receiver");
+                    false
+                } else {
+                    unsafe { (orchard_cb.unwrap())(ua_obj, Box::into_raw(Box::new(addr.unwrap()))) }
                 }
-                unified::Receiver::Sapling(data) => {
-                    // ZIP 316: Consumers MUST reject Unified Addresses/Viewing Keys in
-                    // which any constituent Item does not meet the validation
-                    // requirements of its encoding.
-                    if sapling::PaymentAddress::from_bytes(&data).is_none() {
-                        tracing::error!("Unified Address contains invalid Sapling receiver");
-                        false
-                    } else {
-                        unsafe { (sapling_cb.unwrap())(ua_obj, data.as_ptr()) }
-                    }
+            }
+            unified::Receiver::Sapling(data) => {
+                // ZIP 316: Consumers MUST reject Unified Addresses/Viewing Keys in
+                // which any constituent Item does not meet the validation
+                // requirements of its encoding.
+                if sapling::PaymentAddress::from_bytes(&data).is_none() {
+                    tracing::error!("Unified Address contains invalid Sapling receiver");
+                    false
+                } else {
+                    unsafe { (sapling_cb.unwrap())(ua_obj, data.as_ptr()) }
                 }
-                unified::Receiver::P2sh(data) => unsafe {
-                    (p2sh_cb.unwrap())(ua_obj, data.as_ptr())
-                },
-                unified::Receiver::P2pkh(data) => unsafe {
-                    (p2pkh_cb.unwrap())(ua_obj, data.as_ptr())
-                },
-                unified::Receiver::Unknown { typecode, data } => unsafe {
-                    (unknown_cb.unwrap())(ua_obj, typecode, data.as_ptr(), data.len())
-                },
-            })
-            .all(|b| b)
+            }
+            unified::Receiver::P2sh(data) => unsafe { (p2sh_cb.unwrap())(ua_obj, data.as_ptr()) },
+            unified::Receiver::P2pkh(data) => unsafe { (p2pkh_cb.unwrap())(ua_obj, data.as_ptr()) },
+            unified::Receiver::Unknown { typecode, data } => unsafe {
+                (unknown_cb.unwrap())(ua_obj, typecode, data.as_ptr(), data.len())
+            },
+        })
     }
 }
 
