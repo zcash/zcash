@@ -857,6 +857,11 @@ who = "Jack Grigg <thestr4d@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "1.0.160 -> 1.0.186"
 
+[[audits.cxxbridge-flags]]
+who = "Jack Grigg <thestr4d@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "1.0.186 -> 1.0.194"
+
 [[audits.cxxbridge-macro]]
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"

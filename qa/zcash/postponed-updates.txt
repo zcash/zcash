@@ -29,24 +29,6 @@ native_clang 22.1.3 2026-07-15
 native_clang 22.1.4 2026-07-15
 native_clang 22.1.5 2026-07-15
 
-# Requires MSRV 1.82
-native_cxxbridge 1.0.187 2026-07-15
-native_cxxbridge 1.0.188 2026-07-15
-native_cxxbridge 1.0.189 2026-07-15
-native_cxxbridge 1.0.190 2026-07-15
-native_cxxbridge 1.0.191 2026-07-15
-native_cxxbridge 1.0.192 2026-07-15
-native_cxxbridge 1.0.193 2026-07-15
-native_cxxbridge 1.0.194 2026-07-15
-rustcxx 1.0.187 2026-07-15
-rustcxx 1.0.188 2026-07-15
-rustcxx 1.0.189 2026-07-15
-rustcxx 1.0.190 2026-07-15
-rustcxx 1.0.191 2026-07-15
-rustcxx 1.0.192 2026-07-15
-rustcxx 1.0.193 2026-07-15
-rustcxx 1.0.194 2026-07-15
-
 # We follow upstream Bitcoin Core's LevelDB updates
 leveldb 1.23 2026-08-01
 
