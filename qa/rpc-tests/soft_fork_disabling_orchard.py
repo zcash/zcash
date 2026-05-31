@@ -266,19 +266,10 @@ class SoftForkDisablingOrchardTest(BitcoinTestFramework):
         print("Testing that Orchard transactions are rejected after activation")
 
         # The chain is already synced at height ORCHARD_DISABLED_HEIGHT - 1 from
-        # the boundary test. Mine the activation block on node 0. This also
-        # mines the surviving non-Orchard transaction, so after the block
-        # propagates every node's mempool is empty (the non-Orchard transaction
-        # was never relayed to the 2/3 half, since transactions already in the
-        # mempool are not pushed to newly-connected peers; mining it here lets
-        # the mempools converge).
-        self.nodes[0].generate(1)
-        self.sync_all()
-        assert_equal(self.nodes[0].getblockcount(), ORCHARD_DISABLED_HEIGHT)
-
-        # Mempool rejection: re-broadcasting the Orchard transaction we saved
-        # earlier (its input note is still unspent, as it was never mined) is
-        # rejected by an enforcing node.
+        # the boundary test. The mempool is already be rejecting transactions
+        # that contain Orchard actions: re-broadcasting the Orchard transaction
+        # we saved earlier (its input note is still unspent, as it was never
+        # mined) is rejected by an enforcing node.
         assert_raises_message(
             JSONRPCException,
             "bad-tx-has-orchard-actions",
@@ -294,6 +285,38 @@ class SoftForkDisablingOrchardTest(BitcoinTestFramework):
 
         # Build an otherwise-valid block on node 3 containing the Orchard
         # transaction, then submit it to an enforcing node.
+        block = self.build_block_from_template(self.nodes[3])
+        assert_true(len(block.vtx) >= 2,
+                    "block template should include the Orchard transaction")
+
+        height_before = self.nodes[0].getblockcount()
+        best_before = self.nodes[0].getbestblockhash()
+
+        assert_equal(
+            self.nodes[0].submitblock(block.serialize().hex()),
+            "bad-tx-has-orchard-actions")
+
+        # The enforcing node did not advance onto the rejected block.
+        assert_equal(self.nodes[0].getblockcount(), height_before)
+        assert_equal(self.nodes[0].getbestblockhash(), best_before)
+
+        # Mine the activation block on node 0. This also mines the surviving
+        # non-Orchard transaction, so after the block propagates, the mempool is
+        # empty for every node following the soft fork. However, node 3 still
+        # has the Orchard tx we submitted above, so the mempools cannot converge
+        # (only the blocks).
+        self.nodes[0].generate(1)
+        self.sync_all(False)
+        assert_equal(self.nodes[0].getblockcount(), ORCHARD_DISABLED_HEIGHT)
+
+        # Confirm that mempool rejection is still enforced.
+        assert_raises_message(
+            JSONRPCException,
+            "bad-tx-has-orchard-actions",
+            self.nodes[0].sendrawtransaction,
+            self.orchard_tx_hex)
+
+        # Confirm that block rejection is still enforced
         block = self.build_block_from_template(self.nodes[3])
         assert_true(len(block.vtx) >= 2,
                     "block template should include the Orchard transaction")
