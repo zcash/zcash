@@ -74,8 +74,8 @@ jobs:
               platform: Windows (64-bit MinGW)
               build_os: ${{ vars.UBUNTU_LARGE_RUNNER || 'ubuntu-latest' }}
               test_os: windows-latest
-              cross_deps: >
-                mingw-w64
+              # The Windows cross toolchain (llvm-mingw) is provided by depends/,
+              # so no system mingw-w64 packages are needed.
               host: x86_64-w64-mingw32
               file_ext: ".exe"
 
@@ -208,12 +208,6 @@ jobs:
         if: matrix.cross_deps != ''
         run: sudo apt update && sudo apt install ${{ matrix.cross_deps }}
 
-      - name: Configure MinGW to use POSIX variant
-        if: matrix.name == 'mingw32'
-        run: |
-          sudo update-alternatives --set x86_64-w64-mingw32-gcc $(update-alternatives --query x86_64-w64-mingw32-gcc | grep Alternative | grep posix | cut -d' ' -f2)
-          sudo update-alternatives --set x86_64-w64-mingw32-g++ $(update-alternatives --query x86_64-w64-mingw32-g++ | grep Alternative | grep posix | cut -d' ' -f2)
-
       - name: Cache built dependencies
         uses: actions/cache@v5
         with:
@@ -315,12 +309,6 @@ jobs:
       - name: Install cross-compilation build dependencies
         if: matrix.cross_deps != ''
         run: sudo apt update && sudo apt install ${{ matrix.cross_deps }}
-
-      - name: Configure MinGW to use POSIX variant
-        if: matrix.name == 'mingw32'
-        run: |
-          sudo update-alternatives --set x86_64-w64-mingw32-gcc $(update-alternatives --query x86_64-w64-mingw32-gcc | grep Alternative | grep posix | cut -d' ' -f2)
-          sudo update-alternatives --set x86_64-w64-mingw32-g++ $(update-alternatives --query x86_64-w64-mingw32-g++ | grep Alternative | grep posix | cut -d' ' -f2)
 
       - name: Cache built dependencies
         uses: actions/cache@v5
