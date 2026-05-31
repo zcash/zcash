@@ -105,6 +105,11 @@ $(CXXBRIDGE_H) $(CXXBRIDGE_CPP): $(CXXBRIDGE_RS)
 # same library as the C++ code.
 # - Note that this does not prevent the secp256k1-sys vendored code from being built; this
 #   requires https://github.com/rust-bitcoin/rust-secp256k1/issues/380 to be addressed.
+# Cargo's per-target *_LINKER expects a single program, and linking does not
+# benefit from ccache (which wraps compilation, not linking). $(CC) carries a
+# "ccache <compiler>" prefix, so pass just the compiler (the last word) as the
+# Windows (gnullvm) Rust linker.
+RUST_TARGET_LINKER = $(lastword $(CC))
 RUST_ENV_VARS = \
   RUSTC="$(RUSTC)" \
   RUSTFLAGS="--cfg=rust_secp_no_symbol_renaming -L native=$(abs_top_srcdir)/src/secp256k1/.libs" \
@@ -112,6 +117,7 @@ RUST_ENV_VARS = \
   CFLAGS="$(CFLAGS)" \
   CXX="$(CXX)" \
   CXXFLAGS="$(CXXFLAGS)" \
+  CARGO_TARGET_X86_64_PC_WINDOWS_GNULLVM_LINKER="$(RUST_TARGET_LINKER)" \
   TERM=dumb
 RUST_BUILD_OPTS = --release --target $(RUST_TARGET) --manifest-path $(top_srcdir)/Cargo.toml
 

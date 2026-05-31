@@ -18,12 +18,12 @@ $(package)_sha256_hash_aarch64_linux=20d5ebe3916fe489891fc577574e47fc679cdf62080
 # If a mapping is not present, we assume they are identical, unless $host_os is
 # "darwin", in which case we assume x86_64-apple-darwin.
 $(package)_rust_target_x86_64-pc-linux-gnu=x86_64-unknown-linux-gnu
-$(package)_rust_target_x86_64-w64-mingw32=x86_64-pc-windows-gnu
+$(package)_rust_target_x86_64-w64-mingw32=x86_64-pc-windows-gnullvm
 
 # Mapping from Rust targets to SHA-256 hashes
 $(package)_rust_std_sha256_hash_aarch64-unknown-linux-gnu=66ad5d73e79dd44b93c260ee61752abce3ce5ccb5031832beaccd1c248b88586
 $(package)_rust_std_sha256_hash_x86_64-apple-darwin=c5dfa11ccc724faec277e420ff6b33cfa6567b9ac6fa9e5d712a19c662d8c36c
-$(package)_rust_std_sha256_hash_x86_64-pc-windows-gnu=6951de999a0926aa8e35046017473a1912274cc34e800887eb3bfba4ddae12c9
+$(package)_rust_std_sha256_hash_x86_64-pc-windows-gnullvm=78ae4f2281bce577dcbc8a0183830ddb6e8e043742ba3cae4b17a38bda0f92ff
 $(package)_rust_std_sha256_hash_x86_64-unknown-freebsd=90979e87d60185944eef415230b904253abdcd36a4ea603479a3991ffb185807
 
 define rust_target

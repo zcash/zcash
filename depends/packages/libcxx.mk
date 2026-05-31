@@ -1,6 +1,5 @@
 package=libcxx
 $(package)_version=$(if $(native_clang_version_$(host_arch)_$(host_os)),$(native_clang_version_$(host_arch)_$(host_os)),$(if $(native_clang_version_$(host_os)),$(native_clang_version_$(host_os)),$(native_clang_default_version)))
-$(package)_msys2_version=22.1.2-1
 
 ifneq ($(canonical_host),$(build))
 ifneq ($(host_os),mingw32)
@@ -25,18 +24,18 @@ define $(package)_stage_cmds
 endef
 
 else
-# For Windows cross-compilation, use the MSYS2 binaries.
-# Starting from LLVM 15.0.0, libc++abi is provided by libc++.
-$(package)_download_path=https://repo.msys2.org/mingw/x86_64
-$(package)_download_file=mingw-w64-x86_64-libc++-$($(package)_msys2_version)-any.pkg.tar.zst
-$(package)_file_name=mingw-w64-x86_64-libcxx-$($(package)_msys2_version)-any.pkg.tar.zst
-$(package)_sha256_hash=0b8a1fc7f074ebaf6b230d02c9de8c5fbf5f880908a12fd196b05a19ebf00c51
+# For Windows cross-compilation, libc++ (with libc++abi and libunwind) is provided
+# by the llvm-mingw toolchain (see packages/native_llvm_mingw.mk), so nothing is
+# staged here. This empty package only exists to satisfy the libcxx dependency that
+# boost, zeromq, bdb, and googletest declare.
+define $(package)_fetch_cmds
+endef
+
+define $(package)_extract_cmds
+endef
 
 define $(package)_stage_cmds
-  mkdir -p $($(package)_staging_prefix_dir)/lib && \
-  mv include/ $($(package)_staging_prefix_dir) && \
-  cp lib/libc++.a $($(package)_staging_prefix_dir)/lib && \
-  cp lib/libc++abi.a $($(package)_staging_prefix_dir)/lib
+  mkdir -p $($(package)_staging_prefix_dir)/lib
 endef
 endif
 
