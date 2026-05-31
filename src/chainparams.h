@@ -209,4 +209,9 @@ void UpdateOnetimeLockboxDisbursementParameters(
     Consensus::OnetimeLockboxDisbursementIndex idx,
     Consensus::OnetimeLockboxDisbursement ld);
 
+/**
+ * Allows modifying the regtest temporary Orchard disabling soft fork.
+ */
+void UpdateRegtestTemporaryOrchardDisablingSoftForkHeight(int nHeight);
+
 #endif // BITCOIN_CHAINPARAMS_H
