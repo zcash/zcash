@@ -1421,6 +1421,19 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         }
     }
 
+    if (mapArgs.count("-regtesttemporaryorcharddisablingsoftforkheight")) {
+        // Allow overriding network upgrade parameters for testing
+        if (chainparams.NetworkIDString() != "regtest") {
+            return InitError("-regtesttemporaryorcharddisablingsoftforkheight may only be used on regtest.");
+        }
+
+        auto nHeight = GetArg(
+            "-regtesttemporaryorcharddisablingsoftforkheight",
+            Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+
+        UpdateRegtestTemporaryOrchardDisablingSoftForkHeight(nHeight);
+    }
+
 #ifdef ENABLE_MINING
     if (mapArgs.count("-mineraddress")) {
         KeyIO keyIO(chainparams);
