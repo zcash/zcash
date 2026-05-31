@@ -75,18 +75,11 @@ TEST(OrchardWalletTests, TxInvolvesMyNotes) {
     RegtestDeactivateNU5();
 }
 
-// This test is here instead of test_transaction_builder.cpp because it depends
-// on OrchardWallet, which only exists if the wallet is compiled in.
-TEST(TransactionBuilder, OrchardToOrchard) {
-    LoadProofParameters();
-
-    auto consensusParams = RegtestActivateNU5();
+// Builds a fresh Orchard-spending transaction under the currently-active consensus
+// parameters, so that its consensus branch id matches the active epoch (allowing the
+// same flow to be exercised under both NU5 and NU6.1).
+void BuildOrchardSpend(CTransaction& outTx) {
     OrchardWallet wallet;
-
-    CBasicKeyStore keystore;
-    CKey tsk = AddTestCKeyToKeyStore(keystore);
-    auto scriptPubKey = GetScriptForDestination(tsk.GetPubKey().GetID());
-
     auto sk = RandomOrchardSpendingKey();
     wallet.AddSpendingKey(sk);
 
@@ -110,7 +103,7 @@ TEST(TransactionBuilder, OrchardToOrchard) {
 
     // If we attempt to get spend info now, it will fail because the note hasn't
     // been witnessed in the Orchard commitment tree.
-    EXPECT_THROW(wallet.GetSpendInfo(notes, 1, wallet.GetLatestAnchor()), std::logic_error);
+    ASSERT_THROW(wallet.GetSpendInfo(notes, 1, wallet.GetLatestAnchor()), std::logic_error);
 
     // Append the bundle to the wallet's commitment tree.
     CBlock fakeBlock;
@@ -120,38 +113,73 @@ TEST(TransactionBuilder, OrchardToOrchard) {
 
     // Now we can get spend info for the note.
     auto spendInfo = wallet.GetSpendInfo(notes, 1, wallet.GetLatestAnchor());
-    EXPECT_EQ(spendInfo[0].second.Value(), 40000);
+    ASSERT_EQ(spendInfo[0].second.Value(), 40000);
 
     // Get the root of the commitment tree.
     OrchardMerkleFrontier tree;
     tree.AppendBundle(txRecv.GetOrchardBundle());
-    auto orchardAnchor = tree.root();
 
     // Create an Orchard-only transaction
     // 0.0004 z-ZEC in, 0.00025 z-ZEC out, default fee, 0.00014 z-ZEC change
-    auto builder = TransactionBuilder(Params(), 2, orchardAnchor, SaplingMerkleTree::empty_root());
-    EXPECT_TRUE(builder.AddOrchardSpend(sk, std::move(spendInfo[0].second)));
+    auto builder = TransactionBuilder(Params(), 2, tree.root(), SaplingMerkleTree::empty_root());
+    ASSERT_TRUE(builder.AddOrchardSpend(sk, std::move(spendInfo[0].second)));
     builder.AddOrchardOutput(std::nullopt, recipient, 25000, std::nullopt);
     auto maybeTx = builder.Build();
-    EXPECT_TRUE(maybeTx.IsTx());
-    if (maybeTx.IsError()) {
-        std::cerr << "Failed to build transaction: " << maybeTx.GetError() << std::endl;
-        GTEST_FAIL();
-    }
+    ASSERT_TRUE(maybeTx.IsTx());
+
     auto tx = maybeTx.GetTxOrThrow();
+    ASSERT_EQ(tx.vin.size(), 0);
+    ASSERT_EQ(tx.vout.size(), 0);
+    ASSERT_EQ(tx.vJoinSplit.size(), 0);
+    ASSERT_EQ(tx.GetSaplingSpendsCount(), 0);
+    ASSERT_EQ(tx.GetSaplingOutputsCount(), 0);
+    ASSERT_TRUE(tx.GetOrchardBundle().IsPresent());
+    ASSERT_EQ(tx.GetOrchardBundle().GetValueBalance(), 1000);
+    outTx = tx;
+}
 
-    EXPECT_EQ(tx.vin.size(), 0);
-    EXPECT_EQ(tx.vout.size(), 0);
-    EXPECT_EQ(tx.vJoinSplit.size(), 0);
-    EXPECT_EQ(tx.GetSaplingSpendsCount(), 0);
-    EXPECT_EQ(tx.GetSaplingOutputsCount(), 0);
-    EXPECT_TRUE(tx.GetOrchardBundle().IsPresent());
-    EXPECT_EQ(tx.GetOrchardBundle().GetValueBalance(), 1000);
+// These tests are here instead of test_transaction_builder.cpp because they depend
+// on OrchardWallet, which only exists if the wallet is compiled in.
 
-    CValidationState state;
-    EXPECT_TRUE(ContextualCheckTransaction(tx, state, Params(), 3, true));
-    EXPECT_EQ(state.GetRejectReason(), "");
+TEST(TransactionBuilder, OrchardToOrchardNU5) {
+    LoadProofParameters();
 
-    // Revert to default
+    // Under NU5, the Orchard-spending transaction is accepted.
+    auto consensusParams = RegtestActivateNU5();
+    CTransaction tx;
+    BuildOrchardSpend(tx);
+
+    {
+        CValidationState state;
+        EXPECT_TRUE(ContextualCheckTransaction(tx, state, Params(), 1, true));
+        EXPECT_EQ(state.GetRejectReason(), "");
+    }
+
     RegtestDeactivateNU5();
+}
+
+TEST(TransactionBuilder, OrchardToOrchardNU6point1) {
+    LoadProofParameters();
+
+    // Under NU6.1, with the temporary Orchard-disabling soft fork activating at height 3,
+    // build a fresh (NU6.1) Orchard-spending transaction.
+    auto consensusParams = RegtestActivateNU6point1(false, 1, 2);
+    CTransaction tx;
+    BuildOrchardSpend(tx);
+
+    // Before the soft-fork height the spend is still accepted...
+    {
+        CValidationState state;
+        EXPECT_TRUE(ContextualCheckTransaction(tx, state, Params(), 1, true));
+        EXPECT_EQ(state.GetRejectReason(), "");
+    }
+    // ... and at the soft-fork height it is rejected: the soft fork disables Orchard
+    // spends as well as outputs.
+    {
+        CValidationState state;
+        EXPECT_FALSE(ContextualCheckTransaction(tx, state, Params(), 2, true));
+        EXPECT_EQ(state.GetRejectReason(), "bad-tx-has-orchard-actions");
+    }
+
+    RegtestDeactivateNU6point1();
 }

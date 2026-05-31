@@ -276,7 +276,9 @@ TEST(TransactionBuilder, TransparentToOrchard)
 
 TEST(TransactionBuilder, RejectsTransparentToOrchardIfDisabled)
 {
-    int orchardDisabledHeight = 1;
+    LoadProofParameters();
+
+    int orchardDisabledHeight = 5;
     auto consensusParams = RegtestActivateNU6point1(
         false, Consensus::NetworkUpgrade::ALWAYS_ACTIVE, orchardDisabledHeight);
 
@@ -296,7 +298,7 @@ TEST(TransactionBuilder, RejectsTransparentToOrchardIfDisabled)
 
     // Create a shielding transaction from transparent to Orchard
     // 0.00005 t-ZEC in, 0.00004 z-ZEC out, default fee
-    auto builder = TransactionBuilder(Params(), orchardDisabledHeight, orchardAnchor, SaplingMerkleTree::empty_root(), &keystore);
+    auto builder = TransactionBuilder(Params(), 1, orchardAnchor, SaplingMerkleTree::empty_root(), &keystore);
     builder.AddTransparentInput(COutPoint(uint256S("1234"), 0), scriptPubKey, 5000);
     builder.AddOrchardOutput(std::nullopt, recipient, 4000, std::nullopt);
     auto maybeTx = builder.Build();
@@ -315,9 +317,47 @@ TEST(TransactionBuilder, RejectsTransparentToOrchardIfDisabled)
     EXPECT_TRUE(tx.GetOrchardBundle().IsPresent());
     EXPECT_EQ(tx.GetOrchardBundle().GetValueBalance(), -4000);
 
+    // The soft fork activates at exactly orchardDisabledHeight (nHeight >= height); one
+    // block earlier the same transaction is still accepted.
+    {
+        CValidationState state;
+        EXPECT_TRUE(ContextualCheckTransaction(tx, state, Params(), orchardDisabledHeight - 1, true));
+    }
+    // Rejected at the activation height, in both block (isMined = true) and mempool
+    // (isMined = false) validation.
+    for (bool isMined : {true, false}) {
+        CValidationState state;
+        EXPECT_FALSE(ContextualCheckTransaction(tx, state, Params(), orchardDisabledHeight, isMined));
+        EXPECT_EQ(state.GetRejectReason(), "bad-tx-has-orchard-actions");
+    }
+
+    // Revert to default
+    RegtestDeactivateNU6point1();
+}
+
+// Negative control: a transaction with no Orchard actions is unaffected by the soft fork.
+TEST(TransactionBuilder, AcceptsNonOrchardWhenOrchardDisabled)
+{
+    int orchardDisabledHeight = 1;
+    auto consensusParams = RegtestActivateNU6point1(
+        false, Consensus::NetworkUpgrade::ALWAYS_ACTIVE, orchardDisabledHeight);
+
+    CBasicKeyStore keystore;
+    CKey tsk = AddTestCKeyToKeyStore(keystore);
+    auto scriptPubKey = GetScriptForDestination(tsk.GetPubKey().GetID());
+    CTxDestination taddr = tsk.GetPubKey().GetID();
+
+    // Transparent-to-transparent: 0.00005 t-ZEC in, 0.00004 t-ZEC out, default fee.
+    auto builder = TransactionBuilder(Params(), orchardDisabledHeight, std::nullopt, SaplingMerkleTree::empty_root(), &keystore);
+    builder.AddTransparentInput(COutPoint(uint256S("1234"), 0), scriptPubKey, 5000);
+    builder.AddTransparentOutput(taddr, 4000);
+    auto maybeTx = builder.Build();
+    ASSERT_TRUE(maybeTx.IsTx());
+    auto tx = maybeTx.GetTxOrThrow();
+    ASSERT_FALSE(tx.GetOrchardBundle().IsPresent());
+
     CValidationState state;
-    EXPECT_FALSE(ContextualCheckTransaction(tx, state, Params(), 2, true));
-    EXPECT_EQ(state.GetRejectReason(), "bad-tx-has-orchard-actions");
+    EXPECT_TRUE(ContextualCheckTransaction(tx, state, Params(), 2, true));
 
     // Revert to default
     RegtestDeactivateNU6point1();
