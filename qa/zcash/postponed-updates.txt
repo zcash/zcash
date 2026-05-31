@@ -25,9 +25,11 @@ native_b2 1.91.0 2026-07-15
 libcxx 22.1.3 2026-07-15
 libcxx 22.1.4 2026-07-15
 libcxx 22.1.5 2026-07-15
+libcxx 22.1.6 2026-07-15
 native_clang 22.1.3 2026-07-15
 native_clang 22.1.4 2026-07-15
 native_clang 22.1.5 2026-07-15
+native_clang 22.1.6 2026-07-15
 
 # We follow upstream Bitcoin Core's LevelDB updates
 leveldb 1.23 2026-08-01
