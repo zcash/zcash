@@ -3447,7 +3447,7 @@ end = "2026-01-02"
 criteria = "safe-to-deploy"
 user-id = 64539 # Kenny Kerr (kennykerr)
 start = "2021-11-15"
-end = "2024-06-21"
+end = "2027-05-31"
 
 [[trusted.windows-targets]]
 criteria = "safe-to-deploy"

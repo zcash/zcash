@@ -47,11 +47,11 @@ version = "1.0.14"
 criteria = "safe-to-deploy"
 
 [[exemptions.backtrace]]
-version = "0.3.74"
+version = "0.3.76"
 criteria = "safe-to-deploy"
 
 [[exemptions.base64ct]]
-version = "1.0.1"
+version = "1.8.3"
 criteria = "safe-to-deploy"
 
 [[exemptions.bech32]]
@@ -183,7 +183,7 @@ version = "2.2.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.ed25519-zebra]]
-version = "3.0.0"
+version = "4.2.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.env_home]]
@@ -330,12 +330,16 @@ criteria = "safe-to-deploy"
 version = "0.4.6"
 criteria = "safe-to-deploy"
 
+[[exemptions.num-conv]]
+version = "0.2.2"
+criteria = "safe-to-deploy"
+
 [[exemptions.num_cpus]]
 version = "1.13.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.object]]
-version = "0.36.4"
+version = "0.36.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.once_cell]]
@@ -584,10 +588,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.winapi-x86_64-pc-windows-gnu]]
 version = "0.4.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.windows-sys]]
-version = "0.59.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.winsafe]]
