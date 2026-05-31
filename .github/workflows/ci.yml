@@ -37,22 +37,22 @@ jobs:
             - name: Debian-bookworm
               tier: 1
               platform: Debian Bookworm
-              build_os: ${{ vars.UBUNTU_LARGE_RUNNER || 'ubuntu-22.04' }}
-              test_os: ubuntu-22.04
+              build_os: ${{ vars.UBUNTU_LARGE_RUNNER || 'ubuntu-latest' }}
+              test_os: ubuntu-latest
               container: electriccoinco/debian-helper:bookworm
               host: x86_64-pc-linux-gnu
 
             - name: ubuntu-22.04
               tier: 1
               platform: Ubuntu 22.04
-              build_os: ${{ vars.UBUNTU_LARGE_RUNNER || 'ubuntu-22.04' }}
+              build_os: ${{ vars.UBUNTU_LARGE_RUNNER_2204 || 'ubuntu-22.04' }}
               test_os: ubuntu-22.04
               host: x86_64-pc-linux-gnu
 
             - name: ubuntu-24.04
               tier: 3
               platform: Ubuntu 24.04
-              build_os: ubuntu-24.04
+              build_os: ${{ vars.UBUNTU_LARGE_RUNNER || 'ubuntu-24.04' }}
               test_os: ubuntu-24.04
               host: x86_64-pc-linux-gnu
 
@@ -72,7 +72,7 @@ jobs:
             - name: mingw32
               tier: 3
               platform: Windows (64-bit MinGW)
-              build_os: ${{ vars.UBUNTU_LARGE_RUNNER || 'ubuntu-22.04' }}
+              build_os: ${{ vars.UBUNTU_LARGE_RUNNER || 'ubuntu-latest' }}
               test_os: windows-latest
               cross_deps: >
                 mingw-w64
@@ -82,7 +82,7 @@ jobs:
             - name: aarch64-linux
               tier: 3
               platform: ARM64 Linux
-              build_os: ${{ vars.UBUNTU_LARGE_RUNNER || 'ubuntu-22.04' }}
+              build_os: ${{ vars.UBUNTU_LARGE_RUNNER || 'ubuntu-latest' }}
               cross_deps: >
                 g++-aarch64-linux-gnu
               host: aarch64-linux-gnu
