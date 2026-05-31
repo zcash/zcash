@@ -175,3 +175,14 @@ distclean-local:
 
 rpc-tests: $(BITCOIND_BIN)
 	qa/pull-tester/rpc-tests.py $(RPC_TEST)
+
+test-security-check:
+if TARGET_DARWIN
+	$(AM_V_at) $(PYTHON) $(top_srcdir)/contrib/devtools/test-security-check.py TestSecurityChecks.test_MACHO
+endif
+if TARGET_WINDOWS
+	$(AM_V_at) $(PYTHON) $(top_srcdir)/contrib/devtools/test-security-check.py TestSecurityChecks.test_PE
+endif
+if TARGET_LINUX
+	$(AM_V_at) $(PYTHON) $(top_srcdir)/contrib/devtools/test-security-check.py TestSecurityChecks.test_ELF
+endif

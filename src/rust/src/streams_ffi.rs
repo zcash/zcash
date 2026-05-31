@@ -23,7 +23,7 @@ impl CppStreamReader {
 impl io::Read for CppStreamReader {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         match unsafe { (self.cb)(self.inner, buf.as_mut_ptr(), buf.len()) } {
-            -1 => Err(io::Error::new(io::ErrorKind::Other, "C++ stream error")),
+            -1 => Err(io::Error::other("C++ stream error")),
             n => Ok(n as usize),
         }
     }
@@ -43,7 +43,7 @@ impl CppStreamWriter {
 impl io::Write for CppStreamWriter {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         match unsafe { (self.cb)(self.inner, buf.as_ptr(), buf.len()) } {
-            -1 => Err(io::Error::new(io::ErrorKind::Other, "C++ stream error")),
+            -1 => Err(io::Error::other("C++ stream error")),
             n => Ok(n as usize),
         }
     }

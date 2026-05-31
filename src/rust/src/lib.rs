@@ -25,6 +25,7 @@ use ::sapling::circuit::{
 use bellman::groth16::PreparedVerifyingKey;
 use bls12_381::Bls12;
 use std::path::PathBuf;
+use std::sync::{LazyLock, OnceLock};
 use subtle::CtOption;
 
 mod blake2b;
@@ -64,16 +65,17 @@ mod test_harness_ffi;
 #[cfg(test)]
 mod tests;
 
-static mut SAPLING_SPEND_VK: Option<SpendVerifyingKey> = None;
-static mut SAPLING_OUTPUT_VK: Option<OutputVerifyingKey> = None;
-static mut SPROUT_GROTH16_VK: Option<PreparedVerifyingKey<Bls12>> = None;
+static SAPLING_SPEND_VK: OnceLock<SpendVerifyingKey> = OnceLock::new();
+static SAPLING_OUTPUT_VK: OnceLock<OutputVerifyingKey> = OnceLock::new();
+static SPROUT_GROTH16_VK: OnceLock<PreparedVerifyingKey<Bls12>> = OnceLock::new();
 
-static mut SAPLING_SPEND_PARAMS: Option<SpendParameters> = None;
-static mut SAPLING_OUTPUT_PARAMS: Option<OutputParameters> = None;
-static mut SPROUT_GROTH16_PARAMS_PATH: Option<PathBuf> = None;
+static SAPLING_SPEND_PARAMS: OnceLock<SpendParameters> = OnceLock::new();
+static SAPLING_OUTPUT_PARAMS: OnceLock<OutputParameters> = OnceLock::new();
+static SPROUT_GROTH16_PARAMS_PATH: OnceLock<PathBuf> = OnceLock::new();
 
-static mut ORCHARD_PK: Option<orchard::circuit::ProvingKey> = None;
-static mut ORCHARD_VK: Option<orchard::circuit::VerifyingKey> = None;
+static ORCHARD_PK: OnceLock<orchard::circuit::ProvingKey> = OnceLock::new();
+static ORCHARD_VK: LazyLock<orchard::circuit::VerifyingKey> =
+    LazyLock::new(orchard::circuit::VerifyingKey::build);
 
 /// Converts CtOption<t> into Option<T>
 fn de_ct<T>(ct: CtOption<T>) -> Option<T> {

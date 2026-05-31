@@ -78,8 +78,7 @@ impl BatchValidator {
     /// - `bindingSigOrchard` validity is enforced here.
     pub(crate) fn validate(&mut self) -> bool {
         if let Some(inner) = self.0.take() {
-            let vk = unsafe { crate::ORCHARD_VK.as_ref() }
-                .expect("Parameters not loaded: ORCHARD_VK should have been initialized");
+            let vk = &crate::ORCHARD_VK;
             if inner.validator.validate(vk, OsRng) {
                 // `BatchValidator::validate()` is only called if every
                 // `BatchValidator::check_bundle()` returned `true`, so at this point

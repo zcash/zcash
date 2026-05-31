@@ -62,6 +62,17 @@ CXX_BINARIES = [
 RUST_BINARIES = [
     'src/zcashd-wallet-tool',
 ]
+# Binaries exempt from the FORTIFY_SOURCE check. checksec.sh detects
+# FORTIFY_SOURCE by the presence of __*_chk symbols, which the compiler only
+# emits for fortifiable libc calls whose destination buffer size is known at
+# compile time. src/zcash-cli is a small RPC client whose only fortifiable
+# calls (memcpy, read, fread, recv) operate on runtime-sized buffers, so no
+# __*_chk symbols are emitted even though -D_FORTIFY_SOURCE=2 is applied to the
+# whole build. checksec.sh therefore reports a false negative for it. See the
+# NOTE on test_fortify_source below and zcash/zcash#915.
+FORTIFY_EXEMPT_BINARIES = [
+    'src/zcash-cli',
+]
 
 def test_rpath_runpath(filename):
     output = subprocess.check_output(
@@ -122,9 +133,11 @@ def check_security_hardening():
         ret &= test_rpath_runpath(bin)
 
     # NOTE: checksec.sh does not reliably determine whether FORTIFY_SOURCE
-    # is enabled for the entire binary. See issue #915.
+    # is enabled for the entire binary; see FORTIFY_EXEMPT_BINARIES above.
     # FORTIFY_SOURCE is not applicable to Rust binaries.
     for bin in CXX_BINARIES:
+        if bin in FORTIFY_EXEMPT_BINARIES:
+            continue
         ret &= test_fortify_source(bin)
 
     return ret

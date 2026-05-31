@@ -13,7 +13,6 @@
 #include "amount.h"
 #include "checkpoints.h"
 #include "compat.h"
-#include "compat/sanity.h"
 #include "consensus/upgrades.h"
 #include "consensus/validation.h"
 #include "deprecation.h"
@@ -832,8 +831,6 @@ bool InitSanityCheck(void)
         InitError("Elliptic curve cryptography sanity check failure. Aborting.");
         return false;
     }
-    if (!glibc_sanity_test() || !glibcxx_sanity_test())
-        return false;
 
     if (!ChronoSanityCheck()) {
         return InitError("Clock epoch mismatch. Aborting.");

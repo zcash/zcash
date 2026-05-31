@@ -13,7 +13,7 @@ mod ffi {
 /// and nonce.
 fn is_valid(n: u32, k: u32, input: &[u8], nonce: &[u8], soln: &[u8]) -> bool {
     let expected_soln_len = (1 << k) * ((n / (k + 1)) as usize + 1) / 8;
-    if (k >= n) || (n % 8 != 0) || (soln.len() != expected_soln_len) {
+    if (k >= n) || !n.is_multiple_of(8) || (soln.len() != expected_soln_len) {
         error!(
             "equihash::is_valid: params wrong, n={}, k={}, soln_len={} expected={}",
             n,

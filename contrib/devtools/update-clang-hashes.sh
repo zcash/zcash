@@ -11,7 +11,7 @@ CLANG_VERSION=$( grep -v _major_version $CLANG_PACKAGE | grep -oP "_default_vers
 LIBCXX_MSYS2_VERSION=$( grep -oP "_msys2_version=\K.*" $LIBCXX_PACKAGE )
 
 update_clang_hash() {
-    url="https://github.com/llvm/llvm-project/releases/download/llvmorg-$CLANG_VERSION/clang+llvm-$CLANG_VERSION-$1.tar.xz"
+    url="https://github.com/llvm/llvm-project/releases/download/llvmorg-$CLANG_VERSION/LLVM-$CLANG_VERSION-$1.tar.xz"
     echo "Fetching $url"
     hash=$( curl -fL $url | sha256sum | awk '{print $1}' )
     retVal=$?
@@ -37,9 +37,9 @@ update_libcxx_msys2_hash() {
 
 # For native targets
 # update_clang_hash CLANG_COMPILED_TARGET MAKEFILE_PACKAGE_IDENTIFIER
-update_clang_hash aarch64-linux-gnu aarch64_linux
+update_clang_hash Linux-ARM64 aarch64_linux
 update_clang_hash x86_64-apple-darwin darwin
-update_clang_hash x86_64-linux-gnu-ubuntu-18.04 linux
+update_clang_hash Linux-X64 linux
 update_clang_hash amd64-unknown-freebsd12 freebsd
 
 # For Windows cross-compilation

@@ -10,6 +10,10 @@ wallet_packages=bdb
 
 $(host_arch)_$(host_os)_native_packages += native_b2
 
+# The Windows cross toolchain is provided by llvm-mingw rather than the host's
+# system mingw-w64; see hosts/mingw32.mk.
+mingw32_native_packages += native_llvm_mingw
+
 ifneq ($(build_os),darwin)
 darwin_native_packages=native_cctools
 endif

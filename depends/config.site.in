@@ -35,6 +35,10 @@ CPPFLAGS="-I$depends_prefix/include/ $CPPFLAGS"
 
 if test x@host_os@ = xfreebsd; then
   LDFLAGS="-L$depends_prefix/lib $LDFLAGS -static-libstdc++ -lcxxrt"
+elif test x@host_os@ = xmingw32; then
+  # llvm-mingw's Clang links libc++, libc++abi, and libunwind from its bundled
+  # UCRT sysroot; -static-libstdc++ makes that linkage static.
+  LDFLAGS="-L$depends_prefix/lib $LDFLAGS -static-libstdc++"
 else
   LDFLAGS="-L$depends_prefix/lib $LDFLAGS -static-libstdc++ -lc++abi"
 fi

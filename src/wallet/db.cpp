@@ -4,7 +4,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-#include "db.h"
+#include "wallet/db.h"
 
 #include "addrman.h"
 #include "fs.h"

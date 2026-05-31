@@ -86,13 +86,13 @@ impl<'a> io::Read for CppStream<'a> {
         match self {
             CppStream::Data(inner) => unsafe { inner.as_mut().read_u8(pch, len) }
                 .map(|()| buf.len())
-                .map_err(|e| io::Error::new(io::ErrorKind::Other, e)),
+                .map_err(io::Error::other),
             CppStream::AutoFile(inner) => unsafe { inner.as_mut().read_u8(pch, len) }
                 .map(|()| buf.len())
-                .map_err(|e| io::Error::new(io::ErrorKind::Other, e)),
+                .map_err(io::Error::other),
             CppStream::BufferedFile(inner) => unsafe { inner.as_mut().read_u8(pch, len) }
                 .map(|()| buf.len())
-                .map_err(|e| io::Error::new(io::ErrorKind::Other, e)),
+                .map_err(io::Error::other),
             CppStream::Hash(_) => Err(io::Error::new(
                 io::ErrorKind::Unsupported,
                 "Cannot read from CHashWriter",
@@ -116,23 +116,23 @@ impl<'a> io::Write for CppStream<'a> {
         match self {
             CppStream::Data(inner) => unsafe { inner.as_mut().write_u8(pch, len) }
                 .map(|()| buf.len())
-                .map_err(|e| io::Error::new(io::ErrorKind::Other, e)),
+                .map_err(io::Error::other),
             CppStream::AutoFile(inner) => unsafe { inner.as_mut().write_u8(pch, len) }
                 .map(|()| buf.len())
-                .map_err(|e| io::Error::new(io::ErrorKind::Other, e)),
+                .map_err(io::Error::other),
             CppStream::BufferedFile(_) => Err(io::Error::new(
                 io::ErrorKind::Unsupported,
                 "Cannot write to CBufferedFile",
             )),
             CppStream::Hash(inner) => unsafe { inner.as_mut().write_u8(pch, len) }
                 .map(|()| buf.len())
-                .map_err(|e| io::Error::new(io::ErrorKind::Other, e)),
+                .map_err(io::Error::other),
             CppStream::Blake2b(inner) => unsafe { inner.as_mut().write_u8(pch, len) }
                 .map(|()| buf.len())
-                .map_err(|e| io::Error::new(io::ErrorKind::Other, e)),
+                .map_err(io::Error::other),
             CppStream::Size(inner) => unsafe { inner.as_mut().write_u8(pch, len) }
                 .map(|()| buf.len())
-                .map_err(|e| io::Error::new(io::ErrorKind::Other, e)),
+                .map_err(io::Error::other),
         }
     }
 

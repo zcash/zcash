@@ -94,7 +94,7 @@ impl MapTransparent {
                 Err("all_prev_outputs had trailing data".into())
             }
             Ok(all_prev_outputs)
-                if tx.transparent_bundle().map_or(false, |t| {
+                if tx.transparent_bundle().is_some_and(|t| {
                     // Coinbase txs have one fake input.
                     t.is_coinbase() && !all_prev_outputs.is_empty()
                 }) =>
