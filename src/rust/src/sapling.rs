@@ -24,7 +24,6 @@ use sapling::{
     SaplingVerificationContext,
 };
 use zcash_primitives::{
-    memo::MemoBytes,
     merkle_tree::merkle_path_from_slice,
     transaction::{
         components::sapling as sapling_serialization,
@@ -32,7 +31,7 @@ use zcash_primitives::{
         Authorized, Transaction, TransactionDigest,
     },
 };
-use zcash_protocol::value::ZatBalance;
+use zcash_protocol::{memo::MemoBytes, value::ZatBalance};
 
 use super::GROTH_PROOF_SIZE;
 use super::{

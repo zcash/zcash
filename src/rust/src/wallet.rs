@@ -12,10 +12,10 @@ use zcash_protocol::value::ZatBalance;
 
 use zcash_encoding::{Optional, Vector};
 use zcash_primitives::{
-    consensus::BlockHeight,
     merkle_tree::{read_position, write_position},
     transaction::TxId,
 };
+use zcash_protocol::consensus::BlockHeight;
 
 use orchard::{
     bundle::Authorized,
