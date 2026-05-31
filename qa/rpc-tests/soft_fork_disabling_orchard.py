@@ -153,10 +153,8 @@ class SoftForkDisablingOrchardTest(BitcoinTestFramework):
         coinbase_amount = Decimal('10') - coinbase_fee
         recipients = [{"address": ua1, "amount": coinbase_amount}]
         myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, coinbase_fee, 'AllowRevealedSenders')
-        mytxid = wait_and_assert_operationid_status(self.nodes[0], myopid)
+        wait_and_assert_operationid_status(self.nodes[0], myopid)
         acct1_balance = coinbase_amount
-
-        resp = self.nodes[0].getrawtransaction(mytxid, 1)['orchard']
 
         self.sync_all()
         self.nodes[0].generate(1)
