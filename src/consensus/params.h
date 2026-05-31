@@ -491,7 +491,7 @@ struct Params {
      */
     int nFutureTimestampSoftForkHeight = 2;
 
-    int nTemporaryOrchardDisablingSoftForkHeight;
+    int nTemporaryOrchardDisablingSoftForkHeight = Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
 
     /** Proof of work parameters */
     unsigned int nEquihashN = 0;
