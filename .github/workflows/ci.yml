@@ -42,14 +42,6 @@ jobs:
               container: electriccoinco/debian-helper:bookworm
               host: x86_64-pc-linux-gnu
 
-            - name: Debian-bullseye
-              tier: 1
-              platform: Debian bullseye
-              build_os: ${{ vars.UBUNTU_LARGE_RUNNER || 'ubuntu-22.04' }}
-              test_os: ubuntu-22.04
-              container: electriccoinco/debian-helper:bullseye
-              host: x86_64-pc-linux-gnu
-
             - name: ubuntu-22.04
               tier: 1
               platform: Ubuntu 22.04
