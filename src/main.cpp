@@ -4529,6 +4529,15 @@ bool static ConnectTip(CValidationState& state, const CChainParams& chainparams,
         uiInterface.NotifyTxExpiration(id);
     }
 
+    // If we've just connected the last block before the soft fork, clear the mempool of
+    // transactions containing Orchard actions. We only need to do this at the soft fork
+    // boundary; blocks are always connected sequentially in zcashd while holding
+    // `cs_main`, and after that point AcceptToMemoryPool rejects Orchard-containing
+    // transactions via ContextualCheckTransaction.
+    if (chainparams.GetConsensus().nTemporaryOrchardDisablingSoftForkHeight == pindexNew->nHeight + 1) {
+        mempool.removeContainingOrchard();
+    }
+
     // Update chainActive & related variables.
     UpdateTip(pindexNew, chainparams);
 
