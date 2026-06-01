@@ -1288,8 +1288,7 @@ bool ContextualCheckTransaction(
     // when we add the NU that re-enables Orchard actions.
     if (consensus.TemporaryOrchardDisablingSoftForkActive(nHeight) &&
         orchard_bundle.IsPresent()) {
-        return state.DoS(
-            dosLevelConstricting,
+        return state.Invalid(
             error("ContextualCheckTransaction(): transaction has Orchard actions (temporarily disabled)"),
             REJECT_INVALID, "bad-tx-has-orchard-actions");
     }
