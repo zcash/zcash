@@ -849,6 +849,28 @@ void CTxMemPool::removeWithoutBranchId(uint32_t nMemPoolBranchId)
     }
 }
 
+/**
+ * Called when the block prior to the disable-Orchard soft fork is connected.
+ * Removes transactions which contain Orchard actions from the mempool.
+ */
+void CTxMemPool::removeContainingOrchard()
+{
+    LOCK(cs);
+    std::list<CTransaction> transactionsToRemove;
+
+    for (indexed_transaction_set::const_iterator it = mapTx.begin(); it != mapTx.end(); it++) {
+        const CTransaction& tx = it->GetTx();
+        if (tx.GetOrchardBundle().IsPresent()) {
+            transactionsToRemove.push_back(tx);
+        }
+    }
+
+    for (const CTransaction& tx : transactionsToRemove) {
+        std::list<CTransaction> removed;
+        remove(tx, removed, true);
+    }
+}
+
 void CTxMemPool::_clear()
 {
     mapLinks.clear();

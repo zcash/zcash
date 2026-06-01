@@ -351,7 +351,10 @@ void RegtestDeactivateNU6() {
     SelectParams(CBaseChainParams::MAIN);
 }
 
-const Consensus::Params& RegtestActivateNU6point1(bool updatePow, int nu6point1ActivationHeight) {
+const Consensus::Params& RegtestActivateNU6point1(
+    bool updatePow,
+    int nu6point1ActivationHeight,
+    int temporaryOrchardDisablingSoftForkHeight) {
     SelectParams(CBaseChainParams::REGTEST);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
@@ -361,6 +364,7 @@ const Consensus::Params& RegtestActivateNU6point1(bool updatePow, int nu6point1A
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_NU5, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_NU6, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_NU6_1, nu6point1ActivationHeight);
+    UpdateRegtestTemporaryOrchardDisablingSoftForkHeight(temporaryOrchardDisablingSoftForkHeight);
     if (updatePow) {
         UpdateRegtestPow(32, 16, uint256S("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"), false);
     }
@@ -381,6 +385,7 @@ void RegtestDeactivateNU6point1() {
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_BLOSSOM, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    UpdateRegtestTemporaryOrchardDisablingSoftForkHeight(Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
     SelectParams(CBaseChainParams::MAIN);
 }
 

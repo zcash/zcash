@@ -1278,6 +1278,21 @@ bool ContextualCheckTransaction(
         }
     }
 
+    // Soft fork: temporarily require transactions to not contain Orchard actions.
+    //
+    // This soft fork was added while NU 6.1 was the active epoch on the Zcash chain, but
+    // we apply it uniformly even if NU 6.1 is not active in case it is ported to other
+    // chains with a different sequence of NUs.
+    //
+    // This will be moved into the "Rules that apply generally before the next NU" section
+    // when we add the NU that re-enables Orchard actions.
+    if (consensus.TemporaryOrchardDisablingSoftForkActive(nHeight) &&
+        orchard_bundle.IsPresent()) {
+        return state.Invalid(
+            error("ContextualCheckTransaction(): transaction has Orchard actions (temporarily disabled)"),
+            REJECT_INVALID, "bad-tx-has-orchard-actions");
+    }
+
     // Rules that apply to the future epoch
     if (futureActive) {
         switch (tx.nVersionGroupId) {
@@ -4541,6 +4556,15 @@ bool static ConnectTip(CValidationState& state, const CChainParams& chainparams,
 
     for (auto id : ids) {
         uiInterface.NotifyTxExpiration(id);
+    }
+
+    // If we've just connected the last block before the soft fork, clear the mempool of
+    // transactions containing Orchard actions. We only need to do this at the soft fork
+    // boundary; blocks are always connected sequentially in zcashd while holding
+    // `cs_main`, and after that point AcceptToMemoryPool rejects Orchard-containing
+    // transactions via ContextualCheckTransaction.
+    if (chainparams.GetConsensus().nTemporaryOrchardDisablingSoftForkHeight == pindexNew->nHeight + 1) {
+        mempool.removeContainingOrchard();
     }
 
     // Update chainActive & related variables.

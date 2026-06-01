@@ -505,6 +505,7 @@ public:
     void removeForBlock(const std::vector<CTransaction>& vtx, unsigned int nBlockHeight,
                         std::list<CTransaction>& conflicts);
     void removeWithoutBranchId(uint32_t nMemPoolBranchId);
+    void removeContainingOrchard();
     void clear();
     void _clear(); // unlocked
     bool CompareDepthAndScore(const uint256& hasha, const uint256& hashb);
