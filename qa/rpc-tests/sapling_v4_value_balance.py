@@ -43,7 +43,7 @@
 import struct
 
 from test_framework.authproxy import JSONRPCException
-from test_framework.mininode import SAPLING_VERSION_GROUP_ID, ser_compactsize
+from test_framework.mininode import MAX_MONEY, SAPLING_VERSION_GROUP_ID, ser_compactsize
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_equal,
@@ -121,7 +121,6 @@ class SaplingV4ValueBalanceTest(BitcoinTestFramework):
         # violates §7.1.2. The fix rejects this at deserialization time. Test a
         # range of non-zero values (positive, negative, near the boundaries of
         # the valid range).
-        MAX_MONEY = 2100000000000000
         for bad_value in (1, -1, 42, -42, MAX_MONEY, -MAX_MONEY):
             print("Malformed: valueBalanceSapling = %d must be rejected" % bad_value)
             malformed_hex = bytes_to_hex_str(build_minimal_v4_tx(bad_value))

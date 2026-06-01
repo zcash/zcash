@@ -15,16 +15,12 @@ use orchard::{
 };
 use rand_core::OsRng;
 use tracing::error;
-use zcash_primitives::{
-    consensus::BranchId,
-    transaction::{
-        sighash::{signature_hash, SignableInput},
-        txid::TxIdDigester,
-        Authorization, Transaction, TransactionData,
-    },
+use zcash_primitives::transaction::{
+    sighash::{signature_hash, SignableInput},
+    txid::TxIdDigester,
+    Authorization, Transaction, TransactionData,
 };
-use zcash_protocol::memo::MemoBytes;
-use zcash_protocol::value::ZatBalance;
+use zcash_protocol::{consensus::BranchId, memo::MemoBytes, value::ZatBalance};
 
 use crate::{
     bridge::ffi::OrchardUnauthorizedBundlePtr,
@@ -171,7 +167,8 @@ pub extern "C" fn orchard_unauthorized_bundle_prove_and_sign(
     let bundle = unsafe { Box::from_raw(bundle) };
     let keys = unsafe { slice::from_raw_parts(keys, keys_len) };
     let sighash = unsafe { sighash.as_ref() }.expect("sighash pointer may not be null.");
-    let pk = unsafe { ORCHARD_PK.as_ref() }
+    let pk = ORCHARD_PK
+        .get()
         .expect("Parameters not loaded: ORCHARD_PK should have been initialized");
 
     let signing_keys = keys

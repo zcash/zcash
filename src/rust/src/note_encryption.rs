@@ -9,9 +9,8 @@ use sapling::{
 use zcash_note_encryption::{
     try_output_recovery_with_ovk, Domain, EphemeralKeyBytes, ShieldedOutput, ENC_CIPHERTEXT_SIZE,
 };
-use zcash_primitives::{
-    consensus::BlockHeight, transaction::components::sapling as sapling_serialization,
-};
+use zcash_primitives::transaction::components::sapling as sapling_serialization;
+use zcash_protocol::consensus::BlockHeight;
 
 use crate::{bridge::ffi::SaplingShieldedOutput, params::Network};
 

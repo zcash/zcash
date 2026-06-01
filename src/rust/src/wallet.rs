@@ -12,10 +12,10 @@ use zcash_protocol::value::ZatBalance;
 
 use zcash_encoding::{Optional, Vector};
 use zcash_primitives::{
-    consensus::BlockHeight,
     merkle_tree::{read_position, write_position},
     transaction::TxId,
 };
+use zcash_protocol::consensus::BlockHeight;
 
 use orchard::{
     bundle::Authorized,
@@ -568,7 +568,7 @@ impl Wallet {
         if let Some(last) = &self.last_observed {
             if !(
                 // we are observing a subsequent transaction in the same block
-                (block_height == last.block_height && last.block_tx_idx.map_or(false, |idx| idx < block_tx_idx))
+                (block_height == last.block_height && last.block_tx_idx.is_some_and(|idx| idx < block_tx_idx))
                 // or we are observing a new block
                 || block_height > last.block_height
             ) {
@@ -676,7 +676,7 @@ impl Wallet {
                         self.key_store
                             .ivk_for_address(&dnote.note.recipient())
                             // if `ivk` is `None`, return all notes that match the other conditions
-                            .filter(|dnote_ivk| ivk.map_or(true, |ivk| &ivk == dnote_ivk))
+                            .filter(|dnote_ivk| ivk.is_none_or(|ivk| &ivk == dnote_ivk))
                             .and_then(|dnote_ivk| {
                                 if (ignore_mined && self.mined_notes.contains_key(&outpoint))
                                     || (require_spending_key

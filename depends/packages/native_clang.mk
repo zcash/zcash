@@ -5,8 +5,8 @@ package=native_clang
 # - Manually fix the versions for packages that don't exist (the LLVM project
 #   doesn't uniformly cut binaries across releases).
 # The Clang compiler should use the same LLVM version as the Rust compiler.
-$(package)_default_major_version=18
-$(package)_default_version=18.1.8
+$(package)_default_major_version=22
+$(package)_default_version=22.1.2
 # 2024-05-03: No Intel macOS packages are available for Clang 16, 17, or 18.
 $(package)_major_version_darwin=15
 $(package)_version_darwin=15.0.4
@@ -25,9 +25,9 @@ $(package)_version=$(if $($(package)_version_$(host_arch)_$(host_os)),$($(packag
 $(package)_major_version=$(if $($(package)_major_version_$(host_arch)_$(host_os)),$($(package)_major_version_$(host_arch)_$(host_os)),$(if $($(package)_major_version_$(host_os)),$($(package)_major_version_$(host_os)),$($(package)_default_major_version)))
 
 $(package)_download_path_linux=https://github.com/llvm/llvm-project/releases/download/llvmorg-$($(package)_version)
-$(package)_download_file_linux=clang+llvm-$($(package)_version)-x86_64-linux-gnu-ubuntu-18.04.tar.xz
-$(package)_file_name_linux=clang-llvm-$($(package)_version)-x86_64-linux-gnu-ubuntu-18.04.tar.xz
-$(package)_sha256_hash_linux=54ec30358afcc9fb8aa74307db3046f5187f9fb89fb37064cdde906e062ebf36
+$(package)_download_file_linux=LLVM-$($(package)_version)-Linux-X64.tar.xz
+$(package)_file_name_linux=LLVM-$($(package)_version)-Linux-X64.tar.xz
+$(package)_sha256_hash_linux=ff32497b6801267ee427bc69cdaeecfb2d19578af8c2a942e864c45215f9a2ac
 $(package)_download_path_darwin=https://github.com/llvm/llvm-project/releases/download/llvmorg-$($(package)_version)
 $(package)_download_file_darwin=clang+llvm-$($(package)_version)-x86_64-apple-darwin.tar.xz
 $(package)_file_name_darwin=clang-llvm-$($(package)_version)-x86_64-apple-darwin.tar.xz
@@ -37,12 +37,14 @@ $(package)_download_file_freebsd=clang+llvm-$($(package)_version)-amd64-unknown-
 $(package)_file_name_freebsd=clang-llvm-$($(package)_version)-amd64-unknown-freebsd12.tar.xz
 $(package)_sha256_hash_freebsd=b0a7b86dacb12afb8dd2ca99ea1b894d9cce84aab7711cb1964b3005dfb09af3
 $(package)_download_path_aarch64_linux=https://github.com/llvm/llvm-project/releases/download/llvmorg-$($(package)_version)
-$(package)_download_file_aarch64_linux=clang+llvm-$($(package)_version)-aarch64-linux-gnu.tar.xz
-$(package)_file_name_aarch64_linux=clang-llvm-$($(package)_version)-aarch64-linux-gnu.tar.xz
-$(package)_sha256_hash_aarch64_linux=dcaa1bebbfbb86953fdfbdc7f938800229f75ad26c5c9375ef242edad737d999
+$(package)_download_file_aarch64_linux=LLVM-$($(package)_version)-Linux-ARM64.tar.xz
+$(package)_file_name_aarch64_linux=LLVM-$($(package)_version)-Linux-ARM64.tar.xz
+$(package)_sha256_hash_aarch64_linux=cf2e84d965a95954971cafc71d18c0eb38e723c3ac7276286fd5636df4374b3a
 
 ifeq ($(build_os),linux)
-$(package)_dependencies=native_libtinfo5
+# native_libxml2 supplies libxml2.so.2, which the downloaded ld.lld/lld link
+# against; depending on it here stages the library before any host package links.
+$(package)_dependencies=native_libtinfo5 native_libxml2
 endif
 
 # Ensure we have clang native to the builder, not the target host

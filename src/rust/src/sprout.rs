@@ -1,6 +1,5 @@
 use std::fs::File;
 use std::io::BufReader;
-use std::ptr::addr_of;
 
 use bellman::groth16::Parameters;
 use zcash_proofs::sprout;
@@ -91,12 +90,9 @@ fn prove(
         use std::io::Read;
 
         // Load parameters from disk
-        let sprout_path = unsafe { addr_of!(SPROUT_GROTH16_PARAMS_PATH).as_ref() }
-            .expect("Only mutated during init, so this pointer can never be null")
-            .as_ref()
-            .expect(
-                "Parameters not loaded: SPROUT_GROTH16_PARAMS_PATH should have been initialized",
-            );
+        let sprout_path = SPROUT_GROTH16_PARAMS_PATH.get().expect(
+            "Parameters not loaded: SPROUT_GROTH16_PARAMS_PATH should have been initialized",
+        );
         const HOW_TO_FIX: &str = "
 Please download this file from https://download.z.cash/downloads/sprout-groth16.params
 and put it at ";
@@ -176,7 +172,8 @@ fn verify(
         cm2,
         vpub_old,
         vpub_new,
-        unsafe { SPROUT_GROTH16_VK.as_ref() }
+        SPROUT_GROTH16_VK
+            .get()
             .expect("Parameters not loaded: SPROUT_GROTH16_VK should have been initialized"),
     )
 }

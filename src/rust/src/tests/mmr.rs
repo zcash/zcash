@@ -115,11 +115,7 @@ fn preload_tree_delete(
 
     let peak_count = tree_view.peaks.len();
 
-    for (idx, entry) in tree_view
-        .peaks
-        .into_iter()
-        .chain(tree_view.extra.into_iter())
-    {
+    for (idx, entry) in tree_view.peaks.into_iter().chain(tree_view.extra) {
         let mut buf = [0u8; zcash_history::MAX_ENTRY_SIZE];
         entry
             .write(&mut &mut buf[..])

@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
 
 use zcash_history::{Entry as MMREntry, Tree as MMRTree, Version, V1, V2};
-use zcash_primitives::consensus::BranchId;
+use zcash_protocol::consensus::BranchId;
 
 #[cxx::bridge]
 mod ffi {

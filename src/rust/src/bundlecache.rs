@@ -113,6 +113,7 @@ pub(crate) fn init(cache_bytes: usize) {
     });
 }
 
+#[allow(static_mut_refs)]
 pub(crate) fn sapling_bundle_validity_cache() -> RwLockReadGuard<'static, BundleValidityCache> {
     unsafe { SAPLING_BUNDLE_VALIDITY_CACHE.as_ref() }
         .expect("bundlecache::init() should have been called")
@@ -120,6 +121,7 @@ pub(crate) fn sapling_bundle_validity_cache() -> RwLockReadGuard<'static, Bundle
         .unwrap()
 }
 
+#[allow(static_mut_refs)]
 pub(crate) fn sapling_bundle_validity_cache_mut() -> RwLockWriteGuard<'static, BundleValidityCache>
 {
     unsafe { SAPLING_BUNDLE_VALIDITY_CACHE.as_mut() }
@@ -128,6 +130,7 @@ pub(crate) fn sapling_bundle_validity_cache_mut() -> RwLockWriteGuard<'static, B
         .unwrap()
 }
 
+#[allow(static_mut_refs)]
 pub(crate) fn orchard_bundle_validity_cache() -> RwLockReadGuard<'static, BundleValidityCache> {
     unsafe { ORCHARD_BUNDLE_VALIDITY_CACHE.as_ref() }
         .expect("bundlecache::init() should have been called")
@@ -135,6 +138,7 @@ pub(crate) fn orchard_bundle_validity_cache() -> RwLockReadGuard<'static, Bundle
         .unwrap()
 }
 
+#[allow(static_mut_refs)]
 pub(crate) fn orchard_bundle_validity_cache_mut() -> RwLockWriteGuard<'static, BundleValidityCache>
 {
     unsafe { ORCHARD_BUNDLE_VALIDITY_CACHE.as_mut() }

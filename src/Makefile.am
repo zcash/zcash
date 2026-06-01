@@ -105,6 +105,11 @@ $(CXXBRIDGE_H) $(CXXBRIDGE_CPP): $(CXXBRIDGE_RS)
 # same library as the C++ code.
 # - Note that this does not prevent the secp256k1-sys vendored code from being built; this
 #   requires https://github.com/rust-bitcoin/rust-secp256k1/issues/380 to be addressed.
+# Cargo's per-target *_LINKER expects a single program, and linking does not
+# benefit from ccache (which wraps compilation, not linking). $(CC) carries a
+# "ccache <compiler>" prefix, so pass just the compiler (the last word) as the
+# Windows (gnullvm) Rust linker.
+RUST_TARGET_LINKER = $(lastword $(CC))
 RUST_ENV_VARS = \
   RUSTC="$(RUSTC)" \
   RUSTFLAGS="--cfg=rust_secp_no_symbol_renaming -L native=$(abs_top_srcdir)/src/secp256k1/.libs" \
@@ -112,6 +117,7 @@ RUST_ENV_VARS = \
   CFLAGS="$(CFLAGS)" \
   CXX="$(CXX)" \
   CXXFLAGS="$(CXXFLAGS)" \
+  CARGO_TARGET_X86_64_PC_WINDOWS_GNULLVM_LINKER="$(RUST_TARGET_LINKER)" \
   TERM=dumb
 RUST_BUILD_OPTS = --release --target $(RUST_TARGET) --manifest-path $(top_srcdir)/Cargo.toml
 
@@ -251,7 +257,6 @@ BITCOIN_CORE_H = \
   compat.h \
   compat/byteswap.h \
   compat/endian.h \
-  compat/sanity.h \
   compressor.h \
   consensus/consensus.h \
   core_io.h \
@@ -582,16 +587,12 @@ libbitcoin_common_a_SOURCES = \
   $(LIBZCASH_H)
 
 # util: shared between all executables.
-# This library *must* be included to make sure that the glibc
-# backward-compatibility objects and their sanity checks are linked.
 libbitcoin_util_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
 libbitcoin_util_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libbitcoin_util_a_SOURCES = \
   support/lockedpool.cpp \
   chainparamsbase.cpp \
   clientversion.cpp \
-  compat/glibc_sanity.cpp \
-  compat/glibcxx_sanity.cpp \
   compat/strnlen.cpp \
   fs.cpp \
   logging.cpp \
@@ -606,10 +607,6 @@ libbitcoin_util_a_SOURCES = \
   util/time.cpp \
   $(BITCOIN_CORE_H) \
   $(LIBZCASH_H)
-
-if GLIBC_BACK_COMPAT
-libbitcoin_util_a_SOURCES += compat/glibc_compat.cpp
-endif
 
 # cli: zcash-cli
 libbitcoin_cli_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
@@ -741,10 +738,6 @@ libzcash_script_la_SOURCES = \
   support/cleanse.cpp \
   uint256.cpp
 
-if GLIBC_BACK_COMPAT
-  libzcash_script_la_SOURCES += compat/glibc_compat.cpp
-endif
-
 libzcash_script_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined $(RELDFLAGS)
 libzcash_script_la_LIBADD = $(LIBRUSTZCASH) $(LIBSECP256K1)
 libzcash_script_la_CPPFLAGS = $(AM_CPPFLAGS) -I$(builddir)/obj -I$(srcdir)/rust/include -I$(srcdir)/rust/gen/include -I$(srcdir)/secp256k1/include -DBUILD_BITCOIN_INTERNAL
@@ -783,7 +776,7 @@ clean-local:
 	$(AM_V_GEN) $(WINDRES) -DWINDRES_PREPROC -i $< -o $@
 
 check-symbols: $(bin_PROGRAMS) $(bin_SCRIPTS)
-if GLIBC_BACK_COMPAT
+if TARGET_LINUX
 	@echo "Checking glibc back compat of [$(bin_PROGRAMS) $(bin_SCRIPTS)]..."
 	$(AM_V_at) READELF=$(READELF) CPPFILT=$(CPPFILT) $(top_srcdir)/contrib/devtools/symbol-check.py $(bin_PROGRAMS) $(bin_SCRIPTS)
 endif

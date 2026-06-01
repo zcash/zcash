@@ -2,8 +2,8 @@ use libc::c_char;
 use std::ffi::{CStr, CString};
 use tracing::error;
 
+use transparent::keys::AccountPubKey;
 use zcash_address::unified::{Container, Encoding, Fvk, Ufvk};
-use zcash_primitives::legacy::keys::AccountPubKey;
 
 use crate::address_ffi::network_from_cstr;
 

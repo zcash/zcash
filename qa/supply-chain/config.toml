@@ -42,16 +42,12 @@ criteria = "safe-to-deploy"
 version = "1.1.1"
 criteria = "safe-to-deploy"
 
-[[exemptions.anstyle]]
-version = "1.0.14"
-criteria = "safe-to-deploy"
-
 [[exemptions.backtrace]]
-version = "0.3.74"
+version = "0.3.76"
 criteria = "safe-to-deploy"
 
 [[exemptions.base64ct]]
-version = "1.0.1"
+version = "1.8.3"
 criteria = "safe-to-deploy"
 
 [[exemptions.bech32]]
@@ -110,10 +106,6 @@ criteria = "safe-to-deploy"
 version = "0.9.0"
 criteria = "safe-to-deploy"
 
-[[exemptions.clap_lex]]
-version = "0.7.7"
-criteria = "safe-to-deploy"
-
 [[exemptions.clearscreen]]
 version = "4.0.1"
 criteria = "safe-to-deploy"
@@ -122,8 +114,8 @@ criteria = "safe-to-deploy"
 version = "0.9.6"
 criteria = "safe-to-deploy"
 
-[[exemptions.core2]]
-version = "0.3.3"
+[[exemptions.corez]]
+version = "0.1.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.cpufeatures]]
@@ -159,15 +151,15 @@ version = "0.1.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.cxx]]
-version = "1.0.186"
+version = "1.0.194"
 criteria = "safe-to-deploy"
 
 [[exemptions.cxx-build]]
-version = "1.0.186"
+version = "1.0.194"
 criteria = "safe-to-deploy"
 
 [[exemptions.cxxbridge-macro]]
-version = "1.0.186"
+version = "1.0.194"
 criteria = "safe-to-deploy"
 
 [[exemptions.digest]]
@@ -183,7 +175,7 @@ version = "2.2.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.ed25519-zebra]]
-version = "3.0.0"
+version = "4.2.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.env_home]]
@@ -330,12 +322,16 @@ criteria = "safe-to-deploy"
 version = "0.4.6"
 criteria = "safe-to-deploy"
 
+[[exemptions.num-conv]]
+version = "0.2.2"
+criteria = "safe-to-deploy"
+
 [[exemptions.num_cpus]]
 version = "1.13.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.object]]
-version = "0.36.4"
+version = "0.36.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.once_cell]]
@@ -530,10 +526,6 @@ criteria = "safe-to-deploy"
 version = "0.9.4"
 criteria = "safe-to-deploy"
 
-[[exemptions.unarray]]
-version = "0.1.4"
-criteria = "safe-to-deploy"
-
 [[exemptions.version_check]]
 version = "0.9.5"
 criteria = "safe-to-deploy"
@@ -590,10 +582,6 @@ criteria = "safe-to-deploy"
 version = "0.4.0"
 criteria = "safe-to-deploy"
 
-[[exemptions.windows-sys]]
-version = "0.59.0"
-criteria = "safe-to-deploy"
-
 [[exemptions.winsafe]]
 version = "0.0.19"
 criteria = "safe-to-deploy"
@@ -603,7 +591,7 @@ version = "0.5.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.xdg]]
-version = "2.5.0"
+version = "3.0.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.zerocopy]]
