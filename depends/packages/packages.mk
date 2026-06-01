@@ -4,6 +4,9 @@ native_packages := native_clang native_ccache native_cmake native_fmt native_rus
 
 ifeq ($(build_os),linux)
 native_packages += native_libtinfo5
+# Provides libxml2.so.2 for the downloaded LLVM ld.lld/lld on hosts that have
+# moved to libxml2.so.16 (libxml2 >= 2.14). See native_libxml2.mk.
+native_packages += native_libxml2
 endif
 
 wallet_packages=bdb

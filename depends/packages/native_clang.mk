@@ -42,7 +42,9 @@ $(package)_file_name_aarch64_linux=LLVM-$($(package)_version)-Linux-ARM64.tar.xz
 $(package)_sha256_hash_aarch64_linux=cf2e84d965a95954971cafc71d18c0eb38e723c3ac7276286fd5636df4374b3a
 
 ifeq ($(build_os),linux)
-$(package)_dependencies=native_libtinfo5
+# native_libxml2 supplies libxml2.so.2, which the downloaded ld.lld/lld link
+# against; depending on it here stages the library before any host package links.
+$(package)_dependencies=native_libtinfo5 native_libxml2
 endif
 
 # Ensure we have clang native to the builder, not the target host
