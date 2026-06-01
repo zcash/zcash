@@ -76,15 +76,18 @@ avoid mis-attributing the ban.
 Temporary disabling of Orchard actions (GHSA-ghc3-g8w4-whf9)
 ------------------------------------------------------------
 
-This release introduces a soft fork that temporarily disables Orchard
-actions as a precautionary measure, addressing GHSA-ghc3-g8w4-whf9. After the activation height,
-transactions containing Orchard actions are rejected from the mempool
-(`bad-tx-has-orchard-actions`) and from blocks by enforcing nodes; at the
-activation boundary, any Orchard-containing transactions already in the
-mempool are dropped. Orchard is expected to be re-enabled in a future
-network upgrade; to avoid connectivity issues in the interim, enforcing
-nodes do not increase the DoS score of peers relaying Orchard-containing
-blocks after the fork.
+This release introduces a soft fork that temporarily disables Orchard actions
+as a precautionary measure, addressing GHSA-ghc3-g8w4-whf9. After the
+activation height, transactions containing Orchard actions are rejected from
+the mempool (`bad-tx-has-orchard-actions`) and from blocks by enforcing nodes;
+at the activation boundary, any Orchard-containing transactions already in the
+mempool are dropped. Orchard is expected to be re-enabled shortly by a second
+release with sources to be made available immedately following the soft fork;
+to avoid connectivity issues in the interim, enforcing nodes do not increase
+the DoS score of peers relaying Orchard-containing blocks after the fork.
+
+Node operators should observe the soft fork and then be ready to build the
+follow-on release.
 
 The activation height is set to **3363366** on mainnet. No testnet
 activation height is set in this release; it will be defined alongside
