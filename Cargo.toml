@@ -51,9 +51,9 @@ libc = "0.2"
 jubjub = "0.10"
 memuse = "0.2"
 nonempty = "0.11"
-orchard = "0.11"
+orchard = "0.13"
 pasta_curves = "0.5"
-sapling = { package = "sapling-crypto", version = "0.5", features = ["temporary-zcashd"] }
+sapling = { package = "sapling-crypto", version = "0.7", features = ["temporary-zcashd"] }
 secp256k1 = "0.29"
 subtle = "2.2"
 rand_core = "0.6"
@@ -61,14 +61,14 @@ redjubjub = "0.8"
 tracing = "0.1"
 tracing-core = "0.1"
 tracing-appender = "0.2"
-transparent = { package = "zcash_transparent", version = "0.6" }
-zcash_address = "0.10"
-zcash_encoding = "0.3"
+transparent = { package = "zcash_transparent", version = "0.7" }
+zcash_address = "0.11"
+zcash_encoding = "0.4"
 zcash_history = "0.4"
 zcash_note_encryption = "0.4"
-zcash_primitives = { version = "0.26", features = ["temporary-zcashd", "transparent-inputs"] }
-zcash_proofs = { version = "0.26", features = ["directories"] }
-zcash_protocol = { version = "0.7", features = ["local-consensus"] }
+zcash_primitives = { version = "0.27", features = ["temporary-zcashd", "transparent-inputs"] }
+zcash_proofs = { version = "0.27", features = ["directories"] }
+zcash_protocol = { version = "0.8", features = ["local-consensus"] }
 ed25519-zebra = "4"
 zeroize = "1.4.2"
 zip32 = "0.2"
@@ -107,7 +107,7 @@ macro_find_and_replace = "1"
 [dev-dependencies]
 incrementalmerkletree = { version = "0.8", features = ["test-dependencies"] }
 proptest = "1.0.0"
-zcash_primitives = { version = "0.26", features = ["temporary-zcashd", "transparent-inputs", "test-dependencies"] }
+zcash_primitives = { version = "0.27", features = ["temporary-zcashd", "transparent-inputs", "test-dependencies"] }
 
 [dependencies.tracing-subscriber]
 version = "0.3.20"

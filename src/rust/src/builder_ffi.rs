@@ -15,16 +15,12 @@ use orchard::{
 };
 use rand_core::OsRng;
 use tracing::error;
-use zcash_primitives::{
-    consensus::BranchId,
-    transaction::{
-        sighash::{signature_hash, SignableInput},
-        txid::TxIdDigester,
-        Authorization, Transaction, TransactionData,
-    },
+use zcash_primitives::transaction::{
+    sighash::{signature_hash, SignableInput},
+    txid::TxIdDigester,
+    Authorization, Transaction, TransactionData,
 };
-use zcash_protocol::memo::MemoBytes;
-use zcash_protocol::value::ZatBalance;
+use zcash_protocol::{consensus::BranchId, memo::MemoBytes, value::ZatBalance};
 
 use crate::{
     bridge::ffi::OrchardUnauthorizedBundlePtr,
