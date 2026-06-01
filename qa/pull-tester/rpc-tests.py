@@ -134,6 +134,7 @@ BASE_SCRIPTS= [
     'p2p_txexpiry_dos.py',
     'p2p_txexpiringsoon.py',
     'p2p_duplicate_block_clobbers_chain_value.py',
+    'p2p_ban_pool_value_out_of_range.py',
     'legacy_chain_supply_abort.py',
     'chain_supply_checkpoint.py',
     'p2p_node_bloom.py',
