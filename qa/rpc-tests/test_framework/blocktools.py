@@ -6,6 +6,7 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from hashlib import blake2b
+from io import BytesIO
 
 from .mininode import (
     CBlock, CTransaction, CTxIn, CTxOut, COutPoint,
@@ -44,6 +45,42 @@ def derive_block_commitments_hash(chain_history_root, auth_data_root):
     digest.update(auth_data_root)
     digest.update(b'\x00' * 32)
     return digest.digest()
+
+def txs_from_template(gbt):
+    """
+    Parse the coinbase and the other transactions from a getblocktemplate
+    result into mininode CTransaction objects, returning (coinbase, others).
+    """
+    coinbase = CTransaction()
+    coinbase.deserialize(BytesIO(bytes.fromhex(gbt['coinbasetxn']['data'])))
+    coinbase.calc_sha256()
+    others = []
+    for gbt_tx in gbt['transactions']:
+        tx = CTransaction()
+        tx.deserialize(BytesIO(bytes.fromhex(gbt_tx['data'])))
+        tx.calc_sha256()
+        others.append(tx)
+    return coinbase, others
+
+def solve_block_from_template(gbt, coinbase, extra_txs=None):
+    """
+    Build and solve a regtest block from a getblocktemplate result, its
+    (possibly modified) coinbase, and any extra transactions. The merkle root is
+    recomputed over the full transaction set; the template's blockcommitmentshash
+    is used unchanged.
+    """
+    block = create_block(
+        int(gbt['previousblockhash'], 16),
+        coinbase,
+        gbt['mintime'],
+        int(gbt['bits'], 16),
+        int(gbt['defaultroots']['blockcommitmentshash'], 16))
+    if extra_txs:
+        block.vtx.extend(extra_txs)
+    block.hashMerkleRoot = block.calc_merkle_root()
+    block.solve()
+    block.calc_sha256()
+    return block
 
 def serialize_script_num(value):
     r = bytearray(0)
