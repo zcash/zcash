@@ -137,6 +137,8 @@ BASE_SCRIPTS= [
     'p2p_ban_pool_value_out_of_range.py',
     'legacy_chain_supply_abort.py',
     'chain_supply_checkpoint.py',
+    'shielded_balance_accounting_coinbase.py',
+    'shielded_balance_accounting_noncoinbase.py',
     'p2p_node_bloom.py',
     'regtest_signrawtransaction.py',
     'shorter_block_times.py',

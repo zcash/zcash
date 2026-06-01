@@ -1762,6 +1762,22 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
             return state.DoS(100, error("CheckTransaction(): coinbase has enableSpendsOrchard set"),
                              REJECT_INVALID, "bad-cb-has-orchard-spend");
 
+        // A coinbase transaction has no Sapling spends or spend-enabled Orchard
+        // actions (rejected above), so its shielded value balance is the negation
+        // of the value of its shielded outputs and cannot be positive. A positive
+        // value balance would be unsatisfiable by the binding signature, hence
+        // always invalid (independently of the NU6 exact-coinbase-balance rule).
+        // Rejecting it here, rather than only via the binding-signature check in
+        // ConnectBlock, prevents a malformed coinbase from reaching the chain
+        // supply consistency check with inconsistent pool accounting
+        // (GHSA-g4x5-crjh-29ff).
+        if (tx.GetValueBalanceSapling() > 0)
+            return state.DoS(100, error("CheckTransaction(): coinbase has positive Sapling value balance"),
+                             REJECT_INVALID, "bad-cb-positive-sapling-valuebalance");
+        if (orchard_bundle.GetValueBalance() > 0)
+            return state.DoS(100, error("CheckTransaction(): coinbase has positive Orchard value balance"),
+                             REJECT_INVALID, "bad-cb-positive-orchard-valuebalance");
+
         if (tx.vin[0].scriptSig.size() < 2 || tx.vin[0].scriptSig.size() > 100)
             return state.DoS(100, false, REJECT_INVALID, "bad-cb-length");
     }
@@ -3781,6 +3797,31 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     view.PushAnchor(sprout_tree);
     view.PushAnchor(sapling_tree);
     view.PushAnchor(orchard_tree);
+
+    // Validate the Sapling and Orchard binding signatures here, before the
+    // chain supply consistency check below. The binding signatures are what
+    // enforce that each bundle's value balance is consistent with its
+    // shielded inputs and outputs. If they are not checked first, a block
+    // containing a malformed value balance could reach the supply consistency
+    // check with inconsistent pool accounting, and trigger AbortNode instead
+    // of being cleanly rejected as invalid (GHSA-g4x5-crjh-29ff).
+    //
+    // This must run for both `fJustCheck` and full connection, so it is
+    // placed before the `if (!fJustCheck)` block. The `has_value()` guards
+    // mean that the validators run only when expensive checks are enabled
+    // (`fExpensiveChecks`); they are skipped for block-template checks and
+    // for ancestors of the last checkpoint.
+    if (saplingAuth.has_value() && !saplingAuth.value()->validate()) {
+        return state.DoS(100,
+            error("%s: a Sapling bundle within the block is invalid", __func__),
+            REJECT_INVALID, "bad-sapling-bundle-authorization");
+    }
+    if (orchardAuth.has_value() && !orchardAuth.value()->validate()) {
+        return state.DoS(100,
+            error("%s: an Orchard bundle within the block is invalid", __func__),
+            REJECT_INVALID, "bad-orchard-bundle-authorization");
+    }
+
     if (!fJustCheck) {
         // Update pindex with the net change in value and the chain's total value,
         // both for the supply and for the transparent pool.
@@ -4014,19 +4055,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             REJECT_INVALID, "bad-cb-not-exact");
     }
 
-    // Ensure Sapling authorizations are valid (if we are checking them)
-    if (saplingAuth.has_value() && !saplingAuth.value()->validate()) {
-        return state.DoS(100,
-            error("%s: a Sapling bundle within the block is invalid", __func__),
-            REJECT_INVALID, "bad-sapling-bundle-authorization");
-    }
-
-    // Ensure Orchard signatures are valid (if we are checking them)
-    if (orchardAuth.has_value() && !orchardAuth.value()->validate()) {
-        return state.DoS(100,
-            error("%s: an Orchard bundle within the block is invalid", __func__),
-            REJECT_INVALID, "bad-orchard-bundle-authorization");
-    }
+    // (The Sapling and Orchard bundle authorizations are validated earlier,
+    // before the chain supply consistency check; see GHSA-g4x5-crjh-29ff.)
 
     if (!control.Wait())
         return state.DoS(100, false);
