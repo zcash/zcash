@@ -74,8 +74,16 @@ static SAPLING_OUTPUT_PARAMS: OnceLock<OutputParameters> = OnceLock::new();
 static SPROUT_GROTH16_PARAMS_PATH: OnceLock<PathBuf> = OnceLock::new();
 
 static ORCHARD_PK: OnceLock<orchard::circuit::ProvingKey> = OnceLock::new();
-static ORCHARD_VK: LazyLock<orchard::circuit::VerifyingKey> =
-    LazyLock::new(orchard::circuit::VerifyingKey::build);
+
+// The Orchard circuit was changed in NU6.2 to fix the variable-base scalar multiplication
+// gadget, which changes the verifying key. Pre-NU6.2 proofs verify only under the historical
+// (insecure) verifying key, and NU6.2-onward proofs only under the fixed one, so a node that
+// validates both historical and new blocks needs both.
+static ORCHARD_VK_INSECURE: LazyLock<orchard::circuit::VerifyingKey> = LazyLock::new(|| {
+    orchard::circuit::VerifyingKey::build_for_version(
+        orchard::circuit::OrchardCircuitVersion::InsecurePreNu6_2,
+    )
+});
 
 /// Converts CtOption<t> into Option<T>
 fn de_ct<T>(ct: CtOption<T>) -> Option<T> {

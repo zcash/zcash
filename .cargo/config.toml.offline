@@ -4,5 +4,20 @@ linker = "aarch64-linux-gnu-gcc"
 [source.crates-io]
 replace-with = "vendored-sources"
 
+[source."git+https://github.com/zodl-inc/halo2-security-fixes.git?rev=a101adb907869062593242a1946a7d6157d11899"]
+git = "https://github.com/zodl-inc/halo2-security-fixes.git"
+rev = "a101adb907869062593242a1946a7d6157d11899"
+replace-with = "vendored-sources"
+
+[source."git+https://github.com/zodl-inc/librustzcash-security-fixes.git?rev=f953cfe592f323818cfebb5fd1c78211ff68ea30"]
+git = "https://github.com/zodl-inc/librustzcash-security-fixes.git"
+rev = "f953cfe592f323818cfebb5fd1c78211ff68ea30"
+replace-with = "vendored-sources"
+
+[source."git+https://github.com/zodl-inc/orchard-security-fixes.git?rev=549bd5bb89e0b583a734c164f40cbfd40ea1fd18"]
+git = "https://github.com/zodl-inc/orchard-security-fixes.git"
+rev = "549bd5bb89e0b583a734c164f40cbfd40ea1fd18"
+replace-with = "vendored-sources"
+
 [source.vendored-sources]
 # The directory for this source is set to RUST_VENDORED_SOURCES by src/Makefile.am

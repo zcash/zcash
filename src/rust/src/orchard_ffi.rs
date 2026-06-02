@@ -78,7 +78,7 @@ impl BatchValidator {
     /// - `bindingSigOrchard` validity is enforced here.
     pub(crate) fn validate(&mut self) -> bool {
         if let Some(inner) = self.0.take() {
-            let vk = &crate::ORCHARD_VK;
+            let vk = &crate::ORCHARD_VK_INSECURE;
             if inner.validator.validate(vk, OsRng) {
                 // `BatchValidator::validate()` is only called if every
                 // `BatchValidator::check_bundle()` returned `true`, so at this point

@@ -3,7 +3,7 @@ use std::{mem, ptr};
 use group::{Group as _, GroupEncoding as _};
 use memuse::DynamicUsage;
 use orchard::{
-    bundle::Authorized,
+    bundle::{Authorized, ProofSizeEnforcement},
     keys::OutgoingViewingKey,
     note_encryption::OrchardDomain,
     primitives::redpallas::{Signature, SpendAuth},
@@ -86,7 +86,16 @@ impl Bundle {
 
     /// Parses an authorized Orchard bundle from the given stream.
     pub(crate) fn parse(reader: &mut CppStream<'_>) -> Result<Box<Self>, String> {
-        match orchard_serialization::read_v5_bundle(reader) {
+        // This standalone bundle parse is deliberately lenient about the proof size
+        // (ProofSizeEnforcement::Unenforced): it has no transaction context (and hence no
+        // consensus branch id), and a node must be able to parse Orchard bundles from earlier
+        // epochs whose proofs predate the canonical-size rule.
+        //
+        // The canonical-proof-size consensus rule is instead enforced when a whole transaction
+        // is parsed (see `zcash_transaction_digests` / `Transaction::read`), where the proof
+        // size is checked against the transaction's own consensus branch id (Strict for NU6.2
+        // onward). That parse is reached for every transaction via CTransaction::UpdateHash.
+        match orchard_serialization::read_v5_bundle(reader, ProofSizeEnforcement::Unenforced) {
             Ok(parsed) => Ok(Box::new(Bundle(parsed))),
             Err(e) => Err(format!("Failed to parse Orchard bundle: {}", e)),
         }

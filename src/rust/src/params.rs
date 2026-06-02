@@ -64,6 +64,9 @@ pub(crate) fn network(
             nu5: i32_to_optional_height(nu5),
             nu6: i32_to_optional_height(nu6),
             nu6_1: i32_to_optional_height(nu6_1),
+            // Required by the updated `LocalNetwork`; the NU6.2 activation height is threaded
+            // through when NU6.2 is added to the upgrade list.
+            nu6_2: None,
         }),
         _ => return Err("Unsupported network kind"),
     };
