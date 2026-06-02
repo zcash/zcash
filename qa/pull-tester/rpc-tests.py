@@ -77,6 +77,7 @@ BASE_SCRIPTS= [
     'mempool_limit.py',
     'p2p-fullblocktest.py',
     'soft_fork_disabling_orchard.py',
+    'orchard_nu6_2.py',
     # vv Tests less than 30s vv
     'wallet_1941.py',
     'wallet_accounts.py',
