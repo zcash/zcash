@@ -65,6 +65,8 @@ NON_CANONICAL_X_BYTES = b'\xff' * 32
 # a quadratic non-residue mod q_P, so this x is not on the Pallas curve.
 OFF_CURVE_X_BYTES = b'\x02' + b'\x00' * 31
 
+BAD_EPK_ERROR = "TX decode failed: Failed to parse Orchard bundle: an Orchard action's `epk` is not a valid non-identity Pallas point: unspecified iostream_category error"
+
 
 def read_compact_size(data, pos):
     """Read a Bitcoin CompactSize uint, returning (value, new_pos)."""
@@ -232,13 +234,9 @@ class OrchardActionIdentityPointTest(BitcoinTestFramework):
         assert_equal(epk_tamperedepk, IDENTITY_BYTES, "epk was not zeroed")
 
         # Decode the tampered tx to see if zcashd parses the zero epk
-        action_tamperedepk_decoded = self.nodes[0].decoderawtransaction(tx_tamperedepk_hex)['orchard']['actions'][0]
-        epk_tamperedepk_decoded = hex_str_to_bytes(action_tamperedepk_decoded['ephemeralKey'])
-        assert_equal(epk_tamperedepk_decoded, IDENTITY_BYTES)
-
         assert_raises_message(
-            JSONRPCException, "bad-orchard-action-identity-point",
-            self.nodes[0].sendrawtransaction, tx_tamperedepk_hex,
+            JSONRPCException, BAD_EPK_ERROR,
+            self.nodes[0].decoderawtransaction, tx_tamperedepk_hex,
         )
         print("  PASS: identity epk correctly rejected")
 
@@ -267,17 +265,9 @@ class OrchardActionIdentityPointTest(BitcoinTestFramework):
             assert_equal(get_epk(tx_tamperedepk, action_pos), bad_epk,
                          "epk was not replaced")
 
-            # The serialization is purely byte-level, so decoderawtransaction
-            # should round-trip the tampered bytes regardless of curve validity.
-            action_tamperedepk_decoded = self.nodes[0].decoderawtransaction(
-                tx_tamperedepk_hex)['orchard']['actions'][0]
-            epk_tamperedepk_decoded = hex_str_to_bytes(
-                action_tamperedepk_decoded['ephemeralKey'])
-            assert_equal(epk_tamperedepk_decoded, bad_epk)
-
             assert_raises_message(
-                JSONRPCException, "bad-orchard-action-identity-point",
-                self.nodes[0].sendrawtransaction, tx_tamperedepk_hex,
+                JSONRPCException, BAD_EPK_ERROR,
+                self.nodes[0].decoderawtransaction, tx_tamperedepk_hex,
             )
             print("  PASS: %s correctly rejected" % label)
 
