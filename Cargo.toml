@@ -51,7 +51,7 @@ libc = "0.2"
 jubjub = "0.10"
 memuse = "0.2"
 nonempty = "0.11"
-orchard = "0.13"
+orchard = "0.14"
 pasta_curves = "0.5"
 sapling = { package = "sapling-crypto", version = "0.7", features = ["temporary-zcashd"] }
 secp256k1 = "0.29"
@@ -61,14 +61,14 @@ redjubjub = "0.8"
 tracing = "0.1"
 tracing-core = "0.1"
 tracing-appender = "0.2"
-transparent = { package = "zcash_transparent", version = "0.7" }
-zcash_address = "0.11"
+transparent = { package = "zcash_transparent", version = "0.8" }
+zcash_address = "0.12"
 zcash_encoding = "0.4"
 zcash_history = "0.4"
 zcash_note_encryption = "0.4"
-zcash_primitives = { version = "0.27", features = ["temporary-zcashd", "transparent-inputs"] }
-zcash_proofs = { version = "0.27", features = ["directories"] }
-zcash_protocol = { version = "0.8", features = ["local-consensus"] }
+zcash_primitives = { version = "0.28", features = ["temporary-zcashd", "transparent-inputs"] }
+zcash_proofs = { version = "0.28", features = ["directories"] }
+zcash_protocol = { version = "0.9", features = ["local-consensus"] }
 ed25519-zebra = "4"
 zeroize = "1.4.2"
 zip32 = "0.2"
@@ -107,7 +107,7 @@ macro_find_and_replace = "1"
 [dev-dependencies]
 incrementalmerkletree = { version = "0.8", features = ["test-dependencies"] }
 proptest = "1.0.0"
-zcash_primitives = { version = "0.27", features = ["temporary-zcashd", "transparent-inputs", "test-dependencies"] }
+zcash_primitives = { version = "0.28", features = ["temporary-zcashd", "transparent-inputs", "test-dependencies"] }
 
 [dependencies.tracing-subscriber]
 version = "0.3.20"
@@ -123,14 +123,16 @@ codegen-units = 1
 # testing the NU6.2 changes before the orchard / halo2 / librustzcash releases are published.
 # Drop these once the crates are released.
 [patch.crates-io]
-orchard = { git = "https://github.com/zodl-inc/orchard-security-fixes.git", rev = "549bd5bb89e0b583a734c164f40cbfd40ea1fd18" }
-halo2_gadgets = { package = "halo2_gadgets", git = "https://github.com/zodl-inc/halo2-security-fixes.git", rev = "a101adb907869062593242a1946a7d6157d11899" }
-halo2_proofs = { package = "halo2_proofs", git = "https://github.com/zodl-inc/halo2-security-fixes.git", rev = "a101adb907869062593242a1946a7d6157d11899" }
-poseidon = { package = "halo2_poseidon", git = "https://github.com/zodl-inc/halo2-security-fixes.git", rev = "a101adb907869062593242a1946a7d6157d11899" }
-zcash_address = { git = "https://github.com/zodl-inc/librustzcash-security-fixes.git", rev = "f953cfe592f323818cfebb5fd1c78211ff68ea30" }
-zcash_encoding = { git = "https://github.com/zodl-inc/librustzcash-security-fixes.git", rev = "f953cfe592f323818cfebb5fd1c78211ff68ea30" }
-zcash_history = { git = "https://github.com/zodl-inc/librustzcash-security-fixes.git", rev = "f953cfe592f323818cfebb5fd1c78211ff68ea30" }
-zcash_primitives = { git = "https://github.com/zodl-inc/librustzcash-security-fixes.git", rev = "f953cfe592f323818cfebb5fd1c78211ff68ea30" }
-zcash_proofs = { git = "https://github.com/zodl-inc/librustzcash-security-fixes.git", rev = "f953cfe592f323818cfebb5fd1c78211ff68ea30" }
-zcash_protocol = { git = "https://github.com/zodl-inc/librustzcash-security-fixes.git", rev = "f953cfe592f323818cfebb5fd1c78211ff68ea30" }
-transparent = { package = "zcash_transparent", git = "https://github.com/zodl-inc/librustzcash-security-fixes.git", rev = "f953cfe592f323818cfebb5fd1c78211ff68ea30" }
+orchard = { git = "https://github.com/zodl-inc/orchard-security-fixes.git", rev = "994dad2f7bb8c85e7c8ea336dcc2a814a94bc9fd" }
+halo2_gadgets = { package = "halo2_gadgets", git = "https://github.com/zodl-inc/halo2-security-fixes.git", rev = "d751768afe0d2105b349dd93f73fde7f2eade088" }
+halo2_proofs = { package = "halo2_proofs", git = "https://github.com/zodl-inc/halo2-security-fixes.git", rev = "d751768afe0d2105b349dd93f73fde7f2eade088" }
+poseidon = { package = "halo2_poseidon", git = "https://github.com/zodl-inc/halo2-security-fixes.git", rev = "d751768afe0d2105b349dd93f73fde7f2eade088" }
+equihash = { git = "https://github.com/zodl-inc/librustzcash-security-fixes.git", rev = "a4bc18408935df58db686e1834c23bcc8c5680e0" }
+f4jumble = { git = "https://github.com/zodl-inc/librustzcash-security-fixes.git", rev = "a4bc18408935df58db686e1834c23bcc8c5680e0" }
+zcash_address = { git = "https://github.com/zodl-inc/librustzcash-security-fixes.git", rev = "a4bc18408935df58db686e1834c23bcc8c5680e0" }
+zcash_encoding = { git = "https://github.com/zodl-inc/librustzcash-security-fixes.git", rev = "a4bc18408935df58db686e1834c23bcc8c5680e0" }
+zcash_history = { git = "https://github.com/zodl-inc/librustzcash-security-fixes.git", rev = "a4bc18408935df58db686e1834c23bcc8c5680e0" }
+zcash_primitives = { git = "https://github.com/zodl-inc/librustzcash-security-fixes.git", rev = "a4bc18408935df58db686e1834c23bcc8c5680e0" }
+zcash_proofs = { git = "https://github.com/zodl-inc/librustzcash-security-fixes.git", rev = "a4bc18408935df58db686e1834c23bcc8c5680e0" }
+zcash_protocol = { git = "https://github.com/zodl-inc/librustzcash-security-fixes.git", rev = "a4bc18408935df58db686e1834c23bcc8c5680e0" }
+transparent = { package = "zcash_transparent", git = "https://github.com/zodl-inc/librustzcash-security-fixes.git", rev = "a4bc18408935df58db686e1834c23bcc8c5680e0" }

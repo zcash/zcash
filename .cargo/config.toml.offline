@@ -4,19 +4,19 @@ linker = "aarch64-linux-gnu-gcc"
 [source.crates-io]
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/zodl-inc/halo2-security-fixes.git?rev=a101adb907869062593242a1946a7d6157d11899"]
+[source."git+https://github.com/zodl-inc/halo2-security-fixes.git?rev=d751768afe0d2105b349dd93f73fde7f2eade088"]
 git = "https://github.com/zodl-inc/halo2-security-fixes.git"
-rev = "a101adb907869062593242a1946a7d6157d11899"
+rev = "d751768afe0d2105b349dd93f73fde7f2eade088"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/zodl-inc/librustzcash-security-fixes.git?rev=f953cfe592f323818cfebb5fd1c78211ff68ea30"]
+[source."git+https://github.com/zodl-inc/librustzcash-security-fixes.git?rev=a4bc18408935df58db686e1834c23bcc8c5680e0"]
 git = "https://github.com/zodl-inc/librustzcash-security-fixes.git"
-rev = "f953cfe592f323818cfebb5fd1c78211ff68ea30"
+rev = "a4bc18408935df58db686e1834c23bcc8c5680e0"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/zodl-inc/orchard-security-fixes.git?rev=549bd5bb89e0b583a734c164f40cbfd40ea1fd18"]
+[source."git+https://github.com/zodl-inc/orchard-security-fixes.git?rev=994dad2f7bb8c85e7c8ea336dcc2a814a94bc9fd"]
 git = "https://github.com/zodl-inc/orchard-security-fixes.git"
-rev = "549bd5bb89e0b583a734c164f40cbfd40ea1fd18"
+rev = "994dad2f7bb8c85e7c8ea336dcc2a814a94bc9fd"
 replace-with = "vendored-sources"
 
 [source.vendored-sources]
