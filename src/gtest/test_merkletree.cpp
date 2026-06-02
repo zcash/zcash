@@ -302,7 +302,7 @@ TEST(orchardMerkleTree, appendBundle) {
 
     ASSERT_EQ(newTree.root(), OrchardMerkleFrontier::empty_root());
 
-    for (int i = 0; i < 1; i++) {
+    for (int i = 0; i < 10; i++) {
         CDataStream ssBundleData(merkle_roots_orchard[i].bundle, SER_NETWORK, PROTOCOL_VERSION);
         OrchardBundle b;
         ssBundleData >> b;

@@ -1466,6 +1466,7 @@ TEST(ChecktransactionTests, NU5AcceptsOrchardShieldedCoinbase) {
     const size_t ORCHARD_BUNDLE_START = (HEADER_SIZE + TRANSPARENT_BUNDLE_SIZE + SAPLING_BUNDLE_SIZE);
     const size_t ORCHARD_BUNDLE_CMX_OFFSET = (ORCHARD_BUNDLE_START + ZC_ZIP225_ORCHARD_NUM_ACTIONS_SIZE + 32 + 32 + 32);
     const size_t ORCHARD_CMX_SIZE = 32;
+    const size_t ORCHARD_EPK_SIZE = 32;
 
     // Verify the transaction is the expected size.
     size_t txsize = ORCHARD_BUNDLE_START + ZC_ZIP225_ORCHARD_BASE_SIZE + ZC_ZIP225_ORCHARD_MARGINAL_SIZE * 2;
@@ -1487,11 +1488,33 @@ TEST(ChecktransactionTests, NU5AcceptsOrchardShieldedCoinbase) {
         ContextualCheckTransaction(tx, state, chainparams, 10, 57);
     }
 
+    // Transaction should fail with the identity epk.
+    {
+        auto cmxBad = uint256S("0");
+        std::vector<char> txBytes(ss.begin(), ss.end());
+        std::copy(cmxBad.begin(), cmxBad.end(), txBytes.data() + ORCHARD_BUNDLE_CMX_OFFSET + ORCHARD_CMX_SIZE);
+
+        CDataStream ssBad(txBytes, SER_DISK, PROTOCOL_VERSION);
+        CTransaction tx;
+        EXPECT_THROW((ssBad >> tx), std::ios_base::failure);
+    }
+
+    // Transaction should fail with an invalid epk.
+    {
+        auto cmxBad = uint256S("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+        std::vector<char> txBytes(ss.begin(), ss.end());
+        std::copy(cmxBad.begin(), cmxBad.end(), txBytes.data() + ORCHARD_BUNDLE_CMX_OFFSET + ORCHARD_CMX_SIZE);
+
+        CDataStream ssBad(txBytes, SER_DISK, PROTOCOL_VERSION);
+        CTransaction tx;
+        EXPECT_THROW((ssBad >> tx), std::ios_base::failure);
+    }
+
     // Transaction should fail with a bad encCiphertext.
     {
         std::vector<char> txBytes(ss.begin(), ss.end());
         for (int i = 0; i < libzcash::SAPLING_ENCCIPHERTEXT_SIZE; i++) {
-            txBytes[ORCHARD_BUNDLE_CMX_OFFSET + ORCHARD_CMX_SIZE + i] = 0;
+            txBytes[ORCHARD_BUNDLE_CMX_OFFSET + ORCHARD_CMX_SIZE + ORCHARD_EPK_SIZE + i] = 0;
         }
 
         CDataStream ssBad(txBytes, SER_DISK, PROTOCOL_VERSION);
@@ -1508,7 +1531,7 @@ TEST(ChecktransactionTests, NU5AcceptsOrchardShieldedCoinbase) {
     {
         std::vector<char> txBytes(ss.begin(), ss.end());
         auto byteOffset =
-            ORCHARD_BUNDLE_CMX_OFFSET + ORCHARD_CMX_SIZE + libzcash::SAPLING_ENCCIPHERTEXT_SIZE;
+            ORCHARD_BUNDLE_CMX_OFFSET + ORCHARD_CMX_SIZE + ORCHARD_EPK_SIZE + libzcash::SAPLING_ENCCIPHERTEXT_SIZE;
         for (int i = 0; i < libzcash::SAPLING_OUTCIPHERTEXT_SIZE; i++) {
             txBytes[byteOffset + i] = 0;
         }
