@@ -34,6 +34,7 @@ from test_framework.blocktools import create_block
 from test_framework.mininode import COIN, CTransaction
 from test_framework.util import (
     NU6_1_BRANCH_ID,
+    NU6_2_BRANCH_ID,
     assert_equal,
     assert_raises_message,
     assert_true,
@@ -62,6 +63,7 @@ class SoftForkDisablingOrchardTest(BitcoinTestFramework):
     def setup_nodes(self):
         common = [
             nuparams(NU6_1_BRANCH_ID, 210),
+            nuparams(NU6_2_BRANCH_ID, 230),
         ]
         enforcing = common + [
             '-regtesttemporaryorcharddisablingsoftforkheight=%d' % ORCHARD_DISABLED_HEIGHT,
@@ -175,6 +177,7 @@ class SoftForkDisablingOrchardTest(BitcoinTestFramework):
 
         self.test_mempool_cleared_at_boundary(ua1, ua0_orchard, ua0_sapling)
         self.test_rejected_after_activation()
+        self.test_accepted_after_nu6_2(ua1, ua0_orchard)
 
     def test_mempool_cleared_at_boundary(self, ua1, ua0_orchard, ua0_sapling):
         """When the last block before the soft fork is connected, Orchard
@@ -329,6 +332,37 @@ class SoftForkDisablingOrchardTest(BitcoinTestFramework):
         # The enforcing node did not advance onto the rejected block.
         assert_equal(self.nodes[0].getblockcount(), height_before)
         assert_equal(self.nodes[0].getbestblockhash(), best_before)
+
+    def test_accepted_after_nu6_2(self, ua1, ua0_orchard):
+        """Once NU 6.2 has activated, the Orchard rejection logic from the soft
+        fork is disabled, the mempool accepts transactions containing Orchard
+        actions, and a block containing such a transaction is accepted.
+        """
+        print("Testing that Orchard transactions are accepted after NU 6.2")
+
+        # Activate NU 6.2
+        self.nodes[0].generate(10)
+        self.sync_all()
+        assert_equal(self.nodes[0].getblockcount(), 230)
+
+        # The transaction rejected earlier is still rejected, but now because it
+        # is invalid for this consensus branch ID (and expired due to how zcashd
+        # constructs txs).
+        assert_raises_message(
+            JSONRPCException,
+            "tx-expiring-soon",
+            self.nodes[0].sendrawtransaction,
+            self.orchard_tx_hex)
+
+        # Try again to spend the funded Orchard note (Orchard -> Orchard).
+        orchard_opid = self.nodes[1].z_sendmany(
+            ua1, [{"address": ua0_orchard, "amount": Decimal('1')}], 1, None)
+        orchard_txid = wait_and_assert_operationid_status(self.nodes[1], orchard_opid)
+
+        # Other nodes now accept it.
+        sync_mempools(self.nodes)
+        assert_true(orchard_txid in self.nodes[0].getrawmempool(),
+                    "Orchard transaction should be in the mempool after NU 6.2 activation")
 
 if __name__ == '__main__':
     SoftForkDisablingOrchardTest().main()
