@@ -381,6 +381,8 @@ def main():
         "native_cctools",
         # This package is pinned specifically for Linux.
         "native_libtinfo5",
+        "native_libxml2",
+        "native_llvm_mingw",
     ]
 
     print_row("NAME", "STATUS", "CURRENT VERSION", "NEWER VERSIONS")
