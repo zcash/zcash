@@ -144,6 +144,10 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_NU6_1].nProtocolVersion = 170140;
         consensus.vUpgrades[Consensus::UPGRADE_NU6_1].nActivationHeight = 3146400;
         consensus.nTemporaryOrchardDisablingSoftForkHeight = 3363426;
+        consensus.vUpgrades[Consensus::UPGRADE_NU6_2].nProtocolVersion = 170150;
+        consensus.vUpgrades[Consensus::UPGRADE_NU6_2].nActivationHeight =
+            Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
+        // consensus.vUpgrades[Consensus::UPGRADE_NU6_2].nActivationHeight = 3364000; // provisional
         consensus.vUpgrades[Consensus::UPGRADE_ZFUTURE].nProtocolVersion = 0x7FFFFFFF;
         consensus.vUpgrades[Consensus::UPGRADE_ZFUTURE].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
@@ -531,6 +535,10 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_NU6_1].nActivationHeight = 3536500;
         consensus.nTemporaryOrchardDisablingSoftForkHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
+        consensus.vUpgrades[Consensus::UPGRADE_NU6_2].nProtocolVersion = 170150;
+        consensus.vUpgrades[Consensus::UPGRADE_NU6_2].nActivationHeight =
+            Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
+        // consensus.vUpgrades[Consensus::UPGRADE_NU6_2].nActivationHeight = 4042000; // provisional
         consensus.vUpgrades[Consensus::UPGRADE_ZFUTURE].nProtocolVersion = 0x7FFFFFFF;
         consensus.vUpgrades[Consensus::UPGRADE_ZFUTURE].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
@@ -864,6 +872,9 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_NU6_1].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
         consensus.nTemporaryOrchardDisablingSoftForkHeight =
+            Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
+        consensus.vUpgrades[Consensus::UPGRADE_NU6_2].nProtocolVersion = 170150;
+        consensus.vUpgrades[Consensus::UPGRADE_NU6_2].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
         consensus.vUpgrades[Consensus::UPGRADE_ZFUTURE].nProtocolVersion = 0x7FFFFFFF;
         consensus.vUpgrades[Consensus::UPGRADE_ZFUTURE].nActivationHeight =

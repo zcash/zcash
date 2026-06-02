@@ -894,6 +894,7 @@ bool ContextualCheckTransaction(
     bool nu5Active = consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU5);
     bool nu6Active = consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU6);
     bool nu6point1Active = consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU6_1);
+    bool nu6point2Active = consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU6_2);
     bool futureActive = consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_ZFUTURE);
 
     assert(!saplingActive || overwinterActive); // Sapling cannot be active unless Overwinter is
@@ -902,7 +903,8 @@ bool ContextualCheckTransaction(
     assert(!nu5Active || canopyActive);         // NU5 cannot be active unless Canopy is
     assert(!nu6Active || nu5Active);            // NU6 cannot be active unless NU5 is
     assert(!nu6point1Active || nu6Active);      // NU6.1 cannot be active unless NU6 is
-    assert(!futureActive || nu6point1Active);   // ZFUTURE must include consensus rules for all supported network upgrades.
+    assert(!nu6point2Active || nu6point1Active); // NU6.2 cannot be active unless NU6.1 is
+    assert(!futureActive || nu6point2Active);   // ZFUTURE must include consensus rules for all supported network upgrades.
 
     auto& orchard_bundle = tx.GetOrchardBundle();
 
