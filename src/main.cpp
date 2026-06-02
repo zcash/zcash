@@ -5971,7 +5971,7 @@ static bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state
             return state.DoS(10, error("%s: prev block not found", __func__), 0, "bad-prevblk", BodyCorruption::HeaderOnly);
         pindexPrev = (*mi).second;
         if (pindexPrev->nStatus & BLOCK_FAILED_MASK)
-            return state.DoS(100, error("%s: prev block invalid", __func__), REJECT_INVALID, "bad-prevblk", BodyCorruption::HeaderOnly);
+            return state.DoS(0, error("%s: prev block invalid", __func__), REJECT_INVALID, "bad-prevblk", BodyCorruption::HeaderOnly);
     }
 
     if (!ContextualCheckBlockHeader(block, state, chainparams, pindexPrev))
