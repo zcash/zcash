@@ -1287,7 +1287,7 @@ bool ContextualCheckTransaction(
         // - Orchard proof size enforcement is in the Rust `Transaction` parser.
     } else {
         // Rules that apply generally before NU6.2. These were previously
-        // noncontextual checks that became contextual after NU5 activation.
+        // noncontextual checks that became contextual after NU6.2 activation.
 
         // Soft fork: temporarily require transactions to not contain Orchard actions.
         //
@@ -5988,8 +5988,16 @@ static bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state
         if (mi == mapBlockIndex.end())
             return state.DoS(10, error("%s: prev block not found", __func__), 0, "bad-prevblk", BodyCorruption::HeaderOnly);
         pindexPrev = (*mi).second;
-        if (pindexPrev->nStatus & BLOCK_FAILED_MASK)
-            return state.DoS(0, error("%s: prev block invalid", __func__), REJECT_INVALID, "bad-prevblk", BodyCorruption::HeaderOnly);
+        if (pindexPrev->nStatus & BLOCK_FAILED_MASK) {
+            int level = 100;
+            // Don't ban peers if the invalid block is because of the soft fork
+            // that temporarily disabled Orchard.
+            if (chainparams.GetConsensus().TemporaryOrchardDisablingSoftForkActive(pindexPrev->nHeight) &&
+                !chainparams.GetConsensus().NetworkUpgradeActive(pindexPrev->nHeight, Consensus::UPGRADE_NU6_2)) {
+                level = 0;
+            }
+            return state.DoS(level, error("%s: prev block invalid", __func__), REJECT_INVALID, "bad-prevblk", BodyCorruption::HeaderOnly);
+        }
     }
 
     if (!ContextualCheckBlockHeader(block, state, chainparams, pindexPrev))
