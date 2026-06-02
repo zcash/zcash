@@ -137,6 +137,13 @@ void CTransaction::UpdateHash() const
 {
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << *this;
+    // CONSENSUS: `zcash_transaction_digests` reparses the serialized transaction through
+    // librustzcash, which enforces consensus encoding rules (e.g. canonical Orchard element
+    // encodings, and from NU6.2 the canonical Orchard proof size, keyed on the transaction's
+    // own v5+ consensus branch id; see `zcash_transaction_digests` in src/rust/src/
+    // transaction_ffi.rs). This runs on construction of every CTransaction, so the throw
+    // below is how those rules reject a malformed transaction. Do not weaken this throw or
+    // skip the reparse on the assumption it is only computing hashes.
     if (!zcash_transaction_digests(
         reinterpret_cast<const unsigned char*>(ss.data()),
         ss.size(),

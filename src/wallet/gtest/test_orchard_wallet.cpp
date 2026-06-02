@@ -138,6 +138,74 @@ void BuildOrchardSpend(CTransaction& outTx) {
     outTx = tx;
 }
 
+// Sets `outBytes` to the v5 serialization of `tx` with its Orchard proof padded by one byte,
+// so that the proof length is no longer canonical for the number of actions. The returned
+// bytes are not re-parsed here (parsing is what the callers exercise).
+//
+// The v5 transaction format encodes the Orchard proof as a CompactSize length followed by
+// that many bytes. For the proof sizes in use (a few thousand bytes) the length is encoded
+// in the 3-byte CompactSize form, and incrementing it by one cannot change that encoding's
+// width, so the field can be rewritten in place and one byte inserted into the proof.
+//
+// Uses an out-parameter rather than a return value so that the ASSERT_* macros (which expand
+// to `return;`) can be used to abort the test on a malformed assumption.
+void MakeOrchardProofNonCanonicalBytes(const CTransaction& tx, std::vector<unsigned char>& outBytes) {
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << tx;
+    std::vector<unsigned char> bytes(ss.begin(), ss.end());
+
+    // Walk the v5 serialization to the Orchard proof's CompactSize length field:
+    //   header (nVersion, nVersionGroupId, nConsensusBranchId, nLockTime, nExpiryHeight)
+    size_t pos = 4 + 4 + 4 + 4 + 4;
+    // four empty vectors: transparent in, transparent out, Sapling spends, Sapling outputs.
+    for (int i = 0; i < 4; i++) {
+        ASSERT_EQ(bytes[pos], 0);
+        pos += 1;
+    }
+    // nActionsOrchard, then that many 820-byte action descriptions. These tests build a small
+    // number of actions, so nActionsOrchard is a single-byte CompactSize.
+    size_t nActions = bytes[pos];
+    ASSERT_GT(nActions, 0u);
+    ASSERT_LT(nActions, 253u);
+    pos += 1 + nActions * 820;
+    // flagsOrchard (1) + valueBalanceOrchard (8) + anchorOrchard (32).
+    pos += 1 + 8 + 32;
+
+    // proofsOrchard: a 3-byte CompactSize length (0xfd followed by a little-endian u16).
+    ASSERT_EQ(bytes[pos], 0xfd);
+    size_t proofLen = bytes[pos + 1] | (bytes[pos + 2] << 8);
+    size_t newProofLen = proofLen + 1;
+    ASSERT_LT(newProofLen, 0x10000u); // still fits the 3-byte CompactSize form
+    bytes[pos + 1] = newProofLen & 0xff;
+    bytes[pos + 2] = (newProofLen >> 8) & 0xff;
+    // Insert one byte at the start of the proof body.
+    bytes.insert(bytes.begin() + pos + 3, 0);
+
+    outBytes = bytes;
+}
+
+// Overwrites the nConsensusBranchId field (a little-endian uint32 at byte offset 8 in the v5
+// header) in place.
+void SetConsensusBranchId(std::vector<unsigned char>& bytes, uint32_t branchId) {
+    for (int i = 0; i < 4; i++) {
+        bytes[8 + i] = (branchId >> (8 * i)) & 0xff;
+    }
+}
+
+// Deserializes a transaction from raw bytes, returning whether it parsed successfully. zcashd
+// computes the transaction's hashes by reparsing through librustzcash (see
+// CTransaction::UpdateHash), which is where the Orchard proof size is enforced for NU6.2.
+bool TryDeserializeTx(const std::vector<unsigned char>& bytes) {
+    CDataStream ss(bytes, SER_NETWORK, PROTOCOL_VERSION);
+    try {
+        CTransaction tx;
+        ss >> tx;
+        return true;
+    } catch (const std::ios_base::failure&) {
+        return false;
+    }
+}
+
 // These tests are here instead of test_transaction_builder.cpp because they depend
 // on OrchardWallet, which only exists if the wallet is compiled in.
 
@@ -182,4 +250,57 @@ TEST(TransactionBuilder, OrchardToOrchardNU6point1) {
     }
 
     RegtestDeactivateNU6point1();
+}
+
+// From NU6.2, an Orchard proof must have the canonical length for its number of actions. zcashd
+// enforces this through librustzcash when it reparses a transaction to compute its hashes (see
+// CTransaction::UpdateHash), keyed on the transaction's own consensus branch id. This checks
+// that a NU6.2 transaction with a padded (non-canonical) proof fails to deserialize, while the
+// same transaction with a canonical proof deserializes successfully.
+TEST(TransactionBuilder, OrchardNonCanonicalProofSizeRejectedFromNU6point2) {
+    LoadProofParameters();
+
+    auto consensusParams = RegtestActivateNU6point2(false, 1);
+    CTransaction tx;
+    BuildOrchardSpend(tx);
+
+    // The unmodified (canonical-proof) NU6.2 transaction deserializes.
+    {
+        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+        ss << tx;
+        std::vector<unsigned char> bytes(ss.begin(), ss.end());
+        EXPECT_TRUE(TryDeserializeTx(bytes));
+    }
+
+    // With the proof padded to a non-canonical length, it does not.
+    std::vector<unsigned char> tampered;
+    ASSERT_NO_FATAL_FAILURE(MakeOrchardProofNonCanonicalBytes(tx, tampered));
+    EXPECT_FALSE(TryDeserializeTx(tampered));
+
+    RegtestDeactivateNU6point2();
+}
+
+// The proof-size rule is keyed on the NU6.2 consensus branch id, so it does not apply to
+// transactions from earlier epochs. A node must still be able to deserialize a pre-NU6.2
+// transaction carrying a non-canonical proof, so that it can sync and reindex chain history
+// (which may contain such a proof mined before the rule took effect). This takes the same
+// padded-proof bytes and rewrites the consensus branch id to NU6.1, then checks they
+// deserialize successfully.
+TEST(TransactionBuilder, OrchardNonCanonicalProofSizeAllowedBeforeNU6point2) {
+    LoadProofParameters();
+
+    auto consensusParams = RegtestActivateNU6point2(false, 1);
+    CTransaction tx;
+    BuildOrchardSpend(tx);
+
+    std::vector<unsigned char> tampered;
+    ASSERT_NO_FATAL_FAILURE(MakeOrchardProofNonCanonicalBytes(tx, tampered));
+    // Sanity check: under the NU6.2 branch id these bytes are rejected.
+    ASSERT_FALSE(TryDeserializeTx(tampered));
+
+    // Under the NU6.1 branch id the same non-canonical proof is accepted at deserialization.
+    SetConsensusBranchId(tampered, 0x4dec4df0);
+    EXPECT_TRUE(TryDeserializeTx(tampered));
+
+    RegtestDeactivateNU6point2();
 }

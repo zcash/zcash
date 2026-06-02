@@ -28,7 +28,22 @@ pub extern "C" fn zcash_transaction_digests(
 ) -> bool {
     let tx_bytes = unsafe { slice::from_raw_parts(tx_bytes, tx_bytes_len) };
 
-    // We use a placeholder branch ID here, since it is not used for anything.
+    // The branch ID argument here is a placeholder. It is only used for v1-v4 transactions,
+    // which do not encode a consensus branch id; v5+ transactions carry their own
+    // `nConsensusBranchId`, which `Transaction::read` reads and uses in preference to this
+    // argument. This matters for the consensus rule below: Orchard bundles only exist in v5+
+    // transactions, so the proof-size enforcement always keys off the transaction's real
+    // branch id, never this placeholder.
+    //
+    // CONSENSUS: this parse is consensus-critical, not merely a hashing convenience. It is
+    // reached from CTransaction::UpdateHash on every transaction deserialization, so any
+    // input that `Transaction::read` rejects is rejected by consensus: in Zcash a structural
+    // or encoding violation IS a consensus-rule violation, with no leniency for malformed
+    // data. Rules enforced at this parse include canonical element encodings (e.g. a valid,
+    // non-identity Orchard `ephemeralKey`) and, against the transaction's own (v5+) consensus
+    // branch id, the canonical Orchard proof size (Strict for NU6.2 onward; see
+    // `read_v5_bundle` in zcash_primitives). Do not relax this parse on the assumption that a
+    // rejected encoding is "only" a parse error — doing so can silently drop a consensus rule.
     let tx = match Transaction::read(tx_bytes, BranchId::Canopy) {
         Ok(tx) => tx,
         Err(e) => {
