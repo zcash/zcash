@@ -34,9 +34,15 @@ void orchard_spend_info_free(OrchardSpendInfoPtr* ptr);
 /// Construct a new Orchard transaction builder.
 ///
 /// If `anchor` is `null`, the root of the empty Orchard commitment tree is used.
+///
+/// `use_fixed_circuit_for_proving` selects the circuit version to build the bundle's proof
+/// against: the fixed (NU6.2-onward) circuit, or the historical (insecure) circuit. It is
+/// recorded on the bundle and reused when its proof is created, and should be computed via
+/// `CChainParams::UseFixedCircuitForProving`.
 OrchardBuilderPtr* orchard_builder_new(
     bool coinbase,
-    const unsigned char* anchor);
+    const unsigned char* anchor,
+    bool use_fixed_circuit_for_proving);
 
 /// Frees an Orchard builder returned from `orchard_builder_new`.
 void orchard_builder_free(OrchardBuilderPtr* ptr);
@@ -79,6 +85,10 @@ void orchard_unauthorized_bundle_free(OrchardUnauthorizedBundlePtr* bundle);
 /// Returns `null` if an error occurs.
 ///
 /// `bundle` is always freed by this method.
+///
+/// The proving key's circuit version is taken from the bundle itself (selected via the
+/// `use_fixed_circuit_for_proving` argument to `orchard_builder_new`), so it cannot disagree with the
+/// circuit the bundle's actions were built against.
 OrchardBundlePtr* orchard_unauthorized_bundle_prove_and_sign(
     OrchardUnauthorizedBundlePtr* bundle,
     const OrchardSpendingKeyPtr** keys,

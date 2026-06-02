@@ -74,6 +74,15 @@ static SAPLING_OUTPUT_PARAMS: OnceLock<OutputParameters> = OnceLock::new();
 static SPROUT_GROTH16_PARAMS_PATH: OnceLock<PathBuf> = OnceLock::new();
 
 static ORCHARD_PK: OnceLock<orchard::circuit::ProvingKey> = OnceLock::new();
+// The pre-NU6.2 (insecure) proving key. Only used to reproduce historical Orchard proofs when
+// building transactions below the NU6.2 activation height — which production never does, since
+// Orchard is soft-fork-disabled before NU6.2; this exists so that tests can construct pre-NU6.2
+// chain history. Built lazily, so it costs nothing unless such a proof is actually created.
+static ORCHARD_PK_INSECURE: LazyLock<orchard::circuit::ProvingKey> = LazyLock::new(|| {
+    orchard::circuit::ProvingKey::build_for_version(
+        orchard::circuit::OrchardCircuitVersion::InsecurePreNu6_2,
+    )
+});
 
 // The Orchard circuit was changed in NU6.2 to fix the variable-base scalar multiplication
 // gadget, which changes the verifying key. Pre-NU6.2 proofs verify only under the historical
