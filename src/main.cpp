@@ -1280,19 +1280,26 @@ bool ContextualCheckTransaction(
         }
     }
 
-    // Soft fork: temporarily require transactions to not contain Orchard actions.
-    //
-    // This soft fork was added while NU 6.1 was the active epoch on the Zcash chain, but
-    // we apply it uniformly even if NU 6.1 is not active in case it is ported to other
-    // chains with a different sequence of NUs.
-    //
-    // This will be moved into the "Rules that apply generally before the next NU" section
-    // when we add the NU that re-enables Orchard actions.
-    if (consensus.TemporaryOrchardDisablingSoftForkActive(nHeight) &&
-        orchard_bundle.IsPresent()) {
-        return state.Invalid(
-            error("ContextualCheckTransaction(): transaction has Orchard actions (temporarily disabled)"),
-            REJECT_INVALID, "bad-tx-has-orchard-actions");
+    // Rules that apply to NU6.2 or later:
+    if (nu6point2Active) {
+        // - The Orchard verifying key change is in the `orchard::init_batch_validator`
+        //   constructor, in AcceptToMemoryPool and ConnectBlock.
+        // - Orchard proof size enforcement is in the Rust `Transaction` parser.
+    } else {
+        // Rules that apply generally before NU6.2. These were previously
+        // noncontextual checks that became contextual after NU5 activation.
+
+        // Soft fork: temporarily require transactions to not contain Orchard actions.
+        //
+        // This soft fork was added while NU 6.1 was the active epoch on the Zcash chain, but
+        // we apply it uniformly even if NU 6.1 is not active in case it is ported to other
+        // chains with a different sequence of NUs.
+        if (consensus.TemporaryOrchardDisablingSoftForkActive(nHeight) &&
+                orchard_bundle.IsPresent()) {
+            return state.Invalid(
+                error("ContextualCheckTransaction(): transaction has Orchard actions (temporarily disabled)"),
+                REJECT_INVALID, "bad-tx-has-orchard-actions");
+        }
     }
 
     // Rules that apply to the future epoch
@@ -2070,8 +2077,12 @@ bool AcceptToMemoryPool(
         std::optional<rust::Box<sapling::BatchValidator>> saplingAuth = sapling::init_batch_validator(true);
 
         // This will be a single-transaction batch, which is still more efficient as every
-        // Orchard bundle contains at least two signatures.
-        std::optional<rust::Box<orchard::BatchValidator>> orchardAuth = orchard::init_batch_validator(true);
+        // Orchard bundle contains at least two signatures. The batch is typed to the Orchard
+        // circuit in force at the next block height: NU6.2 changed the circuit and thus the
+        // verifying key.
+        std::optional<rust::Box<orchard::BatchValidator>> orchardAuth = orchard::init_batch_validator(
+            true,
+            chainparams.GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_NU6_2));
 
         // Check shielded input signatures.
         if (!ContextualCheckShieldedInputs(
@@ -3294,8 +3305,13 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     // Disable Sapling and Orchard batch validation if possible.
     std::optional<rust::Box<sapling::BatchValidator>> saplingAuth = fExpensiveChecks ?
         std::optional(sapling::init_batch_validator(fCacheResults)) : std::nullopt;
+    // The batch is typed to the Orchard circuit in force at this block's height: NU6.2 changed
+    // the circuit and thus the verifying key.
     std::optional<rust::Box<orchard::BatchValidator>> orchardAuth = fExpensiveChecks ?
-        std::optional(orchard::init_batch_validator(fCacheResults)) : std::nullopt;
+        std::optional(orchard::init_batch_validator(
+            fCacheResults,
+            consensusParams.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU6_2)))
+        : std::nullopt;
 
     // If in initial block download, and this block is an ancestor of a checkpoint,
     // and -ibdskiptxverification is set, disable all transaction checks.

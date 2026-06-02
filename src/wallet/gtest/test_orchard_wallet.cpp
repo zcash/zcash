@@ -252,6 +252,26 @@ TEST(TransactionBuilder, OrchardToOrchardNU6point1) {
     RegtestDeactivateNU6point1();
 }
 
+TEST(TransactionBuilder, OrchardToOrchardNU6point2) {
+    LoadProofParameters();
+
+    // Under NU6.2, build a fresh Orchard-spending transaction with a canonically-sized proof.
+    // NU6.2 is the active epoch from height 1, so the transaction's consensus branch id matches
+    // at the heights under test.
+    auto consensusParams = RegtestActivateNU6point2(false, 1);
+    CTransaction tx;
+    BuildOrchardSpend(tx);
+
+    // A canonical-proof Orchard transaction is accepted under NU6.2.
+    {
+        CValidationState state;
+        EXPECT_TRUE(ContextualCheckTransaction(tx, state, Params(), 2, true));
+        EXPECT_EQ(state.GetRejectReason(), "");
+    }
+
+    RegtestDeactivateNU6point2();
+}
+
 // From NU6.2, an Orchard proof must have the canonical length for its number of actions. zcashd
 // enforces this through librustzcash when it reparses a transaction to compute its hashes (see
 // CTransaction::UpdateHash), keyed on the transaction's own consensus branch id. This checks

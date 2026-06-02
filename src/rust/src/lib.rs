@@ -84,6 +84,8 @@ static ORCHARD_VK_INSECURE: LazyLock<orchard::circuit::VerifyingKey> = LazyLock:
         orchard::circuit::OrchardCircuitVersion::InsecurePreNu6_2,
     )
 });
+static ORCHARD_VK_FIXED: LazyLock<orchard::circuit::VerifyingKey> =
+    LazyLock::new(orchard::circuit::VerifyingKey::build);
 
 /// Converts CtOption<t> into Option<T>
 fn de_ct<T>(ct: CtOption<T>) -> Option<T> {
