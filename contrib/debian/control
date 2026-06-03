@@ -1,7 +1,7 @@
 Source: zcash
 Section: utils
 Priority: optional
-Maintainer: Electric Coin Company <team@electriccoin.co>
+Maintainer: Zcash Open Development Lab (ZODL) <sysadmin@zodl.com>
 Homepage: https://z.cash
 Build-Depends: autoconf, automake, bsdmainutils, build-essential,
  git, g++-multilib, libc6-dev, libtool,
