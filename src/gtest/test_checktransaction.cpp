@@ -47,7 +47,7 @@ class MockCValidationState : public CValidationState {
 public:
     MOCK_METHOD6(DoS, bool(int level, bool ret,
              unsigned int chRejectCodeIn, const std::string &strRejectReasonIn,
-             bool corruptionIn,
+             BodyCorruption bodyCorruption,
              const std::string &strDebugMessageIn));
     MOCK_METHOD4(Invalid, bool(bool ret,
                  unsigned int _chRejectCode, const std::string _strRejectReason,
@@ -146,7 +146,7 @@ TEST(ChecktransactionTests, BadVersionTooLow) {
     EXPECT_THROW((CTransaction(mtx)), std::ios_base::failure);
     UNSAFE_CTransaction tx(mtx);
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-version-too-low", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-version-too-low", BodyCorruption::Default, "")).Times(1);
     CheckTransactionWithoutProofVerification(tx, state);
 }
 
@@ -157,7 +157,7 @@ TEST(ChecktransactionTests, BadTxnsVinEmpty) {
 
     CTransaction tx(mtx);
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(10, false, REJECT_INVALID, "bad-txns-no-source-of-funds", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(10, false, REJECT_INVALID, "bad-txns-no-source-of-funds", BodyCorruption::Default, "")).Times(1);
     CheckTransactionWithoutProofVerification(tx, state);
 }
 
@@ -169,7 +169,7 @@ TEST(ChecktransactionTests, BadTxnsVoutEmpty) {
     CTransaction tx(mtx);
 
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(10, false, REJECT_INVALID, "bad-txns-no-sink-of-funds", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(10, false, REJECT_INVALID, "bad-txns-no-sink-of-funds", BodyCorruption::Default, "")).Times(1);
     CheckTransactionWithoutProofVerification(tx, state);
 }
 
@@ -203,7 +203,7 @@ TEST(ChecktransactionTests, BadTxnsOversize) {
         EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
 
         // ... but fails contextual ones!
-        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-oversize", false, "")).Times(1);
+        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-oversize", BodyCorruption::Default, "")).Times(1);
         EXPECT_FALSE(ContextualCheckTransaction(tx, state, Params(), 1, true));
     }
 
@@ -281,7 +281,7 @@ TEST(ChecktransactionTests, OversizeSaplingTxns) {
         EXPECT_EQ(::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION), MAX_TX_SIZE_AFTER_SAPLING + 1);
 
         MockCValidationState state;
-        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-oversize", false, "")).Times(1);
+        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-oversize", BodyCorruption::Default, "")).Times(1);
         EXPECT_FALSE(CheckTransactionWithoutProofVerification(tx, state));
     }
 
@@ -297,7 +297,7 @@ TEST(ChecktransactionTests, BadTxnsVoutNegative) {
     UNSAFE_CTransaction tx(mtx);
 
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-vout-negative", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-vout-negative", BodyCorruption::Default, "")).Times(1);
     CheckTransactionWithoutProofVerification(tx, state);
 }
 
@@ -309,7 +309,7 @@ TEST(ChecktransactionTests, BadTxnsVoutToolarge) {
     UNSAFE_CTransaction tx(mtx);
 
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-vout-toolarge", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-vout-toolarge", BodyCorruption::Default, "")).Times(1);
     CheckTransactionWithoutProofVerification(tx, state);
 }
 
@@ -321,7 +321,7 @@ TEST(ChecktransactionTests, BadTxnsTxouttotalToolargeOutputs) {
     CTransaction tx(mtx);
 
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-txouttotal-toolarge", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-txouttotal-toolarge", BodyCorruption::Default, "")).Times(1);
     CheckTransactionWithoutProofVerification(tx, state);
 }
 
@@ -334,7 +334,7 @@ TEST(ChecktransactionTests, ValueBalanceNonZero) {
     CTransaction tx(mtx);
 
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-valuebalance-nonzero", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-valuebalance-nonzero", BodyCorruption::Default, "")).Times(1);
     EXPECT_FALSE(CheckTransactionWithoutProofVerification(tx, state));
 }
 */
@@ -347,7 +347,7 @@ TEST(ChecktransactionTests, ValueBalanceOverflowsTotal) {
     CTransaction tx(mtx);
 
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-txouttotal-toolarge", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-txouttotal-toolarge", BodyCorruption::Default, "")).Times(1);
     CheckTransactionWithoutProofVerification(tx, state);
 }
 
@@ -359,7 +359,7 @@ TEST(ChecktransactionTests, BadTxnsTxouttotalToolargeJoinsplit) {
     CTransaction tx(mtx);
 
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-txouttotal-toolarge", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-txouttotal-toolarge", BodyCorruption::Default, "")).Times(1);
     CheckTransactionWithoutProofVerification(tx, state);
 }
 
@@ -371,7 +371,7 @@ TEST(ChecktransactionTests, BadTxnsTxintotalToolargeJoinsplit) {
     CTransaction tx(mtx);
 
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-txintotal-toolarge", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-txintotal-toolarge", BodyCorruption::Default, "")).Times(1);
     CheckTransactionWithoutProofVerification(tx, state);
 }
 
@@ -382,7 +382,7 @@ TEST(ChecktransactionTests, BadTxnsVpubOldNegative) {
     CTransaction tx(mtx);
 
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-vpub_old-negative", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-vpub_old-negative", BodyCorruption::Default, "")).Times(1);
     CheckTransactionWithoutProofVerification(tx, state);
 }
 
@@ -393,7 +393,7 @@ TEST(ChecktransactionTests, BadTxnsVpubNewNegative) {
     CTransaction tx(mtx);
 
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-vpub_new-negative", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-vpub_new-negative", BodyCorruption::Default, "")).Times(1);
     CheckTransactionWithoutProofVerification(tx, state);
 }
 
@@ -404,7 +404,7 @@ TEST(ChecktransactionTests, BadTxnsVpubOldToolarge) {
     CTransaction tx(mtx);
 
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-vpub_old-toolarge", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-vpub_old-toolarge", BodyCorruption::Default, "")).Times(1);
     CheckTransactionWithoutProofVerification(tx, state);
 }
 
@@ -415,7 +415,7 @@ TEST(ChecktransactionTests, BadTxnsVpubNewToolarge) {
     CTransaction tx(mtx);
 
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-vpub_new-toolarge", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-vpub_new-toolarge", BodyCorruption::Default, "")).Times(1);
     CheckTransactionWithoutProofVerification(tx, state);
 }
 
@@ -427,7 +427,7 @@ TEST(ChecktransactionTests, BadTxnsVpubsBothNonzero) {
     CTransaction tx(mtx);
 
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-vpubs-both-nonzero", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-vpubs-both-nonzero", BodyCorruption::Default, "")).Times(1);
     CheckTransactionWithoutProofVerification(tx, state);
 }
 
@@ -439,7 +439,7 @@ TEST(ChecktransactionTests, BadTxnsInputsDuplicate) {
     CTransaction tx(mtx);
 
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-inputs-duplicate", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-inputs-duplicate", BodyCorruption::Default, "")).Times(1);
     CheckTransactionWithoutProofVerification(tx, state);
 }
 
@@ -451,7 +451,7 @@ TEST(ChecktransactionTests, BadJoinsplitsNullifiersDuplicateSameJoinsplit) {
     CTransaction tx(mtx);
 
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-joinsplits-nullifiers-duplicate", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-joinsplits-nullifiers-duplicate", BodyCorruption::Default, "")).Times(1);
     CheckTransactionWithoutProofVerification(tx, state);
 }
 
@@ -463,7 +463,7 @@ TEST(ChecktransactionTests, BadJoinsplitsNullifiersDuplicateDifferentJoinsplit) 
     CTransaction tx(mtx);
 
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-joinsplits-nullifiers-duplicate", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-joinsplits-nullifiers-duplicate", BodyCorruption::Default, "")).Times(1);
     CheckTransactionWithoutProofVerification(tx, state);
 }
 
@@ -479,7 +479,7 @@ TEST(ChecktransactionTests, BadCbHasJoinsplits) {
     EXPECT_TRUE(tx.IsCoinBase());
 
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-has-joinsplits", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-has-joinsplits", BodyCorruption::Default, "")).Times(1);
     CheckTransactionWithoutProofVerification(tx, state);
 }
 
@@ -495,7 +495,7 @@ TEST(ChecktransactionTests, BadCbEmptyScriptsig) {
     EXPECT_TRUE(tx.IsCoinBase());
 
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-length", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-length", BodyCorruption::Default, "")).Times(1);
     CheckTransactionWithoutProofVerification(tx, state);
 }
 
@@ -507,7 +507,7 @@ TEST(ChecktransactionTests, BadTxnsPrevoutNull) {
     EXPECT_FALSE(tx.IsCoinBase());
 
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(10, false, REJECT_INVALID, "bad-txns-prevout-null", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(10, false, REJECT_INVALID, "bad-txns-prevout-null", BodyCorruption::Default, "")).Times(1);
     CheckTransactionWithoutProofVerification(tx, state);
 }
 
@@ -531,15 +531,15 @@ TEST(ContextualCheckShieldedInputsTest, BadTxnsInvalidJoinsplitSignature) {
     CCoinsViewCache view(&baseView);
     // during initial block download, for transactions being accepted into the
     // mempool (and thus not mined), DoS ban score should be zero, else 10
-    EXPECT_CALL(state, DoS(0, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(0, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", BodyCorruption::Default, "")).Times(1);
     ContextualCheckShieldedInputs(tx, txdata, state, view, saplingAuth, orchardAuth, consensus, 0, false, false, [](const Consensus::Params&) { return true; });
-    EXPECT_CALL(state, DoS(10, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(10, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", BodyCorruption::Default, "")).Times(1);
     ContextualCheckShieldedInputs(tx, txdata, state, view, saplingAuth, orchardAuth, consensus, 0, false, false, [](const Consensus::Params&) { return false; });
     // for transactions that have been mined in a block, DoS ban score should
     // always be 100.
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", BodyCorruption::Default, "")).Times(1);
     ContextualCheckShieldedInputs(tx, txdata, state, view, saplingAuth, orchardAuth, consensus, 0, false, true, [](const Consensus::Params&) { return true; });
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", BodyCorruption::Default, "")).Times(1);
     ContextualCheckShieldedInputs(tx, txdata, state, view, saplingAuth, orchardAuth, consensus, 0, false, true, [](const Consensus::Params&) { return false; });
 }
 
@@ -577,7 +577,7 @@ TEST(ContextualCheckShieldedInputsTest, JoinsplitSignatureDetectsOldBranchId) {
         strprintf("old-consensus-branch-id (Expected %s, found %s)",
             HexInt(blossomBranchId),
             HexInt(saplingBranchId)),
-        false, "")).Times(1);
+        BodyCorruption::Default, "")).Times(1);
     EXPECT_FALSE(ContextualCheckShieldedInputs(
         tx, txdata, state, view, saplingAuth, orchardAuth, consensus, blossomBranchId, false, false,
         [](const Consensus::Params&) { return false; }));
@@ -587,7 +587,7 @@ TEST(ContextualCheckShieldedInputsTest, JoinsplitSignatureDetectsOldBranchId) {
     // network upgrade back.
     EXPECT_CALL(state, DoS(
         10, false, REJECT_INVALID,
-        "bad-txns-invalid-joinsplit-signature", false, "")).Times(1);
+        "bad-txns-invalid-joinsplit-signature", BodyCorruption::Default, "")).Times(1);
     EXPECT_FALSE(ContextualCheckShieldedInputs(
         tx, txdata, state, view, saplingAuth, orchardAuth, consensus, heartwoodBranchId, false, false,
         [](const Consensus::Params&) { return false; }));
@@ -637,15 +637,15 @@ TEST(ContextualCheckShieldedInputsTest, NonCanonicalEd25519Signature) {
     MockCValidationState state;
     // during initial block download, for transactions being accepted into the
     // mempool (and thus not mined), DoS ban score should be zero, else 10
-    EXPECT_CALL(state, DoS(0, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(0, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", BodyCorruption::Default, "")).Times(1);
     ContextualCheckShieldedInputs(tx, txdata, state, view, saplingAuth, orchardAuth, consensus, saplingBranchId, false, false, [](const Consensus::Params&) { return true; });
-    EXPECT_CALL(state, DoS(10, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(10, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", BodyCorruption::Default, "")).Times(1);
     ContextualCheckShieldedInputs(tx, txdata, state, view, saplingAuth, orchardAuth, consensus, saplingBranchId, false, false, [](const Consensus::Params&) { return false; });
     // for transactions that have been mined in a block, DoS ban score should
     // always be 100.
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", BodyCorruption::Default, "")).Times(1);
     ContextualCheckShieldedInputs(tx, txdata, state, view, saplingAuth, orchardAuth, consensus, saplingBranchId, false, true, [](const Consensus::Params&) { return true; });
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", BodyCorruption::Default, "")).Times(1);
     ContextualCheckShieldedInputs(tx, txdata, state, view, saplingAuth, orchardAuth, consensus, saplingBranchId, false, true, [](const Consensus::Params&) { return false; });
 }
 
@@ -781,7 +781,7 @@ TEST(ChecktransactionTests, OverwinterExpiryHeight) {
         CTransaction tx(mtx);
         MockCValidationState state;
         EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
-        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-tx-expiry-height-too-high", false, "")).Times(1);
+        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-tx-expiry-height-too-high", BodyCorruption::Default, "")).Times(1);
         ContextualCheckTransaction(tx, state, params, 1, true);
     }
 
@@ -790,7 +790,7 @@ TEST(ChecktransactionTests, OverwinterExpiryHeight) {
         CTransaction tx(mtx);
         MockCValidationState state;
         EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
-        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-tx-expiry-height-too-high", false, "")).Times(1);
+        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-tx-expiry-height-too-high", BodyCorruption::Default, "")).Times(1);
         ContextualCheckTransaction(tx, state, params, 1, true);
     }
 
@@ -817,7 +817,7 @@ TEST(ChecktransactionTests, SproutTxVersionTooLow) {
     EXPECT_THROW((CTransaction(mtx)), std::ios_base::failure);
     UNSAFE_CTransaction tx(mtx);
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-version-too-low", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-version-too-low", BodyCorruption::Default, "")).Times(1);
     CheckTransactionWithoutProofVerification(tx, state);
 }
 
@@ -872,7 +872,7 @@ TEST(ChecktransactionTests, SaplingSproutInputSumsTooLarge) {
     {
         UNSAFE_CTransaction tx(mtx);
         MockCValidationState state;
-        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-txintotal-toolarge", false, "")).Times(1);
+        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-txintotal-toolarge", BodyCorruption::Default, "")).Times(1);
         CheckTransactionWithoutProofVerification(tx, state);
     }
 }
@@ -889,7 +889,7 @@ TEST(ChecktransactionTests, OverwinterVersionNumberLow) {
     EXPECT_THROW((CTransaction(mtx)), std::ios_base::failure);
     UNSAFE_CTransaction tx(mtx);
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-tx-overwinter-version-too-low", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-tx-overwinter-version-too-low", BodyCorruption::Default, "")).Times(1);
     CheckTransactionWithoutProofVerification(tx, state);
 }
 
@@ -908,7 +908,7 @@ TEST(ChecktransactionTests, OverwinterVersionNumberHigh) {
     EXPECT_THROW((CTransaction(mtx)), std::ios_base::failure);
     UNSAFE_CTransaction tx(mtx);
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-tx-overwinter-version-too-high", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-tx-overwinter-version-too-high", BodyCorruption::Default, "")).Times(1);
     ContextualCheckTransaction(tx, state, Params(), 1, true);
 
     // Revert to default
@@ -928,7 +928,7 @@ TEST(ChecktransactionTests, OverwinterBadVersionGroupId) {
     EXPECT_THROW((CTransaction(mtx)), std::ios_base::failure);
     UNSAFE_CTransaction tx(mtx);
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-tx-version-group-id", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-tx-version-group-id", BodyCorruption::Default, "")).Times(1);
     CheckTransactionWithoutProofVerification(tx, state);
 }
 
@@ -947,15 +947,15 @@ TEST(ChecktransactionTests, OverwinterNotActive) {
     MockCValidationState state;
     // during initial block download, for transactions being accepted into the
     // mempool (and thus not mined), DoS ban score should be zero, else 10
-    EXPECT_CALL(state, DoS(0, false, REJECT_INVALID, "tx-overwinter-not-active", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(0, false, REJECT_INVALID, "tx-overwinter-not-active", BodyCorruption::Default, "")).Times(1);
     ContextualCheckTransaction(tx, state, chainparams, 0, false, [](const Consensus::Params&) { return true; });
-    EXPECT_CALL(state, DoS(10, false, REJECT_INVALID, "tx-overwinter-not-active", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(10, false, REJECT_INVALID, "tx-overwinter-not-active", BodyCorruption::Default, "")).Times(1);
     ContextualCheckTransaction(tx, state, chainparams, 0, false, [](const Consensus::Params&) { return false; });
     // for transactions that have been mined in a block, DoS ban score should
     // always be 100.
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "tx-overwinter-not-active", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "tx-overwinter-not-active", BodyCorruption::Default, "")).Times(1);
     ContextualCheckTransaction(tx, state, chainparams, 0, true, [](const Consensus::Params&) { return true; });
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "tx-overwinter-not-active", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "tx-overwinter-not-active", BodyCorruption::Default, "")).Times(1);
     ContextualCheckTransaction(tx, state, chainparams, 0, true, [](const Consensus::Params&) { return false; });
 }
 
@@ -972,7 +972,7 @@ TEST(ChecktransactionTests, OverwinterFlagNotSet) {
 
     CTransaction tx(mtx);
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "tx-overwintered-flag-not-set", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "tx-overwintered-flag-not-set", BodyCorruption::Default, "")).Times(1);
     ContextualCheckTransaction(tx, state, Params(), 1, true);
 
     // Revert to default
@@ -1137,13 +1137,13 @@ TEST(ChecktransactionTests, InvalidSaplingShieldedCoinbase) {
 
     // Before Heartwood, output descriptions are rejected.
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-has-output-description", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-has-output-description", BodyCorruption::Default, "")).Times(1);
     ContextualCheckTransaction(tx, state, Params(), 10, 57);
 
     RegtestActivateHeartwood(false, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
 
     // From Heartwood, the output description is allowed but invalid (undecryptable).
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-output-desc-invalid-ct", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-output-desc-invalid-ct", BodyCorruption::Default, "")).Times(1);
     ContextualCheckTransaction(tx, state, Params(), 10, 57);
 
     RegtestDeactivateHeartwood();
@@ -1187,7 +1187,7 @@ TEST(ChecktransactionTests, HeartwoodAcceptsSaplingShieldedCoinbase) {
         EXPECT_TRUE(tx.IsCoinBase());
 
         MockCValidationState state;
-        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-output-desc-invalid-ct", false, "")).Times(1);
+        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-output-desc-invalid-ct", BodyCorruption::Default, "")).Times(1);
         ContextualCheckTransaction(tx, state, chainparams, 10, 57);
     }
 
@@ -1203,7 +1203,7 @@ TEST(ChecktransactionTests, HeartwoodAcceptsSaplingShieldedCoinbase) {
         EXPECT_TRUE(tx.IsCoinBase());
 
         MockCValidationState state;
-        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-output-desc-invalid-ct", false, "")).Times(1);
+        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-output-desc-invalid-ct", BodyCorruption::Default, "")).Times(1);
         ContextualCheckTransaction(tx, state, chainparams, 10, 57);
     }
 
@@ -1220,7 +1220,7 @@ TEST(ChecktransactionTests, HeartwoodAcceptsSaplingShieldedCoinbase) {
         EXPECT_TRUE(tx.IsCoinBase());
 
         MockCValidationState state;
-        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-output-desc-invalid-ct", false, "")).Times(1);
+        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-output-desc-invalid-ct", BodyCorruption::Default, "")).Times(1);
         ContextualCheckTransaction(tx, state, chainparams, 10, 57);
     }
 
@@ -1271,7 +1271,7 @@ TEST(ChecktransactionTests, HeartwoodEnforcesSaplingRulesOnShieldedCoinbase) {
         EXPECT_TRUE(tx.IsCoinBase());
 
         MockCValidationState state;
-        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-valuebalance-nonzero", false, "")).Times(1);
+        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-valuebalance-nonzero", BodyCorruption::Default, "")).Times(1);
         EXPECT_FALSE(CheckTransactionWithoutProofVerification(tx, state));
     }
     */
@@ -1341,7 +1341,7 @@ TEST(ChecktransactionTests, CanopyRejectsNonzeroVPubOld) {
 
     // After Canopy, nonzero vpub_old is accepted in non-contextual checks but rejected in contextual checks
     EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-vpub_old-nonzero", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-vpub_old-nonzero", BodyCorruption::Default, "")).Times(1);
     EXPECT_FALSE(ContextualCheckTransaction(tx, state, Params(), 10, true));
 
     RegtestDeactivateCanopy();
@@ -1401,13 +1401,13 @@ TEST(ChecktransactionTests, InvalidOrchardShieldedCoinbase) {
 
     // Before NU5, v5 transactions are rejected.
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-sapling-tx-version-group-id", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-sapling-tx-version-group-id", BodyCorruption::Default, "")).Times(1);
     ContextualCheckTransaction(tx, state, Params(), 10, 57);
 
     RegtestActivateNU5();
 
     // From NU5, the Orchard actions are allowed but invalid (undecryptable).
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-action-invalid-ciphertext", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-action-invalid-ciphertext", BodyCorruption::Default, "")).Times(1);
     ContextualCheckTransaction(tx, state, Params(), 10, 57);
 
     RegtestDeactivateNU5();
@@ -1466,6 +1466,7 @@ TEST(ChecktransactionTests, NU5AcceptsOrchardShieldedCoinbase) {
     const size_t ORCHARD_BUNDLE_START = (HEADER_SIZE + TRANSPARENT_BUNDLE_SIZE + SAPLING_BUNDLE_SIZE);
     const size_t ORCHARD_BUNDLE_CMX_OFFSET = (ORCHARD_BUNDLE_START + ZC_ZIP225_ORCHARD_NUM_ACTIONS_SIZE + 32 + 32 + 32);
     const size_t ORCHARD_CMX_SIZE = 32;
+    const size_t ORCHARD_EPK_SIZE = 32;
 
     // Verify the transaction is the expected size.
     size_t txsize = ORCHARD_BUNDLE_START + ZC_ZIP225_ORCHARD_BASE_SIZE + ZC_ZIP225_ORCHARD_MARGINAL_SIZE * 2;
@@ -1483,15 +1484,37 @@ TEST(ChecktransactionTests, NU5AcceptsOrchardShieldedCoinbase) {
         EXPECT_TRUE(tx.IsCoinBase());
 
         MockCValidationState state;
-        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-action-invalid-ciphertext", false, "")).Times(1);
+        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-action-invalid-ciphertext", BodyCorruption::Default, "")).Times(1);
         ContextualCheckTransaction(tx, state, chainparams, 10, 57);
+    }
+
+    // Transaction should fail with the identity epk.
+    {
+        auto cmxBad = uint256S("0");
+        std::vector<char> txBytes(ss.begin(), ss.end());
+        std::copy(cmxBad.begin(), cmxBad.end(), txBytes.data() + ORCHARD_BUNDLE_CMX_OFFSET + ORCHARD_CMX_SIZE);
+
+        CDataStream ssBad(txBytes, SER_DISK, PROTOCOL_VERSION);
+        CTransaction tx;
+        EXPECT_THROW((ssBad >> tx), std::ios_base::failure);
+    }
+
+    // Transaction should fail with an invalid epk.
+    {
+        auto cmxBad = uint256S("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+        std::vector<char> txBytes(ss.begin(), ss.end());
+        std::copy(cmxBad.begin(), cmxBad.end(), txBytes.data() + ORCHARD_BUNDLE_CMX_OFFSET + ORCHARD_CMX_SIZE);
+
+        CDataStream ssBad(txBytes, SER_DISK, PROTOCOL_VERSION);
+        CTransaction tx;
+        EXPECT_THROW((ssBad >> tx), std::ios_base::failure);
     }
 
     // Transaction should fail with a bad encCiphertext.
     {
         std::vector<char> txBytes(ss.begin(), ss.end());
         for (int i = 0; i < libzcash::SAPLING_ENCCIPHERTEXT_SIZE; i++) {
-            txBytes[ORCHARD_BUNDLE_CMX_OFFSET + ORCHARD_CMX_SIZE + i] = 0;
+            txBytes[ORCHARD_BUNDLE_CMX_OFFSET + ORCHARD_CMX_SIZE + ORCHARD_EPK_SIZE + i] = 0;
         }
 
         CDataStream ssBad(txBytes, SER_DISK, PROTOCOL_VERSION);
@@ -1500,7 +1523,7 @@ TEST(ChecktransactionTests, NU5AcceptsOrchardShieldedCoinbase) {
         EXPECT_TRUE(tx.IsCoinBase());
 
         MockCValidationState state;
-        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-action-invalid-ciphertext", false, "")).Times(1);
+        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-action-invalid-ciphertext", BodyCorruption::Default, "")).Times(1);
         ContextualCheckTransaction(tx, state, chainparams, 10, 57);
     }
 
@@ -1508,7 +1531,7 @@ TEST(ChecktransactionTests, NU5AcceptsOrchardShieldedCoinbase) {
     {
         std::vector<char> txBytes(ss.begin(), ss.end());
         auto byteOffset =
-            ORCHARD_BUNDLE_CMX_OFFSET + ORCHARD_CMX_SIZE + libzcash::SAPLING_ENCCIPHERTEXT_SIZE;
+            ORCHARD_BUNDLE_CMX_OFFSET + ORCHARD_CMX_SIZE + ORCHARD_EPK_SIZE + libzcash::SAPLING_ENCCIPHERTEXT_SIZE;
         for (int i = 0; i < libzcash::SAPLING_OUTCIPHERTEXT_SIZE; i++) {
             txBytes[byteOffset + i] = 0;
         }
@@ -1519,7 +1542,7 @@ TEST(ChecktransactionTests, NU5AcceptsOrchardShieldedCoinbase) {
         EXPECT_TRUE(tx.IsCoinBase());
 
         MockCValidationState state;
-        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-action-invalid-ciphertext", false, "")).Times(1);
+        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-action-invalid-ciphertext", BodyCorruption::Default, "")).Times(1);
         ContextualCheckTransaction(tx, state, chainparams, 10, 57);
     }
 
@@ -1611,7 +1634,7 @@ TEST(ChecktransactionTests, NU5EnforcesOrchardRulesOnShieldedCoinbase) {
         // We can't actually reach the CheckTransactionWithoutProofVerification
         // consensus rule, because Rust is doing this validation at parse time.
         // MockCValidationState state;
-        // EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-valuebalance-toolarge", false, "")).Times(1);
+        // EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-valuebalance-toolarge", BodyCorruption::Default, "")).Times(1);
         // EXPECT_FALSE(CheckTransactionWithoutProofVerification(tx, state));
     }
     {
@@ -1626,7 +1649,7 @@ TEST(ChecktransactionTests, NU5EnforcesOrchardRulesOnShieldedCoinbase) {
         // We can't actually reach the CheckTransactionWithoutProofVerification
         // consensus rule, because Rust is doing this validation at parse time.
         // MockCValidationState state;
-        // EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-valuebalance-toolarge", false, "")).Times(1);
+        // EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-valuebalance-toolarge", BodyCorruption::Default, "")).Times(1);
         // EXPECT_FALSE(CheckTransactionWithoutProofVerification(tx, state));
     }
 

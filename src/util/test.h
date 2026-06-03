@@ -135,10 +135,18 @@ const Consensus::Params& RegtestActivateNU6();
 
 void RegtestDeactivateNU6();
 
-const Consensus::Params& RegtestActivateNU6point1(bool updatePow, int nu6point1ActivationHeight = Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+const Consensus::Params& RegtestActivateNU6point1(
+    bool updatePow,
+    int nu6point1ActivationHeight = Consensus::NetworkUpgrade::ALWAYS_ACTIVE,
+    int temporaryOrchardDisablingSoftForkHeight = Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
 const Consensus::Params& RegtestActivateNU6point1();
 
 void RegtestDeactivateNU6point1();
+
+const Consensus::Params& RegtestActivateNU6point2(bool updatePow, int nu6point2ActivationHeight = Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+const Consensus::Params& RegtestActivateNU6point2();
+
+void RegtestDeactivateNU6point2();
 
 libzcash::SaplingExtendedSpendingKey GetTestMasterSaplingSpendingKey();
 

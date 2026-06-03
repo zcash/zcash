@@ -1,5 +1,5 @@
 ---
-name: "zcash-6.12.3"
+name: "zcash-6.20.0"
 enable_cache: true
 distro: "debian"
 suites:
@@ -122,6 +122,7 @@ script: |
     tar --strip-components=1 -xf ../$SOURCEDIST
 
     CONFIG_SITE=${BASEPREFIX}/${i}/share/config.site ./configure --prefix=/ --disable-ccache --disable-maintainer-mode --disable-dependency-tracking ${CONFIGFLAGS} CFLAGS="${HOST_CFLAGS}" CXXFLAGS="${HOST_CXXFLAGS}" LDFLAGS="${HOST_LDFLAGS}"
+    mkdir -p src/obj # Pre-create -I./obj dir for clang 22 -Werror -Wmissing-include-dirs (avoids race with genbuild.sh)
     make ${MAKEOPTS}
     make ${MAKEOPTS} -C src check-security
     make install DESTDIR=${INSTALLPATH}

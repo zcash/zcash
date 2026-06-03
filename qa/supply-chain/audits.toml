@@ -857,6 +857,11 @@ who = "Jack Grigg <thestr4d@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "1.0.160 -> 1.0.186"
 
+[[audits.cxxbridge-flags]]
+who = "Jack Grigg <thestr4d@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "1.0.186 -> 1.0.194"
+
 [[audits.cxxbridge-macro]]
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
@@ -3335,6 +3340,12 @@ user-id = 6289 # Jack Grigg (str4d)
 start = "2020-06-26"
 end = "2026-07-16"
 
+[[trusted.equihash]]
+criteria = "safe-to-deploy"
+user-id = 169181 # Kris Nuttycombe (nuttycom)
+start = "2025-02-21"
+end = "2027-05-31"
+
 [[trusted.f4jumble]]
 criteria = ["safe-to-deploy", "crypto-reviewed"]
 user-id = 6289 # Jack Grigg (str4d)
@@ -3346,6 +3357,12 @@ criteria = "safe-to-deploy"
 user-id = 6289 # Jack Grigg (str4d)
 start = "2021-08-11"
 end = "2026-07-16"
+
+[[trusted.halo2_gadgets]]
+criteria = "safe-to-deploy"
+user-id = 6289 # Jack Grigg (str4d)
+start = "2022-02-15"
+end = "2027-06-03"
 
 [[trusted.halo2_gadgets]]
 criteria = ["safe-to-deploy", "crypto-reviewed"]
@@ -3409,9 +3426,15 @@ end = "2025-10-02"
 
 [[trusted.orchard]]
 criteria = "safe-to-deploy"
+user-id = 1244
+start = "2022-10-19"
+end = "2027-05-31"
+
+[[trusted.orchard]]
+criteria = "safe-to-deploy"
 user-id = 169181 # Kris Nuttycombe (nuttycom)
 start = "2024-08-12"
-end = "2025-10-02"
+end = "2027-06-03"
 
 [[trusted.orchard]]
 criteria = ["safe-to-deploy", "crypto-reviewed", "license-reviewed"]
@@ -3424,6 +3447,18 @@ criteria = ["safe-to-deploy", "crypto-reviewed", "license-reviewed"]
 user-id = 6289 # Jack Grigg (str4d)
 start = "2021-01-07"
 end = "2024-09-21"
+
+[[trusted.reddsa]]
+criteria = "safe-to-deploy"
+user-id = 159631 # Conrado (conradoplg)
+start = "2023-03-09"
+end = "2027-06-03"
+
+[[trusted.sapling-crypto]]
+criteria = "safe-to-deploy"
+user-id = 169181 # Kris Nuttycombe (nuttycom)
+start = "2024-08-12"
+end = "2027-05-31"
 
 [[trusted.sapling-crypto]]
 criteria = ["safe-to-deploy", "crypto-reviewed"]
@@ -3447,7 +3482,7 @@ end = "2026-01-02"
 criteria = "safe-to-deploy"
 user-id = 64539 # Kenny Kerr (kennykerr)
 start = "2021-11-15"
-end = "2024-06-21"
+end = "2027-05-31"
 
 [[trusted.windows-targets]]
 criteria = "safe-to-deploy"
@@ -3567,7 +3602,7 @@ end = "2025-10-02"
 criteria = "safe-to-deploy"
 user-id = 169181 # Kris Nuttycombe (nuttycom)
 start = "2024-08-20"
-end = "2026-10-03"
+end = "2027-06-03"
 
 [[trusted.zcash_primitives]]
 criteria = ["safe-to-deploy", "crypto-reviewed", "license-reviewed"]
@@ -3627,7 +3662,7 @@ end = "2025-03-18"
 criteria = "safe-to-deploy"
 user-id = 169181 # Kris Nuttycombe (nuttycom)
 start = "2024-12-17"
-end = "2026-05-08"
+end = "2027-06-03"
 
 [[trusted.zip32]]
 criteria = "safe-to-deploy"

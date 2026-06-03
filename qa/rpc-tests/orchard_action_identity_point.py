@@ -8,8 +8,13 @@
 # CheckTransactionWithoutProofVerification:
 #
 # 1. An Orchard action with rk encoding the Pallas identity point (all zeros)
-#    would cause a crash in proof verification. This is now rejected before
-#    proofs are checked.
+#    would cause a crash in proof verification. As of zcash_primitives 0.27,
+#    such an action is consensus-invalid at the deserialization layer (orchard's
+#    Action::from_parts rejects an identity rk), so a tampered transaction no
+#    longer round-trips through decoderawtransaction/sendrawtransaction; it is
+#    rejected with a "Failed to parse Orchard bundle" decode error before
+#    zcashd's own ValidateWithoutProofVerification check (which still rejects an
+#    identity rk as defense-in-depth) is reached.
 #
 # 2. The Zcash protocol specification (section 5.4.9.4) requires that the
 #    ephemeral public key (epk) in each Orchard action encode a non-identity
@@ -59,6 +64,8 @@ NON_CANONICAL_X_BYTES = b'\xff' * 32
 # x = 2 (canonical, in [0, q_P)) with the sign bit clear; (2^3 + 5) = 13 is
 # a quadratic non-residue mod q_P, so this x is not on the Pallas curve.
 OFF_CURVE_X_BYTES = b'\x02' + b'\x00' * 31
+
+BAD_EPK_ERROR = "TX decode failed: Failed to parse Orchard bundle: an Orchard action's `epk` is not a valid non-identity Pallas point: unspecified iostream_category error"
 
 
 def read_compact_size(data, pos):
@@ -189,25 +196,33 @@ class OrchardActionIdentityPointTest(BitcoinTestFramework):
         assert_equal(get_rk(tx_untampered, action_pos), rk_untampered_decoded)
         assert_equal(get_epk(tx_untampered, action_pos), epk_untampered_decoded)
 
+        # An identity-point rk is consensus-invalid at the deserialization
+        # layer (orchard's Action::from_parts rejects it), so the tampered
+        # transaction fails to parse rather than round-tripping. Both
+        # decoderawtransaction and sendrawtransaction surface this as a
+        # "Failed to parse Orchard bundle" decode error.
+        ORCHARD_PARSE_ERROR = "Failed to parse Orchard bundle"
+
         # Test 1: Transaction with identity rk should be rejected
         print("Testing identity rk rejection...")
         tx_tamperedrk = tamper_rk(tx_untampered, action_pos)
         tx_tamperedrk_hex = bytes_to_hex_str(tx_tamperedrk)
 
-        # Verify the tampered data has zeros at the rk position and decode it
+        # Verify the tampered data has zeros at the rk position (byte-level).
         rk_tamperedrk = get_rk(tx_tamperedrk, action_pos)
         assert_equal(rk_tamperedrk, IDENTITY_BYTES, "rk was not zeroed")
 
-        # Decode the tampered tx to see if zcashd parses the zero rk
-        action_tamperedrk_decoded = self.nodes[0].decoderawtransaction(tx_tamperedrk_hex)['orchard']['actions'][0]
-        rk_tamperedrk_decoded = hex_str_to_bytes(action_tamperedrk_decoded['rk'])
-        assert_equal(rk_tamperedrk_decoded, IDENTITY_BYTES)
-
+        # The tampered tx can no longer be deserialized, so both decoding and
+        # submitting it are rejected during Orchard bundle parsing.
         assert_raises_message(
-            JSONRPCException, "bad-orchard-action-identity-point",
+            JSONRPCException, ORCHARD_PARSE_ERROR,
+            self.nodes[0].decoderawtransaction, tx_tamperedrk_hex,
+        )
+        assert_raises_message(
+            JSONRPCException, ORCHARD_PARSE_ERROR,
             self.nodes[0].sendrawtransaction, tx_tamperedrk_hex,
         )
-        print("  PASS: identity rk correctly rejected")
+        print("  PASS: identity rk correctly rejected at deserialization")
 
         # Test 2: Transaction with identity epk should be rejected
         print("Testing identity epk rejection...")
@@ -219,24 +234,22 @@ class OrchardActionIdentityPointTest(BitcoinTestFramework):
         assert_equal(epk_tamperedepk, IDENTITY_BYTES, "epk was not zeroed")
 
         # Decode the tampered tx to see if zcashd parses the zero epk
-        action_tamperedepk_decoded = self.nodes[0].decoderawtransaction(tx_tamperedepk_hex)['orchard']['actions'][0]
-        epk_tamperedepk_decoded = hex_str_to_bytes(action_tamperedepk_decoded['ephemeralKey'])
-        assert_equal(epk_tamperedepk_decoded, IDENTITY_BYTES)
-
         assert_raises_message(
-            JSONRPCException, "bad-orchard-action-identity-point",
-            self.nodes[0].sendrawtransaction, tx_tamperedepk_hex,
+            JSONRPCException, BAD_EPK_ERROR,
+            self.nodes[0].decoderawtransaction, tx_tamperedepk_hex,
         )
         print("  PASS: identity epk correctly rejected")
 
-        # Test 3: Both rk and epk set to identity should also be rejected
+        # Test 3: An identity rk combined with an identity epk is likewise
+        # rejected at deserialization (the identity rk alone makes the bundle
+        # consensus-invalid, regardless of the epk).
         print("Testing identity rk+epk rejection...")
         tx_tamperedboth = tamper_epk(tx_tamperedrk, action_pos)
         assert_raises_message(
-            JSONRPCException, "bad-orchard-action-identity-point",
+            JSONRPCException, ORCHARD_PARSE_ERROR,
             self.nodes[0].sendrawtransaction, bytes_to_hex_str(tx_tamperedboth),
         )
-        print("  PASS: identity rk+epk correctly rejected")
+        print("  PASS: identity rk+epk correctly rejected at deserialization")
 
         # Tests 4 and 5: epk byte strings that do not encode any valid Pallas
         # point (rather than encoding the identity) must also be rejected.
@@ -252,17 +265,9 @@ class OrchardActionIdentityPointTest(BitcoinTestFramework):
             assert_equal(get_epk(tx_tamperedepk, action_pos), bad_epk,
                          "epk was not replaced")
 
-            # The serialization is purely byte-level, so decoderawtransaction
-            # should round-trip the tampered bytes regardless of curve validity.
-            action_tamperedepk_decoded = self.nodes[0].decoderawtransaction(
-                tx_tamperedepk_hex)['orchard']['actions'][0]
-            epk_tamperedepk_decoded = hex_str_to_bytes(
-                action_tamperedepk_decoded['ephemeralKey'])
-            assert_equal(epk_tamperedepk_decoded, bad_epk)
-
             assert_raises_message(
-                JSONRPCException, "bad-orchard-action-identity-point",
-                self.nodes[0].sendrawtransaction, tx_tamperedepk_hex,
+                JSONRPCException, BAD_EPK_ERROR,
+                self.nodes[0].decoderawtransaction, tx_tamperedepk_hex,
             )
             print("  PASS: %s correctly rejected" % label)
 

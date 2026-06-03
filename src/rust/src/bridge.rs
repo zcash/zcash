@@ -81,6 +81,7 @@ pub(crate) mod ffi {
             nu5: i32,
             nu6: i32,
             nu6_1: i32,
+            nu6_2: i32,
         ) -> Result<Box<Network>>;
     }
 
@@ -309,7 +310,10 @@ pub(crate) mod ffi {
         #[cxx_name = "BatchValidator"]
         type OrchardBatchValidator;
         #[cxx_name = "init_batch_validator"]
-        fn orchard_batch_validation_init(cache_store: bool) -> Box<OrchardBatchValidator>;
+        fn orchard_batch_validation_init(
+            cache_store: bool,
+            nu6_2_active: bool,
+        ) -> Box<OrchardBatchValidator>;
         fn add_bundle(self: &mut OrchardBatchValidator, bundle: Box<Bundle>, sighash: [u8; 32]);
         fn validate(self: &mut OrchardBatchValidator) -> bool;
     }

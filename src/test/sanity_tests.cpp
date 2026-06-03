@@ -3,7 +3,6 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-#include "compat/sanity.h"
 #include "key.h"
 #include "test/test_bitcoin.h"
 #include "util/time.h"
@@ -14,8 +13,6 @@ BOOST_FIXTURE_TEST_SUITE(sanity_tests, BasicTestingSetup)
 
 BOOST_AUTO_TEST_CASE(basic_sanity)
 {
-  BOOST_CHECK_MESSAGE(glibc_sanity_test() == true, "libc sanity test");
-  BOOST_CHECK_MESSAGE(glibcxx_sanity_test() == true, "stdlib sanity test");
   BOOST_CHECK_MESSAGE(CKey::ECC_InitSanityCheck() == true, "ECC sanity test");
   BOOST_CHECK_MESSAGE(ChronoSanityCheck() == true, "chrono epoch test");
 }

@@ -6,6 +6,12 @@ on:
     types: [completed]
 
 permissions:
+  # Required for the `fetch-statuses` step below, which calls
+  # `GET /repos/{owner}/{repo}/actions/runs/{run_id}/jobs`. Declaring a
+  # `permissions` block replaces the default token scopes, so without this
+  # the call fails with 403 "Resource not accessible by integration" and the
+  # gate posts `failure` before the success-determination jq ever runs.
+  actions: read
   contents: read
   statuses: write
 
@@ -30,8 +36,28 @@ jobs:
             return statuses
 
       - name: Determine whether all required-pass steps succeeded
+        env:
+          STATUSES: ${{ steps.fetch-statuses.outputs.result }}
+        # The pattern list is coupled to job names defined in `ci.yml`. A
+        # rename of any required job here must update this list, otherwise
+        # the corresponding `length > 0` check below will fail the gate.
+        # Silent passage on an empty match (the prior `jq ... | all`
+        # behavior over an empty array) is the failure mode this check
+        # exists to prevent.
         run: |
-          echo '${{ steps.fetch-statuses.outputs.result }}' | jq -e '[ .[] | select(.name | test("(Build tier [12])|(Boost.Test tier 1)|(GoogleTest tier 1)|(Rust test tier 1)|(secp256k1 tier 1)|(univalue tier 1)|(util-test tier 1)|(no-dot-so tier 1)|(sec-hard tier 1)|(RPC tests tier 1 .* shard-)")) | .conclusion == "success" ] | all'
+          printf '%s' "$STATUSES" | jq -e '
+            [
+              "Build tier [12]", "Boost.Test tier 1", "GoogleTest tier 1",
+              "Rust test tier 1", "secp256k1 tier 1", "univalue tier 1",
+              "util-test tier 1", "no-dot-so tier 1", "sec-hard tier 1",
+              "RPC tests tier 1 .* shard-"
+            ] as $patterns
+            | . as $jobs
+            | all($patterns[];
+                  . as $p
+                  | ($jobs | map(select(.name | test($p))))
+                  | (length > 0) and all(.[]; .conclusion == "success"))
+          '
 
       - name: Submit required-passed status
         if: ${{ !cancelled() }}

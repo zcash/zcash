@@ -197,6 +197,7 @@ public:
         }
 
         if (orchardBundle.has_value()) {
+            // The bundle proves against the circuit version its builder was created with.
             auto authorizedBundle = orchardBundle.value().ProveAndSign({}, dataToBeSigned);
             if (authorizedBundle.has_value()) {
                 mtx.orchardBundle = authorizedBundle.value();
@@ -218,7 +219,9 @@ public:
         // means the Orchard anchor is unconstrained, so we set it to the empty
         // tree root via a null (all zeroes) uint256.
         uint256 orchardAnchor;
-        auto builder = orchard::Builder(true, orchardAnchor);
+        // Choose the Orchard circuit to prove against (see CChainParams::UseFixedCircuitForProving).
+        bool useFixedCircuitForProving = chainparams.UseFixedCircuitForProving(nHeight);
+        auto builder = orchard::Builder(true, orchardAnchor, useFixedCircuitForProving);
 
         // Shielded coinbase outputs must be recoverable with an all-zeroes ovk.
         uint256 ovk;

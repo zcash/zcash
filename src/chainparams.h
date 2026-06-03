@@ -46,6 +46,20 @@ class CChainParams: public KeyConstants
 {
 public:
     const Consensus::Params& GetConsensus() const { return consensus; }
+
+    /// Whether a transaction built for `nHeight` should be proved against the fixed
+    /// (NU6.2-onward) Orchard circuit rather than the historical (insecure) one.
+    ///
+    /// On testnet and regtest, it follows NU6.2 activation (on regtest so that tests can
+    /// reconstruct pre-NU6.2 Orchard history; on testnet because the emergency soft fork
+    /// to disable Orchard will not activate until NU6.2). On mainnet, the fixed Orchard
+    /// circuit is used unconditionally: we know that the emergency soft fork has already
+    /// activated on mainnet, and this makes it easier to reason about the behaviour during
+    /// sync or when eclipsed.
+    bool UseFixedCircuitForProving(int nHeight) const {
+        return NetworkIDString() == CBaseChainParams::MAIN ||
+               GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU6_2);
+    }
     const rust::Box<consensus::Network> RustNetwork() const {
         return consensus::network(
             NetworkIDString(),
@@ -56,7 +70,8 @@ public:
             consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight,
             consensus.vUpgrades[Consensus::UPGRADE_NU5].nActivationHeight,
             consensus.vUpgrades[Consensus::UPGRADE_NU6].nActivationHeight,
-            consensus.vUpgrades[Consensus::UPGRADE_NU6_1].nActivationHeight);
+            consensus.vUpgrades[Consensus::UPGRADE_NU6_1].nActivationHeight,
+            consensus.vUpgrades[Consensus::UPGRADE_NU6_2].nActivationHeight);
     }
     const CMessageHeader::MessageStartChars& MessageStart() const { return pchMessageStart; }
     int GetDefaultPort() const { return nDefaultPort; }
@@ -208,5 +223,10 @@ void UpdateFundingStreamParameters(Consensus::FundingStreamIndex idx, Consensus:
 void UpdateOnetimeLockboxDisbursementParameters(
     Consensus::OnetimeLockboxDisbursementIndex idx,
     Consensus::OnetimeLockboxDisbursement ld);
+
+/**
+ * Allows modifying the regtest temporary Orchard disabling soft fork.
+ */
+void UpdateRegtestTemporaryOrchardDisablingSoftForkHeight(int nHeight);
 
 #endif // BITCOIN_CHAINPARAMS_H

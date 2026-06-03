@@ -4,13 +4,13 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 '''
-A script to check that the (Linux) executables produced by gitian only contain
+A script to check that (Linux) release executables only contain
 allowed gcc and glibc version symbols.  This makes sure they are still compatible
 with the minimum supported Linux distribution versions.
 
 Example usage:
 
-    find ../gitian-builder/build -type f -executable | xargs python contrib/devtools/symbol-check.py
+    find ../path/to/binaries -type f -executable | xargs python3 contrib/devtools/symbol-check.py
 '''
 from __future__ import division, print_function
 import subprocess
@@ -23,45 +23,40 @@ import os
 # - g++ version 11.2.0 (https://packages.ubuntu.com/search?suite=all&searchon=names&keywords=g%2B%2B)
 # - libc6 version 2.35 (https://packages.ubuntu.com/search?suite=all&searchon=names&keywords=libc6)
 #
-# Debian 11 (Bullseye; LTS EOL August 2026) has:
+# Debian 12 (Bookworm; LTS EOL June 2028) has:
 #
-# - g++ version 10.2.1 (https://packages.debian.org/search?suite=default&section=all&arch=any&searchon=names&keywords=g%2B%2B)
-# - libc6 version 2.31 (https://packages.debian.org/search?suite=default&section=all&arch=any&searchon=names&keywords=libc6)
+# - g++ version 12.2.0 (https://packages.debian.org/search?suite=default&section=all&arch=any&searchon=names&keywords=g%2B%2B)
+# - libc6 version 2.36 (https://packages.debian.org/search?suite=default&section=all&arch=any&searchon=names&keywords=libc6)
 #
-# RedHat Enterprise Linux 9 (EOL some time in 2032) is based on Fedora 34 (EOL 2022-06-07) and uses the same base packages:
+# Fedora 43 (EOL ~December 2026) has:
 #
-# - g++ version 11.0.1 (https://archives.fedoraproject.org/pub/archive/fedora/linux/releases/34/Everything/x86_64/os/Packages/g/ search for gcc-)
-# - libc6 version 2.33 (https://archives.fedoraproject.org/pub/archive/fedora/linux/releases/34/Everything/x86_64/os/Packages/g/ search for glibc)
+# - g++ version 15.2.1 (https://dl.fedoraproject.org/pub/fedora/linux/releases/43/Everything/x86_64/os/Packages/g/ search for gcc-)
+# - libc6 version 2.42 (https://dl.fedoraproject.org/pub/fedora/linux/releases/43/Everything/x86_64/os/Packages/g/ search for glibc)
 #
-# Fedora 40 (EOL ~May 2025) has:
+# Arch is a rolling release, and as of May 2026 has packages for:
 #
-# - g++ version 14.0.1 (https://dl.fedoraproject.org/pub/fedora/linux/releases/40/Everything/x86_64/os/Packages/g/ search for gcc-)
-# - libc6 version 2.39 (https://dl.fedoraproject.org/pub/fedora/linux/releases/40/Everything/x86_64/os/Packages/g/ search for glibc)
+# - g++ version 16.1.1 (https://www.archlinux.org/packages/?q=gcc)
+# - libc6 version 2.43 (https://www.archlinux.org/packages/?q=glibc)
 #
-# Arch is a rolling release, and as of April 2025 has packages for:
-#
-# - g++ version 13.3.1 / 14.2.1 (https://www.archlinux.org/packages/?q=gcc)
-# - libc6 version 2.41 (https://www.archlinux.org/packages/?q=glibc)
-#
-# We take the minimum of these as our target. In practice, if we build on Bullseye without
-# upgrading GCC or libc, then we should get a binary that works for all these systems, and
+# We take the minimum of these as our target. In practice, if we build on Ubuntu 22.04 LTS without
+# upgrading GCC or libc, then we should get a binary that works for all these systems (except RHEL 9), and
 # later ones.
 #
-# According to the GNU ABI document (https://gcc.gnu.org/onlinedocs/libstdc++/manual/abi.html) this corresponds to libstdc++.so.6.0.28:
-#   GCC 10.1.0: GCC_9.0.0, GLIBCXX_3.4.28, CXXABI_1.3.12
-#   libc6:      GLIBC_2_31
+# According to the GNU ABI document (https://gcc.gnu.org/onlinedocs/libstdc++/manual/abi.html) this corresponds to libstdc++.so.6.0.29:
+#   GCC 11.1.0: GCC_11.0, GLIBCXX_3.4.29, CXXABI_1.3.13
+#   libc6:      GLIBC_2_35
 
 # We statically link libc++ and libc++abi in our builds. Set this to allow dynamic linking to libstdc++.
 ALLOW_DYNAMIC_LIBSTDCXX = False
 
 MAX_VERSIONS = {
-    'GCC':   (10,2,1),
-    'GLIBC': (2,31),
+    'GCC':   (11,2,0),
+    'GLIBC': (2,35),
 }
 if ALLOW_DYNAMIC_LIBSTDCXX:
     MAX_VERSIONS.update({
-        'GLIBCXX': (3,4,28),
-        'CXXABI':  (1,3,12),
+        'GLIBCXX': (3,4,29),
+        'CXXABI':  (1,3,13),
     })
 
 # See here for a description of _IO_stdin_used:

@@ -1,0 +1,22 @@
+From f3b5cbfddd623c063f34011060ad0d07d210f995 Mon Sep 17 00:00:00 2001
+From: Frank Denis <github@pureftpd.org>
+Date: Mon, 16 Mar 2026 20:52:14 +0100
+Subject: [PATCH] Restrict evex512 to clang 18-21 only
+
+---
+ src/libsodium/crypto_pwhash/argon2/argon2-fill-block-avx512f.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/libsodium/crypto_pwhash/argon2/argon2-fill-block-avx512f.c b/src/libsodium/crypto_pwhash/argon2/argon2-fill-block-avx512f.c
+index ea20fa83f8..8629fdf51b 100644
+--- a/src/libsodium/crypto_pwhash/argon2/argon2-fill-block-avx512f.c
++++ b/src/libsodium/crypto_pwhash/argon2/argon2-fill-block-avx512f.c
+@@ -23,7 +23,7 @@
+     defined(HAVE_EMMINTRIN_H) &&  defined(HAVE_TMMINTRIN_H) && defined(HAVE_SMMINTRIN_H)
+ 
+ # ifdef __clang__
+-#  if __clang_major__ >= 18
++#  if __clang_major__ >= 18 && __clang_major__ < 22
+ #   pragma clang attribute push(__attribute__((target("sse2,ssse3,sse4.1,avx2,avx512f,evex512"))), apply_to = function)
+ #  else
+ #   pragma clang attribute push(__attribute__((target("sse2,ssse3,sse4.1,avx2,avx512f"))), apply_to = function)

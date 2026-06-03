@@ -75,18 +75,11 @@ TEST(OrchardWalletTests, TxInvolvesMyNotes) {
     RegtestDeactivateNU5();
 }
 
-// This test is here instead of test_transaction_builder.cpp because it depends
-// on OrchardWallet, which only exists if the wallet is compiled in.
-TEST(TransactionBuilder, OrchardToOrchard) {
-    LoadProofParameters();
-
-    auto consensusParams = RegtestActivateNU5();
+// Builds a fresh Orchard-spending transaction under the currently-active consensus
+// parameters, so that its consensus branch id matches the active epoch (allowing the
+// same flow to be exercised under both NU5 and NU6.1).
+void BuildOrchardSpend(CTransaction& outTx) {
     OrchardWallet wallet;
-
-    CBasicKeyStore keystore;
-    CKey tsk = AddTestCKeyToKeyStore(keystore);
-    auto scriptPubKey = GetScriptForDestination(tsk.GetPubKey().GetID());
-
     auto sk = RandomOrchardSpendingKey();
     wallet.AddSpendingKey(sk);
 
@@ -110,7 +103,7 @@ TEST(TransactionBuilder, OrchardToOrchard) {
 
     // If we attempt to get spend info now, it will fail because the note hasn't
     // been witnessed in the Orchard commitment tree.
-    EXPECT_THROW(wallet.GetSpendInfo(notes, 1, wallet.GetLatestAnchor()), std::logic_error);
+    ASSERT_THROW(wallet.GetSpendInfo(notes, 1, wallet.GetLatestAnchor()), std::logic_error);
 
     // Append the bundle to the wallet's commitment tree.
     CBlock fakeBlock;
@@ -120,38 +113,214 @@ TEST(TransactionBuilder, OrchardToOrchard) {
 
     // Now we can get spend info for the note.
     auto spendInfo = wallet.GetSpendInfo(notes, 1, wallet.GetLatestAnchor());
-    EXPECT_EQ(spendInfo[0].second.Value(), 40000);
+    ASSERT_EQ(spendInfo[0].second.Value(), 40000);
 
     // Get the root of the commitment tree.
     OrchardMerkleFrontier tree;
     tree.AppendBundle(txRecv.GetOrchardBundle());
-    auto orchardAnchor = tree.root();
 
     // Create an Orchard-only transaction
     // 0.0004 z-ZEC in, 0.00025 z-ZEC out, default fee, 0.00014 z-ZEC change
-    auto builder = TransactionBuilder(Params(), 2, orchardAnchor, SaplingMerkleTree::empty_root());
-    EXPECT_TRUE(builder.AddOrchardSpend(sk, std::move(spendInfo[0].second)));
+    auto builder = TransactionBuilder(Params(), 2, tree.root(), SaplingMerkleTree::empty_root());
+    ASSERT_TRUE(builder.AddOrchardSpend(sk, std::move(spendInfo[0].second)));
     builder.AddOrchardOutput(std::nullopt, recipient, 25000, std::nullopt);
     auto maybeTx = builder.Build();
-    EXPECT_TRUE(maybeTx.IsTx());
-    if (maybeTx.IsError()) {
-        std::cerr << "Failed to build transaction: " << maybeTx.GetError() << std::endl;
-        GTEST_FAIL();
-    }
+    ASSERT_TRUE(maybeTx.IsTx());
+
     auto tx = maybeTx.GetTxOrThrow();
+    ASSERT_EQ(tx.vin.size(), 0);
+    ASSERT_EQ(tx.vout.size(), 0);
+    ASSERT_EQ(tx.vJoinSplit.size(), 0);
+    ASSERT_EQ(tx.GetSaplingSpendsCount(), 0);
+    ASSERT_EQ(tx.GetSaplingOutputsCount(), 0);
+    ASSERT_TRUE(tx.GetOrchardBundle().IsPresent());
+    ASSERT_EQ(tx.GetOrchardBundle().GetValueBalance(), 1000);
+    outTx = tx;
+}
 
-    EXPECT_EQ(tx.vin.size(), 0);
-    EXPECT_EQ(tx.vout.size(), 0);
-    EXPECT_EQ(tx.vJoinSplit.size(), 0);
-    EXPECT_EQ(tx.GetSaplingSpendsCount(), 0);
-    EXPECT_EQ(tx.GetSaplingOutputsCount(), 0);
-    EXPECT_TRUE(tx.GetOrchardBundle().IsPresent());
-    EXPECT_EQ(tx.GetOrchardBundle().GetValueBalance(), 1000);
+// Sets `outBytes` to the v5 serialization of `tx` with its Orchard proof padded by one byte,
+// so that the proof length is no longer canonical for the number of actions. The returned
+// bytes are not re-parsed here (parsing is what the callers exercise).
+//
+// The v5 transaction format encodes the Orchard proof as a CompactSize length followed by
+// that many bytes. For the proof sizes in use (a few thousand bytes) the length is encoded
+// in the 3-byte CompactSize form, and incrementing it by one cannot change that encoding's
+// width, so the field can be rewritten in place and one byte inserted into the proof.
+//
+// Uses an out-parameter rather than a return value so that the ASSERT_* macros (which expand
+// to `return;`) can be used to abort the test on a malformed assumption.
+void MakeOrchardProofNonCanonicalBytes(const CTransaction& tx, std::vector<unsigned char>& outBytes) {
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << tx;
+    std::vector<unsigned char> bytes(ss.begin(), ss.end());
 
-    CValidationState state;
-    EXPECT_TRUE(ContextualCheckTransaction(tx, state, Params(), 3, true));
-    EXPECT_EQ(state.GetRejectReason(), "");
+    // Walk the v5 serialization to the Orchard proof's CompactSize length field:
+    //   header (nVersion, nVersionGroupId, nConsensusBranchId, nLockTime, nExpiryHeight)
+    size_t pos = 4 + 4 + 4 + 4 + 4;
+    // four empty vectors: transparent in, transparent out, Sapling spends, Sapling outputs.
+    for (int i = 0; i < 4; i++) {
+        ASSERT_EQ(bytes[pos], 0);
+        pos += 1;
+    }
+    // nActionsOrchard, then that many 820-byte action descriptions. These tests build a small
+    // number of actions, so nActionsOrchard is a single-byte CompactSize.
+    size_t nActions = bytes[pos];
+    ASSERT_GT(nActions, 0u);
+    ASSERT_LT(nActions, 253u);
+    pos += 1 + nActions * 820;
+    // flagsOrchard (1) + valueBalanceOrchard (8) + anchorOrchard (32).
+    pos += 1 + 8 + 32;
 
-    // Revert to default
+    // proofsOrchard: a 3-byte CompactSize length (0xfd followed by a little-endian u16).
+    ASSERT_EQ(bytes[pos], 0xfd);
+    size_t proofLen = bytes[pos + 1] | (bytes[pos + 2] << 8);
+    size_t newProofLen = proofLen + 1;
+    ASSERT_LT(newProofLen, 0x10000u); // still fits the 3-byte CompactSize form
+    bytes[pos + 1] = newProofLen & 0xff;
+    bytes[pos + 2] = (newProofLen >> 8) & 0xff;
+    // Insert one byte at the start of the proof body.
+    bytes.insert(bytes.begin() + pos + 3, 0);
+
+    outBytes = bytes;
+}
+
+// Overwrites the nConsensusBranchId field (a little-endian uint32 at byte offset 8 in the v5
+// header) in place.
+void SetConsensusBranchId(std::vector<unsigned char>& bytes, uint32_t branchId) {
+    for (int i = 0; i < 4; i++) {
+        bytes[8 + i] = (branchId >> (8 * i)) & 0xff;
+    }
+}
+
+// Deserializes a transaction from raw bytes, returning whether it parsed successfully. zcashd
+// computes the transaction's hashes by reparsing through librustzcash (see
+// CTransaction::UpdateHash), which is where the Orchard proof size is enforced for NU6.2.
+bool TryDeserializeTx(const std::vector<unsigned char>& bytes) {
+    CDataStream ss(bytes, SER_NETWORK, PROTOCOL_VERSION);
+    try {
+        CTransaction tx;
+        ss >> tx;
+        return true;
+    } catch (const std::ios_base::failure&) {
+        return false;
+    }
+}
+
+// These tests are here instead of test_transaction_builder.cpp because they depend
+// on OrchardWallet, which only exists if the wallet is compiled in.
+
+TEST(TransactionBuilder, OrchardToOrchardNU5) {
+    LoadProofParameters();
+
+    // Under NU5, the Orchard-spending transaction is accepted.
+    auto consensusParams = RegtestActivateNU5();
+    CTransaction tx;
+    BuildOrchardSpend(tx);
+
+    {
+        CValidationState state;
+        EXPECT_TRUE(ContextualCheckTransaction(tx, state, Params(), 1, true));
+        EXPECT_EQ(state.GetRejectReason(), "");
+    }
+
     RegtestDeactivateNU5();
+}
+
+TEST(TransactionBuilder, OrchardToOrchardNU6point1) {
+    LoadProofParameters();
+
+    // Under NU6.1, with the temporary Orchard-disabling soft fork activating at height 3,
+    // build a fresh (NU6.1) Orchard-spending transaction.
+    auto consensusParams = RegtestActivateNU6point1(false, 1, 2);
+    CTransaction tx;
+    BuildOrchardSpend(tx);
+
+    // Before the soft-fork height the spend is still accepted...
+    {
+        CValidationState state;
+        EXPECT_TRUE(ContextualCheckTransaction(tx, state, Params(), 1, true));
+        EXPECT_EQ(state.GetRejectReason(), "");
+    }
+    // ... and at the soft-fork height it is rejected: the soft fork disables Orchard
+    // spends as well as outputs.
+    {
+        CValidationState state;
+        EXPECT_FALSE(ContextualCheckTransaction(tx, state, Params(), 2, true));
+        EXPECT_EQ(state.GetRejectReason(), "bad-tx-has-orchard-actions");
+    }
+
+    RegtestDeactivateNU6point1();
+}
+
+TEST(TransactionBuilder, OrchardToOrchardNU6point2) {
+    LoadProofParameters();
+
+    // Under NU6.2, build a fresh Orchard-spending transaction with a canonically-sized proof.
+    // NU6.2 is the active epoch from height 1, so the transaction's consensus branch id matches
+    // at the heights under test.
+    auto consensusParams = RegtestActivateNU6point2(false, 1);
+    CTransaction tx;
+    BuildOrchardSpend(tx);
+
+    // A canonical-proof Orchard transaction is accepted under NU6.2.
+    {
+        CValidationState state;
+        EXPECT_TRUE(ContextualCheckTransaction(tx, state, Params(), 2, true));
+        EXPECT_EQ(state.GetRejectReason(), "");
+    }
+
+    RegtestDeactivateNU6point2();
+}
+
+// From NU6.2, an Orchard proof must have the canonical length for its number of actions. zcashd
+// enforces this through librustzcash when it reparses a transaction to compute its hashes (see
+// CTransaction::UpdateHash), keyed on the transaction's own consensus branch id. This checks
+// that a NU6.2 transaction with a padded (non-canonical) proof fails to deserialize, while the
+// same transaction with a canonical proof deserializes successfully.
+TEST(TransactionBuilder, OrchardNonCanonicalProofSizeRejectedFromNU6point2) {
+    LoadProofParameters();
+
+    auto consensusParams = RegtestActivateNU6point2(false, 1);
+    CTransaction tx;
+    BuildOrchardSpend(tx);
+
+    // The unmodified (canonical-proof) NU6.2 transaction deserializes.
+    {
+        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+        ss << tx;
+        std::vector<unsigned char> bytes(ss.begin(), ss.end());
+        EXPECT_TRUE(TryDeserializeTx(bytes));
+    }
+
+    // With the proof padded to a non-canonical length, it does not.
+    std::vector<unsigned char> tampered;
+    ASSERT_NO_FATAL_FAILURE(MakeOrchardProofNonCanonicalBytes(tx, tampered));
+    EXPECT_FALSE(TryDeserializeTx(tampered));
+
+    RegtestDeactivateNU6point2();
+}
+
+// The proof-size rule is keyed on the NU6.2 consensus branch id, so it does not apply to
+// transactions from earlier epochs. A node must still be able to deserialize a pre-NU6.2
+// transaction carrying a non-canonical proof, so that it can sync and reindex chain history
+// (which may contain such a proof mined before the rule took effect). This takes the same
+// padded-proof bytes and rewrites the consensus branch id to NU6.1, then checks they
+// deserialize successfully.
+TEST(TransactionBuilder, OrchardNonCanonicalProofSizeAllowedBeforeNU6point2) {
+    LoadProofParameters();
+
+    auto consensusParams = RegtestActivateNU6point2(false, 1);
+    CTransaction tx;
+    BuildOrchardSpend(tx);
+
+    std::vector<unsigned char> tampered;
+    ASSERT_NO_FATAL_FAILURE(MakeOrchardProofNonCanonicalBytes(tx, tampered));
+    // Sanity check: under the NU6.2 branch id these bytes are rejected.
+    ASSERT_FALSE(TryDeserializeTx(tampered));
+
+    // Under the NU6.1 branch id the same non-canonical proof is accepted at deserialization.
+    SetConsensusBranchId(tampered, 0x4dec4df0);
+    EXPECT_TRUE(TryDeserializeTx(tampered));
+
+    RegtestDeactivateNU6point2();
 }

@@ -1,14 +1,14 @@
 package=native_cxxbridge
 # The version needs to match cxx in Cargo.toml
-$(package)_version=1.0.186
+$(package)_version=1.0.194
 $(package)_download_path=https://github.com/dtolnay/cxx/archive/refs/tags
 $(package)_file_name=native_cxxbridge-$($(package)_version).tar.gz
 $(package)_download_file=$($(package)_version).tar.gz
-$(package)_sha256_hash=3ae90b44cd12c8339c774854745213ca8e17b669e6ad260a03ee2c12afb27739
+$(package)_sha256_hash=2edf94915ab43778b02a13e522d050a76dea607d1a05f769911775676d27cb3c
 $(package)_build_subdir=gen/cmd
 $(package)_dependencies=native_rust
 # This file is somewhat annoying to update, but can be done like so from the repo base:
-# $ export VERSION=1.0.186
+# $ export VERSION=1.0.194
 # $ rm .cargo/config.toml .cargo/.configured-for-offline
 # $ mkdir tmp
 # $ cd tmp

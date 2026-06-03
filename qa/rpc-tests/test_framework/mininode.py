@@ -67,6 +67,7 @@ ZIP225_VERSION_GROUP_ID = 0x26A7270A
 MAX_INV_SZ = 50000
 
 COIN = 100000000 # 1 zec in zatoshis
+MAX_MONEY = 21000000 * COIN # consensus monetary bound (see src/amount.h)
 
 BLOSSOM_POW_TARGET_SPACING_RATIO = 2
 

@@ -5,17 +5,13 @@ use std::{ptr, slice};
 use blake2b_simd::Hash;
 use libc::{c_uchar, size_t};
 use tracing::error;
-use transparent::sighash::TransparentAuthorizingContext;
+use transparent::{address::Script, sighash::TransparentAuthorizingContext};
 use zcash_encoding::Vector;
-use zcash_primitives::{
-    consensus::BranchId,
-    legacy::Script,
-    transaction::{
-        sighash::SignableInput, sighash_v5::v5_signature_hash, txid::TxIdDigester, Authorization,
-        Transaction, TransactionData, TxDigests, TxVersion,
-    },
+use zcash_primitives::transaction::{
+    sighash::SignableInput, sighash_v5::v5_signature_hash, txid::TxIdDigester, Authorization,
+    Transaction, TransactionData, TxDigests, TxVersion,
 };
-use zcash_protocol::value::Zatoshis;
+use zcash_protocol::{consensus::BranchId, value::Zatoshis};
 
 /// Calculates identifying and authorizing digests for the given transaction.
 ///
@@ -32,7 +28,22 @@ pub extern "C" fn zcash_transaction_digests(
 ) -> bool {
     let tx_bytes = unsafe { slice::from_raw_parts(tx_bytes, tx_bytes_len) };
 
-    // We use a placeholder branch ID here, since it is not used for anything.
+    // The branch ID argument here is a placeholder. It is only used for v1-v4 transactions,
+    // which do not encode a consensus branch id; v5+ transactions carry their own
+    // `nConsensusBranchId`, which `Transaction::read` reads and uses in preference to this
+    // argument. This matters for the consensus rule below: Orchard bundles only exist in v5+
+    // transactions, so the proof-size enforcement always keys off the transaction's real
+    // branch id, never this placeholder.
+    //
+    // CONSENSUS: this parse is consensus-critical, not merely a hashing convenience. It is
+    // reached from CTransaction::UpdateHash on every transaction deserialization, so any
+    // input that `Transaction::read` rejects is rejected by consensus: in Zcash a structural
+    // or encoding violation IS a consensus-rule violation, with no leniency for malformed
+    // data. Rules enforced at this parse include canonical element encodings (e.g. a valid,
+    // non-identity Orchard `ephemeralKey`) and, against the transaction's own (v5+) consensus
+    // branch id, the canonical Orchard proof size (Strict for NU6.2 onward; see
+    // `read_v5_bundle` in zcash_primitives). Do not relax this parse on the assumption that a
+    // rejected encoding is "only" a parse error — doing so can silently drop a consensus rule.
     let tx = match Transaction::read(tx_bytes, BranchId::Canopy) {
         Ok(tx) => tx,
         Err(e) => {
@@ -94,7 +105,7 @@ impl MapTransparent {
                 Err("all_prev_outputs had trailing data".into())
             }
             Ok(all_prev_outputs)
-                if tx.transparent_bundle().map_or(false, |t| {
+                if tx.transparent_bundle().is_some_and(|t| {
                     // Coinbase txs have one fake input.
                     t.is_coinbase() && !all_prev_outputs.is_empty()
                 }) =>
@@ -274,9 +285,28 @@ pub extern "C" fn zcash_transaction_zip244_signature_digest(
             }
         };
 
-        let prevout = match precomputed_tx.tx.transparent_bundle() {
+        match precomputed_tx.tx.transparent_bundle() {
             Some(bundle) => match bundle.authorization.all_prev_outputs.get(index) {
-                Some(prevout) => prevout,
+                Some(prevout) => {
+                    match transparent::sighash::SignableInput::from_parts(
+                        bundle,
+                        hash_type,
+                        index,
+                        // `script_code` is unused by `v5_signature_hash`, so instead of passing the
+                        // real `script_code` across the FFI (and paying the serialization and parsing
+                        // cost for no benefit), we set it to the prevout's `script_pubkey`. This
+                        // happens to be correct anyway for every output script kind except P2SH.
+                        prevout.script_pubkey(),
+                        prevout.script_pubkey(),
+                        prevout.value(),
+                    ) {
+                        Ok(input) => SignableInput::Transparent(input),
+                        Err(_) => {
+                            error!("transparent input does not validate against bundle");
+                            return false;
+                        }
+                    }
+                }
                 None => {
                     error!("nIn out of range");
                     return false;
@@ -286,19 +316,7 @@ pub extern "C" fn zcash_transaction_zip244_signature_digest(
                 error!("Tried to create a transparent sighash for a tx without transparent data");
                 return false;
             }
-        };
-
-        SignableInput::Transparent(transparent::sighash::SignableInput::from_parts(
-            hash_type,
-            index,
-            // `script_code` is unused by `v5_signature_hash`, so instead of passing the
-            // real `script_code` across the FFI (and paying the serialization and parsing
-            // cost for no benefit), we set it to the prevout's `script_pubkey`. This
-            // happens to be correct anyway for every output script kind except P2SH.
-            prevout.script_pubkey(),
-            prevout.script_pubkey(),
-            prevout.value(),
-        ))
+        }
     };
 
     let sighash = v5_signature_hash(

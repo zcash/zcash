@@ -138,7 +138,7 @@ class MockCValidationState : public CValidationState {
 public:
     MOCK_METHOD6(DoS, bool(int level, bool ret,
              unsigned int chRejectCodeIn, const std::string strRejectReasonIn,
-             bool corruptionIn,
+             BodyCorruption bodyCorruption,
              const std::string &strDebugMessageIn));
     MOCK_METHOD4(Invalid, bool(bool ret,
                  unsigned int _chRejectCode, const std::string _strRejectReason,
@@ -153,6 +153,89 @@ public:
     MOCK_CONST_METHOD0(GetRejectReason, std::string());
     MOCK_CONST_METHOD0(GetDebugMessage, std::string());
 };
+
+// Directly exercises the `CValidationState::DoS` classification logic that the
+// `MockCValidationState` in this and the other gtest files necessarily bypasses:
+// the mock overrides `DoS`, so the `BodyCorruption` switch and the
+// `Default` -> `!(hashMerkleRootChecked && hashBlockCommitmentsChecked)` rule that
+// underpin the GHSA-rpcw-q5mr-gq35 / GHSA-qvwc-hc2r-82qv / GHSA-wmwc-773c-qcvv /
+// GHSA-382w-958v-m5jr body-poisoning fixes are never run there.
+TEST(Validation, BodyCorruptionClassification) {
+    // `Possible`: always corruption-possible, regardless of commitment flags.
+    {
+        CValidationState s;
+        s.DoS(100, false, REJECT_INVALID, "x", BodyCorruption::Possible);
+        EXPECT_TRUE(s.CorruptionPossible());
+    }
+    {
+        // Even when the body is fully pinned, `Possible` forces corruption-possible.
+        CValidationState s;
+        s.SetMerkleRootChecked();
+        s.SetBlockCommitmentsChecked();
+        s.DoS(100, false, REJECT_INVALID, "x", BodyCorruption::Possible);
+        EXPECT_TRUE(s.CorruptionPossible());
+    }
+
+    // `HeaderOnly`: never corruption-possible, regardless of commitment flags.
+    {
+        CValidationState s;
+        s.DoS(100, false, REJECT_INVALID, "x", BodyCorruption::HeaderOnly);
+        EXPECT_FALSE(s.CorruptionPossible());
+    }
+    {
+        CValidationState s;
+        s.SetMerkleRootChecked();
+        s.SetBlockCommitmentsChecked();
+        s.DoS(100, false, REJECT_INVALID, "x", BodyCorruption::HeaderOnly);
+        EXPECT_FALSE(s.CorruptionPossible());
+    }
+
+    // `Default`: corruption-possible iff NOT (merkle && commitments) both checked.
+    {
+        CValidationState s; // (merkle=F, commitments=F)
+        s.DoS(100, false, REJECT_INVALID, "x", BodyCorruption::Default);
+        EXPECT_TRUE(s.CorruptionPossible());
+    }
+    {
+        CValidationState s; // (merkle=T, commitments=F)
+        s.SetMerkleRootChecked();
+        s.DoS(100, false, REJECT_INVALID, "x", BodyCorruption::Default);
+        EXPECT_TRUE(s.CorruptionPossible());
+    }
+    {
+        CValidationState s; // (merkle=F, commitments=T)
+        s.SetBlockCommitmentsChecked();
+        s.DoS(100, false, REJECT_INVALID, "x", BodyCorruption::Default);
+        EXPECT_TRUE(s.CorruptionPossible());
+    }
+    {
+        CValidationState s; // (merkle=T, commitments=T) -> fully pinned
+        s.SetMerkleRootChecked();
+        s.SetBlockCommitmentsChecked();
+        s.DoS(100, false, REJECT_INVALID, "x", BodyCorruption::Default);
+        EXPECT_FALSE(s.CorruptionPossible());
+    }
+
+    // `ResetBodyCommitmentChecks` clears both flags, so a subsequent `Default`
+    // rejection is classified corruption-possible again. (This reset runs at the
+    // start of each block-validation pass because a single `CValidationState` is
+    // reused across successive block connections.)
+    {
+        CValidationState s;
+        s.SetMerkleRootChecked();
+        s.SetBlockCommitmentsChecked();
+        s.ResetBodyCommitmentChecks();
+        s.DoS(100, false, REJECT_INVALID, "x", BodyCorruption::Default);
+        EXPECT_TRUE(s.CorruptionPossible());
+    }
+
+    // `Invalid()` defaults to `Default` classification.
+    {
+        CValidationState s;
+        s.Invalid(false, REJECT_INVALID, "x");
+        EXPECT_TRUE(s.CorruptionPossible());
+    }
+}
 
 TEST(Validation, ContextualCheckInputsPassesWithCoinbase) {
     // Create fake coinbase transaction
@@ -249,7 +332,7 @@ TEST(Validation, ContextualCheckInputsDetectsOldBranchId) {
             strprintf("old-consensus-branch-id (Expected %s, found %s)",
                 HexInt(saplingBranchId),
                 HexInt(overwinterBranchId)),
-            false, "")).Times(1);
+            BodyCorruption::Default, "")).Times(1);
         EXPECT_FALSE(ContextualCheckInputs(
             tx, mockState, view, true, 0, false, txdata,
             consensusParams, saplingBranchId));
@@ -260,7 +343,7 @@ TEST(Validation, ContextualCheckInputsDetectsOldBranchId) {
         EXPECT_CALL(mockState, DoS(
             100, false, REJECT_INVALID,
             "mandatory-script-verify-flag-failed (Script evaluated without error but finished with a false/empty top stack element)",
-            false, "")).Times(1);
+            BodyCorruption::Default, "")).Times(1);
         EXPECT_FALSE(ContextualCheckInputs(
             tx, mockState, view, true, 0, false, txdata,
             consensusParams, blossomBranchId));
@@ -294,7 +377,7 @@ TEST(Validation, ContextualCheckInputsDetectsOldBranchId) {
             strprintf("old-consensus-branch-id (Expected %s, found %s)",
                 HexInt(penultimateBranchId),
                 HexInt(antepenultimateBranchId)),
-            false, "")).Times(1);
+            BodyCorruption::Default, "")).Times(1);
         EXPECT_FALSE(ContextualCheckInputs(
             tx, mockState, view, true, 0, false, txdata,
             consensusParams, penultimateBranchId));
@@ -305,7 +388,7 @@ TEST(Validation, ContextualCheckInputsDetectsOldBranchId) {
         EXPECT_CALL(mockState, DoS(
             100, false, REJECT_INVALID,
             "mandatory-script-verify-flag-failed (Script evaluated without error but finished with a false/empty top stack element)",
-            false, "")).Times(1);
+            BodyCorruption::Default, "")).Times(1);
         EXPECT_FALSE(ContextualCheckInputs(
             tx, mockState, view, true, 0, false, txdata,
             consensusParams, lastBranchId));
@@ -649,4 +732,64 @@ TEST(Validation, FallbackChainSupplyCheckpoint) {
     EXPECT_FALSE(afterCheckpoint.nChainSaplingValue.has_value());
     EXPECT_FALSE(afterCheckpoint.nChainOrchardValue.has_value());
     EXPECT_FALSE(afterCheckpoint.nChainLockboxValue.has_value());
+}
+
+// Unit test for GHSA-78pp-mc9g-g4mw: a block whose aggregate per-pool value
+// delta is out of range must be rejected through `state.DoS(100, ...)` so that
+// the sending peer is banned, rather than via a bare `error()` that leaves the
+// state MODE_VALID. This drives ReceivedBlockTransactions on a fake index and
+// asserts the DoS score and reject reason directly. The black-box regression
+// test in `p2p_ban_pool_value_out_of_range.py` exercises the same path over
+// P2P but can only observe the resulting disconnection.
+TEST(Validation, BanOnPoolValueOutOfRange) {
+    SelectParams(CBaseChainParams::REGTEST);
+    const auto chainParams = Params();
+    const auto sk = libzcash::SproutSpendingKey::random();
+
+    // Parent block + index, just so the child is not treated as genesis.
+    CBlock block1;
+    block1.vtx.push_back(GetValidSproutReceive(sk, 5, true));
+    block1.hashMerkleRoot = BlockMerkleRoot(block1);
+    CBlockIndex fakeIndex1 {block1};
+
+    // Child block whose aggregate Sprout pool delta is out of range.
+    // GetValidSproutReceiveTransaction sets `vpub_old = 2 * value`, so
+    // `value = MAX_MONEY / 2` gives `vpub_old = MAX_MONEY` per transaction.
+    // Each is in range individually, but ComputePoolDeltas sums them to
+    // `2 * MAX_MONEY`, overflowing MoneyDeltaRange.
+    CBlock block2;
+    block2.hashPrevBlock = block1.GetHash();
+    block2.vtx.push_back(GetValidSproutReceive(sk, MAX_MONEY / 2, true));
+    block2.vtx.push_back(GetValidSproutReceive(sk, MAX_MONEY / 2, true));
+    block2.hashMerkleRoot = BlockMerkleRoot(block2);
+    CBlockIndex fakeIndex2 {block2};
+    fakeIndex2.pprev = &fakeIndex1;
+
+    ASSERT_TRUE(fakeIndex1.RaiseValidity(BLOCK_VALID_TREE));
+    ASSERT_TRUE(fakeIndex2.RaiseValidity(BLOCK_VALID_TREE));
+
+    CDiskBlockPos pos2;
+    CValidationState state;
+    {
+        // Taking cs_main is required even when working on a fake index.
+        LOCK(cs_main);
+        // The overflow is detected in ComputePoolDeltas, so SetChainPoolValues
+        // fails, and ReceivedBlockTransactions routes that failure through DoS.
+        EXPECT_FALSE(SetChainPoolValues(chainParams, block2, &fakeIndex2));
+        EXPECT_FALSE(ReceivedBlockTransactions(block2, state, chainParams, &fakeIndex2, pos2));
+    }
+
+    int nDoS = 0;
+    EXPECT_TRUE(state.IsInvalid(nDoS));
+    EXPECT_EQ(100, nDoS);
+    EXPECT_EQ("bad-blk-pool-value-out-of-range", state.GetRejectReason());
+
+    // The block must not have been recorded as having data; leaving it
+    // header-only is what, absent the ban, enables the replay re-write.
+    EXPECT_FALSE(fakeIndex2.IsValid(BLOCK_PARTIALLY_VALID_TRANSACTIONS));
+    EXPECT_FALSE(fakeIndex2.nStatus & BLOCK_HAVE_DATA);
+
+    // No fake CBlockIndex should be referenced by mapBlocksUnlinked.
+    EnsureUnreferencedAsKeyOfMapBlocksUnlinked(&fakeIndex1);
+    EnsureUnreferencedAsKeyOfMapBlocksUnlinked(&fakeIndex2);
 }

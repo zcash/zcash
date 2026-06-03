@@ -33,5 +33,5 @@ update_rust_hash x86_64-unknown-freebsd freebsd
 # update_stdlib_hash RUST_TARGET
 update_stdlib_hash aarch64-unknown-linux-gnu
 update_stdlib_hash x86_64-apple-darwin
-update_stdlib_hash x86_64-pc-windows-gnu
+update_stdlib_hash x86_64-pc-windows-gnullvm
 update_stdlib_hash x86_64-unknown-freebsd

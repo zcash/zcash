@@ -15,8 +15,7 @@ be removed from tier 1. These dates are subject to change.
 
 | target                  | OS           | End of Support |
 | ----------------------- | ------------ | -------------- |
-| `x86_64-pc-linux-gnu`   | Debian 11    | June 2026      |
-|                         | Debian 12    | June 2028      |
+| `x86_64-pc-linux-gnu`   | Debian 12    | June 2028      |
 |                         | Ubuntu 22.04 | April 2027     |
 
 ## Tier 2

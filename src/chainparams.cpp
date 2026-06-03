@@ -143,6 +143,9 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_NU6].nActivationHeight = 2726400;
         consensus.vUpgrades[Consensus::UPGRADE_NU6_1].nProtocolVersion = 170140;
         consensus.vUpgrades[Consensus::UPGRADE_NU6_1].nActivationHeight = 3146400;
+        consensus.nTemporaryOrchardDisablingSoftForkHeight = 3363426;
+        consensus.vUpgrades[Consensus::UPGRADE_NU6_2].nProtocolVersion = 170150;
+        consensus.vUpgrades[Consensus::UPGRADE_NU6_2].nActivationHeight = 3364600;
         consensus.vUpgrades[Consensus::UPGRADE_ZFUTURE].nProtocolVersion = 0x7FFFFFFF;
         consensus.vUpgrades[Consensus::UPGRADE_ZFUTURE].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
@@ -528,6 +531,9 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_NU6].nActivationHeight = 2976000;
         consensus.vUpgrades[Consensus::UPGRADE_NU6_1].nProtocolVersion = 170130;
         consensus.vUpgrades[Consensus::UPGRADE_NU6_1].nActivationHeight = 3536500;
+        consensus.nTemporaryOrchardDisablingSoftForkHeight = 4048500;
+        consensus.vUpgrades[Consensus::UPGRADE_NU6_2].nProtocolVersion = 170150;
+        consensus.vUpgrades[Consensus::UPGRADE_NU6_2].nActivationHeight = 4052000;
         consensus.vUpgrades[Consensus::UPGRADE_ZFUTURE].nProtocolVersion = 0x7FFFFFFF;
         consensus.vUpgrades[Consensus::UPGRADE_ZFUTURE].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
@@ -860,6 +866,11 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_NU6_1].nProtocolVersion = 170130;
         consensus.vUpgrades[Consensus::UPGRADE_NU6_1].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
+        consensus.nTemporaryOrchardDisablingSoftForkHeight =
+            Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
+        consensus.vUpgrades[Consensus::UPGRADE_NU6_2].nProtocolVersion = 170150;
+        consensus.vUpgrades[Consensus::UPGRADE_NU6_2].nActivationHeight =
+            Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
         consensus.vUpgrades[Consensus::UPGRADE_ZFUTURE].nProtocolVersion = 0x7FFFFFFF;
         consensus.vUpgrades[Consensus::UPGRADE_ZFUTURE].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
@@ -960,6 +971,11 @@ public:
         consensus.nPowMaxAdjustUp = nPowMaxAdjustUp;
         consensus.powLimit = powLimit;
         consensus.fPowNoRetargeting = noRetargeting;
+    }
+
+    void UpdateTemporaryOrchardDisablingSoftForkHeight(int nHeight)
+    {
+        consensus.nTemporaryOrchardDisablingSoftForkHeight = nHeight;
     }
 
     void SetRegTestZIP209Enabled() {
@@ -1101,4 +1117,9 @@ void UpdateRegtestPow(
     bool noRetargeting)
 {
     regTestParams.UpdateRegtestPow(nPowMaxAdjustDown, nPowMaxAdjustUp, powLimit, noRetargeting);
+}
+
+void UpdateRegtestTemporaryOrchardDisablingSoftForkHeight(int nHeight)
+{
+    regTestParams.UpdateTemporaryOrchardDisablingSoftForkHeight(nHeight);
 }
