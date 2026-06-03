@@ -381,7 +381,7 @@ DISABLED_WARNING_CXXFLAGS="\
   -Wno-unused-but-set-variable -Wno-unused-exception-parameter -Wno-unused-function \
   -Wno-unused-macros -Wno-unused-member-function -Wno-unused-parameter -Wno-unused-private-field \
   -Wno-unused-template -Wno-unused-variable -Wno-used-but-marked-unused -Wno-weak-vtables \
-  -Wno-zero-as-null-pointer-constant"
+  -Wno-zero-as-null-pointer-constant -Wno-unique-object-duplication"
 
 # These are sub-flags of those in `DISABLED_WARNING_CXXFLAGS` that allow us to temporarily
 # re-enable pieces until the disabling flags are removed.
