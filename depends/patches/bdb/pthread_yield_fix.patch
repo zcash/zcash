@@ -1,0 +1,17 @@
+--- a/src/os/os_yield.c
++++ b/src/os/os_yield.c
+@@ -49,8 +49,12 @@
+ 	else {
+ #if defined(HAVE_MUTEX_UI_THREADS)
+ 		thr_yield();
+-#elif defined(HAVE_PTHREAD_YIELD)
+-		pthread_yield();
++		/*
++		 * The HAVE_PTHREAD_YIELD branch was removed here: glibc 2.34+
++		 * dropped the nonstandard pthread_yield() symbol, breaking the
++		 * final link.  sched_yield() (POSIX, below) covers the same
++		 * platforms.
++		 */
+ #elif defined(HAVE_SCHED_YIELD)
+ 		(void)sched_yield();
+ #elif defined(HAVE_YIELD)
