@@ -118,21 +118,3 @@ features = ["ansi", "env-filter", "fmt", "time"]
 lto = 'thin'
 panic = 'abort'
 codegen-units = 1
-
-# TEMPORARY: patch the security-fix crates to their unreleased revisions, for building and
-# testing the NU6.2 changes before the orchard / halo2 / librustzcash releases are published.
-# Drop these once the crates are released.
-[patch.crates-io]
-orchard = { git = "https://github.com/zodl-inc/orchard-security-fixes.git", rev = "994dad2f7bb8c85e7c8ea336dcc2a814a94bc9fd" }
-halo2_gadgets = { package = "halo2_gadgets", git = "https://github.com/zodl-inc/halo2-security-fixes.git", rev = "d751768afe0d2105b349dd93f73fde7f2eade088" }
-halo2_proofs = { package = "halo2_proofs", git = "https://github.com/zodl-inc/halo2-security-fixes.git", rev = "d751768afe0d2105b349dd93f73fde7f2eade088" }
-poseidon = { package = "halo2_poseidon", git = "https://github.com/zodl-inc/halo2-security-fixes.git", rev = "d751768afe0d2105b349dd93f73fde7f2eade088" }
-equihash = { git = "https://github.com/zodl-inc/librustzcash-security-fixes.git", rev = "a4bc18408935df58db686e1834c23bcc8c5680e0" }
-f4jumble = { git = "https://github.com/zodl-inc/librustzcash-security-fixes.git", rev = "a4bc18408935df58db686e1834c23bcc8c5680e0" }
-zcash_address = { git = "https://github.com/zodl-inc/librustzcash-security-fixes.git", rev = "a4bc18408935df58db686e1834c23bcc8c5680e0" }
-zcash_encoding = { git = "https://github.com/zodl-inc/librustzcash-security-fixes.git", rev = "a4bc18408935df58db686e1834c23bcc8c5680e0" }
-zcash_history = { git = "https://github.com/zodl-inc/librustzcash-security-fixes.git", rev = "a4bc18408935df58db686e1834c23bcc8c5680e0" }
-zcash_primitives = { git = "https://github.com/zodl-inc/librustzcash-security-fixes.git", rev = "a4bc18408935df58db686e1834c23bcc8c5680e0" }
-zcash_proofs = { git = "https://github.com/zodl-inc/librustzcash-security-fixes.git", rev = "a4bc18408935df58db686e1834c23bcc8c5680e0" }
-zcash_protocol = { git = "https://github.com/zodl-inc/librustzcash-security-fixes.git", rev = "a4bc18408935df58db686e1834c23bcc8c5680e0" }
-transparent = { package = "zcash_transparent", git = "https://github.com/zodl-inc/librustzcash-security-fixes.git", rev = "a4bc18408935df58db686e1834c23bcc8c5680e0" }
