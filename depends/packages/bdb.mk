@@ -34,7 +34,7 @@ endef
 define $(package)_preprocess_cmds
   patch -p1 <$($(package)_patch_dir)/clang-12-stpcpy-issue.diff && \
   patch -p1 <$($(package)_patch_dir)/winioctl-and-atomic_init_db.patch && \
-  sed -i "s/pthread_yield()/sched_yield()/" src/os/os_yield.c
+  patch -p1 <$($(package)_patch_dir)/pthread_yield_fix.patch
 endef
 
 define $(package)_config_cmds
