@@ -78,6 +78,10 @@ TEST(OrchardWalletTests, TxInvolvesMyNotes) {
 // Builds a fresh Orchard-spending transaction under the currently-active consensus
 // parameters, so that its consensus branch id matches the active epoch (allowing the
 // same flow to be exercised under both NU5 and NU6.1).
+//
+// Uses `ASSERT_*` internally (which expand to conditional `return;`, returning only from this
+// helper, not the calling test); so callers must invoke it via `ASSERT_NO_FATAL_FAILURE(...)`
+// for a failed assumption to abort the test rather than continue with an unset `outTx`.
 void BuildOrchardSpend(CTransaction& outTx) {
     OrchardWallet wallet;
     auto sk = RandomOrchardSpendingKey();
@@ -147,8 +151,9 @@ void BuildOrchardSpend(CTransaction& outTx) {
 // in the 3-byte CompactSize form, and incrementing it by one cannot change that encoding's
 // width, so the field can be rewritten in place and one byte inserted into the proof.
 //
-// Uses an out-parameter rather than a return value so that the ASSERT_* macros (which expand
-// to `return;`) can be used to abort the test on a malformed assumption.
+// Uses `ASSERT_*` internally (which expand to conditional `return;`, returning only from this
+// helper, not the calling test); so callers must invoke it via `ASSERT_NO_FATAL_FAILURE(...)`
+// for a failed assumption to abort the test rather than continue with an unset `outBytes`.
 void MakeOrchardProofNonCanonicalBytes(const CTransaction& tx, std::vector<unsigned char>& outBytes) {
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << tx;
@@ -215,7 +220,7 @@ TEST(TransactionBuilder, OrchardToOrchardNU5) {
     // Under NU5, the Orchard-spending transaction is accepted.
     auto consensusParams = RegtestActivateNU5();
     CTransaction tx;
-    BuildOrchardSpend(tx);
+    ASSERT_NO_FATAL_FAILURE(BuildOrchardSpend(tx));
 
     {
         CValidationState state;
@@ -233,7 +238,7 @@ TEST(TransactionBuilder, OrchardToOrchardNU6point1) {
     // build a fresh (NU6.1) Orchard-spending transaction.
     auto consensusParams = RegtestActivateNU6point1(false, 1, 2);
     CTransaction tx;
-    BuildOrchardSpend(tx);
+    ASSERT_NO_FATAL_FAILURE(BuildOrchardSpend(tx));
 
     // Before the soft-fork height the spend is still accepted...
     {
@@ -260,7 +265,7 @@ TEST(TransactionBuilder, OrchardToOrchardNU6point2) {
     // at the heights under test.
     auto consensusParams = RegtestActivateNU6point2(false, 1);
     CTransaction tx;
-    BuildOrchardSpend(tx);
+    ASSERT_NO_FATAL_FAILURE(BuildOrchardSpend(tx));
 
     // A canonical-proof Orchard transaction is accepted under NU6.2.
     {
@@ -282,7 +287,7 @@ TEST(TransactionBuilder, OrchardNonCanonicalProofSizeRejectedFromNU6point2) {
 
     auto consensusParams = RegtestActivateNU6point2(false, 1);
     CTransaction tx;
-    BuildOrchardSpend(tx);
+    ASSERT_NO_FATAL_FAILURE(BuildOrchardSpend(tx));
 
     // The unmodified (canonical-proof) NU6.2 transaction deserializes.
     {
@@ -311,7 +316,7 @@ TEST(TransactionBuilder, OrchardNonCanonicalProofSizeAllowedBeforeNU6point2) {
 
     auto consensusParams = RegtestActivateNU6point2(false, 1);
     CTransaction tx;
-    BuildOrchardSpend(tx);
+    ASSERT_NO_FATAL_FAILURE(BuildOrchardSpend(tx));
 
     std::vector<unsigned char> tampered;
     ASSERT_NO_FATAL_FAILURE(MakeOrchardProofNonCanonicalBytes(tx, tampered));
