@@ -1294,7 +1294,11 @@ protected:
             const CBlockIndex* pindex,
             const CBlock* pblock,
             MerkleFrontiers& frontiers,
-            bool performOrchardWalletUpdates
+            bool performOrchardWalletUpdates,
+            // When true (only on the live tip-connection path, never during bulk
+            // rescan), verify that the wallet's Orchard note commitment tree root
+            // matches the consensus root for the connected block. See #6052/#5960.
+            bool performConsistencyCheck = false
             );
     /**
      * pindex is the old tip being disconnected.
@@ -1365,7 +1369,8 @@ private:
             const CBlockIndex *pindex,
             const CBlock *pblock,
             MerkleFrontiers frontiers,
-            bool performOrchardWalletUpdates);
+            bool performOrchardWalletUpdates,
+            bool performConsistencyCheck = false);
 
     /* Add a transparent secret key to the wallet. Internal use only. */
     CPubKey AddTransparentSecretKey(

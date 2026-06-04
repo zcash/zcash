@@ -1391,13 +1391,14 @@ bool CWallet::ChangeWalletPassphrase(const SecureString& strOldWalletPassphrase,
 void CWallet::ChainTipAdded(const CBlockIndex *pindex,
                             const CBlock *pblock,
                             MerkleFrontiers frontiers,
-                            bool performOrchardWalletUpdates)
+                            bool performOrchardWalletUpdates,
+                            bool performConsistencyCheck)
 {
     const auto chainParams = Params();
     IncrementNoteWitnesses(
             chainParams.GetConsensus(),
             pindex, pblock,
-            frontiers, performOrchardWalletUpdates);
+            frontiers, performOrchardWalletUpdates, performConsistencyCheck);
     UpdateSaplingNullifierNoteMapForBlock(pblock);
 
     // SetBestChain() can be expensive for large wallets, so do only
@@ -2754,7 +2755,8 @@ void CWallet::IncrementNoteWitnesses(
         const CBlockIndex* pindex,
         const CBlock* pblockIn,
         MerkleFrontiers& frontiers,
-        bool performOrchardWalletUpdates)
+        bool performOrchardWalletUpdates,
+        bool performConsistencyCheck)
 {
     LOCK(cs_wallet);
     int chainHeight = pindex->nHeight;
@@ -2895,7 +2897,19 @@ void CWallet::IncrementNoteWitnesses(
         }
         assert(orchardWallet.CheckpointNoteCommitmentTree(pindex->nHeight));
 
-        assert(orchardWallet.AppendNoteCommitments(pindex->nHeight, *pblock));
+        // Regtest-only test hook for https://github.com/zcash/zcash/issues/5960:
+        // when `-regtestcorruptorchardtree=<height>` is set, skip appending this
+        // block's Orchard commitments at that height (while still checkpointing),
+        // simulating a wallet whose note commitment tree has silently diverged
+        // (undercounted) from consensus. This is the condition the fix must detect
+        // and recover from rather than aborting the node.
+        int64_t corruptOrchardTreeHeight =
+            (Params().NetworkIDString() == CBaseChainParams::REGTEST)
+                ? GetArg("-regtestcorruptorchardtree", -1)
+                : -1;
+        if (pindex->nHeight != corruptOrchardTreeHeight) {
+            assert(orchardWallet.AppendNoteCommitments(pindex->nHeight, *pblock));
+        }
 
         // This assertion slows scanning for blocks with few shielded transactions by an
         // order of magnitude. It is only intended as a consistency check between the node
