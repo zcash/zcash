@@ -1434,15 +1434,16 @@ void CWallet::ChainTip(const CBlockIndex *pindex,
 {
     const auto& consensus = Params().GetConsensus();
     if (added.has_value()) {
-        // Only run the Orchard note commitment tree consistency check when we are
-        // synced close to the chain tip, i.e. the block being connected is recent.
-        // During bulk catch-up after the wallet has been offline, blocks are
-        // connected one at a time through this same path, and checking every block
-        // would reintroduce the per-block cost that #6052 disabled. The block-time
-        // proxy mirrors the "are we caught up?" heuristic used just below to gate
-        // the Sapling migration.
-        bool nearChainTip = pblock->GetBlockTime() > GetTime() - nMaxTipAge;
-        ChainTipAdded(pindex, pblock, added.value(), true, nearChainTip);
+        // Run the Orchard note commitment tree consistency check on every block
+        // connected through this path. The wallet's anchor (`GetLatestAnchor`) is
+        // memoized by the underlying commitment tree and recomputed only when the
+        // tree actually changes, so a block that appends no Orchard commitments —
+        // the common case — costs nothing here. This is cheap enough to run during
+        // offline catch-up as well, so unlike #6052 we no longer gate it on a
+        // block-time "are we near the tip?" proxy. A bulk rescan still skips the
+        // check (see `ScanForWalletTransactions`): it rebuilds the tree from
+        // scratch and so cannot be diverged from itself.
+        ChainTipAdded(pindex, pblock, added.value(), true, true);
         // Prevent migration transactions from being created when node is syncing after launch,
         // and also when node wakes up from suspension/hibernation and incoming blocks are old.
         // We do not call IsInitialBlockDownload() because during IBD that locks on cs_main,
@@ -2952,16 +2953,20 @@ void CWallet::IncrementNoteWitnesses(
         }
 
         // Verify that the wallet's Orchard note commitment tree root matches the
-        // consensus root for this block. This check noticeably slows down bulk
-        // block processing (https://github.com/zcash/zcash/issues/6052), so the
-        // caller only enables it when connecting recent blocks at or near the
-        // chain tip — never during a bulk rescan or offline catch-up — where the
-        // per-block cost is negligible. Checking here lets us detect a divergence
-        // (#5960) as soon as it occurs, rather than only later as a fatal assertion
-        // on the disconnect path during a reorg. On divergence we shut down cleanly
-        // and prompt the operator to rebuild with -rescan. (The check is suppressed
-        // while the regtest divergence hook above is active, so that an injected
-        // divergence is exercised against the disconnect path.)
+        // consensus root for this block. Historically this check noticeably slowed
+        // down bulk block processing (https://github.com/zcash/zcash/issues/6052),
+        // because computing the wallet's anchor re-folded the commitment tree
+        // frontier on every block. That root is now memoized by the commitment tree
+        // and recomputed only when the tree changes, so a block that appends no
+        // Orchard commitments costs nothing here and the check runs on every block
+        // connected by `ChainTip`. Detecting a divergence (#5960) as it occurs lets
+        // us shut down cleanly and prompt the operator to rebuild with -rescan,
+        // rather than only discovering it later as a fatal assertion on the
+        // disconnect path during a reorg. The caller passes performConsistencyCheck
+        // = false only for a bulk rescan, which rebuilds the tree from scratch and
+        // so cannot be diverged from itself. (The check is also suppressed while the
+        // regtest divergence hook above is active, so that an injected divergence is
+        // exercised against the disconnect path.)
         if (corruptOrchardTreeHeight < 0 && performConsistencyCheck &&
             pindex->hashFinalOrchardRoot != orchardWallet.GetLatestAnchor()) {
             OrchardNoteCommitmentTreeDiverged(pindex->nHeight);
