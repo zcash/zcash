@@ -1432,6 +1432,19 @@ void CWallet::ChainTip(const CBlockIndex *pindex,
                        std::optional<MerkleFrontiers> added)
 {
     const auto& consensus = Params().GetConsensus();
+
+    // If a shutdown has already been requested, stop processing further blocks.
+    // This could happen, for example, because a divergence was detected while
+    // processing an earlier block in this connect/disconnect batch — see
+    // OrchardNoteCommitmentTreeDiverged.
+    // StartShutdown only requests an asynchronous shutdown, so without this the
+    // notification thread would keep mutating wallet state. Returning here, rather
+    // than inside Increment/DecrementNoteWitnesses, skips the whole block: it keeps
+    // the note commitment trees and the persisted best block (written by
+    // SetBestChain in ChainTipAdded) in lockstep, and avoids re-reaching the
+    // remaining fatal rewind/witness assertions for the rest of the batch.
+    if (ShutdownRequested()) return;
+
     if (added.has_value()) {
         ChainTipAdded(pindex, pblock, added.value(), true);
         // Prevent migration transactions from being created when node is syncing after launch,
@@ -2749,6 +2762,32 @@ static void IncrementNoteWitnesses(std::map<OutPoint, NoteData>& noteDataMap,
 }
 
 
+// Handle a detected divergence between the wallet's Orchard note commitment tree
+// and the consensus note commitment tree. This is a recoverable wallet-internal
+// inconsistency. The previous behaviour was to abort() the node, which shuts down
+// uncleanly and —because the diverged tree is durable on disk— recurs on the
+// next reorg as a restart-proof crash loop (#5960). Instead, log, notify the
+// operator, and request a clean shutdown; restarting with `-rescan` rebuilds the
+// wallet's Orchard state from the consensus note commitment tree.
+//
+// This runs on the wallet notification thread (ThreadNotifyWallets), so it must
+// request a clean shutdown via StartShutdown rather than throw: an exception
+// escaping onto that thread would terminate the process.
+static void OrchardNoteCommitmentTreeDiverged(int nHeight)
+{
+    LogPrintf(
+        "*** Orchard note commitment tree diverged from consensus at height %d; the "
+        "wallet's Orchard state is inconsistent and must be rebuilt with -rescan.\n",
+        nHeight);
+    uiInterface.ThreadSafeMessageBox(
+        _("Error: The wallet's Orchard note commitment tree has become inconsistent "
+          "with the block chain. The zcashd node will now shut down; please restart "
+          "with the -rescan option to rebuild the wallet's Orchard note commitment "
+          "tree."),
+        "", CClientUIInterface::MSG_ERROR);
+    StartShutdown();
+}
+
 void CWallet::IncrementNoteWitnesses(
         const Consensus::Params& consensus,
         const CBlockIndex* pindex,
@@ -2997,8 +3036,14 @@ void CWallet::DecrementNoteWitnesses(const Consensus::Params& consensus, const C
         // will be overwritten in the next `IncrementNoteWitnesses` call, so we can skip
         // the check against `hashFinalOrchardRoot`.
         auto walletLastCheckpointHeight = orchardWallet.GetLastCheckpointHeight();
-        if (walletLastCheckpointHeight.has_value()) {
-            assert(pindex->pprev->hashFinalOrchardRoot == orchardWallet.GetLatestAnchor());
+        if (walletLastCheckpointHeight.has_value() &&
+            pindex->pprev->hashFinalOrchardRoot != orchardWallet.GetLatestAnchor()) {
+            // The wallet's Orchard note commitment tree has diverged from consensus.
+            // Recover by requesting a clean shutdown (and `-rescan` on the next start)
+            // rather than aborting the node; see OrchardNoteCommitmentTreeDiverged
+            // and #5960.
+            OrchardNoteCommitmentTreeDiverged(pindex->pprev->nHeight);
+            return;
         }
     }
 
