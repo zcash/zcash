@@ -976,8 +976,8 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
         if (orchardAnchor.has_value()) {
             orchardSpendInfo = wallet.GetOrchardSpendInfo(
                     spendable.orchardNoteMetadata,
-                    anchorConfirmations,
-                    orchardAnchor.value());
+                    orchardAnchor.value(),
+                    anchorHeight);
         }
     }
 

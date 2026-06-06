@@ -4010,8 +4010,8 @@ bool CWallet::GetSaplingNoteWitnesses(const std::vector<SaplingOutPoint>& notes,
 
 std::vector<std::pair<libzcash::OrchardSpendingKey, orchard::SpendInfo>> CWallet::GetOrchardSpendInfo(
     const std::vector<OrchardNoteMetadata>& orchardNoteMetadata,
-    unsigned int confirmations,
-    const uint256& anchor) const
+    const uint256& anchor,
+    int anchorHeight) const
 {
     AssertLockHeld(cs_wallet);
 
@@ -4028,7 +4028,7 @@ std::vector<std::pair<libzcash::OrchardSpendingKey, orchard::SpendInfo>> CWallet
         throw std::runtime_error(
             "Cannot create an Orchard spend while the node is shutting down.");
     }
-    return orchardWallet.GetSpendInfo(orchardNoteMetadata, confirmations, anchor);
+    return orchardWallet.GetSpendInfo(orchardNoteMetadata, anchor, anchorHeight);
 }
 
 isminetype CWallet::IsMine(const CTxIn &txin) const
