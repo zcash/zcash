@@ -5,11 +5,13 @@
 #include "chainparams.h"
 #include "consensus/merkle.h"
 #include "fs.h"
+#include "init.h"
 #include "key_io.h"
 #include "main.h"
 #include "primitives/block.h"
 #include "random.h"
 #include "transaction_builder.h"
+#include "ui_interface.h"
 #include "gtest/utils.h"
 #include "util/test.h"
 #include "wallet/wallet.h"
@@ -939,6 +941,111 @@ TEST(WalletTests, GetConflictedOrchardNotes) {
     chainActive.SetTip(NULL);
     mapBlockIndex.erase(blockHash);
 
+    RegtestDeactivateNU5();
+}
+
+// Fixture for tests that a detected Orchard note commitment tree divergence triggers
+// the clean-shutdown recovery (OrchardNoteCommitmentTreeDiverged) instead of aborting.
+// SetUp connects a mock for the operator notification; TearDown disconnects it and
+// clears any requested shutdown — guaranteed even on an early return (ASSERT_*) or an
+// exception.
+class OrchardDivergenceTest : public ::testing::Test {
+protected:
+    void SetUp() override { ConnectMockUIInterface(mock_); }
+    void TearDown() override { DisconnectMockUIInterface(); }
+    MockUIInterface mock_;
+};
+
+// Regression test for #5960. When the re-enabled forward consistency check connects a
+// block near the tip and finds the wallet's Orchard note commitment tree root
+// inconsistent with the block's consensus root, it must request a clean shutdown (so
+// the operator can restart with -rescan) rather than abort the node.
+TEST_F(OrchardDivergenceTest, ForwardConsistencyCheckRequestsCleanShutdown) {
+    auto consensusParams = RegtestActivateNU5();
+    TestWallet wallet(Params());
+    wallet.GenerateNewSeed();
+
+    LOCK2(cs_main, wallet.cs_wallet);
+
+    MerkleFrontiers frontiers;
+    CBlock block;
+    CBlockIndex fakeIndex {block};
+    fakeIndex.nHeight = 0;
+    // Record a consensus Orchard root that the wallet's tree will not match, standing
+    // in for a divergence between the wallet and consensus.
+    fakeIndex.hashFinalOrchardRoot = uint256S("ff");
+    auto blockHash = block.GetHash();
+    mapBlockIndex.insert(std::make_pair(blockHash, &fakeIndex));
+    chainActive.SetTip(&fakeIndex);
+
+    ASSERT_FALSE(ShutdownRequested());
+    // The divergence handler must notify the operator via ThreadSafeMessageBox.
+    EXPECT_CALL(mock_, ThreadSafeMessageBox(
+        ::testing::_, ::testing::_, CClientUIInterface::MSG_ERROR)).WillOnce(::testing::Return(false));
+
+    // Connect the block with the consistency check enabled.
+    wallet.IncrementNoteWitnesses(consensusParams, &fakeIndex, &block, frontiers, true, true);
+
+    // The divergence must have been detected and a clean shutdown requested, not an abort.
+    EXPECT_TRUE(ShutdownRequested());
+
+    // Tear down (the mock and shutdown cleanup is handled by the fixture's TearDown).
+    chainActive.SetTip(NULL);
+    mapBlockIndex.erase(blockHash);
+    RegtestDeactivateNU5();
+}
+
+// Regression test for #5960. When a reorg disconnects a block and DecrementNoteWitnesses
+// finds the rewound wallet Orchard tree inconsistent with the parent block's consensus
+// root, it must request a clean shutdown rather than abort the node — the restart-proof
+// crash loop that motivated this work. Previously this was a fatal assertion.
+TEST_F(OrchardDivergenceTest, DisconnectRequestsCleanShutdown) {
+    auto consensusParams = RegtestActivateNU5();
+    TestWallet wallet(Params());
+    wallet.GenerateNewSeed();
+
+    LOCK2(cs_main, wallet.cs_wallet);
+
+    MerkleFrontiers frontiers;
+
+    // Connect two blocks so the wallet has checkpoints at heights 0 and 1, so that
+    // disconnecting block 1 rewinds to block 0. The consistency check is left off
+    // during setup (false) so the connect path does not itself request a shutdown.
+    CBlock block0;
+    CBlockIndex fakeIndex0 {block0};
+    fakeIndex0.nHeight = 0;
+    // Record a consensus Orchard root for block 0 that the wallet will not match.
+    fakeIndex0.hashFinalOrchardRoot = uint256S("ff");
+    auto blockHash0 = block0.GetHash();
+    mapBlockIndex.insert(std::make_pair(blockHash0, &fakeIndex0));
+    chainActive.SetTip(&fakeIndex0);
+    wallet.IncrementNoteWitnesses(consensusParams, &fakeIndex0, &block0, frontiers, true, false);
+
+    CBlock block1;
+    block1.hashPrevBlock = blockHash0;
+    CBlockIndex fakeIndex1 {block1};
+    fakeIndex1.nHeight = 1;
+    fakeIndex1.pprev = &fakeIndex0;
+    auto blockHash1 = block1.GetHash();
+    mapBlockIndex.insert(std::make_pair(blockHash1, &fakeIndex1));
+    chainActive.SetTip(&fakeIndex1);
+    wallet.IncrementNoteWitnesses(consensusParams, &fakeIndex1, &block1, frontiers, true, false);
+
+    ASSERT_FALSE(ShutdownRequested());
+    // The divergence handler must notify the operator via ThreadSafeMessageBox.
+    EXPECT_CALL(mock_, ThreadSafeMessageBox(
+        ::testing::_, ::testing::_, CClientUIInterface::MSG_ERROR)).WillOnce(::testing::Return(false));
+
+    // Disconnect block 1: this rewinds to block 0, whose recorded consensus root does
+    // not match the wallet's, so a clean shutdown must be requested.
+    wallet.DecrementNoteWitnesses(consensusParams, &fakeIndex1);
+
+    EXPECT_TRUE(ShutdownRequested());
+
+    // Tear down (the mock and shutdown cleanup is handled by the fixture's TearDown).
+    chainActive.SetTip(NULL);
+    mapBlockIndex.erase(blockHash0);
+    mapBlockIndex.erase(blockHash1);
     RegtestDeactivateNU5();
 }
 
