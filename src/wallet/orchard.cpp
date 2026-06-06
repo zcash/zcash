@@ -19,7 +19,13 @@ std::vector<std::pair<libzcash::OrchardSpendingKey, orchard::SpendInfo>> Orchard
 {
     std::vector<std::pair<libzcash::OrchardSpendingKey, orchard::SpendInfo>> result;
     auto walletAnchor = GetAnchorWithConfirmations(anchorConfirmations);
-    assert(walletAnchor.has_value() && walletAnchor.value() == anchor);
+    if (!walletAnchor.has_value() || walletAnchor.value() != anchor) {
+        // Reachable on the ordinary spend path, so throw rather than aborting the
+        // node (as an assertion did previously) on an anchor mismatch (#5960, #7150).
+        throw std::runtime_error(
+            "The wallet's Orchard note commitment tree does not match the anchor "
+            "selected for this spend.");
+    }
 
     for (const auto& note : noteMetadata) {
         auto pSpendInfo = orchard_wallet_get_spend_info(
