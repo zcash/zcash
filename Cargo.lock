@@ -297,9 +297,9 @@ dependencies = [
 
 [[package]]
 name = "bridgetree"
-version = "0.7.0"
+version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3990cc973c3b9c41c4dbb66cde22e3af77c4c7b133008d81f292ad12c27ed794"
+checksum = "3d74f010107ed76a581e5c348f27bdf47b8e6286c667d3ae5be473bd07bfc22f"
 dependencies = [
  "incrementalmerkletree",
 ]

@@ -1391,13 +1391,14 @@ bool CWallet::ChangeWalletPassphrase(const SecureString& strOldWalletPassphrase,
 void CWallet::ChainTipAdded(const CBlockIndex *pindex,
                             const CBlock *pblock,
                             MerkleFrontiers frontiers,
-                            bool performOrchardWalletUpdates)
+                            bool performOrchardWalletUpdates,
+                            bool performConsistencyCheck)
 {
     const auto chainParams = Params();
     IncrementNoteWitnesses(
             chainParams.GetConsensus(),
             pindex, pblock,
-            frontiers, performOrchardWalletUpdates);
+            frontiers, performOrchardWalletUpdates, performConsistencyCheck);
     UpdateSaplingNullifierNoteMapForBlock(pblock);
 
     // SetBestChain() can be expensive for large wallets, so do only
@@ -1446,7 +1447,12 @@ void CWallet::ChainTip(const CBlockIndex *pindex,
     if (ShutdownRequested()) return;
 
     if (added.has_value()) {
-        ChainTipAdded(pindex, pblock, added.value(), true);
+        // Connecting a block at the chain tip: run the Orchard note commitment tree
+        // consistency check (performConsistencyCheck = true) to detect a divergence
+        // (#5960) as it occurs. This is cheap on every connected block because the
+        // wallet's anchor is memoized; see IncrementNoteWitnesses.
+        ChainTipAdded(pindex, pblock, added.value(), true, true);
+
         // Prevent migration transactions from being created when node is syncing after launch,
         // and also when node wakes up from suspension/hibernation and incoming blocks are old.
         // We do not call IsInitialBlockDownload() because during IBD that locks on cs_main,
@@ -2793,7 +2799,8 @@ void CWallet::IncrementNoteWitnesses(
         const CBlockIndex* pindex,
         const CBlock* pblockIn,
         MerkleFrontiers& frontiers,
-        bool performOrchardWalletUpdates)
+        bool performOrchardWalletUpdates,
+        bool performConsistencyCheck)
 {
     LOCK(cs_wallet);
     int chainHeight = pindex->nHeight;
@@ -2936,12 +2943,22 @@ void CWallet::IncrementNoteWitnesses(
 
         assert(orchardWallet.AppendNoteCommitments(pindex->nHeight, *pblock));
 
-        // This assertion slows scanning for blocks with few shielded transactions by an
-        // order of magnitude. It is only intended as a consistency check between the node
-        // and wallet computing trees. Commented out until we have figured out what is
-        // causing the slowness and fixed it.
-        // https://github.com/zcash/zcash/issues/6052
-        //assert(pindex->hashFinalOrchardRoot == orchardWallet.GetLatestAnchor());
+        // Verify the wallet's Orchard note commitment tree root against the block's
+        // consensus root, to catch a divergence (#5960) as soon as it occurs rather
+        // than only later, fatally, on the disconnect path during a reorg. Computing
+        // the wallet's anchor used to re-fold the commitment tree frontier on every
+        // block, which is why #6052 disabled this check; the frontier root is now
+        // memoized and recomputed only when the tree changes, so a block that appends
+        // no Orchard commitments costs nothing here and the check runs on every block
+        // connected by ChainTip. The caller passes performConsistencyCheck = false only
+        // for a bulk rescan, which rebuilds the tree from the consensus frontier and so
+        // cannot have diverged from it. On divergence, request a clean shutdown and
+        // prompt the operator to `-rescan` (the same recovery as the disconnect path).
+        if (performConsistencyCheck &&
+            pindex->hashFinalOrchardRoot != orchardWallet.GetLatestAnchor()) {
+            OrchardNoteCommitmentTreeDiverged(pindex->nHeight);
+            return;
+        }
     }
 
     // For performance reasons, we write out the witness cache in
@@ -4795,8 +4812,12 @@ std::optional<int> CWallet::ScanForWalletTransactions(
                     assert(pcoinsTip->GetOrchardAnchorAt(pindex->pprev->hashFinalOrchardRoot, frontiers.orchard));
                 }
             }
-            // Increment note witness caches
-            ChainTipAdded(pindex, &block, frontiers, performOrchardWalletUpdates);
+            // Connecting a block during a bulk rescan: skip the Orchard note commitment
+            // tree consistency check (performConsistencyCheck = false). The rescan
+            // rebuilds the tree from the consensus frontier, so it cannot have diverged
+            // (#5960), and running the check would reintroduce the per-block cost #6052
+            // removed; see IncrementNoteWitnesses.
+            ChainTipAdded(pindex, &block, frontiers, performOrchardWalletUpdates, false);
 
             pindex = chainActive.Next(pindex);
             if (GetTime() >= nNow + 60) {

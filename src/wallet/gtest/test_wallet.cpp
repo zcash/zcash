@@ -61,9 +61,11 @@ public:
                                 const CBlockIndex* pindex,
                                 const CBlock* pblock,
                                 MerkleFrontiers& frontiers,
-                                bool performOrchardWalletUpdates) {
+                                bool performOrchardWalletUpdates,
+                                bool performConsistencyCheck) {
         CWallet::IncrementNoteWitnesses(
-                consensus, pindex, pblock, frontiers, performOrchardWalletUpdates);
+                consensus, pindex, pblock, frontiers, performOrchardWalletUpdates,
+                performConsistencyCheck);
     }
 
 
@@ -109,7 +111,7 @@ static std::pair<JSOutPoint, SaplingOutPoint> CreateValidBlock(TestWallet& walle
     wallet.LoadWalletTx(wtx);
 
     block.vtx.push_back(wtx);
-    wallet.IncrementNoteWitnesses(Params().GetConsensus(), &index, &block, frontiers, true);
+    wallet.IncrementNoteWitnesses(Params().GetConsensus(), &index, &block, frontiers, true, false);
 
     return std::make_pair(jsoutpt, saplingNotes[0]);
 }
@@ -739,7 +741,7 @@ TEST(WalletTests, GetConflictedSaplingNotes) {
         wallet.LoadWalletTx(wtx);
 
         // Simulate receiving new block and ChainTip signal
-        wallet.IncrementNoteWitnesses(consensusParams, &fakeIndex, &block, frontiers, true);
+        wallet.IncrementNoteWitnesses(consensusParams, &fakeIndex, &block, frontiers, true, false);
         wallet.UpdateSaplingNullifierNoteMapForBlock(&block);
 
         // Retrieve the updated wtx from wallet
@@ -861,8 +863,10 @@ TEST(WalletTests, GetConflictedOrchardNotes) {
     wtx.SetMerkleBranch(block);
     wallet.LoadWalletTx(wtx);
 
-    // Simulate receiving new block and ChainTip signal
-    wallet.IncrementNoteWitnesses(consensusParams, &fakeIndex, &block, frontiers, true);
+    // Simulate receiving a new block and ChainTip signal at the chain tip, exercising
+    // the Orchard consistency check (performConsistencyCheck = true). This block's
+    // hashFinalOrchardRoot was set consistently above, so the check passes.
+    wallet.IncrementNoteWitnesses(consensusParams, &fakeIndex, &block, frontiers, true, true);
 
     // Fetch the Orchard note so we can spend it.
     std::vector<SproutNoteEntry> sproutEntries;
@@ -1139,7 +1143,7 @@ TEST(WalletTests, NavigateFromSaplingNullifierToNote) {
     }
 
     // Simulate receiving new block and ChainTip signal
-    wallet.IncrementNoteWitnesses(consensusParams, &fakeIndex, &block, frontiers, true);
+    wallet.IncrementNoteWitnesses(consensusParams, &fakeIndex, &block, frontiers, true, false);
     wallet.UpdateSaplingNullifierNoteMapForBlock(&block);
 
     // Retrieve the updated wtx from wallet
@@ -1258,7 +1262,7 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
         // Simulate receiving new block and ChainTip signal.
         // This triggers calculation of nullifiers for notes belonging to this wallet
         // in the output descriptions of wtx.
-        wallet.IncrementNoteWitnesses(consensusParams, &fakeIndex, &block, frontiers, true);
+        wallet.IncrementNoteWitnesses(consensusParams, &fakeIndex, &block, frontiers, true, false);
         wallet.UpdateSaplingNullifierNoteMapForBlock(&block);
 
         // Retrieve the updated wtx from wallet
@@ -1385,7 +1389,7 @@ TEST(WalletTests, CachedWitnessesEmptyChain) {
     CBlockIndex index(block);
     MerkleFrontiers frontiers;
     const auto& params = Params().GetConsensus();
-    wallet.IncrementNoteWitnesses(params, &index, &block, frontiers, true);
+    wallet.IncrementNoteWitnesses(params, &index, &block, frontiers, true, false);
 
     // this death will occur because there will not be sufficient Sprout witnesses to reach the
     // default anchor depth
@@ -1397,7 +1401,7 @@ TEST(WalletTests, CachedWitnessesEmptyChain) {
         CBlock another_block;
         CBlockIndex another_index(another_block);
         another_index.nHeight = 1;
-        wallet.IncrementNoteWitnesses(params, &another_index, &another_block, frontiers, true);
+        wallet.IncrementNoteWitnesses(params, &another_index, &another_block, frontiers, true, false);
     }
 
     EXPECT_DEATH(::GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, nAnchorConfirmations, sproutWitnesses, saplingWitnesses),
@@ -1407,13 +1411,13 @@ TEST(WalletTests, CachedWitnessesEmptyChain) {
         CBlock another_block;
         CBlockIndex another_index(another_block);
         another_index.nHeight = i;
-        wallet.IncrementNoteWitnesses(params, &another_index, &another_block, frontiers, true);
+        wallet.IncrementNoteWitnesses(params, &another_index, &another_block, frontiers, true, false);
     }
 
     CBlock last_block;
     CBlockIndex last_index(last_block);
     last_index.nHeight = 9;
-    wallet.IncrementNoteWitnesses(params, &last_index, &last_block, frontiers, true);
+    wallet.IncrementNoteWitnesses(params, &last_index, &last_block, frontiers, true, false);
 
     ::GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, nAnchorConfirmations, sproutWitnesses, saplingWitnesses);
 
@@ -1495,7 +1499,7 @@ TEST(WalletTests, CachedWitnessesChainTip) {
             .sapling = frontiers.sapling,
             .orchard = frontiers.orchard,
         };
-        wallet.IncrementNoteWitnesses(Params().GetConsensus(), &index2, &block2, frontiers2, true);
+        wallet.IncrementNoteWitnesses(Params().GetConsensus(), &index2, &block2, frontiers2, true, false);
 
         auto anchors2 = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, 1, sproutWitnesses, saplingWitnesses);
         EXPECT_NE(anchors2.first, anchors2.second);
@@ -1516,7 +1520,7 @@ TEST(WalletTests, CachedWitnessesChainTip) {
         EXPECT_NE(anchors1.second, anchors3.second);
 
         // Re-incrementing with the same block should give the same result
-        wallet.IncrementNoteWitnesses(Params().GetConsensus(), &index2, &block2, frontiers, true);
+        wallet.IncrementNoteWitnesses(Params().GetConsensus(), &index2, &block2, frontiers, true, false);
         auto anchors4 = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, 1, sproutWitnesses, saplingWitnesses);
         EXPECT_NE(anchors4.first, anchors4.second);
 
@@ -1526,7 +1530,7 @@ TEST(WalletTests, CachedWitnessesChainTip) {
         EXPECT_EQ(anchors2.second, anchors4.second);
 
         // Incrementing with the same block again should not change the cache
-        wallet.IncrementNoteWitnesses(Params().GetConsensus(), &index2, &block2, frontiers, true);
+        wallet.IncrementNoteWitnesses(Params().GetConsensus(), &index2, &block2, frontiers, true, false);
         std::vector<std::optional<SproutWitness>> sproutWitnesses5;
         std::vector<std::optional<SaplingWitness>> saplingWitnesses5;
 
@@ -1611,7 +1615,7 @@ TEST(WalletTests, CachedWitnessesDecrementFirst) {
         EXPECT_NE(anchors2.second, anchors4.second);
 
         // Re-incrementing with the same block should give the same result
-        wallet.IncrementNoteWitnesses(Params().GetConsensus(), &index2, &block2, frontiers, true);
+        wallet.IncrementNoteWitnesses(Params().GetConsensus(), &index2, &block2, frontiers, true, false);
 
         auto anchors5 = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, 1, sproutWitnesses, saplingWitnesses);
 
@@ -1672,7 +1676,7 @@ TEST(WalletTests, CachedWitnessesCleanIndex) {
     // used to increment witnesses again.
     for (size_t i = 0; i < numBlocks; i++) {
         MerkleFrontiers riPrevFrontiers{riFrontiers};
-        wallet.IncrementNoteWitnesses(Params().GetConsensus(), &(indices[i]), &(blocks[i]), riFrontiers, true);
+        wallet.IncrementNoteWitnesses(Params().GetConsensus(), &(indices[i]), &(blocks[i]), riFrontiers, true, false);
 
         auto anchors = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, 1, sproutWitnesses, saplingWitnesses);
         for (size_t j = 0; j < numBlocks; j++) {
@@ -1699,7 +1703,7 @@ TEST(WalletTests, CachedWitnessesCleanIndex) {
             }
 
             {
-                wallet.IncrementNoteWitnesses(Params().GetConsensus(), &(indices[i]), &(blocks[i]), riPrevFrontiers, true);
+                wallet.IncrementNoteWitnesses(Params().GetConsensus(), &(indices[i]), &(blocks[i]), riPrevFrontiers, true, false);
                 auto anchors = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, 1, sproutWitnesses, saplingWitnesses);
                 for (size_t j = 0; j < numBlocks; j++) {
                     EXPECT_TRUE((bool) sproutWitnesses[j]);
@@ -2120,7 +2124,7 @@ TEST(WalletTests, UpdatedSaplingNoteData) {
     wallet.LoadWalletTx(wtx);
 
     // Simulate receiving new block and ChainTip signal
-    wallet.IncrementNoteWitnesses(consensusParams, &fakeIndex, &block, frontiers, true);
+    wallet.IncrementNoteWitnesses(consensusParams, &fakeIndex, &block, frontiers, true, false);
     wallet.UpdateSaplingNullifierNoteMapForBlock(&block);
 
     // Retrieve the updated wtx from wallet
@@ -2286,7 +2290,7 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
     wallet.LoadWalletTx(wtx);
 
     // Simulate receiving new block and ChainTip signal
-    wallet.IncrementNoteWitnesses(consensusParams, &fakeIndex, &block, frontiers, true);
+    wallet.IncrementNoteWitnesses(consensusParams, &fakeIndex, &block, frontiers, true, false);
     wallet.UpdateSaplingNullifierNoteMapForBlock(&block);
 
     // Retrieve the updated wtx from wallet
