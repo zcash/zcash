@@ -182,8 +182,22 @@ class DuplicateBlockClobbersChainValueTest(BitcoinTestFramework):
         assert_equal(node.getblockcount(), 200)
 
         # Activate NU5 (which enables Orchard) by mining past height 210.
+        txcount_before = node.getwalletinfo()['txcount']
         node.generate(11)
         assert_equal(node.getblockcount(), 211)
+
+        # The wallet updates its Orchard note commitment tree on the asynchronous
+        # ThreadNotifyWallets thread, so it can lag the chain tip after a burst of
+        # blocks (neither `generate` nor a p2p ping waits for it). Poll until the
+        # wallet has processed the 11 new blocks (each adds its coinbase to the
+        # wallet in the same step that extends the Orchard tree) before spending
+        # against an anchor behind the tip.
+        for _ in range(120):
+            if node.getwalletinfo()['txcount'] >= txcount_before + 11:
+                break
+            time.sleep(0.25)
+        else:
+            raise AssertionError("wallet did not finish processing the generated blocks")
 
         # Mine an Orchard shielding transaction so we have a block with
         # non-zero per-block Orchard delta. We use Orchard rather than
