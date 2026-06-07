@@ -11,7 +11,6 @@ from test_framework.util import (
     CANOPY_BRANCH_ID,
     NU5_BRANCH_ID,
     assert_equal,
-    assert_raises_message,
     get_coinbase_address,
     nuparams,
     start_nodes,
@@ -61,19 +60,11 @@ class WalletZip317DefaultTest(BitcoinTestFramework):
         acct1 = self.nodes[1].z_getnewaccount()['account']
         ua1 = self.nodes[1].z_getaddressforaccount(acct1, ['orchard'])['address']
 
-        # The next z_sendmany call fails when passed `None`/`ZIP_317_FEE` because it
-        # calculates a fee that is too low.
-        # https://github.com/zcash/zcash/issues/6956
         recipients = [{"address": ua1, "amount": Decimal('1')}]
-        opid = self.nodes[0].z_sendmany(ua0, recipients, 1, ZIP_317_FEE, 'AllowRevealedAmounts')
-        # The buggy behaviour.
-        assert_raises_message(AssertionError,
-                              "Transaction commit failed:: tx unpaid action limit exceeded: 1 action(s) exceeds limit of 0",
-                              wait_and_assert_operationid_status, self.nodes[0], opid)
-
-        # If we pass `fee` instead of `None`, it succeeds.
+        # This requires four logical actions: one Sapling spend padded to two
+        # Sapling actions, plus two Orchard actions.
         fee = conventional_fee(4)
-        opid = self.nodes[0].z_sendmany(ua0, recipients, 1, fee, 'AllowRevealedAmounts')
+        opid = self.nodes[0].z_sendmany(ua0, recipients, 1, ZIP_317_FEE, 'AllowRevealedAmounts')
         wait_and_assert_operationid_status(self.nodes[0], opid)
 
         self.sync_all()
