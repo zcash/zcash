@@ -321,7 +321,7 @@ NETWORK_UPGRADES = [
         phase=6,
         notes=(
             "NU5 introduces the Orchard shielded pool (ZIP 224), Unified "
-            "Addresses (ZIP 316), v5 transaction format, and Halo2 proofs."
+            "Addresses (ZIP 316), v5 transaction format, and Halo 2 proofs."
         ),
     ),
     NetworkUpgrade(
