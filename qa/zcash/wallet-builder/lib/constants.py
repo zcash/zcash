@@ -288,7 +288,8 @@ NETWORK_UPGRADES = [
         phase=5,
         notes=(
             "Canopy disables Sprout deposits (ZIP 211) and introduces the "
-            "development fund (ZIP 1014)."
+            "development fund (ZIP 1014). It also changes the "
+            "note plaintext format for Sapling (ZIP 212)."
         ),
     ),
     NetworkUpgrade(
