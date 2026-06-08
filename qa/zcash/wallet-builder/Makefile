@@ -21,41 +21,19 @@ OUTPUT_DIR    := output
 
 .PHONY: all build run extract shell clean nuke help
 
-# Default target
-help:
-	@echo "Zcash Regtest Chain Builder"
-	@echo ""
-	@echo "Targets:"
-	@echo "  make build    - Build Docker image (~4GB download on first run)"
-	@echo "  make run      - Run the chain build (~30-60 min)"
-	@echo "  make extract  - Copy artifacts to ./output/"
-	@echo "  make all      - Build + run + extract"
-	@echo ""
-	@echo "  make shell    - Open a debug shell in the container"
-	@echo "  make clean    - Remove container and output"
-	@echo "  make nuke     - Remove container, image, and output"
-	@echo ""
+help: ## Ask for help!
+	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
-all: build run extract
+all: build run extract ## Build + run + extract
 
-# Build the Docker image.
-# The first build downloads ~4GB (zcashd binaries + proving parameters).
-# Subsequent builds use Docker layer cache and are fast unless
-# scripts or config change.
-build:
+build: ## Build Docker image (~4GB download on first run)
 	docker build -t $(IMAGE_NAME) .
 
-# Run the chain build inside Docker.
-# This creates the regtest chain with wallet state across all NUs.
-# Artifacts are stored inside the container at /artifacts/.
-run:
+run: ## Run the chain build (~30-60 min)
 	-docker rm -f $(CONTAINER_NAME) 2>/dev/null
 	docker run --name $(CONTAINER_NAME) $(IMAGE_NAME)
 
-# Extract artifacts from the completed container to ./output/.
-# Includes the full regtest chain state and zcash proving parameters
-# so the chain can be resumed for future NUs.
-extract:
+extract: ## Copy artifacts to ./output/
 	@mkdir -p $(OUTPUT_DIR)
 	-docker cp $(CONTAINER_NAME):/artifacts/final/wallet.dat $(OUTPUT_DIR)/wallet.dat
 	-docker cp $(CONTAINER_NAME):/artifacts/final/full_manifest.json $(OUTPUT_DIR)/full_manifest.json
@@ -73,21 +51,14 @@ extract:
 	@du -sh $(OUTPUT_DIR)/regtest 2>/dev/null || true
 	@du -sh $(OUTPUT_DIR)/zcash-params 2>/dev/null || true
 
-# Open a shell inside a fresh container for debugging.
-# Useful for:
-#   - Testing zcashd binaries manually
-#   - Inspecting the chain state
-#   - Running individual phase scripts
-shell:
+shell: ## Open a debug shell in the container
 	docker run --rm -it --entrypoint /bin/bash $(IMAGE_NAME)
 
-# Clean up the run container and output directory.
-clean:
+clean: ## Remove container and output
 	-docker rm -f $(CONTAINER_NAME) 2>/dev/null
 	rm -rf $(OUTPUT_DIR)
 	@echo "Cleaned container and output."
 
-# Remove everything: container, image, and output.
-nuke: clean
+nuke: clean ## Remove container, image, and output
 	-docker rmi $(IMAGE_NAME) 2>/dev/null
 	@echo "Removed Docker image."
