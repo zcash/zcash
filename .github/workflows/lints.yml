@@ -71,7 +71,7 @@ jobs:
       # the tree (contrib/docker, src/secp256k1) still have outstanding hadolint
       # findings; add them here once they are clean.
       - name: Lint wallet-builder Dockerfile
-        uses: hadolint/hadolint-action@v3.1.0
+        uses: hadolint/hadolint-action@v3.3.0
         with:
           dockerfile: qa/zcash/wallet-builder/Dockerfile
 
