@@ -66,7 +66,7 @@ jobs:
     name: Hadolint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v6.0.3
       # Scoped to the wallet-builder Dockerfile for now. Other Dockerfiles in
       # the tree (contrib/docker, src/secp256k1) still have outstanding hadolint
       # findings; add them here once they are clean.
