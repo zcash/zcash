@@ -13,7 +13,11 @@ use zcash_note_encryption::try_output_recovery_with_ovk;
 use zcash_primitives::transaction::components::orchard as orchard_serialization;
 use zcash_protocol::value::ZatBalance;
 
-use crate::{bridge::ffi, streams::CppStream};
+use crate::{
+    bridge::ffi,
+    bundle_parse_error::format_bundle_parse_error,
+    streams::CppStream,
+};
 
 pub struct Action(orchard::Action<Signature<SpendAuth>>);
 
@@ -95,10 +99,9 @@ impl Bundle {
         // is parsed (see `zcash_transaction_digests` / `Transaction::read`), where the proof
         // size is checked against the transaction's own consensus branch id (Strict for NU6.2
         // onward). That parse is reached for every transaction via CTransaction::UpdateHash.
-        match orchard_serialization::read_v5_bundle(reader, ProofSizeEnforcement::Unenforced) {
-            Ok(parsed) => Ok(Box::new(Bundle(parsed))),
-            Err(e) => Err(format!("Failed to parse Orchard bundle: {}", e)),
-        }
+        orchard_serialization::read_v5_bundle(reader, ProofSizeEnforcement::Unenforced)
+            .map(|parsed| Box::new(Bundle(parsed)))
+            .map_err(|e| format_bundle_parse_error(e, "Failed to parse Orchard bundle"))
     }
 
     /// Serializes an authorized Orchard bundle to the given stream.
