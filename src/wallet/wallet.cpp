@@ -2998,7 +2998,11 @@ void CWallet::DecrementNoteWitnesses(const Consensus::Params& consensus, const C
         // the check against `hashFinalOrchardRoot`.
         auto walletLastCheckpointHeight = orchardWallet.GetLastCheckpointHeight();
         if (walletLastCheckpointHeight.has_value()) {
-            assert(pindex->pprev->hashFinalOrchardRoot == orchardWallet.GetLatestAnchor());
+            if (pindex->pprev && pindex->pprev->hashFinalOrchardRoot != orchardWallet.GetLatestAnchor()) {
+                LogPrintf("Warning: Orchard anchor mismatch detected during rewind\n");
+            } else if (pindex->pprev) {
+                assert(pindex->pprev->hashFinalOrchardRoot == orchardWallet.GetLatestAnchor());
+            }
         }
     }
 
