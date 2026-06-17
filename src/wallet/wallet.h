@@ -1313,8 +1313,8 @@ protected:
         }
         try {
             LOCK(cs_wallet);
-            for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
-                auto wtx = wtxItem.second;
+            for (const std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
+                const CWalletTx& wtx = wtxItem.second;
                 // We skip transactions for which mapSproutNoteData and mapSaplingNoteData
                 // are empty. This covers transactions that have no Sprout or Sapling data
                 // (i.e. are purely transparent), as well as shielding and unshielding
