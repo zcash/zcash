@@ -151,9 +151,9 @@ NETWORK_UPGRADES = [
         id="sprout",
         branch_id=None,  # Genesis -- no branch ID
         activation_height=0,
-        # Historical target: v1.0.15 (commit 93332d6e8..., Mar 28, 2018).
-        # See config/versions.json for current selected version (substituted
-        # to v2.1.0-1 to avoid the BCTV14 sprout-proving.key requirement).
+        # Pre-Sapling, non-deterministic (no HD seed) zcashd. The `make ancient`
+        # build (phases 0-1) creates its wallet here, so phase 0 must run a real
+        # pre-Sapling binary (v1.1.1; uses the BCTV14 sprout-proving.key).
         zcashd_version=_PHASE_VERSIONS[0],
         pools={
             Pool.TRANSPARENT: PoolPermission.FULL,
@@ -178,8 +178,8 @@ NETWORK_UPGRADES = [
         # ZIP 200: Network Upgrade Mechanism
         branch_id="5ba81b19",
         activation_height=200,
-        # Historical target: v1.1.1 (commit 047b0bf9..., May 29, 2018).
-        # See config/versions.json for current selected version.
+        # v1.1.1 is the historical Overwinter release (also pre-Sapling/BCTV14).
+        # Phases 0-1 share it; the switch to v2.1.0-1 is at the Sapling boundary.
         zcashd_version=_PHASE_VERSIONS[1],
         pools={
             Pool.TRANSPARENT: PoolPermission.FULL,

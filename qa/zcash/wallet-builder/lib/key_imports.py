@@ -115,6 +115,17 @@ def _privkey_to_wif(privkey_bytes: bytes, compressed: bool = True) -> str:
     return _base58check_encode(payload)
 
 
+def _supports_importpubkey_and_p2sh(version: str) -> bool:
+    """Whether this zcashd version has importpubkey and importaddress's p2sh flag.
+
+    Both are Bitcoin 0.10/0.11 features and have been present in zcashd since
+    v1.1.0; v1.0.x predates them (returns 404). Compares (major, minor).
+    """
+    parts = version.split(".")
+    major, minor = int(parts[0]), int(parts[1])
+    return (major, minor) >= (1, 1)
+
+
 def import_keys_for_phase(primary_rpc: ZcashRPC,
                           external_rpc: ZcashRPC | None,
                           phase_index: int) -> ImportedKeys:
@@ -172,10 +183,11 @@ def import_keys_for_phase(primary_rpc: ZcashRPC,
 
     # ------------------------------------------------------------------
     # 3. importaddress + p2sh -- 1-of-1 multisig redeemScript (watch-only)
-    # The p2sh (4th) parameter was added around v2.1.0. Skip on v1.x/v2.0.x.
+    # importpubkey and importaddress's p2sh flag are Bitcoin 0.10/0.11 features
+    # present in zcashd since v1.1.0 (v1.0.x predates them).
     # ------------------------------------------------------------------
     major = int(nu.zcashd_version.split(".")[0])
-    if major >= 3 or (major == 2 and not nu.zcashd_version.startswith("2.0")):
+    if _supports_importpubkey_and_p2sh(nu.zcashd_version):
         try:
             if external_rpc is not None:
                 privkey3, _ = _generate_random_keypair()
@@ -206,10 +218,9 @@ def import_keys_for_phase(primary_rpc: ZcashRPC,
 
     # ------------------------------------------------------------------
     # 4. importpubkey -- random pubkey (watch-only)
-    # Not available in v1.0.x (returns 404). Available from v1.1.x+.
+    # Available from v1.1.0+ (v1.0.x predates it and returns 404).
     # ------------------------------------------------------------------
-    # importpubkey available from ~v2.1.0+. Earlier versions return 404.
-    if major >= 3 or (major == 2 and not nu.zcashd_version.startswith("2.0")):
+    if _supports_importpubkey_and_p2sh(nu.zcashd_version):
         try:
             if external_rpc is not None:
                 privkey4, _ = _generate_random_keypair()
