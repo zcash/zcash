@@ -99,6 +99,12 @@ TEST(OrchardWalletTests, SpendResolvesAnchorByAbsoluteHeight) {
     ASSERT_EQ(notes.size(), 1);
 
     // Connect the note's block at height 2 and capture the anchor at that height.
+    // This mirrors the production convention (CWallet::IncrementNoteWitnesses
+    // checkpoints height H *before* appending block H's commitments), under which
+    // the checkpoint identified by H records the tree state at the *end of block
+    // H-1*. So the checkpoint we create as "2" here records the pre-block-2 (empty)
+    // state, and the end-of-block-2 anchor is the current frontier root captured
+    // after the append below.
     CBlock block2;
     block2.vtx.resize(2);
     block2.vtx[1] = txRecv;
@@ -117,9 +123,11 @@ TEST(OrchardWalletTests, SpendResolvesAnchorByAbsoluteHeight) {
     }
     ASSERT_EQ(wallet.GetLastCheckpointHeight().value(), 7);
 
-    // The tip's anchor now differs from the anchor at height 2, so the spend can only
-    // succeed if GetSpendInfo resolves by absolute height (depth = 7 - 2 = 5) rather
-    // than against the latest checkpoint.
+    // The tip's anchor now differs from the end-of-block-2 anchor, so the spend can
+    // only succeed if GetSpendInfo resolves by absolute height: it computes
+    // depth = lastCheckpointHeight - anchorHeight = 7 - 2 = 5, which resolves to
+    // checkpoint id 3 — the checkpoint created before block 3, recording the
+    // end-of-block-2 state — rather than against the latest checkpoint.
     ASSERT_NE(wallet.GetLatestAnchor(), anchorAtHeight2);
     auto spendInfo = wallet.GetSpendInfo(notes, anchorAtHeight2, 2);
     ASSERT_EQ(spendInfo.size(), 1);
@@ -158,9 +166,11 @@ void BuildOrchardSpend(CTransaction& outTx) {
         notes, sk.ToFullViewingKey().ToIncomingViewingKey(), true, true);
     ASSERT_EQ(notes.size(), 1);
 
-    // Checkpoint the tree at height 2 (the height of the block whose commitments
-    // are appended below). GetSpendInfo addresses the wallet's tree by absolute
-    // height (#7150), so it needs a checkpoint to resolve the anchor against.
+    // Checkpoint at height 2 before appending block 2's commitments, as in
+    // production (CWallet::IncrementNoteWitnesses): the checkpoint identified by H
+    // is created before block H and records the end-of-block-(H-1) state.
+    // GetSpendInfo addresses the wallet's tree by absolute height (#7150), so a
+    // checkpoint must exist for GetLastCheckpointHeight() to resolve against.
     ASSERT_TRUE(wallet.CheckpointNoteCommitmentTree(2));
 
     // If we attempt to get spend info now, it will fail because the note hasn't

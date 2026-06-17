@@ -353,8 +353,10 @@ public:
 
     /**
      * Return the root of the wallet's Orchard note commitment tree at the given
-     * checkpoint depth (0 = the most recent checkpoint), or std::nullopt if the
-     * wallet's tree has no checkpoint at that depth.
+     * checkpoint depth, or std::nullopt if the wallet's tree has no checkpoint at
+     * that depth. Depth 0 is the current frontier (the state after the most recent
+     * append, which may be ahead of any checkpoint); depth 1 is the most recent
+     * checkpoint, depth 2 the one before it, and so on.
      */
     std::optional<uint256> GetAnchorAtCheckpointDepth(size_t checkpointDepth) const {
         uint256 value;
