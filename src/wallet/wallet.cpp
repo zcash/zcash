@@ -4032,19 +4032,12 @@ std::vector<std::pair<libzcash::OrchardSpendingKey, orchard::SpendInfo>> CWallet
 {
     AssertLockHeld(cs_wallet);
 
-    // Refuse to construct an Orchard spend once a shutdown has been requested.
-    // Shutdown is asynchronous, so the node may still be up, but Orchard proof
-    // construction is slow relative to the shutdown process, so a spend started now
-    // is unlikely to complete. More importantly, when the shutdown was triggered by
-    // a detected Orchard note commitment tree divergence (see
-    // OrchardNoteCommitmentTreeDiverged), the tree we would read here is known to
-    // be inconsistent. cs_wallet —held here and by the divergence detector when it
-    // requests the shutdown— ensures we observe the request, closing the window in
-    // which a spend could read the diverged tree.
-    if (ShutdownRequested()) {
-        throw std::runtime_error(
-            "Cannot create an Orchard spend while the node is shutting down.");
-    }
+    // Callers that may run concurrently with the wallet notification thread must
+    // refuse to build a spend once a shutdown has been requested, checking
+    // ShutdownRequested() under this same cs_wallet hold (see
+    // TransactionEffects::ApproveAndBuild). The divergence detector requests
+    // the shutdown while holding cs_wallet, so a spend that observes no request has
+    // read a tree that was consistent at that point.
     return orchardWallet.GetSpendInfo(orchardNoteMetadata, anchor, anchorHeight);
 }
 
