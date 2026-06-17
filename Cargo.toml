@@ -114,6 +114,13 @@ version = "0.3.20"
 default-features = false
 features = ["ansi", "env-filter", "fmt", "time"]
 
+[patch.crates-io]
+# Memoizes the root of the current frontier so the per-block Orchard note
+# commitment tree consistency check (see CWallet::IncrementNoteWitnesses) is
+# O(1) when a block appends no commitments, allowing it to run unconditionally.
+# TODO: replace with a published `bridgetree` release before merging.
+bridgetree = { git = "https://github.com/nuttycom/incrementalmerkletree", branch = "frontier-root-cache" }
+
 [profile.release]
 lto = 'thin'
 panic = 'abort'

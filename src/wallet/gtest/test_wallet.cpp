@@ -5,19 +5,26 @@
 #include "chainparams.h"
 #include "consensus/merkle.h"
 #include "fs.h"
+#include "init.h"
 #include "key_io.h"
 #include "main.h"
 #include "primitives/block.h"
 #include "random.h"
 #include "transaction_builder.h"
 #include "gtest/utils.h"
+#include "ui_interface.h"
 #include "util/test.h"
 #include "wallet/wallet.h"
 #include "zcash/JoinSplit.hpp"
 #include "zcash/Note.hpp"
 #include "zcash/NoteEncryption.hpp"
 
+#include <atomic>
 #include <optional>
+
+// Defined in init.cpp; reset by the Orchard divergence test below so that the
+// requested-shutdown state it sets does not leak into subsequent tests.
+extern std::atomic<bool> fRequestShutdown;
 
 using ::testing::Return;
 using namespace libzcash;
@@ -61,9 +68,11 @@ public:
                                 const CBlockIndex* pindex,
                                 const CBlock* pblock,
                                 MerkleFrontiers& frontiers,
-                                bool performOrchardWalletUpdates) {
+                                bool performOrchardWalletUpdates,
+                                bool performConsistencyCheck = false) {
         CWallet::IncrementNoteWitnesses(
-                consensus, pindex, pblock, frontiers, performOrchardWalletUpdates);
+                consensus, pindex, pblock, frontiers, performOrchardWalletUpdates,
+                performConsistencyCheck);
     }
 
 
@@ -933,6 +942,138 @@ TEST(WalletTests, GetConflictedOrchardNotes) {
     chainActive.SetTip(NULL);
     mapBlockIndex.erase(blockHash);
 
+    RegtestDeactivateNU5();
+}
+
+// Helper for the Orchard consistency-check regression tests below: builds a
+// wallet with NU5 active that observes a single Orchard output in a fake-mined
+// block at height 0, leaving the block's consensus Orchard root settable by the
+// caller. The block has not yet been connected to the wallet's note commitment
+// tree; the caller drives IncrementNoteWitnesses to exercise the check.
+static void SetupOrchardBlockForConsistencyCheck(
+        TestWallet& wallet,
+        CBlock& block,
+        OrchardMerkleFrontier& orchardTree)
+{
+    auto ufvk = wallet.GenerateNewUnifiedSpendingKey().first;
+    auto fvk = ufvk.GetOrchardKey().value();
+    auto ivk = fvk.ToIncomingViewingKey();
+    libzcash::diversifier_index_t j(0);
+    auto recipient = ivk.Address(j);
+
+    // Generate transparent funds to source the Orchard output.
+    CBasicKeyStore keystore;
+    CKey tsk = AddTestCKeyToKeyStore(keystore);
+    auto scriptPubKey = GetScriptForDestination(tsk.GetPubKey().GetID());
+
+    auto builder = TransactionBuilder(Params(), 1, uint256(), SaplingMerkleTree::empty_root(), &keystore);
+    builder.AddTransparentInput(COutPoint(uint256(), 0), scriptPubKey, 5000);
+    builder.AddOrchardOutput(std::nullopt, recipient, 4000, {});
+    auto maybeTx = builder.Build();
+    ASSERT_TRUE(maybeTx.IsTx());
+    auto tx = maybeTx.GetTxOrThrow();
+    CWalletTx wtx {&wallet, tx};
+
+    orchardTree.AppendBundle(wtx.GetOrchardBundle());
+
+    block.vtx.push_back(wtx);
+    block.hashMerkleRoot = BlockMerkleRoot(block);
+
+    auto orchardTxMeta = wallet.GetOrchardWallet().AddNotesIfInvolvingMe(wtx);
+    ASSERT_TRUE(orchardTxMeta.has_value());
+    wtx.SetOrchardTxMeta(orchardTxMeta.value());
+    wtx.SetMerkleBranch(block);
+    wallet.LoadWalletTx(wtx);
+}
+
+// Regression test for https://github.com/zcash/zcash/issues/5960: when the
+// wallet's Orchard note commitment tree root diverges from the consensus root of
+// a block being connected at the tip, IncrementNoteWitnesses must shut the node
+// down cleanly (so the operator can restart with -rescan) rather than aborting
+// the process in a crash loop. In the test harness StartShutdown() is stubbed to
+// exit(0) (test_bitcoin.cpp), so a clean shutdown is observable as a clean exit,
+// whereas the previous behaviour (a failed assertion) would terminate via SIGABRT.
+TEST(WalletTests, OrchardConsistencyCheckDivergenceTriggersCleanShutdown) {
+    LoadProofParameters();
+    auto consensusParams = RegtestActivateNU5();
+    TestWallet wallet(Params());
+    wallet.GenerateNewSeed();
+
+    LOCK2(cs_main, wallet.cs_wallet);
+
+    CBlock block;
+    OrchardMerkleFrontier orchardTree;
+    SetupOrchardBlockForConsistencyCheck(wallet, block, orchardTree);
+
+    auto blockHash = block.GetHash();
+    CBlockIndex fakeIndex {block};
+    // Deliberately record a consensus Orchard root that does NOT match the root
+    // the wallet will compute, simulating a silently-diverged note commitment tree.
+    fakeIndex.hashFinalOrchardRoot = uint256S("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+    ASSERT_NE(fakeIndex.hashFinalOrchardRoot, orchardTree.root());
+    mapBlockIndex.insert(std::make_pair(blockHash, &fakeIndex));
+    chainActive.SetTip(&fakeIndex);
+
+    // The divergence handler notifies the operator via uiInterface.ThreadSafeMessageBox.
+    // First clear any slots left connected by earlier tests (e.g. DeprecationTest binds a
+    // slot to its fixture and never disconnects it, leaving a dangling slot that would
+    // crash when invoked), then connect a no-op slot so the handler's message-box call is
+    // safe and proceeds to StartShutdown.
+    uiInterface.ThreadSafeMessageBox.disconnect_all_slots();
+    auto conn = uiInterface.ThreadSafeMessageBox.connect(
+        [](const std::string&, const std::string&, unsigned int) { return false; });
+
+    ASSERT_FALSE(ShutdownRequested());
+
+    MerkleFrontiers frontiers;
+    // Connecting this block at the tip with the consistency check enabled must
+    // detect the divergence and request a clean shutdown (so the operator can
+    // restart with -rescan) rather than aborting the node.
+    wallet.IncrementNoteWitnesses(consensusParams, &fakeIndex, &block, frontiers, true, true);
+    EXPECT_TRUE(ShutdownRequested());
+
+    // Reset the global shutdown state so it does not leak into other tests, and
+    // disconnect the message-box slot.
+    fRequestShutdown = false;
+    conn.disconnect();
+
+    // Tear down
+    chainActive.SetTip(NULL);
+    mapBlockIndex.erase(blockHash);
+    RegtestDeactivateNU5();
+}
+
+// Companion to the test above: with a consensus Orchard root that matches the
+// wallet's computed root, the consistency check must pass (no false positive,
+// no shutdown) and the wallet's note commitment tree must equal consensus.
+TEST(WalletTests, OrchardConsistencyCheckPassesWhenConsistent) {
+    LoadProofParameters();
+    auto consensusParams = RegtestActivateNU5();
+    TestWallet wallet(Params());
+    wallet.GenerateNewSeed();
+
+    LOCK2(cs_main, wallet.cs_wallet);
+
+    CBlock block;
+    OrchardMerkleFrontier orchardTree;
+    SetupOrchardBlockForConsistencyCheck(wallet, block, orchardTree);
+
+    auto blockHash = block.GetHash();
+    CBlockIndex fakeIndex {block};
+    fakeIndex.hashFinalOrchardRoot = orchardTree.root();
+    mapBlockIndex.insert(std::make_pair(blockHash, &fakeIndex));
+    chainActive.SetTip(&fakeIndex);
+
+    MerkleFrontiers frontiers;
+    // With a matching consensus root and the consistency check enabled, this must
+    // not shut down (a false positive would exit(0) and abort the test binary
+    // before the assertion below is reached).
+    wallet.IncrementNoteWitnesses(consensusParams, &fakeIndex, &block, frontiers, true, true);
+    EXPECT_EQ(orchardTree.root(), wallet.GetOrchardWallet().GetLatestAnchor());
+
+    // Tear down
+    chainActive.SetTip(NULL);
+    mapBlockIndex.erase(blockHash);
     RegtestDeactivateNU5();
 }
 
