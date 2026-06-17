@@ -1,13 +1,16 @@
 # =============================================================================
 # Makefile -- Convenience targets for the Zcash regtest chain builder
 #
-# Quick start:
-#   make build   -- Build the Docker image (downloads ~4GB on first run)
-#   make run     -- Run the chain build (~30-60 minutes)
-#   make extract -- Copy artifacts from the container to ./output/
+# Pick which wallet to build with a distinct target:
+#   make run      -- the multi-version wallet spanning every network upgrade
+#                    (Sprout -> NU6.2), with an HD seed.
+#   make ancient  -- a pre-Sapling, non-deterministic (no HD seed) wallet for
+#                    zallet's seedless import path (zcash/wallet#384); this is
+#                    `make run` stopped after phase 1 (the pre-Sapling eras).
 #
-# Or all at once:
-#   make all     -- Build + run + extract
+# Typical flow:
+#   make build && make run     && make extract
+#   make build && make ancient && make extract
 #
 # Development:
 #   make shell   -- Open a shell inside the container (for debugging)
@@ -19,21 +22,27 @@ IMAGE_NAME    := zcash-regtest-wallet-builder
 CONTAINER_NAME := zcash-regtest-wallet-builder-run
 OUTPUT_DIR    := output
 
-.PHONY: all build run extract shell clean nuke help
+.PHONY: build run ancient extract shell clean nuke help
 
 help: ## Ask for help!
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
-all: build run extract ## Build + run + extract
-
-build: ## Build Docker image (~4GB download on first run)
+build: ## Build Docker image (~4.6GB download on first run)
 	docker build -t $(IMAGE_NAME) .
 
-run: ## Run the chain build (~30-60 min)
+run: ## Build the full multi-version wallet (Sprout -> NU6.2, HD seed; ~30-60 min)
 	-docker rm -f $(CONTAINER_NAME) 2>/dev/null
 	docker run --name $(CONTAINER_NAME) $(IMAGE_NAME)
 
-extract: ## Copy artifacts to ./output/
+# `make ancient` is the same build as `make run`, stopped after phase 1 -- the
+# trailing "1" is build_chain.sh's STOP_AFTER_PHASE argument. Phases 0-1 (Sprout,
+# Overwinter) both run the pre-Sapling v1.1.1, so the wallet has no HD seed;
+# phase 2 (Sapling) is the first that would add one.
+ancient: ## Build the pre-Sapling, non-deterministic wallet (= phases 0-1 of the full build)
+	-docker rm -f $(CONTAINER_NAME) 2>/dev/null
+	docker run --name $(CONTAINER_NAME) $(IMAGE_NAME) 1
+
+extract: ## Copy artifacts to ./output/ (same layout for either wallet)
 	@mkdir -p $(OUTPUT_DIR)
 	-docker cp $(CONTAINER_NAME):/artifacts/final/wallet.dat $(OUTPUT_DIR)/wallet.dat
 	-docker cp $(CONTAINER_NAME):/artifacts/final/full_manifest.json $(OUTPUT_DIR)/full_manifest.json

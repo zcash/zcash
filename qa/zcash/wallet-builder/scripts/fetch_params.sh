@@ -89,11 +89,10 @@ verify_size() {
     [[ ${actual} -ge ${min} ]]
 }
 
-# The files in PARAMS are REQUIRED: without them zcashd cannot start, so a
-# failure here must abort the build rather than ship a broken image. Optional
-# files (sprout-proving.key, below) are tracked separately.
+# All parameter files here (PARAMS plus sprout-proving.key, below) are REQUIRED:
+# without them zcashd cannot start, so any failure must abort the build rather
+# than ship a broken image.
 essential_errors=0
-optional_errors=0
 
 for filename in "${!PARAMS[@]}"; do
     expected_size="${PARAMS[${filename}]}"
@@ -120,9 +119,10 @@ for filename in "${!PARAMS[@]}"; do
     fi
 done
 
-# sprout-proving.key (BCTV14) is OPTIONAL for this tool: phases 0-3 run on
-# v2.1.0-1, which uses sprout-groth16.params instead, so a failure here must not
-# abort the build -- it is fetched only for completeness. Different URL path too.
+# sprout-proving.key (BCTV14) is REQUIRED: phases 0-1 run the pre-Sapling
+# binary v1.1.1, which loads it at startup (existence check) and uses it to
+# create Sprout JoinSplit proofs. Different URL path too (under /zcashfinalmpc/,
+# not /downloads/).
 filepath="${TARGET_DIR}/sprout-proving.key"
 if [[ -f "${filepath}" ]] && verify_size "${filepath}" "${SPROUT_PROVING_KEY_SIZE}"; then
     actual_size=$(stat -c%s "${filepath}" 2>/dev/null || stat -f%z "${filepath}" 2>/dev/null || echo "0")
@@ -133,9 +133,10 @@ else
         actual_size=$(stat -c%s "${filepath}" 2>/dev/null || stat -f%z "${filepath}" 2>/dev/null || echo "0")
         echo "  [OK] Downloaded ($(numfmt --to=iec "${actual_size}" 2>/dev/null || echo "${actual_size} bytes"))"
     else
-        echo "  [WARNING] Could not download sprout-proving.key (optional, skipping)."
-        rm -f "${filepath}"  # drop any partial file
-        optional_errors=$((optional_errors + 1))
+        rm -f "${filepath}"  # drop any partial file so a re-run retries cleanly
+        echo "  [ERROR] Could not download sprout-proving.key, which is REQUIRED by"
+        echo "          the pre-Sapling binary used for phases 0-1."
+        essential_errors=$((essential_errors + 1))
     fi
 fi
 
@@ -188,9 +189,6 @@ if [[ ${essential_errors} -gt 0 ]]; then
     echo "transient network error -- just re-run the build; already-downloaded files"
     echo "are skipped, so only the missing ones are retried."
     exit 1
-fi
-if [[ ${optional_errors} -gt 0 ]]; then
-    echo "=== NOTE: ${optional_errors} optional parameter file(s) were skipped (not needed by this tool) ==="
 fi
 echo "=== All required Zcash parameters present ==="
 echo "Total size: $(du -sh "${TARGET_DIR}" | cut -f1)"

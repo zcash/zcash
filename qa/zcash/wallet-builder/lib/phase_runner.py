@@ -66,16 +66,23 @@ from lib.key_imports import import_keys_for_phase
 logger = logging.getLogger(__name__)
 
 
-def run_all_phases() -> None:
+def run_all_phases(stop_after_phase: int | None = None) -> None:
     """
-    Run all build phases to create the complete regtest chain.
+    Run the build phases to create the regtest chain.
 
-    This is the top-level entry point. It iterates through all network
+    This is the top-level entry point. It iterates through the network
     upgrades, executing the build operations for each one, and produces
     the final artifacts (wallet.dat, manifests, exports).
+
+    Args:
+        stop_after_phase: if set, stop after this phase index completes
+                          (e.g. 0 builds only the first era); otherwise run all.
     """
+    upgrades = (NETWORK_UPGRADES if stop_after_phase is None
+                else NETWORK_UPGRADES[:stop_after_phase + 1])
+
     logger.info("=" * 70)
-    logger.info("Starting regtest chain build: %d phases", len(NETWORK_UPGRADES))
+    logger.info("Starting regtest chain build: %d phases", len(upgrades))
     logger.info("=" * 70)
 
     phase_manifests = []
@@ -84,12 +91,12 @@ def run_all_phases() -> None:
     rpc = None
 
     try:
-        for i, nu in enumerate(NETWORK_UPGRADES):
+        for i, nu in enumerate(upgrades):
             logger.info("")
             logger.info("=" * 70)
             logger.info(
                 "PHASE %d/%d: %s (zcashd v%s, activation height %d)",
-                i, len(NETWORK_UPGRADES) - 1,
+                i, len(upgrades) - 1,
                 nu.name, nu.zcashd_version, nu.activation_height,
             )
             logger.info("=" * 70)
@@ -112,10 +119,15 @@ def run_all_phases() -> None:
 
         logger.info("")
         logger.info("=" * 70)
-        logger.info("ALL PHASES COMPLETE -- Running verification")
+        logger.info("ALL PHASES COMPLETE")
         logger.info("=" * 70)
 
-        if rpc is not None:
+        # verify_all is a full-wallet smoke test: it expects every pool and
+        # modern RPCs (e.g. z_viewtransaction) that only exist on recent zcashd.
+        # Only run it for the complete build -- a truncated build's final node
+        # may be a pre-Sapling version that lacks those RPCs.
+        if rpc is not None and stop_after_phase is None:
+            logger.info("Running post-build verification...")
             errors = verify_all(rpc, phase_manifests)
             if errors:
                 logger.warning(

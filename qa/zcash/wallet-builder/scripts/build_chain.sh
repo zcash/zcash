@@ -15,8 +15,11 @@
 #   - Python 3 with no external dependencies (uses only stdlib + lib/)
 #
 # USAGE:
-#   ./build_chain.sh
+#   ./build_chain.sh [STOP_AFTER_PHASE]
 #   Typically called as the Docker ENTRYPOINT, not directly.
+#
+#   With no argument it builds every phase. With STOP_AFTER_PHASE it stops after
+#   that phase index completes (e.g. 0 builds only the first era).
 #
 # ENVIRONMENT:
 #   ZCASH_VERSIONS_DIR  -- Directory containing zcashd binaries (default: /opt/zcash/versions)
@@ -50,6 +53,16 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "${SCRIPT_DIR}")"
 
+# Optional first argument: stop after this phase index (0 = only the first era).
+# Empty means run every phase. Validate it is a non-negative integer so a typo
+# fails fast rather than silently building all phases.
+STOP_AFTER_PHASE="${1:-}"
+if [[ -n "${STOP_AFTER_PHASE}" && ! "${STOP_AFTER_PHASE}" =~ ^[0-9]+$ ]]; then
+    echo "[ERROR] STOP_AFTER_PHASE must be a non-negative integer, got '${STOP_AFTER_PHASE}'" >&2
+    exit 2
+fi
+export STOP_AFTER_PHASE
+
 # Default paths (can be overridden by environment)
 export ZCASH_VERSIONS_DIR="${ZCASH_VERSIONS_DIR:-/opt/zcash/versions}"
 export ZCASH_PARAMS_DIR="${ZCASH_PARAMS_DIR:-/opt/zcash/params}"
@@ -65,6 +78,11 @@ echo "  Versions directory: ${ZCASH_VERSIONS_DIR}"
 echo "  Parameters directory: ${ZCASH_PARAMS_DIR}"
 echo "  Artifacts directory: ${ARTIFACTS_DIR}"
 echo "  Log level: ${LOG_LEVEL}"
+if [[ -n "${STOP_AFTER_PHASE}" ]]; then
+    echo "  Stop after phase: ${STOP_AFTER_PHASE}"
+else
+    echo "  Stop after phase: (none -- full build)"
+fi
 echo ""
 
 # Ensure required directories exist
@@ -99,9 +117,11 @@ logging.basicConfig(
     stream=sys.stdout,
 )
 
-# Run the build
+# Run the build. STOP_AFTER_PHASE (if set) truncates the build after that phase
+# index (0 builds only the first era).
+_stop = os.environ.get('STOP_AFTER_PHASE', '')
 from lib.phase_runner import run_all_phases
-run_all_phases()
+run_all_phases(stop_after_phase=int(_stop) if _stop != '' else None)
 "
 exit_code=$?
 set -e
