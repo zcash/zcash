@@ -1294,7 +1294,13 @@ protected:
             const CBlockIndex* pindex,
             const CBlock* pblock,
             MerkleFrontiers& frontiers,
-            bool performOrchardWalletUpdates
+            bool performOrchardWalletUpdates,
+            // When true, verify the wallet's Orchard note commitment tree root against
+            // the connected block's consensus root (#5960). The tip-connection path
+            // passes true (cheap on every block now that the anchor is memoized); a bulk
+            // rescan passes false, as it cannot diverge from the consensus frontier it
+            // rebuilds from (and the check was too slow there before; #6052).
+            bool performConsistencyCheck
             );
     /**
      * pindex is the old tip being disconnected.
@@ -1365,7 +1371,8 @@ private:
             const CBlockIndex *pindex,
             const CBlock *pblock,
             MerkleFrontiers frontiers,
-            bool performOrchardWalletUpdates);
+            bool performOrchardWalletUpdates,
+            bool performConsistencyCheck);
 
     /* Add a transparent secret key to the wallet. Internal use only. */
     CPubKey AddTransparentSecretKey(
@@ -2028,19 +2035,18 @@ public:
          std::vector<std::optional<SaplingWitness>>& witnesses,
          uint256 &final_anchor) const;
     /**
-     * Return the witness and other information required to spend a given
-     * Orchard note. `anchorConfirmations` must be a value in the range
-     * `1..=100`; it is not possible to spend shielded notes with 0
-     * confirmations.
+     * Return the witness and other information required to spend the given
+     * Orchard notes against `anchor`, the consensus Orchard note commitment tree
+     * root at the absolute block height `anchorHeight`.
      *
-     * This method checks the root of the wallet's note commitment tree having
-     * the specified `anchorConfirmations` to ensure that it corresponds to the
-     * specified anchor and will panic if this check fails.
+     * Throws std::runtime_error if a shutdown has been requested, if the wallet
+     * has no checkpoint at `anchorHeight`, or if the wallet's root there differs
+     * from `anchor` (indicating divergence from consensus).
      */
     std::vector<std::pair<libzcash::OrchardSpendingKey, orchard::SpendInfo>> GetOrchardSpendInfo(
         const std::vector<OrchardNoteMetadata>& orchardNoteMetadata,
-        unsigned int confirmations,
-        const uint256& anchor) const;
+        const uint256& anchor,
+        int anchorHeight) const;
 
     isminetype IsMine(const CTxIn& txin) const;
     CAmount GetDebit(const CTxIn& txin, const isminefilter& filter) const;

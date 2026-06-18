@@ -352,15 +352,15 @@ public:
     }
 
     /**
-     * Return the root of the Orchard note commitment tree having the specified number
-     * of confirmations. `confirmations` must be a value in the range `1..=100`; it is
-     * not possible to spend shielded notes with 0 confirmations.
+     * Return the root of the wallet's Orchard note commitment tree at the given
+     * checkpoint depth, or std::nullopt if the wallet's tree has no checkpoint at
+     * that depth. Depth 0 is the current frontier (the state after the most recent
+     * append, which may be ahead of any checkpoint); depth 1 is the most recent
+     * checkpoint, depth 2 the one before it, and so on.
      */
-    std::optional<uint256> GetAnchorWithConfirmations(unsigned int confirmations) const {
-        // the checkpoint depth is equal to the number of confirmations - 1
-        assert(confirmations > 0);
+    std::optional<uint256> GetAnchorAtCheckpointDepth(size_t checkpointDepth) const {
         uint256 value;
-        if (orchard_wallet_commitment_tree_root(inner.get(), (size_t) confirmations - 1, value.begin())) {
+        if (orchard_wallet_commitment_tree_root(inner.get(), checkpointDepth, value.begin())) {
             return value;
         } else {
             return std::nullopt;
@@ -465,18 +465,19 @@ public:
     }
 
     /**
-     * Return the witness and other information required to spend a given note.
-     * `anchorConfirmations` must be a value in the range `1..=100`; it is not
-     * possible to spend shielded notes with 0 confirmations.
+     * Return the witness and other information required to spend the given notes
+     * against `anchor`, the consensus Orchard note commitment tree root at the
+     * absolute block height `anchorHeight`.
      *
-     * This method checks the root of the wallet's note commitment tree having
-     * the specified `anchorConfirmations` to ensure that it corresponds to the
-     * specified anchor and will panic if this check fails.
+     * The wallet's tree is checked at the checkpoint corresponding to `anchorHeight`
+     * to ensure that its root matches `anchor`. Throws std::runtime_error if the
+     * wallet has no checkpoint at that height, or if its root there differs from
+     * `anchor` (indicating that the wallet's tree has diverged from consensus).
      */
     std::vector<std::pair<libzcash::OrchardSpendingKey, orchard::SpendInfo>> GetSpendInfo(
         const std::vector<OrchardNoteMetadata>& noteMetadata,
-        unsigned int anchorConfirmations,
-        const uint256& anchor) const;
+        const uint256& anchor,
+        int anchorHeight) const;
 
     void GarbageCollect() {
         orchard_wallet_gc_note_commitment_tree(inner.get());

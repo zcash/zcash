@@ -40,7 +40,7 @@ bip0039 = { version = "0.12", features = ["std", "all-languages"] }
 blake2b_simd = "1"
 blake2s_simd = "1"
 bls12_381 = "0.8"
-bridgetree = "0.7"
+bridgetree = "0.7.1"
 byteorder = "1"
 crossbeam-channel = "0.5"
 getrandom = "0.3"

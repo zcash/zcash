@@ -5,6 +5,7 @@
 #include "clientversion.h"
 #include "deprecation.h"
 #include "fs.h"
+#include "gtest/utils.h"
 #include "init.h"
 #include "ui_interface.h"
 #include "util/system.h"
@@ -16,34 +17,17 @@ using namespace boost::placeholders;
 using ::testing::StrictMock;
 
 static const std::string CLIENT_VERSION_STR = FormatVersion(CLIENT_VERSION);
-extern std::atomic<bool> fRequestShutdown;
-
-class MockUIInterface {
-public:
-    MOCK_METHOD3(ThreadSafeMessageBox, bool(const std::string& message,
-                                      const std::string& caption,
-                                      unsigned int style));
-};
-
-static bool ThreadSafeMessageBox(MockUIInterface *mock,
-                                 const std::string& message,
-                                 const std::string& caption,
-                                 unsigned int style)
-{
-    return mock->ThreadSafeMessageBox(message, caption, style);
-}
 
 class DeprecationTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        uiInterface.ThreadSafeMessageBox.disconnect_all_slots();
-        uiInterface.ThreadSafeMessageBox.connect(boost::bind(ThreadSafeMessageBox, &mock_, _1, _2, _3));
+        ConnectMockUIInterface(mock_);
         SelectParams(CBaseChainParams::MAIN);
 
     }
 
     void TearDown() override {
-        fRequestShutdown = false;
+        DisconnectMockUIInterface();
         mapArgs.clear();
     }
 

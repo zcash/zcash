@@ -1,5 +1,8 @@
 #include "gtest/utils.h"
 #include "rpc/server.h"
+#include "ui_interface.h"
+
+#include <atomic>
 #ifdef ENABLE_WALLET
 #include "wallet/wallet.h"
 #endif
@@ -17,6 +20,24 @@ int GenZero(int n)
 int GenMax(int n)
 {
     return n-1;
+}
+
+void ConnectMockUIInterface(MockUIInterface& mock)
+{
+    uiInterface.ThreadSafeMessageBox.disconnect_all_slots();
+    uiInterface.ThreadSafeMessageBox.connect(
+        [&mock](const std::string& message, const std::string& caption, unsigned int style) {
+            return mock.ThreadSafeMessageBox(message, caption, style);
+        });
+}
+
+// Defined in init.cpp.
+extern std::atomic<bool> fRequestShutdown;
+
+void DisconnectMockUIInterface()
+{
+    uiInterface.ThreadSafeMessageBox.disconnect_all_slots();
+    fRequestShutdown = false;
 }
 
 void LoadProofParameters() {
