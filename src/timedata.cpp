@@ -3,6 +3,10 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
+#if defined(HAVE_CONFIG_H)
+#include "config/bitcoin-config.h"
+#endif
+
 #include "timedata.h"
 
 #include "netbase.h"
@@ -58,11 +62,11 @@ void CTimeWarning::Warn(size_t peersAhead, size_t peersBehind)
 {
     std::string strMessage;
     if (peersBehind >= TIMEDATA_WARNING_MAJORITY) {
-        strMessage = _("Your computer's date and time may be ahead of the rest of the network! If your clock is wrong Zcash will not work properly.");
+        strMessage = strprintf(_("Your computer's date and time may be ahead of the rest of the network! If your clock is wrong, %s will not work properly."), _(PACKAGE_NAME));
     } else if (peersAhead >= TIMEDATA_WARNING_MAJORITY) {
-        strMessage = _("Your computer's date and time may be behind the rest of the network! If your clock is wrong Zcash will not work properly.");
+        strMessage = strprintf(_("Your computer's date and time may be behind the rest of the network! If your clock is wrong, %s will not work properly."), _(PACKAGE_NAME));
     } else {
-        strMessage = _("Please check that your computer's date and time are correct! If your clock is wrong Zcash will not work properly.");
+        strMessage = strprintf(_("Please check that your computer's date and time are correct! If your clock is wrong, %s will not work properly."), _(PACKAGE_NAME));
     }
     SetMiscWarning(strMessage, GetTime());
     uiInterface.ThreadSafeMessageBox(strMessage, "", CClientUIInterface::MSG_WARNING);
