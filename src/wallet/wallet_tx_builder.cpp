@@ -32,27 +32,25 @@ CalcZIP317Fee(
     std::vector<CTxOut> vout{};
     size_t sproutOutputCount{}, saplingOutputCount{}, orchardOutputCount{};
     for (const auto& payment : payments) {
-        std::visit(match {
+        examine(
+            payment.address,
             [&](const CKeyID& addr) {
                 vout.emplace_back(payment.amount, GetScriptForDestination(addr));
             },
             [&](const CScriptID& addr) {
                 vout.emplace_back(payment.amount, GetScriptForDestination(addr));
             },
-            [&](const libzcash::SaplingPaymentAddress&) {
-                ++saplingOutputCount;
-            },
-            [&](const libzcash::OrchardRawAddress&) {
-                ++orchardOutputCount;
-            }
-        }, payment.address);
+            [&](const libzcash::SaplingPaymentAddress&) { ++saplingOutputCount; },
+            [&](const libzcash::OrchardRawAddress&) { ++orchardOutputCount; });
     }
 
     if (changeAddr.has_value()) {
-        examine(changeAddr.value(), match {
+        examine(
+            changeAddr.value(),
             [&](const SproutPaymentAddress&) { ++sproutOutputCount; },
             [&](const RecipientAddress& addr) {
-                examine(addr, match {
+                examine(
+                    addr,
                     [&](const CKeyID& taddr) {
                         vout.emplace_back(0, GetScriptForDestination(taddr));
                     },
@@ -60,10 +58,8 @@ CalcZIP317Fee(
                         vout.emplace_back(0, GetScriptForDestination(taddr));
                     },
                     [&](const libzcash::SaplingPaymentAddress&) { ++saplingOutputCount; },
-                    [&](const libzcash::OrchardRawAddress&) { ++orchardOutputCount; }
-                });
-            }
-        });
+                    [&](const libzcash::OrchardRawAddress&) { ++orchardOutputCount; });
+            });
     }
 
     std::vector<CTxIn> vin{};
@@ -104,7 +100,8 @@ ResolvePayment(
         CAmount& maxOrchardAvailable,
         uint32_t& orchardOutputs)
 {
-    return examine(payment.GetAddress(), match {
+    return examine(
+        payment.GetAddress(),
         [&](const CKeyID& p2pkh) -> tl::expected<ResolvedPayment, AddressResolutionError> {
             if (strategy.AllowRevealedRecipients()) {
                 return {{std::nullopt, p2pkh, payment.GetAmount(), payment.GetMemo(), false}};
@@ -177,8 +174,7 @@ ResolvePayment(
                     return tl::make_unexpected(AddressResolutionError::RevealingReceiverAmountsNotAllowed);
                 }
             }
-        }
-    });
+        });
 }
 
 InvalidFundsError ReportInvalidFunds(
@@ -348,13 +344,10 @@ WalletTxBuilder::GetChangeAddress(
         return addr.value();
     };
 
-    return examine(selector.GetPattern(), match {
-        [&](const CKeyID&) {
-            return changeAddressForTransparentSelector({ReceiverType::P2PKH});
-        },
-        [&](const CScriptID&) {
-            return changeAddressForTransparentSelector({ReceiverType::P2SH});
-        },
+    return examine(
+        selector.GetPattern(),
+        [&](const CKeyID&) { return changeAddressForTransparentSelector({ReceiverType::P2PKH}); },
+        [&](const CScriptID&) { return changeAddressForTransparentSelector({ReceiverType::P2SH}); },
         [](const libzcash::SproutPaymentAddress& addr)
             -> tl::expected<ChangeAddress, AddressResolutionError> {
             // for Sprout, we return change to the originating address using the tx builder.
@@ -400,8 +393,7 @@ WalletTxBuilder::GetChangeAddress(
                     }
                 });
 
-        }
-    });
+        });
 }
 
 tl::expected<TransactionEffects, InputSelectionError>
@@ -527,7 +519,8 @@ AddChangePayment(
         return tl::make_unexpected(ChangeNotAllowedError(spendable.Total(), targetAmount));
     }
 
-    examine(changeAddr, match {
+    examine(
+        changeAddr,
         // TODO: Once we can add Sprout change to `resolvedPayments`, we don’t need to pass
         //       `changeAddr` around the rest of these functions.
         [](const libzcash::SproutPaymentAddress&) {},
@@ -535,8 +528,7 @@ AddChangePayment(
         [&](const auto& sendTo) {
             resolvedPayments.AddPayment(
                     ResolvedPayment(std::nullopt, sendTo, changeAmount, std::nullopt, true));
-        }
-    });
+        });
 
     return {};
 }
@@ -822,7 +814,8 @@ std::pair<uint256, uint256> WalletTxBuilder::SelectOVKs(
         const ZTXOSelector& selector,
         const SpendableInputs& spendable) const
 {
-    return examine(selector.GetPattern(), match {
+    return examine(
+        selector.GetPattern(),
         [&](const CKeyID& keyId) {
             return wallet.GetLegacyAccountKey().ToAccountPubKey().GetOVKsForShielding();
         },
@@ -840,9 +833,7 @@ std::pair<uint256, uint256> WalletTxBuilder::SelectOVKs(
             assert(wallet.GetSaplingExtendedSpendingKey(addr, extsk));
             return extsk.ToXFVK().GetOVKs();
         },
-        [](const libzcash::SaplingExtendedFullViewingKey& sxfvk) {
-            return sxfvk.GetOVKs();
-        },
+        [](const libzcash::SaplingExtendedFullViewingKey& sxfvk) { return sxfvk.GetOVKs(); },
         [&](const UnifiedAddress& ua) {
             auto ufvk = wallet.GetUFVKForAddress(ua);
             // This is safe because spending key checks will have ensured that we have a UFVK
@@ -850,9 +841,7 @@ std::pair<uint256, uint256> WalletTxBuilder::SelectOVKs(
             assert(ufvk.has_value());
             return GetOVKsForUFVK(ufvk.value().ToFullViewingKey(), spendable);
         },
-        [&](const UnifiedFullViewingKey& ufvk) {
-            return GetOVKsForUFVK(ufvk, spendable);
-        },
+        [&](const UnifiedFullViewingKey& ufvk) { return GetOVKsForUFVK(ufvk, spendable); },
         [&](const AccountZTXOPattern& acct) {
             if (acct.GetAccountId() == ZCASH_LEGACY_ACCOUNT) {
                 return wallet.GetLegacyAccountKey().ToAccountPubKey().GetOVKsForShielding();
@@ -862,8 +851,7 @@ std::pair<uint256, uint256> WalletTxBuilder::SelectOVKs(
                 assert(ufvk.has_value());
                 return GetOVKsForUFVK(ufvk.value().ToFullViewingKey(), spendable);
             }
-        },
-    });
+        });
 }
 
 PrivacyPolicy TransactionEffects::GetRequiredPrivacyPolicy() const
@@ -1014,7 +1002,8 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
     // Add outputs
     for (const auto& r : payments.GetResolvedPayments()) {
         std::optional<TransactionBuilderResult> result;
-        examine(r.address, match {
+        examine(
+            r.address,
             [&](const CKeyID& keyId) {
                 if (r.memo.has_value()) {
                     result = TransactionBuilderResult("Memos cannot be sent to transparent addresses.");
@@ -1042,8 +1031,7 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
                         addr,
                         r.amount,
                         r.memo);
-            },
-        });
+            });
         if (result.has_value()) {
             return result.value();
         }
@@ -1099,14 +1087,10 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
     //       (re)calculate the change. In future, we shouldn’t rely on `TransactionBuilder` ever
     //       calculating change. (#5660)
     if (changeAddr.has_value()) {
-        examine(changeAddr.value(), match {
-            [&](const SproutPaymentAddress& addr) {
-                builder.SendChangeToSprout(addr);
-            },
-            [&](const RecipientAddress&) {
-                assert(totalSpend == payments.Total() + fee);
-            }
-        });
+        examine(
+            changeAddr.value(),
+            [&](const SproutPaymentAddress& addr) { builder.SendChangeToSprout(addr); },
+            [&](const RecipientAddress&) { assert(totalSpend == payments.Total() + fee); });
     }
 
     // Build the transaction
