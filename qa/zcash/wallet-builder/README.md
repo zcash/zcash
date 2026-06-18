@@ -1,10 +1,26 @@
 # zcash-regtest-wallet-builder
 
-Build a Zcash regtest chain with a `wallet.dat` containing keys and transaction history from **every network upgrade** -- Sprout through NU6.2. The result is a test fixture for integration and regression testing of Zcash wallet tools.
+Build a Zcash regtest chain with a `wallet.dat` containing keys and transaction
+history from historical versions of the zcashd wallet. May generate a "full"
+wallet with keys from **every network upgrade** -- Sprout through NU6.2 -- or
+an "ancient" wallet with only pre-Sapling keys (no HD seed). The result is a
+test fixture for integration and regression testing of Zcash wallet tools.
+
+Build it with one of two targets:
+
+- **`make run`** -- the multi-version wallet described below (all eras).
+- **`make ancient`** -- the same build, stopped after phase 1: just the
+  pre-Sapling, non-deterministic (no HD seed) eras (Sprout + Overwinter).
 
 ## What This Produces
 
-A `wallet.dat` progressively built through **10 network upgrade eras** (Sprout through NU6.2), simulating the real-world wallet upgrade path. The wallet contains:
+Both targets write the same `./output/` layout (see [Quick Start](#quick-start));
+only the wallet contents differ.
+
+### `make run`: a multi-version historical zcashd wallet
+
+A `wallet.dat` progressively built through **10 network upgrade eras** (Sprout
+through NU6.2), simulating the real-world wallet upgrade path. It contains:
 
 - **Transparent addresses** with coinbase UTXOs from every NU era
 - **Sprout shielded notes** from the Sprout through Heartwood eras (pre-Canopy)
@@ -17,27 +33,51 @@ A `wallet.dat` progressively built through **10 network upgrade eras** (Sprout t
 - **Per-phase manifests** documenting every TXID, mined height, value, fee, address, and imported key
 - **Full regtest chain state** and Zcash proving parameters for resuming with future NUs
 
+### `make ancient`: a pre-Sapling, non-deterministic zcashd wallet
+
+`make ancient` is **`make run` stopped after phase 1** -- the same build process,
+run only through the pre-Sapling eras (phase 0 Sprout + phase 1 Overwinter). Both
+run a real pre-Sapling zcashd (**v1.1.1**), and a v1.x wallet has **no HD seed**
+at all (it is a flat keypool of independent, non-deterministically generated
+keys), so this is the seedless fixture that exercises zallet's seedless import
+path. The wallet contains:
+
+- Mined **transparent coinbase UTXOs** (the wallet's own funds)
+- **Sprout shielded notes** (phases 0-1 shield coinbase to Sprout)
+- **Imported foreign keys** (not derived from any seed): `importprivkey`
+  (spendable), `importpubkey` (watch-only), `importaddress <redeemScript>`
+  (watch-only P2SH), `importaddress <addr>` (watch-only address), and Sprout
+  `z_importkey` / `z_importviewingkey`
+- A **manifest** in the same schema as the full build
+- **Full regtest chain state**
+
+Because phases 0-1 are pre-Sapling (BCTV14), this build -- like the full build --
+requires the `sprout-proving.key` (~910MB); it is part of the `make build` image.
+
 ## Prerequisites
 
 - **Docker** installed and running.
 - **Internet access** -- the first build downloads ~2GB of zcashd binaries and
-  ~1.7GB of proving parameters from `download.z.cash`.
-- **~6GB of free disk space** for the image (binaries + parameters + chain state).
+  ~2.6GB of proving parameters (including the BCTV14 `sprout-proving.key`,
+  ~910MB) from `download.z.cash`.
+- **~7GB of free disk space** for the image (binaries + parameters + chain state).
 
 ## Quick Start
 
 ```bash
-# Build the Docker image (~2GB binaries + ~1.7GB params on first run)
+# Build the Docker image (~2GB binaries + ~2.6GB params on first run)
 make build
 
-# Run the chain build
-make run
+# Build ONE wallet -- pick a mode:
+make run        # the full multi-version wallet (~30-60 min)
+# or
+make ancient     # the pre-Sapling, non-deterministic wallet (a few minutes)
 
-# Extract artifacts to ./output/
+# Extract artifacts to ./output/ (same command for either mode)
 make extract
 ```
 
-> **First build downloads ~4GB.** If `make build` fails partway through with a
+> **First build downloads ~4.6GB.** If `make build` fails partway through with a
 > network error, just run `make build` again: already-downloaded files are
 > skipped, so only the missing ones are retried. The build deliberately
 > **aborts** if a required proving parameter cannot be downloaded, rather than
@@ -45,21 +85,16 @@ make extract
 > `Cannot find the Zcash network parameters`). If you ever hit that error at
 > run time, your image predates this check -- rebuild with `make build`.
 
-Or all at once:
-```bash
-make all
-```
-
 The full output is in `./output/`:
 ```
 output/
   wallet.dat              # The test fixture wallet database (Berkeley DB)
-  full_manifest.json      # Aggregated manifest across all NUs
+  full_manifest.json      # Aggregated manifest (or the ancient manifest)
   manifests/              # Per-phase JSON manifests
-  checkpoints/            # wallet.dat snapshot at each phase boundary
-  exports/                # z_exportwallet output files
+  checkpoints/            # wallet.dat snapshot at each phase boundary (full mode)
+  exports/                # dumpwallet / z_exportwallet output files
   regtest/                # Full regtest chain state (blocks, chainstate, wallet.dat)
-  zcash-params/           # Zcash proving parameters (~1.7GB)
+  zcash-params/           # Zcash proving parameters (~2.6GB)
 ```
 
 The `regtest/` directory and `zcash-params/` are needed to resume the chain for future NUs -- see [Resuming for Future NUs](#resuming-for-future-nus) below.
@@ -87,8 +122,8 @@ Each NU era uses a zcashd version that supports that NU's consensus rules, appro
 
 | Phase | NU | zcashd (used) | Historical target | Branch ID | Regtest Height |
 |---|---|---|---|---|---|
-| 0 | Sprout | v2.1.0-1 | v1.0.15 | (genesis) | 0 |
-| 1 | Overwinter | v2.1.0-1 | v1.1.1 | `5ba81b19` | 200 |
+| 0 | Sprout | v1.1.1 | v1.0.15 | (genesis) | 0 |
+| 1 | Overwinter | v1.1.1 | v1.1.1 | `5ba81b19` | 200 |
 | 2 | Sapling | v2.1.0-1 | v2.0.1 | `76b809bb` | 350 |
 | 3 | Blossom | v2.1.0-1 | v2.1.0-1 | `2bb40e60` | 500 |
 | 4 | Heartwood | v3.0.0 | v3.0.0 | `f5b9230b` | 700 |
@@ -98,7 +133,7 @@ Each NU era uses a zcashd version that supports that NU's consensus rules, appro
 | 8 | NU6.1 | v6.10.0 | v6.10.0 | `4dec4df0` | 1400 |
 | 9 | NU6.2 | v6.20.0 | v6.20.0 | `5437f330` | 1600 |
 
-Phases 0-3 are all run with v2.1.0-1 (the oldest release that uses `sprout-groth16.params` rather than the much larger BCTV14 `sprout-proving.key`); the wallet records are identical, only the proof system differs. All versions verified against [GitHub releases](https://github.com/zcash/zcash/releases) and [download server](https://download.z.cash/downloads/). All use Berkeley DB for `wallet.dat` (per [ZIP 400](https://zips.z.cash/zip-0400)).
+Phases 0-1 (Sprout, Overwinter) run the real pre-Sapling release **v1.1.1**, which has no HD seed -- this is what makes `make ancient` (phases 0-1) a seedless fixture. Because v1.1.1 uses the BCTV14 `sprout-proving.key` (~910MB), the build requires it. Phases 2-3 run v2.1.0-1, so the binary switch lands at the Sapling boundary, which is also where Sprout proofs move from BCTV14 to Groth16. All versions verified against [GitHub releases](https://github.com/zcash/zcash/releases) and [download server](https://download.z.cash/downloads/). All use Berkeley DB for `wallet.dat` (per [ZIP 400](https://zips.z.cash/zip-0400)).
 
 ### Pool availability per phase
 
@@ -119,19 +154,19 @@ Host Machine                              Docker Container
    |  make build                              |
    |  ---------> [Dockerfile]                 |
    |             1. Install deps              |
-   |             2. Download params           |  /opt/zcash/params/  (~1.7GB)
+   |             2. Download params           |  /opt/zcash/params/  (~2.6GB)
    |             3. Download zcashd versions  |  /opt/zcash/versions/
    |             4. Validate all binaries     |
    |                                          |
-   |  make run                                |
+   |  make run                               |
    |  ---------> [build_chain.sh]             |
    |             -> [phase_runner.py]         |
    |                                          |
-   |             Phase 0: Start v2.1.0-1      |
+   |             Phase 0: Start v1.1.1        |  (`make ancient` stops here)
    |               Mine, shield to Sprout     |
-   |             Phase 1: Stay on v2.1.0-1    |  (Overwinter activates)
+   |             Phase 1: Stay on v1.1.1      |  (Overwinter activates)
    |               Mine, Overwinter txs       |
-   |             Phase 2: Stay on v2.1.0-1    |
+   |             Phase 2: Switch to v2.1.0-1  |
    |               Sapling pool opens         |
    |             ...                          |
    |             Phase 9: Switch to v6.20.0   |
@@ -144,12 +179,12 @@ Host Machine                              Docker Container
    |  ./output/wallet.dat                     |
    |  ./output/full_manifest.json             |
    |  ./output/regtest/        (chain)        |
-   |  ./output/zcash-params/   (1.7GB)        |
+   |  ./output/zcash-params/   (2.6GB)        |
 ```
 
 ### How version switching works
 
-Between phases, we: stop zcashd, swap the binary, write an updated `zcash.conf` with cumulative `-nuparams`, and restart. Each version only receives nuparams for the NUs it recognizes (e.g., v2.1.0-1 gets Overwinter, Sapling, and Blossom). Phases 0-3 share the same binary (v2.1.0-1), so for those the "swap" is just a config update.
+Between phases, we: stop zcashd, swap the binary, write an updated `zcash.conf` with cumulative `-nuparams`, and restart. Each version only receives nuparams for the NUs it recognizes (e.g., v1.1.1 only gets Overwinter). Phases 0-1 share the v1.1.1 binary and phases 2-3 share v2.1.0-1, so within each pair the "swap" is just a config update; the actual binary switch happens once, at the Sapling boundary (phase 1 -> 2).
 
 **No `-reindex` is needed.** LevelDB chainstate and block index are forward-compatible across zcashd versions. A newer version reads databases written by an older version without issue. Using `-reindex` is actively harmful: it re-validates every block from scratch, and newer versions may apply stricter rules that reject blocks the older version accepted.
 
@@ -157,13 +192,13 @@ Between phases, we: stop zcashd, swap the binary, write an updated `zcash.conf` 
 
 ### sprout-proving.key
 
-The BCTV14 Sprout proving key (`sprout-proving.key`, ~910MB) would be required by zcashd v1.0.15 through v2.0.1, which is why phases 0-3 are all substituted to v2.1.0-1 (the oldest release that uses `sprout-groth16.params` instead). If you need to fetch the BCTV14 key for other purposes, it's not at the standard `/downloads/` CDN path -- it's at:
+The BCTV14 Sprout proving key (`sprout-proving.key`, ~910MB) is required by the pre-Sapling binary v1.1.1 used for phases 0-1 (it is loaded at startup and used to create Sprout JoinSplit proofs). It is **not** at the standard `/downloads/` CDN path -- it's at:
 
 ```
 https://download.z.cash/zcashfinalmpc/sprout-proving.key
 ```
 
-The `fetch_params.sh` script downloads it automatically.
+The `fetch_params.sh` script downloads it automatically as part of `make build`, so both `make run` and `make ancient` have it.
 
 ## Regtest Halving Constraint
 
@@ -185,6 +220,14 @@ Edit `lib/constants.py` and `config/activation_heights.json`. Heights must maint
 
 Edit `lib/operations.py` to change what transactions are created at each phase (how many UTXOs to shield, send amounts, etc.). The `_calculate_send_amount()` function in `lib/phase_runner.py` controls per-phase send amounts.
 
+### Adjusting the Ancient Build
+
+There is no separate ancient build -- `make ancient` is `make run` stopped after
+phase 1 (`build_chain.sh 1` -> `run_all_phases(stop_after_phase=1)`), i.e. the
+pre-Sapling eras (phases 0-1, both v1.1.1). To change which pre-Sapling binary it
+produces, edit phases 0-1's `zcashd_version` in `config/versions.json` (e.g. to
+`1.0.15`, though that lacks importpubkey/importaddress-p2sh).
+
 ## File Layout
 
 ```
@@ -196,13 +239,13 @@ zcash-regtest-wallet-builder/
     versions.json                # Version matrix with git commits and download URLs
     activation_heights.json      # NU -> regtest activation height
   scripts/
-    download_binaries.sh         # Download all zcashd versions (~2GB)
-    fetch_params.sh              # Download proving parameters (~1.7GB incl. sprout-proving.key)
+    download_binaries.sh         # Download zcashd versions (~2GB)
+    fetch_params.sh              # Download proving parameters (incl. required sprout-proving.key)
     validate_binaries.sh         # Verify all binaries run on Debian Bookworm
-    build_chain.sh               # Container entry point
+    build_chain.sh               # Entry point: build_chain.sh [STOP_AFTER_PHASE]
   lib/
     __init__.py
-    constants.py                 # Source of truth: 9 versions, heights, pools per NU
+    constants.py                 # Source of truth: versions, heights, pools per NU
     rpc_client.py                # JSON-RPC client for zcashd
     conf_generator.py            # Generate version-aware zcash.conf per phase
     zcashd_manager.py            # Start/stop/switch zcashd versions (no reindex)
@@ -210,7 +253,7 @@ zcash-regtest-wallet-builder/
     key_imports.py               # Import foreign keys (privkey, watch-only, P2SH, shielded)
     operations.py                # Pool-aware transaction operations
     manifest.py                  # Manifest creation and aggregation
-    phase_runner.py              # Per-phase orchestration with version switching
+    phase_runner.py              # Orchestration; run_all_phases(stop_after_phase=...)
     verification.py              # Post-build verification suite
 ```
 
@@ -333,10 +376,10 @@ with `make build`; a transient network failure is the usual cause, and re-runnin
 resumes and retries only the missing files.
 
 The required files are `sprout-groth16.params`, `sapling-spend.params`,
-`sapling-output.params`, and `sprout-verifying.key`. `sprout-proving.key` (the
-legacy BCTV14 key) is **optional** -- phases 0-3 run on v2.1.0-1, which uses
-`sprout-groth16.params` instead -- so the build does not fail if it can't be
-fetched. `fetch_params.sh` also creates testnet-suffixed symlinks
+`sapling-output.params`, `sprout-verifying.key`, and the legacy BCTV14
+`sprout-proving.key` (~910MB) -- the last is needed by the pre-Sapling binary
+(v1.1.1) used for phases 0-1, so the build fails if it can't be fetched.
+`fetch_params.sh` also creates testnet-suffixed symlinks
 (`sapling-spend-testnet.params`, etc.) for compatibility with older zcashd that
 expects them.
 

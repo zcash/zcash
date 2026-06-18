@@ -75,6 +75,67 @@ TEST(OrchardWalletTests, TxInvolvesMyNotes) {
     RegtestDeactivateNU5();
 }
 
+// Regression test for #7150. GetSpendInfo resolves the spend against the anchor at
+// its absolute height, so it must still succeed when the wallet's latest checkpoint
+// has advanced past that height — e.g. a block connecting between anchor selection
+// and spend construction. Before the #7150 fix, GetSpendInfo derived the checkpoint
+// depth from a fixed confirmation count relative to the latest checkpoint, so an
+// advanced tip made it read the wrong checkpoint and spuriously fail even though the
+// wallet's tree had not diverged.
+TEST(OrchardWalletTests, SpendResolvesAnchorByAbsoluteHeight) {
+    auto consensusParams = RegtestActivateNU5();
+    OrchardWallet wallet;
+
+    // Receive a note into the wallet.
+    auto sk = RandomOrchardSpendingKey();
+    wallet.AddSpendingKey(sk);
+    libzcash::diversifier_index_t j(0);
+    auto txRecv = FakeOrchardTx(sk, j);
+    wallet.AddNotesIfInvolvingMe(txRecv);
+
+    std::vector<OrchardNoteMetadata> notes;
+    wallet.GetFilteredNotes(
+        notes, sk.ToFullViewingKey().ToIncomingViewingKey(), true, true);
+    ASSERT_EQ(notes.size(), 1);
+
+    // Connect the note's block at height 2 and capture the anchor at that height.
+    // This mirrors the production convention (CWallet::IncrementNoteWitnesses
+    // checkpoints height H *before* appending block H's commitments), under which
+    // the checkpoint identified by H records the tree state at the *end of block
+    // H-1*. So the checkpoint we create as "2" here records the pre-block-2 (empty)
+    // state, and the end-of-block-2 anchor is the current frontier root captured
+    // after the append below.
+    CBlock block2;
+    block2.vtx.resize(2);
+    block2.vtx[1] = txRecv;
+    ASSERT_TRUE(wallet.CheckpointNoteCommitmentTree(2));
+    ASSERT_TRUE(wallet.AppendNoteCommitments(2, block2));
+    uint256 anchorAtHeight2 = wallet.GetLatestAnchor();
+
+    // Connect several further blocks, each adding an unrelated Orchard commitment so
+    // the tree root changes and the latest checkpoint moves well past height 2.
+    for (int h = 3; h <= 7; h++) {
+        CBlock block;
+        block.vtx.resize(2);
+        block.vtx[1] = FakeOrchardTx(RandomOrchardSpendingKey(), j);
+        ASSERT_TRUE(wallet.CheckpointNoteCommitmentTree(h));
+        ASSERT_TRUE(wallet.AppendNoteCommitments(h, block));
+    }
+    ASSERT_EQ(wallet.GetLastCheckpointHeight().value(), 7);
+
+    // The tip's anchor now differs from the end-of-block-2 anchor, so the spend can
+    // only succeed if GetSpendInfo resolves by absolute height: it computes
+    // depth = lastCheckpointHeight - anchorHeight = 7 - 2 = 5, which resolves to
+    // checkpoint id 3 — the checkpoint created before block 3, recording the
+    // end-of-block-2 state — rather than against the latest checkpoint.
+    ASSERT_NE(wallet.GetLatestAnchor(), anchorAtHeight2);
+    auto spendInfo = wallet.GetSpendInfo(notes, anchorAtHeight2, 2);
+    ASSERT_EQ(spendInfo.size(), 1);
+    EXPECT_EQ(spendInfo[0].second.Value(), 40000);
+
+    RegtestDeactivateNU5();
+}
+
 // Builds a fresh Orchard-spending transaction under the currently-active consensus
 // parameters, so that its consensus branch id matches the active epoch (allowing the
 // same flow to be exercised under both NU5 and NU6.1).
@@ -105,9 +166,16 @@ void BuildOrchardSpend(CTransaction& outTx) {
         notes, sk.ToFullViewingKey().ToIncomingViewingKey(), true, true);
     ASSERT_EQ(notes.size(), 1);
 
+    // Checkpoint at height 2 before appending block 2's commitments, as in
+    // production (CWallet::IncrementNoteWitnesses): the checkpoint identified by H
+    // is created before block H and records the end-of-block-(H-1) state.
+    // GetSpendInfo addresses the wallet's tree by absolute height (#7150), so a
+    // checkpoint must exist for GetLastCheckpointHeight() to resolve against.
+    ASSERT_TRUE(wallet.CheckpointNoteCommitmentTree(2));
+
     // If we attempt to get spend info now, it will fail because the note hasn't
     // been witnessed in the Orchard commitment tree.
-    ASSERT_THROW(wallet.GetSpendInfo(notes, 1, wallet.GetLatestAnchor()), std::logic_error);
+    ASSERT_THROW(wallet.GetSpendInfo(notes, wallet.GetLatestAnchor(), 2), std::logic_error);
 
     // Append the bundle to the wallet's commitment tree.
     CBlock fakeBlock;
@@ -116,7 +184,7 @@ void BuildOrchardSpend(CTransaction& outTx) {
     ASSERT_TRUE(wallet.AppendNoteCommitments(2, fakeBlock));
 
     // Now we can get spend info for the note.
-    auto spendInfo = wallet.GetSpendInfo(notes, 1, wallet.GetLatestAnchor());
+    auto spendInfo = wallet.GetSpendInfo(notes, wallet.GetLatestAnchor(), 2);
     ASSERT_EQ(spendInfo[0].second.Value(), 40000);
 
     // Get the root of the commitment tree.
