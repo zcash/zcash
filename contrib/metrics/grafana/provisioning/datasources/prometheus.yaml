@@ -7,6 +7,5 @@ datasources:
     name: Prometheus
     orgId: 1
     type: prometheus
-    uid: T9XAoUn4k
     url: "http://prometheus:9090"
     version: 1
