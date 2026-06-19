@@ -35,7 +35,7 @@ jobs:
       run:
         working-directory: qa/zcash/wallet-builder
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v7.0.0
 
       - name: Build the Docker image (~4GB download on first run)
         run: make build
