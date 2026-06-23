@@ -78,6 +78,7 @@ BASE_SCRIPTS= [
     'p2p-fullblocktest.py',
     'soft_fork_disabling_orchard.py',
     'orchard_nu6_2.py',
+    'ironwood_transparent.py',
     # vv Tests less than 30s vv
     'wallet_1941.py',
     'wallet_accounts.py',
