@@ -1531,6 +1531,7 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
         if (tx.nVersionGroupId != OVERWINTER_VERSION_GROUP_ID &&
                 tx.nVersionGroupId != SAPLING_VERSION_GROUP_ID &&
                 tx.nVersionGroupId != ZIP225_VERSION_GROUP_ID &&
+                tx.nVersionGroupId != IRONWOOD_VERSION_GROUP_ID && // NU6.3 / Ironwood (MOCK)
                 tx.nVersionGroupId != ZFUTURE_VERSION_GROUP_ID) {
             return state.DoS(100, error("CheckTransaction(): unknown tx version group id"),
                     REJECT_INVALID, "bad-tx-version-group-id");
