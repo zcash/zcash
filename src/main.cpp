@@ -1132,9 +1132,14 @@ bool ContextualCheckTransaction(
 
     // Rules that apply to NU5 or later:
     if (nu5Active) {
+        // NU6.3 / Ironwood (MOCK): the v6 (Ironwood) transaction version group is only
+        // valid once NU6.3 is active.
+        bool nu6_3Active = consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU6_3);
         // Reject transactions with invalid version group id
         if (!futureActive) {
-            if (!(tx.nVersionGroupId == SAPLING_VERSION_GROUP_ID || tx.nVersionGroupId == ZIP225_VERSION_GROUP_ID)) {
+            if (!(tx.nVersionGroupId == SAPLING_VERSION_GROUP_ID ||
+                  tx.nVersionGroupId == ZIP225_VERSION_GROUP_ID ||
+                  (nu6_3Active && tx.nVersionGroupId == IRONWOOD_VERSION_GROUP_ID))) {
                 return state.DoS(
                     dosLevelPotentiallyRelaxing,
                     error("ContextualCheckTransaction(): invalid NU5 tx version"),
@@ -1156,16 +1161,21 @@ bool ContextualCheckTransaction(
             }
         }
 
-        // Reject transactions with invalid version
-        if (tx.nVersionGroupId == ZIP225_VERSION_GROUP_ID) {
-            if (tx.nVersion < ZIP225_MIN_TX_VERSION) {
+        // Reject transactions with invalid version. The Ironwood (v6) group shares the
+        // ZIP225 structural rules (branch id present + matching, no Sprout JoinSplits) but
+        // has its own tx-version bounds. MOCK feasibility fork.
+        if (tx.nVersionGroupId == ZIP225_VERSION_GROUP_ID || tx.nVersionGroupId == IRONWOOD_VERSION_GROUP_ID) {
+            bool isIronwoodGroup = tx.nVersionGroupId == IRONWOOD_VERSION_GROUP_ID;
+            int32_t minTxVersion = isIronwoodGroup ? IRONWOOD_MIN_TX_VERSION : ZIP225_MIN_TX_VERSION;
+            int32_t maxTxVersion = isIronwoodGroup ? IRONWOOD_MAX_TX_VERSION : ZIP225_MAX_TX_VERSION;
+            if (tx.nVersion < minTxVersion) {
                 return state.DoS(
                     dosLevelConstricting,
                     error("ContextualCheckTransaction(): ZIP225 version too low"),
                     REJECT_INVALID, "bad-tx-zip225-version-too-low");
             }
 
-            if (tx.nVersion > ZIP225_MAX_TX_VERSION) {
+            if (tx.nVersion > maxTxVersion) {
                 return state.DoS(
                     dosLevelPotentiallyRelaxing,
                     error("ContextualCheckTransaction(): ZIP225 version too high"),
@@ -1427,6 +1437,21 @@ bool ContextualCheckShieldedInputs(
     // Queue Orchard bundle to be batch-validated.
     if (orchardAuth.has_value()) {
         tx.GetOrchardBundle().QueueAuthValidation(*orchardAuth.value(), dataToBeSigned);
+    }
+
+    // NU6.3 / Ironwood (MOCK): queue the Ironwood bundle for proof verification.
+    //
+    // CIRCUIT SELECTION SEAM: the Ironwood pool should be verified against the new
+    // Ironwood circuit, and the post-NU6.3 Orchard pool against the new restricted-Orchard
+    // circuit (spends-except-change). Those circuits do not exist yet; per the feasibility
+    // mock we log an error and fall back to the existing fixed Orchard verifying key that
+    // the batch validator already holds. The Ironwood bundle reuses the Orchard bundle
+    // type, so it can be queued into the same validator.
+    if (orchardAuth.has_value() && tx.GetIronwoodBundle().IsPresent()) {
+        LogPrintf("ERROR: %s: Ironwood/restricted-Orchard circuit not implemented; "
+                  "verifying the Ironwood bundle against the fixed Orchard circuit (MOCK). "
+                  "txid=%s\n", __func__, tx.GetHash().ToString());
+        tx.GetIronwoodBundle().QueueAuthValidation(*orchardAuth.value(), dataToBeSigned);
     }
 
     return true;
@@ -3380,9 +3405,11 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     // `chainparams.ZIP209Enabled()`).
     assert(pindex->nChainSaplingValue.has_value());
     assert(pindex->nChainOrchardValue.has_value());
+    assert(pindex->nChainIronwoodValue.has_value());
     assert(pindex->nChainLockboxValue.has_value());
     const CAmount sapling_supply = pindex->nChainSaplingValue.value();
     const CAmount orchard_supply = pindex->nChainOrchardValue.value();
+    const CAmount ironwood_supply = pindex->nChainIronwoodValue.value();
     const CAmount lockbox_supply = pindex->nChainLockboxValue.value();
 
     // Shielded pool turnstile checks (ZIP 209)
@@ -3435,6 +3462,14 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                 error("%s: turnstile violation in Orchard shielded value pool at height %d (sprout=%d, sapling=%d, orchard=%d, lockbox=%d)", __func__,
                       pindex->nHeight, pindex->nChainSproutValue.value(), sapling_supply, orchard_supply, lockbox_supply),
                 REJECT_INVALID, "turnstile-violation-orchard");
+        }
+
+        // Ironwood (NU6.3, MOCK): supply soundness for the second Orchard-style pool.
+        if (!MoneyRange(ironwood_supply)) {
+            return state.DoS(100,
+                error("%s: turnstile violation in Ironwood shielded value pool at height %d (sprout=%d, sapling=%d, orchard=%d, ironwood=%d, lockbox=%d)", __func__,
+                      pindex->nHeight, pindex->nChainSproutValue.value(), sapling_supply, orchard_supply, ironwood_supply, lockbox_supply),
+                REJECT_INVALID, "turnstile-violation-ironwood");
         }
     }
 
@@ -5119,11 +5154,13 @@ static bool ComputePoolDeltas(
     CAmount& sproutValue,
     CAmount& saplingValue,
     CAmount& orchardValue,
+    CAmount& ironwoodValue,
     CAmount& lockboxValue)
 {
     sproutValue = 0;
     saplingValue = 0;
     orchardValue = 0;
+    ironwoodValue = 0;
 
     // Each lockbox disbursement produces a negative change to the lockbox value.
     // Each lockbox funding stream produces a positive change to the lockbox value.
@@ -5161,6 +5198,14 @@ static bool ComputePoolDeltas(
         if (!MoneyDeltaRange(orchardValue)) {
             return error("%s: orchard value delta out of range: %d at height %d.%s", __func__,
                 orchardValue, nHeight, corruptionHint);
+        }
+
+        // NU6.3 / Ironwood (MOCK): the Ironwood bundle's value balance behaves exactly
+        // like Orchard's, tracked in a separate pool.
+        ironwoodValue -= tx.GetIronwoodBundle().GetValueBalance();
+        if (!MoneyDeltaRange(ironwoodValue)) {
+            return error("%s: ironwood value delta out of range: %d at height %d.%s", __func__,
+                ironwoodValue, nHeight, corruptionHint);
         }
 
         for (const auto& js : tx.vJoinSplit) {
@@ -5220,10 +5265,10 @@ static bool CheckRecomputedPoolDeltas(const CBlockIndex* pindex, const CChainPar
     // Recompute pool deltas from the block data. If an overflow is detected
     // here, it indicates persisted-deltas corruption (since the same block
     // was accepted at tip previously), so hint at reindexing.
-    CAmount sproutValue, saplingValue, orchardValue, lockboxValue;
+    CAmount sproutValue, saplingValue, orchardValue, ironwoodValue, lockboxValue;
     if (!ComputePoolDeltas(block, chainparams, pindex->nHeight,
                            " This may indicate on-disk corruption; please restart with -reindex.",
-                           sproutValue, saplingValue, orchardValue, lockboxValue)) {
+                           sproutValue, saplingValue, orchardValue, ironwoodValue, lockboxValue)) {
         return false;
     }
 
@@ -5250,6 +5295,7 @@ static bool CheckRecomputedPoolDeltas(const CBlockIndex* pindex, const CChainPar
     return checkDelta("nSproutValue", pindex->nSproutValue.value(), sproutValue)
         && checkDelta("nSaplingValue", pindex->nSaplingValue, saplingValue)
         && checkDelta("nOrchardValue", pindex->nOrchardValue, orchardValue)
+        && checkDelta("nIronwoodValue", pindex->nIronwoodValue, ironwoodValue)
         && checkDelta("nLockboxValue", pindex->nLockboxValue, lockboxValue);
 }
 
@@ -5343,6 +5389,7 @@ static bool AccumulateChainPoolValues(CBlockIndex *pindex)
         pindex->nChainSproutValue = pindex->nSproutValue;
         pindex->nChainSaplingValue = pindex->nSaplingValue;
         pindex->nChainOrchardValue = pindex->nOrchardValue;
+        pindex->nChainIronwoodValue = pindex->nIronwoodValue;
         pindex->nChainLockboxValue = pindex->nLockboxValue;
         return true;
     }
@@ -5385,6 +5432,17 @@ static bool AccumulateChainPoolValues(CBlockIndex *pindex)
         pindex->nChainOrchardValue = std::nullopt;
     }
 
+    // Ironwood (NU6.3, MOCK): same accumulation as Orchard, separate pool.
+    if (pindex->pprev->nChainIronwoodValue.has_value()) {
+        CAmount chainIronwoodValue = pindex->pprev->nChainIronwoodValue.value();
+        if (!MoneyRange(chainIronwoodValue) || !MoneyDeltaRange(pindex->nIronwoodValue)) {
+            return error("%s: ironwood pool value out of range at height %d", __func__, pindex->nHeight);
+        }
+        pindex->nChainIronwoodValue = chainIronwoodValue + pindex->nIronwoodValue;
+    } else {
+        pindex->nChainIronwoodValue = std::nullopt;
+    }
+
     // Lockbox
     if (pindex->pprev->nChainLockboxValue.has_value()) {
         CAmount chainLockboxValue = pindex->pprev->nChainLockboxValue.value();
@@ -5412,9 +5470,9 @@ bool SetChainPoolValues(
     // pindex->pprev is only permitted to be null for the genesis block
     assert (pindex->pprev || pindex->nHeight == 0);
 
-    CAmount sproutValue, saplingValue, orchardValue, lockboxValue;
+    CAmount sproutValue, saplingValue, orchardValue, ironwoodValue, lockboxValue;
     if (!ComputePoolDeltas(block, chainparams, pindex->nHeight, "",
-                           sproutValue, saplingValue, orchardValue, lockboxValue)) {
+                           sproutValue, saplingValue, orchardValue, ironwoodValue, lockboxValue)) {
         return false;
     }
     LogPrint("valuepool", "%s: Lockbox value is %d at height %d", __func__, lockboxValue, pindex->nHeight);
@@ -5447,6 +5505,7 @@ bool SetChainPoolValues(
     pindex->nSproutValue = sproutValue;
     pindex->nSaplingValue = saplingValue;
     pindex->nOrchardValue = orchardValue;
+    pindex->nIronwoodValue = ironwoodValue;
     pindex->nLockboxValue = lockboxValue;
     pindex->nChainLockboxValue = std::nullopt;
 
