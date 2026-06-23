@@ -61,6 +61,20 @@ static_assert(ZIP225_TX_VERSION >= ZIP225_MIN_TX_VERSION,
 static_assert(ZIP225_TX_VERSION <= ZIP225_MAX_TX_VERSION,
     "ZIP225 tx version must not be higher than maximum");
 
+// Ironwood (NU6.3) transaction version group id (MOCK feasibility fork; see
+// ironwood-notes/). The real implementation would assign this via a ZIP. The Ironwood v6
+// body is identical to the ZIP225 v5 body, followed by a second ("Ironwood") Orchard
+// bundle. This value MUST match IRONWOOD_VERSION_GROUP_ID in the zcash_primitives mock.
+static constexpr uint32_t IRONWOOD_VERSION_GROUP_ID = 0x77777777;
+static_assert(IRONWOOD_VERSION_GROUP_ID != 0, "version group id must be non-zero as specified in ZIP 202");
+
+// Ironwood (NU6.3) transaction version.
+static const int32_t IRONWOOD_TX_VERSION = 6;
+static_assert(IRONWOOD_TX_VERSION >= IRONWOOD_MIN_TX_VERSION,
+    "Ironwood tx version must not be lower than minimum");
+static_assert(IRONWOOD_TX_VERSION <= IRONWOOD_MAX_TX_VERSION,
+    "Ironwood tx version must not be higher than maximum");
+
 // Future transaction version group id
 static constexpr uint32_t ZFUTURE_VERSION_GROUP_ID = 0xFFFFFFFF;
 static_assert(ZFUTURE_VERSION_GROUP_ID != 0, "version group id must be non-zero as specified in ZIP 202");
@@ -459,6 +473,9 @@ private:
     std::optional<uint32_t> nConsensusBranchId;
     SaplingBundle saplingBundle;
     OrchardBundle orchardBundle;
+    /// The Ironwood (second Orchard-style) bundle. Only present in NU6.3 v6 transactions.
+    /// MOCK feasibility fork; see ironwood-notes/.
+    OrchardBundle ironwoodBundle;
 
     /** Memory only. */
     const WTxId wtxid;
@@ -565,6 +582,13 @@ public:
             nVersionGroupId == ZIP225_VERSION_GROUP_ID &&
             nVersion == ZIP225_TX_VERSION;
 
+        // Ironwood (NU6.3) v6: identical body to ZIP225 v5, plus a trailing Ironwood
+        // (second Orchard-style) bundle. MOCK feasibility fork; see ironwood-notes/.
+        bool isIronwoodV6 =
+            fOverwintered &&
+            nVersionGroupId == IRONWOOD_VERSION_GROUP_ID &&
+            nVersion == IRONWOOD_TX_VERSION;
+
         // It is not possible to make the transaction's serialized form vary on
         // a per-enabled-feature basis. The approach here is that all
         // serialization rules for not-yet-released features must be
@@ -575,11 +599,11 @@ public:
             nVersionGroupId == ZFUTURE_VERSION_GROUP_ID &&
             nVersion == ZFUTURE_TX_VERSION;
 
-        if (fOverwintered && !(isOverwinterV3 || isSaplingV4 || isZip225V5 || isFuture)) {
+        if (fOverwintered && !(isOverwinterV3 || isSaplingV4 || isZip225V5 || isIronwoodV6 || isFuture)) {
             throw std::ios_base::failure("Unknown transaction format");
         }
 
-        if (isZip225V5) {
+        if (isZip225V5 || isIronwoodV6) {
             // Common Transaction Fields (plus version bytes above)
             if (ser_action.ForRead()) {
                 uint32_t consensusBranchId;
@@ -601,6 +625,11 @@ public:
 
             // Orchard Transaction Fields
             READWRITE(orchardBundle);
+
+            // Ironwood Transaction Fields (NU6.3 v6 only). MOCK feasibility fork.
+            if (isIronwoodV6) {
+                READWRITE(ironwoodBundle);
+            }
         } else {
             // Legacy transaction formats
             READWRITE(*const_cast<std::vector<CTxIn>*>(&vin));
@@ -718,6 +747,13 @@ public:
         return orchardBundle;
     }
 
+    /**
+     * Returns the Ironwood bundle for the transaction (NU6.3+). MOCK feasibility fork.
+     */
+    const OrchardBundle& GetIronwoodBundle() const {
+        return ironwoodBundle;
+    }
+
     /*
      * Context for the two methods below:
      * As at most one of vpub_new and vpub_old is non-zero in every JoinSplit,
@@ -778,6 +814,8 @@ struct CMutableTransaction
     uint32_t nExpiryHeight{0};
     SaplingBundle saplingBundle;
     OrchardBundle orchardBundle;
+    /// Ironwood (second Orchard-style) bundle; only present in NU6.3 v6 txs. MOCK.
+    OrchardBundle ironwoodBundle;
     std::vector<JSDescription> vJoinSplit;
     ed25519::VerificationKey joinSplitPubKey;
     ed25519::Signature joinSplitSig;
@@ -820,15 +858,20 @@ struct CMutableTransaction
             fOverwintered &&
             nVersionGroupId == ZIP225_VERSION_GROUP_ID &&
             nVersion == ZIP225_TX_VERSION;
+        // Ironwood (NU6.3) v6: ZIP225 v5 body + trailing Ironwood bundle. MOCK.
+        bool isIronwoodV6 =
+            fOverwintered &&
+            nVersionGroupId == IRONWOOD_VERSION_GROUP_ID &&
+            nVersion == IRONWOOD_TX_VERSION;
         bool isFuture =
             fOverwintered &&
             nVersionGroupId == ZFUTURE_VERSION_GROUP_ID &&
             nVersion == ZFUTURE_TX_VERSION;
-        if (fOverwintered && !(isOverwinterV3 || isSaplingV4 || isZip225V5 || isFuture)) {
+        if (fOverwintered && !(isOverwinterV3 || isSaplingV4 || isZip225V5 || isIronwoodV6 || isFuture)) {
             throw std::ios_base::failure("Unknown transaction format");
         }
 
-        if (isZip225V5) {
+        if (isZip225V5 || isIronwoodV6) {
             // Common Transaction Fields (plus version bytes above)
             if (ser_action.ForRead()) {
                 uint32_t consensusBranchId;
@@ -850,6 +893,11 @@ struct CMutableTransaction
 
             // Orchard Transaction Fields
             READWRITE(orchardBundle);
+
+            // Ironwood Transaction Fields (NU6.3 v6 only). MOCK feasibility fork.
+            if (isIronwoodV6) {
+                READWRITE(ironwoodBundle);
+            }
         } else {
             // Legacy transaction formats
             READWRITE(vin);

@@ -148,6 +148,11 @@ const Consensus::Params& RegtestActivateNU6point2();
 
 void RegtestDeactivateNU6point2();
 
+const Consensus::Params& RegtestActivateNU6point3(bool updatePow, int nu6point3ActivationHeight = Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+const Consensus::Params& RegtestActivateNU6point3();
+
+void RegtestDeactivateNU6point3();
+
 libzcash::SaplingExtendedSpendingKey GetTestMasterSaplingSpendingKey();
 
 CKey AddTestCKeyToKeyStore(CBasicKeyStore& keyStore);

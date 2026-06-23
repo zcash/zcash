@@ -97,6 +97,7 @@ CMutableTransaction::CMutableTransaction(const CTransaction& tx) : nVersion(tx.n
                                                                    vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime),
                                                                    saplingBundle(tx.GetSaplingBundle()),
                                                                    orchardBundle(tx.GetOrchardBundle()),
+                                                                   ironwoodBundle(tx.GetIronwoodBundle()),
                                                                    vJoinSplit(tx.vJoinSplit), joinSplitPubKey(tx.joinSplitPubKey), joinSplitSig(tx.joinSplitSig)
 {
 }
@@ -160,6 +161,7 @@ CTransaction::CTransaction() : nVersion(CTransaction::SPROUT_MIN_CURRENT_VERSION
                                vin(), vout(), nLockTime(0),
                                saplingBundle(),
                                orchardBundle(),
+                               ironwoodBundle(),
                                vJoinSplit(), joinSplitPubKey(), joinSplitSig() { }
 
 CTransaction::CTransaction(const CMutableTransaction &tx) : nVersion(tx.nVersion), fOverwintered(tx.fOverwintered), nVersionGroupId(tx.nVersionGroupId), nExpiryHeight(tx.nExpiryHeight),
@@ -167,6 +169,7 @@ CTransaction::CTransaction(const CMutableTransaction &tx) : nVersion(tx.nVersion
                                                             vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime),
                                                             saplingBundle(tx.saplingBundle),
                                                             orchardBundle(tx.orchardBundle),
+                                                            ironwoodBundle(tx.ironwoodBundle),
                                                             vJoinSplit(tx.vJoinSplit), joinSplitPubKey(tx.joinSplitPubKey), joinSplitSig(tx.joinSplitSig)
 {
     UpdateHash();
@@ -181,6 +184,7 @@ CTransaction::CTransaction(
                               vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime),
                               saplingBundle(tx.saplingBundle),
                               orchardBundle(tx.orchardBundle),
+                              ironwoodBundle(tx.ironwoodBundle),
                               vJoinSplit(tx.vJoinSplit), joinSplitPubKey(tx.joinSplitPubKey), joinSplitSig(tx.joinSplitSig)
 {
     assert(evilDeveloperFlag);
@@ -193,6 +197,7 @@ CTransaction::CTransaction(CMutableTransaction &&tx) : nVersion(tx.nVersion),
                                                        nLockTime(tx.nLockTime), nExpiryHeight(tx.nExpiryHeight),
                                                        saplingBundle(std::move(tx.saplingBundle)),
                                                        orchardBundle(std::move(tx.orchardBundle)),
+                                                       ironwoodBundle(std::move(tx.ironwoodBundle)),
                                                        vJoinSplit(std::move(tx.vJoinSplit)),
                                                        joinSplitPubKey(std::move(tx.joinSplitPubKey)), joinSplitSig(std::move(tx.joinSplitSig))
 {
@@ -210,6 +215,7 @@ CTransaction& CTransaction::operator=(const CTransaction &tx) {
     *const_cast<uint32_t*>(&nExpiryHeight) = tx.nExpiryHeight;
     saplingBundle = tx.saplingBundle;
     orchardBundle = tx.orchardBundle;
+    ironwoodBundle = tx.ironwoodBundle;
     *const_cast<std::vector<JSDescription>*>(&vJoinSplit) = tx.vJoinSplit;
     *const_cast<ed25519::VerificationKey*>(&joinSplitPubKey) = tx.joinSplitPubKey;
     *const_cast<ed25519::Signature*>(&joinSplitSig) = tx.joinSplitSig;

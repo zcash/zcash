@@ -44,6 +44,7 @@ pub(crate) fn network(
     nu6: i32,
     nu6_1: i32,
     nu6_2: i32,
+    nu6_3: i32,
 ) -> Result<Box<Network>, &'static str> {
     let i32_to_optional_height = |n: i32| {
         if n.is_negative() {
@@ -66,6 +67,7 @@ pub(crate) fn network(
             nu6: i32_to_optional_height(nu6),
             nu6_1: i32_to_optional_height(nu6_1),
             nu6_2: i32_to_optional_height(nu6_2),
+            nu6_3: i32_to_optional_height(nu6_3),
         }),
         _ => return Err("Unsupported network kind"),
     };

@@ -118,3 +118,14 @@ features = ["ansi", "env-filter", "fmt", "time"]
 lto = 'thin'
 panic = 'abort'
 codegen-units = 1
+
+# Ironwood (NU6.3) feasibility MOCK — see ironwood-notes/.
+# The shared crates are Zebra-shared and will gain real Ironwood support upstream; here
+# they are forked locally (path = clones in ./ironwood-crates/, created by
+# ironwood-notes/crate-mocks/apply.py) only enough for zcashd to build/run against the
+# new NU6.3 branch id and v6 Ironwood transactions. These clones live outside depends/
+# so they survive `./distclean.sh`. This is build scaffolding, NOT part of the measured
+# zcashd complexity.
+[patch.crates-io]
+zcash_protocol = { path = "ironwood-crates/zcash_protocol" }
+zcash_primitives = { path = "ironwood-crates/zcash_primitives" }

@@ -19,6 +19,13 @@ TxVersionInfo CurrentTxVersionInfo(
             .nVersionGroupId = ZFUTURE_VERSION_GROUP_ID,
             .nVersion =        ZFUTURE_TX_VERSION
         };
+    } else if (consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU6_3) && !requireV4) {
+        // NU6.3 / Ironwood (MOCK): build v6 transactions that can carry an Ironwood bundle.
+        return {
+            .fOverwintered =   true,
+            .nVersionGroupId = IRONWOOD_VERSION_GROUP_ID,
+            .nVersion =        IRONWOOD_TX_VERSION
+        };
     } else if (consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU5) && !requireV4) {
         return {
             .fOverwintered =   true,

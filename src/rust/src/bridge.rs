@@ -82,6 +82,7 @@ pub(crate) mod ffi {
             nu6: i32,
             nu6_1: i32,
             nu6_2: i32,
+            nu6_3: i32,
         ) -> Result<Box<Network>>;
     }
 

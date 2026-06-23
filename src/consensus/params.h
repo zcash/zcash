@@ -43,6 +43,10 @@ enum UpgradeIndex : uint32_t {
     UPGRADE_NU6,
     UPGRADE_NU6_1,
     UPGRADE_NU6_2,
+    // NU6.3 is the deployment vehicle for Ironwood (this is a feasibility MOCK; see
+    // ironwood-notes/). It introduces a second Orchard-style "Ironwood" pool and
+    // switches the original Orchard pool to a restricted circuit.
+    UPGRADE_NU6_3,
     // Add new network upgrades before this line.
     // NOTE: Also add new upgrades to NetworkUpgradeInfo in upgrades.cpp
     UPGRADE_ZFUTURE,

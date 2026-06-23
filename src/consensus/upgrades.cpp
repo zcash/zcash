@@ -65,6 +65,13 @@ const struct NUInfo NetworkUpgradeInfo[Consensus::MAX_NETWORK_UPGRADES] = {
         .strInfo = "See https://z.cash/upgrade/nu6.2/ for details.",
     },
     {
+        // MOCK Ironwood deployment vehicle. Branch ID is a placeholder random
+        // non-zero value; the real NU6.3 branch ID is not yet assigned.
+        .nBranchId = 0x725d9e30,
+        .strName = "NU6.3",
+        .strInfo = "Ironwood (MOCK). See ironwood-notes/ for the feasibility writeup.",
+    },
+    {
         .nBranchId = 0xffffffff,
         .strName = "ZFUTURE",
         .strInfo = "Future network upgrade (integration testing only)",
