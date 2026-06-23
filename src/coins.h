@@ -316,6 +316,21 @@ struct CAnchorsOrchardCacheEntry
     CAnchorsOrchardCacheEntry() : entered(false), flags(0) {}
 };
 
+// NU6.3 / Ironwood (MOCK): the Ironwood pool reuses the Orchard commitment-tree type
+// (OrchardMerkleFrontier) but is a separate pool with its own anchors.
+struct CAnchorsIronwoodCacheEntry
+{
+    bool entered; // This will be false if the anchor is removed from the cache
+    OrchardMerkleFrontier tree; // The tree itself
+    unsigned char flags;
+
+    enum Flags {
+        DIRTY = (1 << 0), // This cache entry is potentially different from the version in the parent view.
+    };
+
+    CAnchorsIronwoodCacheEntry() : entered(false), flags(0) {}
+};
+
 struct CNullifiersCacheEntry
 {
     bool entered; // If the nullifier is spent or not
@@ -336,12 +351,14 @@ enum ShieldedType: uint8_t
     SPROUT = 0x01,
     SAPLING = 0x02,
     ORCHARD = 0x03,
+    IRONWOOD = 0x04, // NU6.3 / Ironwood (MOCK): second Orchard-style pool.
 };
 
 typedef boost::unordered_map<uint256, CCoinsCacheEntry, SaltedTxidHasher> CCoinsMap;
 typedef boost::unordered_map<uint256, CAnchorsSproutCacheEntry, SaltedTxidHasher> CAnchorsSproutMap;
 typedef boost::unordered_map<uint256, CAnchorsSaplingCacheEntry, SaltedTxidHasher> CAnchorsSaplingMap;
 typedef boost::unordered_map<uint256, CAnchorsOrchardCacheEntry, SaltedTxidHasher> CAnchorsOrchardMap;
+typedef boost::unordered_map<uint256, CAnchorsIronwoodCacheEntry, SaltedTxidHasher> CAnchorsIronwoodMap;
 typedef boost::unordered_map<uint256, CNullifiersCacheEntry, SaltedTxidHasher> CNullifiersMap;
 typedef boost::unordered_map<uint32_t, HistoryCache> CHistoryCacheMap;
 
@@ -372,6 +389,9 @@ public:
 
     //! Retrieve the tree (Orchard) at a particular anchored root in the chain
     virtual bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const = 0;
+
+    //! Retrieve the tree (Ironwood) at a particular anchored root in the chain. MOCK.
+    virtual bool GetIronwoodAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const = 0;
 
     //! Determine whether a nullifier is spent or not
     virtual bool GetNullifier(const uint256 &nullifier, ShieldedType type) const = 0;
@@ -429,12 +449,15 @@ public:
                             const uint256 &hashSproutAnchor,
                             const uint256 &hashSaplingAnchor,
                             const uint256 &hashOrchardAnchor,
+                            const uint256 &hashIronwoodAnchor,
                             CAnchorsSproutMap &mapSproutAnchors,
                             CAnchorsSaplingMap &mapSaplingAnchors,
                             CAnchorsOrchardMap &mapOrchardAnchors,
+                            CAnchorsIronwoodMap &mapIronwoodAnchors,
                             CNullifiersMap &mapSproutNullifiers,
                             CNullifiersMap &mapSaplingNullifiers,
                             CNullifiersMap &mapOrchardNullifiers,
+                            CNullifiersMap &mapIronwoodNullifiers,
                             CHistoryCacheMap &historyCacheMap,
                             SubtreeCache &cacheSaplingSubtrees,
                             SubtreeCache &cacheOrchardSubtrees) = 0;
@@ -508,6 +531,7 @@ public:
     bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const { return false; }
     bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const { return false; }
     bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const { return false; }
+    bool GetIronwoodAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const { return false; }
     bool GetNullifier(const uint256 &nullifier, ShieldedType type) const { return false; }
     bool GetCoins(const uint256 &txid, CCoins &coins) const { return false; }
     bool HaveCoins(const uint256 &txid) const { return false; }
@@ -525,12 +549,15 @@ public:
                     const uint256 &hashSproutAnchor,
                     const uint256 &hashSaplingAnchor,
                     const uint256 &hashOrchardAnchor,
+                    const uint256 &hashIronwoodAnchor,
                     CAnchorsSproutMap &mapSproutAnchors,
                     CAnchorsSaplingMap &mapSaplingAnchors,
                     CAnchorsOrchardMap &mapOrchardAnchors,
+                    CAnchorsIronwoodMap &mapIronwoodAnchors,
                     CNullifiersMap &mapSproutNullifiers,
                     CNullifiersMap &mapSaplingNullifiers,
                     CNullifiersMap &mapOrchardNullifiers,
+                    CNullifiersMap &mapIronwoodNullifiers,
                     CHistoryCacheMap &historyCacheMap,
                     SubtreeCache &cacheSaplingSubtrees,
                     SubtreeCache &cacheOrchardSubtrees) { return false; }
@@ -551,6 +578,7 @@ public:
     bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const;
     bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const;
     bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const;
+    bool GetIronwoodAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const;
     bool GetNullifier(const uint256 &nullifier, ShieldedType type) const;
     bool GetCoins(const uint256 &txid, CCoins &coins) const;
     bool HaveCoins(const uint256 &txid) const;
@@ -569,12 +597,15 @@ public:
                     const uint256 &hashSproutAnchor,
                     const uint256 &hashSaplingAnchor,
                     const uint256 &hashOrchardAnchor,
+                    const uint256 &hashIronwoodAnchor,
                     CAnchorsSproutMap &mapSproutAnchors,
                     CAnchorsSaplingMap &mapSaplingAnchors,
                     CAnchorsOrchardMap &mapOrchardAnchors,
+                    CAnchorsIronwoodMap &mapIronwoodAnchors,
                     CNullifiersMap &mapSproutNullifiers,
                     CNullifiersMap &mapSaplingNullifiers,
                     CNullifiersMap &mapOrchardNullifiers,
+                    CNullifiersMap &mapIronwoodNullifiers,
                     CHistoryCacheMap &historyCacheMap,
                     SubtreeCache &cacheSaplingSubtrees,
                     SubtreeCache &cacheOrchardSubtrees);
@@ -631,12 +662,15 @@ protected:
     mutable uint256 hashSproutAnchor;
     mutable uint256 hashSaplingAnchor;
     mutable uint256 hashOrchardAnchor;
+    mutable uint256 hashIronwoodAnchor;
     mutable CAnchorsSproutMap cacheSproutAnchors;
     mutable CAnchorsSaplingMap cacheSaplingAnchors;
     mutable CAnchorsOrchardMap cacheOrchardAnchors;
+    mutable CAnchorsIronwoodMap cacheIronwoodAnchors;
     mutable CNullifiersMap cacheSproutNullifiers;
     mutable CNullifiersMap cacheSaplingNullifiers;
     mutable CNullifiersMap cacheOrchardNullifiers;
+    mutable CNullifiersMap cacheIronwoodNullifiers;
     mutable CHistoryCacheMap historyCacheMap;
     mutable SubtreeCache cacheSaplingSubtrees = SubtreeCache(SAPLING);
     mutable SubtreeCache cacheOrchardSubtrees = SubtreeCache(ORCHARD);
@@ -652,6 +686,7 @@ public:
     bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const;
     bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const;
     bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const;
+    bool GetIronwoodAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const;
     bool GetNullifier(const uint256 &nullifier, ShieldedType type) const;
     bool GetCoins(const uint256 &txid, CCoins &coins) const;
     bool HaveCoins(const uint256 &txid) const;
@@ -670,12 +705,15 @@ public:
                     const uint256 &hashSproutAnchor,
                     const uint256 &hashSaplingAnchor,
                     const uint256 &hashOrchardAnchor,
+                    const uint256 &hashIronwoodAnchor,
                     CAnchorsSproutMap &mapSproutAnchors,
                     CAnchorsSaplingMap &mapSaplingAnchors,
                     CAnchorsOrchardMap &mapOrchardAnchors,
+                    CAnchorsIronwoodMap &mapIronwoodAnchors,
                     CNullifiersMap &mapSproutNullifiers,
                     CNullifiersMap &mapSaplingNullifiers,
                     CNullifiersMap &mapOrchardNullifiers,
+                    CNullifiersMap &mapIronwoodNullifiers,
                     CHistoryCacheMap &historyCacheMap,
                     SubtreeCache &cacheSaplingSubtrees,
                     SubtreeCache &cacheOrchardSubtrees);
@@ -683,6 +721,10 @@ public:
     // Adds the tree to mapSproutAnchors, mapSaplingAnchors, or mapOrchardAnchors
     // based on the type of tree and sets the current commitment root to this root.
     template<typename Tree> void PushAnchor(const Tree &tree);
+
+    // NU6.3 / Ironwood (MOCK): the Ironwood pool reuses the OrchardMerkleFrontier tree
+    // type, so it cannot use the type-dispatched PushAnchor template; push explicitly.
+    void PushIronwoodAnchor(const OrchardMerkleFrontier &tree);
 
     // Removes the current commitment root from mapAnchors and sets
     // the new current root.

@@ -30,6 +30,10 @@ public:
         return true;
     }
 
+    bool GetIronwoodAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const {
+        return true;
+    }
+
     bool GetNullifier(const uint256 &nf, ShieldedType type) const {
         // Always return false so we treat every nullifier as being unspent.
         return false;
@@ -65,12 +69,15 @@ public:
                     const uint256 &hashSproutAnchor,
                     const uint256 &hashSaplingAnchor,
                     const uint256 &hashOrchardAnchor,
+                    const uint256 &hashIronwoodAnchor,
                     CAnchorsSproutMap &mapSproutAnchors,
                     CAnchorsSaplingMap &mapSaplingAnchors,
                     CAnchorsOrchardMap &mapOrchardAnchors,
+                    CAnchorsIronwoodMap &mapIronwoodAnchors,
                     CNullifiersMap &mapSproutNullifiers,
                     CNullifiersMap &mapSaplingNullifiers,
                     CNullifiersMap &mapOrchardNullifiers,
+                    CNullifiersMap &mapIronwoodNullifiers,
                     CHistoryCacheMap &historyCacheMap,
                     SubtreeCache &cacheSaplingSubtrees,
                     SubtreeCache &cacheOrchardSubtrees) {

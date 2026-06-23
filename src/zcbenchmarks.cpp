@@ -532,6 +532,16 @@ public:
         return false;
     }
 
+    bool GetIronwoodAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const {
+        for (const auto& orchardTree : orchardTrees) {
+            if (rt == orchardTree.root()) {
+                tree = orchardTree;
+                return true;
+            }
+        }
+        return false;
+    }
+
     bool GetNullifier(const uint256 &nf, ShieldedType type) const {
         return false;
     }
@@ -575,12 +585,15 @@ public:
                     const uint256 &hashSproutAnchor,
                     const uint256 &hashSaplingAnchor,
                     const uint256 &hashOrchardAnchor,
+                    const uint256 &hashIronwoodAnchor,
                     CAnchorsSproutMap &mapSproutAnchors,
                     CAnchorsSaplingMap &mapSaplingAnchors,
                     CAnchorsOrchardMap &mapOrchardAnchors,
+                    CAnchorsIronwoodMap &mapIronwoodAnchors,
                     CNullifiersMap &mapSproutNullifiers,
                     CNullifiersMap &mapSaplingNullifiers,
                     CNullifiersMap &mapOrchardNullifiers,
+                    CNullifiersMap &mapIronwoodNullifiers,
                     CHistoryCacheMap &historyCacheMap,
                     SubtreeCache &cacheSaplingSubtrees,
                     SubtreeCache &cacheOrchardSubtrees) {

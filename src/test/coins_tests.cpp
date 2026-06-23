@@ -96,6 +96,22 @@ public:
         }
     }
 
+    bool GetIronwoodAnchorAt(const uint256& rt, OrchardMerkleFrontier &tree) const {
+        if (rt == OrchardMerkleFrontier::empty_root()) {
+            OrchardMerkleFrontier new_tree;
+            tree = new_tree;
+            return true;
+        }
+
+        std::map<uint256, OrchardMerkleFrontier>::const_iterator it = mapOrchardAnchors_.find(rt);
+        if (it == mapOrchardAnchors_.end()) {
+            return false;
+        } else {
+            tree = it->second;
+            return true;
+        }
+    }
+
     bool GetNullifier(const uint256 &nf, ShieldedType type) const
     {
         const std::map<uint256, bool>* mapToUse;
@@ -213,12 +229,15 @@ public:
                     const uint256& hashSproutAnchor,
                     const uint256& hashSaplingAnchor,
                     const uint256& hashOrchardAnchor,
+                    const uint256& hashIronwoodAnchor,
                     CAnchorsSproutMap& mapSproutAnchors,
                     CAnchorsSaplingMap& mapSaplingAnchors,
                     CAnchorsOrchardMap& mapOrchardAnchors,
+                    CAnchorsIronwoodMap& mapIronwoodAnchors,
                     CNullifiersMap& mapSproutNullifiers,
                     CNullifiersMap& mapSaplingNullifiers,
                     CNullifiersMap& mapOrchardNullifiers,
+                    CNullifiersMap& mapIronwoodNullifiers,
                     CHistoryCacheMap &historyCacheMap,
                     SubtreeCache &cacheSaplingSubtrees,
                     SubtreeCache &cacheOrchardSubtrees)
