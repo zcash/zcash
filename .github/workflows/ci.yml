@@ -169,7 +169,7 @@ jobs:
           printf '%s\n%s\n' "$RPC_TEST_MATRIX" "$RPC_SHARDS_JSON" | jq -r -s 'add | @json "rpc_test_shards_matrix=\(.)"' >> $GITHUB_OUTPUT
 
       - name: Cache Sprout parameters
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: zcash-params
           key: zcash-params
@@ -209,7 +209,7 @@ jobs:
         run: sudo apt update && sudo apt install ${{ matrix.cross_deps }}
 
       - name: Cache built dependencies
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: depends/built
           key: ${{ matrix.name }}-built-${{ hashFiles('depends/Makefile', 'depends/funcs.mk') }}-${{ hashFiles('depends/packages/*.mk', 'depends/patches/**/*') }}
@@ -222,7 +222,7 @@ jobs:
         run: echo "timestamp=$(date +'%Y-%m-%d-%H;%M;%S')" >> "$GITHUB_OUTPUT"
 
       - name: Cache ccache files
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ${{ runner.os == 'macOS' && '~/Library/Caches/ccache' || '~/.cache/ccache' }}
           key: ${{ matrix.name }}-ccache-${{ steps.ccache_cache_timestamp.outputs.timestamp }}
@@ -311,7 +311,7 @@ jobs:
         run: sudo apt update && sudo apt install ${{ matrix.cross_deps }}
 
       - name: Cache built dependencies
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: depends/built
           key: ${{ matrix.name }}-built-${{ hashFiles('depends/Makefile', 'depends/funcs.mk') }}-${{ hashFiles('depends/packages/*.mk', 'depends/patches/**/*') }}
@@ -324,7 +324,7 @@ jobs:
         run: echo "timestamp=$(date +'%Y-%m-%d-%H;%M;%S')" >> "$GITHUB_OUTPUT"
 
       - name: Cache ccache files
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ${{ runner.os == 'macOS' && '~/Library/Caches/ccache' || '~/.cache/ccache' }}
           key: ${{ matrix.name }}-ccache-${{ steps.ccache_cache_timestamp.outputs.timestamp }}
@@ -402,7 +402,7 @@ jobs:
         run: chmod +x ${{ format('./src/zcash-gtest{0}', matrix.file_ext) }}
 
       - name: Cache Sprout parameters
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: zcash-params
           key: zcash-params
@@ -649,7 +649,7 @@ jobs:
 
     steps:
       - name: Cache Python dependencies for RPC tests
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           enableCrossOsArchive: true
           path: venv
@@ -682,7 +682,7 @@ jobs:
       - uses: actions/checkout@v6.0.3
 
       - name: Cache Python dependencies for RPC tests
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           enableCrossOsArchive: true
           path: venv
@@ -707,7 +707,7 @@ jobs:
           chmod +x ${{ format('./src/zcash-cli{0}', matrix.file_ext) }}
 
       - name: Get Sprout parameters
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: zcash-params
           key: zcash-params
