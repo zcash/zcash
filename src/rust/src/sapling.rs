@@ -39,6 +39,7 @@ use super::{
 };
 use crate::params::Network;
 use crate::{
+    bundle_parse_error::format_bundle_parse_error,
     bundlecache::{sapling_bundle_validity_cache, sapling_bundle_validity_cache_mut, CacheEntries},
     streams::CppStream,
 };
@@ -145,10 +146,9 @@ impl Bundle {
 
     /// Parses an authorized Sapling bundle from the given stream.
     fn parse_v5(reader: &mut CppStream<'_>) -> Result<Box<Self>, String> {
-        match Transaction::temporary_zcashd_read_v5_sapling(reader) {
-            Ok(parsed) => Ok(Box::new(Bundle(parsed))),
-            Err(e) => Err(format!("Failed to parse v5 Sapling bundle: {}", e)),
-        }
+        Transaction::temporary_zcashd_read_v5_sapling(reader)
+            .map(|parsed| Box::new(Bundle(parsed)))
+            .map_err(|e| format_bundle_parse_error(e, "Failed to parse v5 Sapling bundle"))
     }
 
     pub(crate) fn serialize_v4_components(
@@ -269,7 +269,7 @@ pub(crate) fn parse_v4_sapling_components(
     has_sapling: bool,
 ) -> Result<Box<BundleAssembler>, String> {
     BundleAssembler::parse_v4_components(reader, has_sapling)
-        .map_err(|e| format!("Failed to parse v4 Sapling bundle: {}", e))
+        .map_err(|e| format_bundle_parse_error(e, "Failed to parse v4 Sapling bundle"))
 }
 
 impl BundleAssembler {

@@ -29,6 +29,7 @@ use std::sync::{LazyLock, OnceLock};
 use subtle::CtOption;
 
 mod blake2b;
+mod bundle_parse_error;
 mod ed25519;
 mod equihash;
 mod metrics_ffi;

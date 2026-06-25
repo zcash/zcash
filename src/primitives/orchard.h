@@ -5,6 +5,7 @@
 #ifndef ZCASH_PRIMITIVES_ORCHARD_H
 #define ZCASH_PRIMITIVES_ORCHARD_H
 
+#include "consensus/parse_error.h"
 #include "streams.h"
 #include "streams_rust.h"
 
@@ -78,8 +79,8 @@ public:
     void Unserialize(Stream& s) {
         try {
             inner = orchard_bundle::parse(*ToRustStream(s));
-        } catch (const std::exception& e) {
-            throw std::ios_base::failure(e.what());
+        } catch (const rust::Error& e) {
+            ThrowBundleParseError(e);
         }
     }
 
