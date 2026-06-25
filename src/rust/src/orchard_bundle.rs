@@ -13,11 +13,7 @@ use zcash_note_encryption::try_output_recovery_with_ovk;
 use zcash_primitives::transaction::components::orchard as orchard_serialization;
 use zcash_protocol::value::ZatBalance;
 
-use crate::{
-    bridge::ffi,
-    bundle_parse_error::format_bundle_parse_error,
-    streams::CppStream,
-};
+use crate::{bridge::ffi, bundle_parse_error::format_bundle_parse_error, streams::CppStream};
 
 pub struct Action(orchard::Action<Signature<SpendAuth>>);
 

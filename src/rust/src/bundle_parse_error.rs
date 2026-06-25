@@ -48,10 +48,7 @@ mod tests {
 
     #[test]
     fn end_of_data_from_cpp_stream_is_io_failure() {
-        let err = io::Error::new(
-            io::ErrorKind::Other,
-            "CBaseDataStream::read(): end of data",
-        );
+        let err = io::Error::other("CBaseDataStream::read(): end of data");
         assert!(is_io_parse_failure(&err));
     }
 
