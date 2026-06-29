@@ -80,6 +80,7 @@ BASE_SCRIPTS= [
     'orchard_nu6_2.py',
     'ironwood_transparent.py',
     'ironwood_sapling.py',
+    'ironwood_orchard_restriction.py',
     # vv Tests less than 30s vv
     'wallet_1941.py',
     'wallet_accounts.py',

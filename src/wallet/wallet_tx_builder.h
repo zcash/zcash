@@ -419,6 +419,7 @@ private:
             const TransactionStrategy& strategy,
             const std::optional<CAmount>& fee,
             bool afterNU5,
+            bool afterNU6_3,
             uint32_t consensusBranchId) const;
     /**
      * Compute the internal and external OVKs to use in transaction construction, given

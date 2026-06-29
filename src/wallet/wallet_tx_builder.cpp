@@ -227,9 +227,15 @@ ResolveNetPayment(
         const std::optional<CAmount>& fee,
         const TransactionStrategy& strategy,
         bool afterNU5,
+        bool afterNU6_3,
         uint32_t consensusBranchId)
 {
-    bool canResolveOrchard = afterNU5 && !selector.SelectsSprout();
+    // NU6.3 / Ironwood (MOCK): once NU6.3 is active, the Orchard pool is outflow/change-only
+    // -- the wallet must not create new Orchard *payment* outputs (the real design routes
+    // such payments into the Ironwood pool; Orchard outputs are restricted to same-address
+    // change by the new circuit). Orchard change is still allowed via getAllowedChangePools,
+    // and existing Orchard notes can still be spent (drained).
+    bool canResolveOrchard = afterNU5 && !selector.SelectsSprout() && !afterNU6_3;
     CAmount maxSaplingAvailable = spendable.GetSaplingTotal();
     CAmount maxOrchardAvailable = spendable.GetOrchardTotal();
     uint32_t orchardOutputs{0};
@@ -428,6 +434,8 @@ WalletTxBuilder::PrepareTransaction(
     auto consensus = params.GetConsensus();
     int anchorHeight = GetAnchorHeight(chain, anchorConfirmations);
     bool afterNU5 = consensus.NetworkUpgradeActive(anchorHeight, Consensus::UPGRADE_NU5);
+    // NU6.3 / Ironwood (MOCK): used to restrict the Orchard pool to outflow/change-only.
+    bool afterNU6_3 = consensus.NetworkUpgradeActive(anchorHeight, Consensus::UPGRADE_NU6_3);
     auto consensusBranchId = CurrentEpochBranchId(chain.Height(), consensus);
     auto selected = examine(payments, match {
             [&](const std::vector<Payment>& payments) {
@@ -439,10 +447,11 @@ WalletTxBuilder::PrepareTransaction(
                         strategy,
                         fee,
                         afterNU5,
+                        afterNU6_3,
                         consensusBranchId);
             },
             [&](const NetAmountRecipient& netRecipient) {
-                return ResolveNetPayment(wallet, selector, spendable, netRecipient, fee, strategy, afterNU5, consensusBranchId)
+                return ResolveNetPayment(wallet, selector, spendable, netRecipient, fee, strategy, afterNU5, afterNU6_3, consensusBranchId)
                     .map([&](const auto& pair) {
                         const auto& [payment, finalFee] = pair;
                         return InputSelection(spendable, {{payment}}, finalFee, std::nullopt);
@@ -658,6 +667,7 @@ WalletTxBuilder::ResolveInputsAndPayments(
         const TransactionStrategy& strategy,
         const std::optional<CAmount>& fee,
         bool afterNU5,
+        bool afterNU6_3,
         uint32_t consensusBranchId) const
 {
     LOCK2(cs_main, wallet.cs_wallet);
@@ -673,7 +683,12 @@ WalletTxBuilder::ResolveInputsAndPayments(
 
     // we can only select Orchard addresses if we’re not sending from Sprout, since there is no tx
     // version where both Sprout and Orchard are valid.
-    bool canResolveOrchard = afterNU5 && !selector.SelectsSprout();
+    // NU6.3 / Ironwood (MOCK): once NU6.3 is active, the Orchard pool is outflow/change-only
+    // -- the wallet must not create new Orchard *payment* outputs (the real design routes
+    // such payments into the Ironwood pool; Orchard outputs are restricted to same-address
+    // change by the new circuit). Orchard change is still allowed via getAllowedChangePools,
+    // and existing Orchard notes can still be spent (drained).
+    bool canResolveOrchard = afterNU5 && !selector.SelectsSprout() && !afterNU6_3;
     std::vector<ResolvedPayment> resolvedPayments;
     std::optional<AddressResolutionError> resolutionError;
     for (const auto& payment : payments) {
