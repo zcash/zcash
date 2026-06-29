@@ -1190,7 +1190,12 @@ void PrecomputedTransactionData::SetPrecomputed(
 SigVersion SignatureHashVersion(const CTransaction& txTo)
 {
     if (txTo.fOverwintered) {
-        if (txTo.nVersionGroupId == ZIP225_VERSION_GROUP_ID) {
+        // NU6.3 / Ironwood (MOCK): the v6 Ironwood version group uses ZIP 244 signature
+        // hashing, like ZIP225 v5. Without this, the v6 shielded sighash would be computed
+        // with the legacy (pre-ZIP244) algorithm on the verification side while the builder
+        // produces a ZIP 244 digest, breaking shielded binding signatures.
+        if (txTo.nVersionGroupId == ZIP225_VERSION_GROUP_ID ||
+            txTo.nVersionGroupId == IRONWOOD_VERSION_GROUP_ID) {
             return SIGVERSION_ZIP244;
         } else if (txTo.nVersionGroupId == SAPLING_VERSION_GROUP_ID) {
             return SIGVERSION_SAPLING;
