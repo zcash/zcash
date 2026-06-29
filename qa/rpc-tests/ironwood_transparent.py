@@ -8,8 +8,7 @@ Feasibility MOCK test (a): transparent wallet functionality across NU6.3 / Ironw
 
 Verifies that, once the NU6.3 consensus rules are active, a transparent send still builds,
 is accepted, mined, and updates balances -- with NO transparent-wallet-logic changes. The
-wallet builds v5 (ZIP225) transactions committing to the NU6.3 consensus branch id (zcashd
-never constructs Ironwood bundles, so it has no reason to build the v6 Ironwood version).
+wallet builds v6 (Ironwood) transactions committing to the NU6.3 consensus branch id.
 
 Finding: the legacy transparent-wallet RPCs (e.g. getnewaddress) are already disabled by
 default in zcashd's deprecation campaign, so this test re-enables getnewaddress via
@@ -27,8 +26,8 @@ from test_framework.util import (
     start_nodes,
 )
 
-ZIP225_TX_VERSION = 5
-ZIP225_VERSION_GROUP_ID = "26a7270a"
+IRONWOOD_TX_VERSION = 6
+IRONWOOD_VERSION_GROUP_ID = "77777777"
 
 
 class IronwoodTransparentTest(BitcoinTestFramework):
@@ -64,11 +63,11 @@ class IronwoodTransparentTest(BitcoinTestFramework):
         txid = self.nodes[0].sendtoaddress(taddr1, Decimal('10'))
         self.sync_all()
 
-        # The wallet built a v5 (ZIP225) transaction committing to the NU6.3 branch id.
+        # The wallet built a v6 (Ironwood) transaction committing to the NU6.3 branch id.
         raw = self.nodes[0].getrawtransaction(txid, 1)
         assert_equal(raw['overwintered'], True)
-        assert_equal(raw['version'], ZIP225_TX_VERSION)
-        assert_equal(raw['versiongroupid'], ZIP225_VERSION_GROUP_ID)
+        assert_equal(raw['version'], IRONWOOD_TX_VERSION)
+        assert_equal(raw['versiongroupid'], IRONWOOD_VERSION_GROUP_ID)
 
         # Mine it; connecting the block validates the transaction under NU6.3 rules.
         self.nodes[0].generate(1)

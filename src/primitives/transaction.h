@@ -499,6 +499,9 @@ public:
     static const int32_t SAPLING_MAX_CURRENT_VERSION = 4;
     static const int32_t NU5_MIN_CURRENT_VERSION = 4;
     static const int32_t NU5_MAX_CURRENT_VERSION = 5;
+    // NU6.3 / Ironwood (MOCK): allow v4/v5/v6 as standard once NU6.3 is active.
+    static const int32_t NU6_3_MIN_CURRENT_VERSION = 4;
+    static const int32_t NU6_3_MAX_CURRENT_VERSION = 6;
 
     static_assert(SPROUT_MIN_CURRENT_VERSION >= SPROUT_MIN_TX_VERSION,
                   "standard rule for tx version should be consistent with network rule");
@@ -522,6 +525,13 @@ public:
 
     static_assert( (NU5_MAX_CURRENT_VERSION <= ZIP225_MAX_TX_VERSION &&
                     NU5_MAX_CURRENT_VERSION >= NU5_MIN_CURRENT_VERSION),
+                  "standard rule for tx version should be consistent with network rule");
+
+    static_assert(NU6_3_MIN_CURRENT_VERSION >= SAPLING_MIN_TX_VERSION,
+                  "standard rule for tx version should be consistent with network rule");
+
+    static_assert( (NU6_3_MAX_CURRENT_VERSION <= IRONWOOD_MAX_TX_VERSION &&
+                    NU6_3_MAX_CURRENT_VERSION >= NU6_3_MIN_CURRENT_VERSION),
                   "standard rule for tx version should be consistent with network rule");
 
     // The local variables are made const to prevent unintended modification

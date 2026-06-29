@@ -8,8 +8,8 @@ Feasibility MOCK test (b): Sapling shielded wallet functionality across NU6.3 / 
 
 Verifies that, once the NU6.3 consensus rules are active, the Sapling wallet still works --
 a transparent -> Sapling shielding and a Sapling -> Sapling spend both build, are accepted,
-mined, and update balances -- with NO Sapling-wallet-logic changes. The wallet builds v5
-(ZIP225) transactions committing to the NU6.3 consensus branch id.
+mined, and update balances -- with NO Sapling-wallet-logic changes. The wallet builds v6
+(Ironwood) transactions committing to the NU6.3 consensus branch id.
 """
 
 from decimal import Decimal
@@ -27,8 +27,8 @@ from test_framework.util import (
 )
 from test_framework.zip317 import conventional_fee
 
-ZIP225_TX_VERSION = 5
-ZIP225_VERSION_GROUP_ID = "26a7270a"
+IRONWOOD_TX_VERSION = 6
+IRONWOOD_VERSION_GROUP_ID = "77777777"
 
 
 class IronwoodSaplingTest(BitcoinTestFramework):
@@ -42,11 +42,11 @@ class IronwoodSaplingTest(BitcoinTestFramework):
             nuparams(NU6_3_BRANCH_ID, 201),
         ]] * self.num_nodes)
 
-    def assert_v5(self, node, txid):
+    def assert_v6(self, node, txid):
         raw = node.getrawtransaction(txid, 1)
         assert_equal(raw['overwintered'], True)
-        assert_equal(raw['version'], ZIP225_TX_VERSION)
-        assert_equal(raw['versiongroupid'], ZIP225_VERSION_GROUP_ID)
+        assert_equal(raw['version'], IRONWOOD_TX_VERSION)
+        assert_equal(raw['versiongroupid'], IRONWOOD_VERSION_GROUP_ID)
 
     def run_test(self):
         # Mine the NU6.3 activation block.
@@ -57,7 +57,7 @@ class IronwoodSaplingTest(BitcoinTestFramework):
         upgrades = self.nodes[0].getblockchaininfo()['upgrades']
         assert_true(("%08x" % NU6_3_BRANCH_ID) in upgrades, "NU6.3 not reported active")
 
-        # (b) Transparent -> Sapling shielding (v5 tx carrying a Sapling bundle).
+        # (b) Transparent -> Sapling shielding (v6 tx carrying a Sapling bundle).
         acct1 = self.nodes[1].z_getnewaccount()['account']
         sapling_ua1 = self.nodes[1].z_getaddressforaccount(acct1, ['sapling'])['address']
         shield_fee = conventional_fee(3)
@@ -68,14 +68,14 @@ class IronwoodSaplingTest(BitcoinTestFramework):
             1, shield_fee, 'AllowRevealedSenders')
         txid_s = wait_and_assert_operationid_status(self.nodes[0], opid)
         self.sync_all()
-        self.assert_v5(self.nodes[0], txid_s)
+        self.assert_v6(self.nodes[0], txid_s)
         self.nodes[0].generate(1)
         self.sync_all()
         assert_equal(
             {'pools': {'sapling': {'valueZat': shield_amount * COIN}}, 'minimum_confirmations': 1},
             self.nodes[1].z_getbalanceforaccount(acct1))
 
-        # (b) Sapling -> Sapling spend (v5 tx with a Sapling spend + output).
+        # (b) Sapling -> Sapling spend (v6 tx with a Sapling spend + output).
         acct2 = self.nodes[2].z_getnewaccount()['account']
         sapling_ua2 = self.nodes[2].z_getaddressforaccount(acct2, ['sapling'])['address']
         spend_fee = conventional_fee(2)
@@ -85,7 +85,7 @@ class IronwoodSaplingTest(BitcoinTestFramework):
         txid_s2 = wait_and_assert_operationid_status(self.nodes[1], opid)
         self.sync_all()
         assert_equal(len(self.nodes[1].getrawmempool()), 1)
-        self.assert_v5(self.nodes[1], txid_s2)
+        self.assert_v6(self.nodes[1], txid_s2)
         self.nodes[1].generate(1)
         self.sync_all()
         assert_equal(len(self.nodes[1].getrawmempool()), 0)
