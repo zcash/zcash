@@ -1,6 +1,11 @@
 Deprecated Features
 ===================
 
+> **Note:** `zcashd` as a whole is [deprecated](end-of-life.md) as of July 15th 2026 and
+> will not support NU6.3; the automatic End-of-Support halt follows at block height
+> 3417100 (estimated July 21st 2026). See the [End of Life](end-of-life.md) page for
+> migration guidance to Zebra and Zallet.
+
 In order to support the continuous improvement of `zcashd`, features are
 periodically deprecated and removed when they have been superseded or are no
 longer useful.  Deprecation follows a 3-stage process:

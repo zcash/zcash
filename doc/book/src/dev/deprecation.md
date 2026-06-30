@@ -1,6 +1,10 @@
 Deprecation Procedure
 =====================
 
+> **Note:** `zcashd` as a whole is [deprecated](../user/end-of-life.md) as of July 15th
+> 2026 and will not support NU6.3; the automatic End-of-Support halt follows at block
+> height 3417100 (estimated July 21st 2026).
+
 From time to time, features of `zcashd` and its associated wallet and RPC API are
 deprecated to allow eventual removal of functionality that has been superseded
 by more recent improvements. Deprecation follows a process whereby deprecate
