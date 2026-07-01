@@ -6,10 +6,10 @@
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.mininode import COIN
-from test_framework.util import assert_equal, initialize_chain_clean, \
-    start_nodes, connect_nodes_bi, wait_and_assert_operationid_status, \
-    wait_and_assert_operationid_status_result, get_coinbase_address, \
-    check_node_log
+from test_framework.util import assert_equal, assert_raises_message, \
+    initialize_chain_clean, start_nodes, connect_nodes_bi, \
+    wait_and_assert_operationid_status, wait_and_assert_operationid_status_result, \
+    get_coinbase_address, check_node_log
 from test_framework.zip317 import conventional_fee, WEIGHT_RATIO_CAP, ZIP_317_FEE
 
 import sys
@@ -77,12 +77,13 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
 
         # Send will fail because we are enforcing the consensus rule that
         # coinbase utxos can only be sent to a zaddr.
-        errorString = ""
-        try:
-            self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 1)
-        except JSONRPCException as e:
-            errorString = e.error['message']
-        assert_equal("Coinbase funds can only be sent to a zaddr" in errorString, True)
+        assert_raises_message(
+            JSONRPCException,
+            "Coinbase funds can only be sent to a zaddr",
+            self.nodes[0].sendtoaddress,
+            self.nodes[2].getnewaddress(),
+            1,
+        )
 
         # Prepare to send taddr->zaddr
         mytaddr = get_coinbase_address(self.nodes[0])
@@ -91,11 +92,13 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         # Node 3 will test that watch only address utxos are not selected
         self.nodes[3].importaddress(mytaddr)
         recipients= [{"address": myzaddr, "amount": Decimal('1')}]
-        try:
-            myopid = self.nodes[3].z_sendmany(mytaddr, recipients)
-        except JSONRPCException as e:
-            errorString = e.error['message']
-        assert_equal("Invalid from address, no payment source found for address.", errorString);
+        assert_raises_message(
+            JSONRPCException,
+            "Invalid from address, no payment source found for address.",
+            self.nodes[3].z_sendmany,
+            mytaddr,
+            recipients,
+        )
 
         # This send will fail because our consensus does not allow transparent change when
         # shielding a coinbase utxo.
@@ -166,11 +169,15 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         assert_equal(results[0]["spendable"], False)
 
         # Verify that z_listunspent returns error when address spending key from node 0 is not available in wallet of node 1.
-        try:
-            results = self.nodes[1].z_listunspent(1, 999, False, [myzaddr])
-        except JSONRPCException as e:
-            errorString = e.error['message']
-        assert_equal("Invalid parameter, spending key for an address does not belong to the wallet.", errorString)
+        assert_raises_message(
+            JSONRPCException,
+            "Invalid parameter, spending key for an address does not belong to the wallet.",
+            self.nodes[1].z_listunspent,
+            1,
+            999,
+            False,
+            [myzaddr],
+        )
 
         # Verify that debug=zrpcunsafe logs params, and that full txid is associated with opid
         initialized_line = check_node_log(self, 0, myopid + ": z_sendmany initialized", False)
@@ -235,12 +242,13 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         wait_and_assert_operationid_status(self.nodes[0], myopid, "failed", "Insufficient funds: have 10.00, need 0.00000053 more to avoid creating invalid change output 0.00000001 (dust threshold is 0.00000054); note that coinbase outputs will not be selected if you specify ANY_TADDR, any transparent recipients are included, or if the `privacyPolicy` parameter is not set to `AllowRevealedSenders` or weaker.")
 
         # Send will fail because send amount is too big, even when including coinbase utxos
-        errorString = ""
-        try:
-            self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 99999)
-        except JSONRPCException as e:
-            errorString = e.error['message']
-        assert_equal("Insufficient funds" in errorString, True)
+        assert_raises_message(
+            JSONRPCException,
+            "Insufficient funds",
+            self.nodes[0].sendtoaddress,
+            self.nodes[2].getnewaddress(),
+            99999,
+        )
 
         # z_sendmany will fail because of insufficient funds
         recipients = [{"address": self.nodes[1].getnewaddress(), "amount": Decimal('10000.0')}]
@@ -250,14 +258,15 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         wait_and_assert_operationid_status(self.nodes[0], myopid, "failed", "Insufficient funds: have 9.99955, need 10000.0001; note that coinbase outputs will not be selected if you specify ANY_TADDR, any transparent recipients are included, or if the `privacyPolicy` parameter is not set to `AllowRevealedSenders` or weaker.")
 
         # Send will fail because of insufficient funds unless sender uses coinbase utxos
-        try:
-            self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 21)
-        except JSONRPCException as e:
-            errorString = e.error['message']
-        assert_equal("Insufficient funds, coinbase funds can only be spent after they have been sent to a zaddr" in errorString, True)
+        assert_raises_message(
+            JSONRPCException,
+            "Insufficient funds, coinbase funds can only be spent after they have been sent to a zaddr",
+            self.nodes[0].sendtoaddress,
+            self.nodes[2].getnewaddress(),
+            21,
+        )
 
         # Verify that mempools accept tx with shielded outputs and that pay at least the conventional fee.
-        errorString = ''
         recipients = []
         num_t_recipients = 1998 # stay just under the absurdly-high-fee error
         amount_per_recipient = Decimal('0.00000054') # dust threshold
@@ -302,18 +311,26 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         check_value_pool(self.nodes[0], 'sapling', saplingvalue)
 
         # Send will fail because fee is negative
-        try:
-            self.nodes[0].z_sendmany(myzaddr, recipients, 1, -1)
-        except JSONRPCException as e:
-            errorString = e.error['message']
-        assert_equal("Amount out of range" in errorString, True)
+        assert_raises_message(
+            JSONRPCException,
+            "Amount out of range",
+            self.nodes[0].z_sendmany,
+            myzaddr,
+            recipients,
+            1,
+            -1,
+        )
 
         # Send will fail because fee is larger than MAX_MONEY
-        try:
-            self.nodes[0].z_sendmany(myzaddr, recipients, 1, Decimal('21000000.00000001'))
-        except JSONRPCException as e:
-            errorString = e.error['message']
-        assert_equal("Amount out of range" in errorString, True)
+        assert_raises_message(
+            JSONRPCException,
+            "Amount out of range",
+            self.nodes[0].z_sendmany,
+            myzaddr,
+            recipients,
+            1,
+            Decimal('21000000.00000001'),
+        )
 
         # Send will fail because fee is more than `WEIGHT_RATIO_CAP * conventional_fee`
         num_fewer_recipients = 400
