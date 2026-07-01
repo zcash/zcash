@@ -1,6 +1,7 @@
 # The zcashd Book
 
 [zcashd](README.md)
+- [End of Life](user/end-of-life.md)
 - [User Documentation](user.md)
   - [Release Support](user/release-support.md)
   - [Platform Support](user/platform-support.md)
