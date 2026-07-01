@@ -4,9 +4,10 @@ Zcash 6.20.0
 
 > ## ⚠️ `zcashd` is reaching its End of Life
 >
-> `zcashd` is **deprecated as of July 15th 2026** and will **not** support NU6.3; the
-> automatic End-of-Support halt follows at block height 3417100 (estimated July 21st
-> 2026). If you do not need the `zcashd` wallet, migrate to
+> `zcashd` is being **deprecated** and will **not** support NU6.3; its automatic
+> End-of-Support halt is estimated for July 18th 2026 at block height 3417100, after which
+> every node shuts down (NU6.3 mainnet activation follows around July 21st). If you do not
+> need the `zcashd` wallet, migrate to
 > [Zebra](https://github.com/ZcashFoundation/zebra) now. If you depend on the `zcashd`
 > wallet, start testing [Zallet](https://zcash.github.io/zallet/) immediately. See the
 > [End of Life](https://zcash.github.io/zcash/user/end-of-life.html) page for the full

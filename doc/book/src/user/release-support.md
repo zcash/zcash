@@ -1,10 +1,9 @@
 # `zcashd` Release Support
 
-> **Note:** `zcashd` is [deprecated](end-of-life.md) as of July 15th 2026 and will not
-> support NU6.3. That **deprecation** date (when maintainer support ends) is distinct from
-> the 6.20.0 **End-of-Support halt** described below — block height 3417100, estimated
-> 2026-07-21 — which is when the binary automatically shuts down. See the
-> [End of Life](end-of-life.md) page for the full timeline and migration guidance.
+> **Note:** `zcashd` is being [deprecated](end-of-life.md) and will not support NU6.3. Its
+> 6.20.0 **End-of-Support halt** — block height 3417100, estimated 2026-07-18 — is when the
+> binary automatically shuts down, ahead of NU6.3 mainnet activation (estimated 2026-07-21).
+> See the [End of Life](end-of-life.md) page for the full timeline and migration guidance.
 
 ## Release cadence and support window
 
