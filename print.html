@@ -36,10 +36,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-98733732.js";
+            window.path_to_searchindex_js = "searchindex-73408213.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-51d90264.js"></script>
+        <script src="toc-943eab5d.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -177,6 +177,17 @@
                     <main>
                         <h1 id="zcash-6200"><a class="header" href="#zcash-6200">Zcash 6.20.0
 <img align="right" width="120" height="80" src="doc/imgs/logo.png"></a></h1>
+<blockquote>
+<h2 id="-zcashd-is-reaching-its-end-of-life"><a class="header" href="#-zcashd-is-reaching-its-end-of-life">⚠️ <code>zcashd</code> is reaching its End of Life</a></h2>
+<p><code>zcashd</code> is <strong>deprecated</strong> and will <strong>not</strong> support NU6.3; its automatic
+End-of-Support halt is estimated for July 18th 2026 at block height 3417100, after which
+every node shuts down (NU6.3 mainnet activation follows around July 21st). If you do not
+need the <code>zcashd</code> wallet, migrate to
+<a href="https://github.com/ZcashFoundation/zebra">Zebra</a> now. If you depend on the <code>zcashd</code>
+wallet, start testing <a href="https://zcash.github.io/zallet/">Zallet</a> immediately. See the
+<a href="https://zcash.github.io/zcash/user/end-of-life.html">End of Life</a> page for the full
+timeline and migration guidance.</p>
+</blockquote>
 <h2 id="what-is-zcash"><a class="header" href="#what-is-zcash">What is Zcash?</a></h2>
 <p><a href="https://z.cash/">Zcash</a> is HTTPS for money.</p>
 <p>Initially based on Bitcoin’s design, Zcash has been developed from
@@ -235,12 +246,83 @@ for detailed instructions.</p>
 <h2 id="license"><a class="header" href="#license">License</a></h2>
 <p>For license information see the file <a href="COPYING">COPYING</a>.</p>
 <div style="break-before: page; page-break-before: always;"></div>
+<h1 id="end-of-life"><a class="header" href="#end-of-life">End of Life</a></h1>
+<blockquote>
+<h2 id="-zcashd-is-reaching-its-end-of-life-1"><a class="header" href="#-zcashd-is-reaching-its-end-of-life-1">⚠️ <code>zcashd</code> is reaching its End of Life</a></h2>
+<p><code>zcashd</code> is <strong>deprecated</strong> and will <strong>not</strong> support NU6.3.
+<strong>If you do not need the <code>zcashd</code> wallet, migrate to <a href="https://github.com/ZcashFoundation/zebra">Zebra</a> now.</strong>
+If you depend on the <code>zcashd</code> wallet, start testing <a href="https://zcash.github.io/zallet/">Zallet</a>
+migrating your <code>wallet.dat</code> as soon as possible. The binary’s <strong>End-of-Support halt</strong> is
+estimated for <strong>July 18th 2026</strong> at block height 3417100, after which every <code>zcashd</code> node
+automatically shuts down.</p>
+</blockquote>
+<h2 id="two-key-dates-end-of-support-halt-vs-nu63-activation"><a class="header" href="#two-key-dates-end-of-support-halt-vs-nu63-activation">Two key dates: End-of-Support halt vs. NU6.3 activation</a></h2>
+<p><code>zcashd</code>’s End of Life involves two distinct milestones. Don’t conflate them:</p>
+<ul>
+<li><strong><code>zcashd</code> End-of-Support halt — estimated July 18th 2026, at block height 3417100.</strong>
+The point at which every <code>zcashd</code> 6.20.0 binary automatically shuts down and refuses to
+restart. This is hard-coded as the deprecation height (<code>DEPRECATION_HEIGHT</code> in
+<code>src/deprecation.h</code>). The date is an estimate that may shift with network solution power;
+query the exact height your node will halt at with the <code>getdeprecationinfo</code> JSON-RPC
+method. See <a href="#zcashd-release-support">Release Support</a> for more on the End-of-Support halt.</li>
+<li><strong>NU6.3 mainnet activation — estimated July 21st 2026.</strong> The Ironwood/NU6.3 network
+upgrade activates on mainnet a few days <em>after</em> the End-of-Support halt. The halt is
+deliberately targeted to precede activation so that every un-upgraded <code>zcashd</code> node has
+already shut down and the network is Zebra-only before NU6.3 takes effect. <strong><code>zcashd</code>
+will not support NU6.3.</strong></li>
+</ul>
+<h2 id="context"><a class="header" href="#context">Context</a></h2>
+<p>Zcash organizations continue to work on the different components that are needed to
+specify, develop and deploy the Ironwood shielded pool in the next Network Upgrade,
+NU6.3. <strong><code>zcashd</code> maintainers will NOT</strong> support this upgrade. <code>zcashd</code> is deprecated and
+will reach end of life ahead of the activation of NU6.3 on mainnet.</p>
+<p>The decision to accelerate <code>zcashd</code> deprecation is specifically related to the recent
+Orchard vulnerability disclosed on June 1st 2026 and the associated risks that the C++
+codebase poses for future (or present) AI advancements. Deprecating <code>zcashd</code> is a
+<strong>mandatory</strong> step to conclude the remediation of the reported Orchard bug.</p>
+<h2 id="timeline"><a class="header" href="#timeline">Timeline</a></h2>
+<p>The current timeline estimates that NU6.3 activation will be integrated into testnet
+code around July 2nd 2026, and testnet activation will follow on July 3rd (block height 4134000).
+The same will follow for mainnet on later dates (see timeline below).</p>
+<p>With regards to mainnet, <code>zcashd</code> 6.20.0’s automatic <strong>End-of-Support halt</strong> (block height
+3417100) is estimated for July 18th. This precedes NU6.3 <strong>mainnet activation</strong> on July
+21st, ensuring a Zebra-only network before the upgrade takes effect.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Date</th><th>Event</th></tr>
+</thead>
+<tbody>
+<tr><td>July 2nd 2026</td><td>Ironwood/NU6.3 Testnet deployment</td></tr>
+<tr><td>July 3rd 2026</td><td>Ironwood/NU6.3 Testnet Activation (block height 4134000)</td></tr>
+<tr><td>July 9th 2026</td><td>Ironwood/NU6.3 <strong>Mainnet</strong> deployment</td></tr>
+<tr><td>~July 18th 2026</td><td><code>zcashd</code> <strong>End-of-Support halt</strong> (block height 3417100)</td></tr>
+<tr><td>~July 21st 2026</td><td>Ironwood/NU6.3 <strong>Mainnet</strong> Activation</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="the-path-forward-zebra--zallet"><a class="header" href="#the-path-forward-zebra--zallet">The Path Forward: Zebra + Zallet</a></h2>
+<p>The Zcash Foundation has developed and maintains the
+<a href="https://github.com/ZcashFoundation/zebra">Zebra full node</a>, a Rust implementation of the
+Zcash protocol. All <code>zcashd</code> users that don’t need the <code>zcashd</code> wallet should migrate to
+Zebra <strong>immediately</strong>.</p>
+<p>For those who do depend on the <code>zcashd</code> wallet, ZODL developers have released Zallet
+Alpha.4, which allows migration of <code>zcashd</code>’s <code>wallet.dat</code> files into Zallet. You can find
+the documentation for Zallet <a href="https://zcash.github.io/zallet/">here</a>. We encourage these
+users to start testing Zallet and to send feedback to its maintainers as soon as possible.</p>
+<div style="break-before: page; page-break-before: always;"></div>
 <h1 id="user-documentation"><a class="header" href="#user-documentation">User Documentation</a></h1>
 <p>This section contains user documentation specific to <code>zcashd</code>.</p>
 <p>See <a href="https://zcash.readthedocs.io/">here</a> for more general Zcash documentation, as well as
 installation instructions for <code>zcashd</code>.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="zcashd-release-support"><a class="header" href="#zcashd-release-support"><code>zcashd</code> Release Support</a></h1>
+<blockquote>
+<p><strong>Note:</strong> <code>zcashd</code> is <a href="#end-of-life">deprecated</a> and will not support NU6.3. Its
+6.20.0 <strong>End-of-Support halt</strong> — block height 3417100, estimated 2026-07-18 — is when the
+binary automatically shuts down, ahead of NU6.3 mainnet activation (estimated 2026-07-21).
+See the <a href="#end-of-life">End of Life</a> page for the full timeline and migration guidance.</p>
+</blockquote>
 <h2 id="release-cadence-and-support-window"><a class="header" href="#release-cadence-and-support-window">Release cadence and support window</a></h2>
 <p><code>zcashd</code> releases happen approximately every six weeks, although this may change if a
 particular release is delayed, or if a hotfix release occurs.</p>
@@ -1060,6 +1142,12 @@ believe that we have changed or done everything that was necessary for the
 1.0.0 launch. Users may want to review this list themselves.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="deprecated-features"><a class="header" href="#deprecated-features">Deprecated Features</a></h1>
+<blockquote>
+<p><strong>Note:</strong> <code>zcashd</code> is <a href="#end-of-life">deprecated</a> and will not support
+NU6.3; the automatic End-of-Support halt is estimated for July 18th 2026 at block height
+3417100 (NU6.3 mainnet activation follows around July 21st). See the
+<a href="#end-of-life">End of Life</a> page for migration guidance to Zebra and Zallet.</p>
+</blockquote>
 <p>In order to support the continuous improvement of <code>zcashd</code>, features are
 periodically deprecated and removed when they have been superseded or are no
 longer useful.  Deprecation follows a 3-stage process:</p>
@@ -1558,6 +1646,11 @@ onerous legal agreements.)</li>
 still meets the requirements for a lower tier.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="deprecation-procedure"><a class="header" href="#deprecation-procedure">Deprecation Procedure</a></h1>
+<blockquote>
+<p><strong>Note:</strong> <code>zcashd</code> is <a href="#end-of-life">deprecated</a> and will not
+support NU6.3; the automatic End-of-Support halt is estimated for July 18th 2026 at block
+height 3417100 (NU6.3 mainnet activation follows around July 21st).</p>
+</blockquote>
 <p>From time to time, features of <code>zcashd</code> and its associated wallet and RPC API are
 deprecated to allow eventual removal of functionality that has been superseded
 by more recent improvements. Deprecation follows a process whereby deprecate
