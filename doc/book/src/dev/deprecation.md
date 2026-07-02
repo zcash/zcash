@@ -1,7 +1,7 @@
 Deprecation Procedure
 =====================
 
-> **Note:** `zcashd` as a whole is being [deprecated](../user/end-of-life.md) and will not
+> **Note:** `zcashd` is [deprecated](../user/end-of-life.md) and will not
 > support NU6.3; the automatic End-of-Support halt is estimated for July 18th 2026 at block
 > height 3417100 (NU6.3 mainnet activation follows around July 21st).
 

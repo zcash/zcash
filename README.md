@@ -4,7 +4,7 @@ Zcash 6.20.0
 
 > ## ⚠️ `zcashd` is reaching its End of Life
 >
-> `zcashd` is being **deprecated** and will **not** support NU6.3; its automatic
+> `zcashd` is **deprecated** and will **not** support NU6.3; its automatic
 > End-of-Support halt is estimated for July 18th 2026 at block height 3417100, after which
 > every node shuts down (NU6.3 mainnet activation follows around July 21st). If you do not
 > need the `zcashd` wallet, migrate to
