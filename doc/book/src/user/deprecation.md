@@ -1,6 +1,11 @@
 Deprecated Features
 ===================
 
+> **Note:** `zcashd` is [deprecated](end-of-life.md) and will not support
+> NU6.3; the automatic End-of-Support halt is estimated for July 18th 2026 at block height
+> 3417100 (NU6.3 mainnet activation follows around July 21st). See the
+> [End of Life](end-of-life.md) page for migration guidance to Zebra and Zallet.
+
 In order to support the continuous improvement of `zcashd`, features are
 periodically deprecated and removed when they have been superseded or are no
 longer useful.  Deprecation follows a 3-stage process:
@@ -11,7 +16,7 @@ longer useful.  Deprecation follows a 3-stage process:
    stage remain enabled by default, they may be explicitly disabled by
    specifying `-allowdeprecated=none` on the command line when starting the
    node, or by including `allowdeprecated=none` as a line in the `zcash.conf`
-   file. 
+   file.
 2. In the next stage of deprecation, the feature will be disabled by default.
    Disabled features may be reenabled via use of the `-allowdeprecated` flag.
 3. In the third stage, the feature is fully removed and is no longer available.
@@ -23,7 +28,7 @@ features will only be fully removed after a total of at least 6 minor-version up
 version every 6 weeks, so deprecated features remain accessible by default for
 approximately 18 weeks, and then can be expected to be removed no less than 36
 weeks after their initial deprecation. Deprecation and removal timelines might
-be extended beyond this on a case-by-case basis to satisfy user requirements. 
+be extended beyond this on a case-by-case basis to satisfy user requirements.
 
 Currently Deprecated
 ====================
