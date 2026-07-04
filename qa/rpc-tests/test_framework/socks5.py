@@ -131,6 +131,8 @@ class Socks5Server(object):
         self.s = socket.socket(conf.af)
         self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.s.bind(conf.addr)
+        bound_addr = self.s.getsockname()
+        self.conf.addr = bound_addr[:2] if isinstance(bound_addr, tuple) else bound_addr
         self.s.listen(5)
         self.running = False
         self.thread = None

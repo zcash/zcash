@@ -4,8 +4,8 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
+import queue
 import socket
-import os
 
 from test_framework.socks5 import Socks5Configuration, Socks5Command, Socks5Server, AddressType
 from test_framework.test_framework import BitcoinTestFramework
@@ -35,6 +35,9 @@ addnode connect to onion
 addnode connect to generic DNS name
 '''
 
+SOCKS5_COMMAND_TIMEOUT = 10
+
+
 class ProxyTest(BitcoinTestFramework):        
     def __init__(self):
         super().__init__()
@@ -43,19 +46,19 @@ class ProxyTest(BitcoinTestFramework):
         # Create two proxies on different ports
         # ... one unauthenticated
         self.conf1 = Socks5Configuration()
-        self.conf1.addr = ('127.0.0.1', 13000 + (os.getpid() % 1000))
+        self.conf1.addr = ('127.0.0.1', 0)
         self.conf1.unauth = True
         self.conf1.auth = False
         # ... one supporting authenticated and unauthenticated (Tor)
         self.conf2 = Socks5Configuration()
-        self.conf2.addr = ('127.0.0.1', 14000 + (os.getpid() % 1000))
+        self.conf2.addr = ('127.0.0.1', 0)
         self.conf2.unauth = True
         self.conf2.auth = True
         if self.have_ipv6:
             # ... one on IPv6 with similar configuration
             self.conf3 = Socks5Configuration()
             self.conf3.af = socket.AF_INET6
-            self.conf3.addr = ('::1', 15000 + (os.getpid() % 1000))
+            self.conf3.addr = ('::1', 0)
             self.conf3.unauth = True
             self.conf3.auth = True
         else:
@@ -82,12 +85,19 @@ class ProxyTest(BitcoinTestFramework):
             args[3] = ['-listen', '-debug=net', '-debug=proxy', '-proxy=[%s]:%i' % (self.conf3.addr),'-proxyrandomize=0', '-noonion']
         return start_nodes(self.num_nodes, self.options.tmpdir, extra_args=args)
 
+    def wait_for_proxy_command(self, proxy):
+        try:
+            cmd = proxy.queue.get(timeout=SOCKS5_COMMAND_TIMEOUT)
+        except queue.Empty:
+            raise AssertionError("Timed out waiting for proxy connection")
+        assert(isinstance(cmd, Socks5Command)), "expected Socks5Command, got %r" % (cmd,)
+        return cmd
+
     def node_test(self, node, proxies, auth, test_onion=True):
         rv = []
         # Test: outgoing IPv4 connection through node
         node.addnode("15.61.23.23:1234", "onetry")
-        cmd = proxies[0].queue.get()
-        assert(isinstance(cmd, Socks5Command))
+        cmd = self.wait_for_proxy_command(proxies[0])
         # Note: bitcoind's SOCKS5 implementation only sends atyp DOMAINNAME, even if connecting directly to IPv4/IPv6
         assert_equal(cmd.atyp, AddressType.DOMAINNAME)
         assert_equal(cmd.addr, b"15.61.23.23")
@@ -100,8 +110,7 @@ class ProxyTest(BitcoinTestFramework):
         if self.have_ipv6:
             # Test: outgoing IPv6 connection through node
             node.addnode("[1233:3432:2434:2343:3234:2345:6546:4534]:5443", "onetry")
-            cmd = proxies[1].queue.get()
-            assert(isinstance(cmd, Socks5Command))
+            cmd = self.wait_for_proxy_command(proxies[1])
             # Note: bitcoind's SOCKS5 implementation only sends atyp DOMAINNAME, even if connecting directly to IPv4/IPv6
             assert_equal(cmd.atyp, AddressType.DOMAINNAME)
             assert_equal(cmd.addr, b"1233:3432:2434:2343:3234:2345:6546:4534")
@@ -114,8 +123,7 @@ class ProxyTest(BitcoinTestFramework):
         if test_onion:
             # Test: outgoing onion connection through node
             node.addnode("bitcoinostk4e4re.onion:8333", "onetry")
-            cmd = proxies[2].queue.get()
-            assert(isinstance(cmd, Socks5Command))
+            cmd = self.wait_for_proxy_command(proxies[2])
             assert_equal(cmd.atyp, AddressType.DOMAINNAME)
             assert_equal(cmd.addr, b"bitcoinostk4e4re.onion")
             assert_equal(cmd.port, 8333)
@@ -126,8 +134,7 @@ class ProxyTest(BitcoinTestFramework):
 
         # Test: outgoing DNS name connection through node
         node.addnode("node.noumenon:8333", "onetry")
-        cmd = proxies[3].queue.get()
-        assert(isinstance(cmd, Socks5Command))
+        cmd = self.wait_for_proxy_command(proxies[3])
         assert_equal(cmd.atyp, AddressType.DOMAINNAME)
         assert_equal(cmd.addr, b"node.noumenon")
         assert_equal(cmd.port, 8333)
