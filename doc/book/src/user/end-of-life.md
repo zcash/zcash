@@ -19,7 +19,7 @@
   `src/deprecation.h`). The date is an estimate that may shift with network solution power;
   query the exact height your node will halt at with the `getdeprecationinfo` JSON-RPC
   method. See [Release Support](release-support.md) for more on the End-of-Support halt.
-- **NU6.3 mainnet activation — estimated July 21st 2026.** The Ironwood/NU6.3 network
+- **NU6.3 mainnet activation — estimated July 28th 2026.** The Ironwood/NU6.3 network
   upgrade activates on mainnet a few days *after* the End-of-Support halt. The halt is
   deliberately targeted to precede activation so that every un-upgraded `zcashd` node has
   already shut down and the network is Zebra-only before NU6.3 takes effect. **`zcashd`
