@@ -63,6 +63,25 @@ TEST(SigHashTest, Zip244AcceptsKnownHashTypes) {
     }
 }
 
+TEST(SigHashTest, Zip244IgnoresExternalConsensusBranchId) {
+    auto parts = DummyV5Transaction();
+    auto mtx = parts.first;
+    auto allPrevOutputs = parts.second;
+
+    unsigned int nIn = 1;
+    PrecomputedTransactionData txdata(mtx, allPrevOutputs);
+    CScript scriptCode;
+    CAmount amount;
+
+    EXPECT_EQ(
+        SignatureHash(
+            scriptCode, mtx, nIn, SIGHASH_ALL, amount,
+            NetworkUpgradeInfo[Consensus::UPGRADE_NU5].nBranchId, txdata),
+        SignatureHash(
+            scriptCode, mtx, nIn, SIGHASH_ALL, amount,
+            NetworkUpgradeInfo[Consensus::UPGRADE_CANOPY].nBranchId, txdata));
+}
+
 TEST(SigHashTest, Zip244RejectsUnknownHashTypes) {
     auto parts = DummyV5Transaction();
     auto mtx = parts.first;
