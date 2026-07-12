@@ -40,20 +40,20 @@ codebase poses for future (or present) AI advancements. Deprecating `zcashd` is 
 ## Timeline
 
 The current timeline estimates that NU6.3 activation will be integrated into testnet
-code around July 2nd 2026, and testnet activation will follow on July 3rd (block height 4134000).
+code around July 2nd 2026, and testnet activation will follow on July 4th (block height 4134000).
 The same will follow for mainnet on later dates (see timeline below).
 
 With regards to mainnet, `zcashd` 6.20.0's automatic **End-of-Support halt** (block height
 3417100) is estimated for July 18th. This precedes NU6.3 **mainnet activation** on July
-21st, ensuring a Zebra-only network before the upgrade takes effect.
+28th, ensuring a Zebra-only network before the upgrade takes effect.
 
 | Date | Event |
 | ----- | ----- |
 | July 2nd 2026 | Ironwood/NU6.3 Testnet deployment |
-| July 3rd 2026 | Ironwood/NU6.3 Testnet Activation (block height 4134000) |
+| July 4th 2026 | Ironwood/NU6.3 Testnet Activation (block height 4134000) |
 | July 9th 2026 | Ironwood/NU6.3 **Mainnet** deployment |
 | ~July 18th 2026 | `zcashd` **End-of-Support halt** (block height 3417100) |
-| ~July 21st 2026 | Ironwood/NU6.3 **Mainnet** Activation |
+| ~July 28th 2026 | Ironwood/NU6.3 **Mainnet** Activation |
 
 ## The Path Forward: Zebra + Zallet
 
