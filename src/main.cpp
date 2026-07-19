@@ -8970,6 +8970,13 @@ bool ProcessMessages(const CChainParams& chainparams, CNode* pfrom)
             fRet = ProcessMessage(chainparams, pfrom, strCommand, vRecv, msg.nTime);
             boost::this_thread::interruption_point();
         }
+        catch (const consensus_rule_failure& e)
+        {
+            LOCK(cs_main);
+            Misbehaving(pfrom->GetId(), 100);
+            pfrom->PushMessage("reject", strCommand, REJECT_MALFORMED, string("error parsing message"));
+            PrintExceptionContinue(&e, "ProcessMessages()");
+        }
         catch (const std::ios_base::failure& e)
         {
             pfrom->PushMessage("reject", strCommand, REJECT_MALFORMED, string("error parsing message"));

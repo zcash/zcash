@@ -553,6 +553,7 @@ libbitcoin_consensus_a_SOURCES = \
   consensus/merkle.h \
   consensus/params.cpp \
   consensus/params.h \
+  consensus/parse_error.h \
   consensus/upgrades.cpp \
   consensus/upgrades.h \
   consensus/validation.h \
