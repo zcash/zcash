@@ -2849,14 +2849,18 @@ bool ContextualCheckInputs(
                     // the assumption that users creating transactions will
                     // notice their transactions failing before a second network
                     // upgrade occurs.
-                    auto prevConsensusBranchId = PrevEpochBranchId(consensusBranchId, consensusParams);
-                    CScriptCheck checkPrev(*coins, tx, i, flags, cacheStore, prevConsensusBranchId, &txdata);
-                    if (checkPrev()) {
-                        return state.DoS(
-                            10, false, REJECT_INVALID, strprintf(
-                                "old-consensus-branch-id (Expected %s, found %s)",
-                                HexInt(consensusBranchId),
-                                HexInt(prevConsensusBranchId)));
+                    // ZIP 244 hashes use the branch ID encoded in the
+                    // transaction itself.
+                    if (!tx.GetConsensusBranchId()) {
+                        auto prevConsensusBranchId = PrevEpochBranchId(consensusBranchId, consensusParams);
+                        CScriptCheck checkPrev(*coins, tx, i, flags, cacheStore, prevConsensusBranchId, &txdata);
+                        if (checkPrev()) {
+                            return state.DoS(
+                                10, false, REJECT_INVALID, strprintf(
+                                    "old-consensus-branch-id (Expected %s, found %s)",
+                                    HexInt(consensusBranchId),
+                                    HexInt(prevConsensusBranchId)));
+                        }
                     }
                     if (flags & STANDARD_NOT_MANDATORY_VERIFY_FLAGS) {
                         // Check whether the failure was caused by a
