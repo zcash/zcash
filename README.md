@@ -4,14 +4,17 @@ Zcash 6.20.0
 
 > ## ⚠️ `zcashd` has reached its End of Life
 >
-> `zcashd` is **deprecated** and does **not** support NU6.3. Its automatic
-> End-of-Support halt was reached on July 18th 2026 at block height 3417100, and every
-> `zcashd` 6.20.0 node has now shut down and will refuse to restart (NU6.3 mainnet
-> activation follows around July 28th). If you have not migrated yet, do so now: move to
-> [Zebra](https://github.com/ZcashFoundation/zebra) if you do not need the `zcashd`
-> wallet, or to [Zallet](https://zcash.github.io/zallet/) if you depend on it. See the
-> [End of Life](https://zcash.github.io/zcash/user/end-of-life.html) page for the full
-> timeline and migration guidance.
+> `zcashd` reached its final End-of-Support halt on July 18th 2026 at block
+> height 3417100, and every unmodified `zcashd` 6.20.0 node shut down at that
+> height.
+>
+> The `zcashd` node software is succeeded by the [Zebra](https://github.com/ZcashFoundation/zebra)
+> and [Zakura](https://zakura.com/) consensus node implementations, along with the
+> [Zallet](https://zcash.github.io/zallet/) full node wallet. Users of the `zcashd`
+> node and wallet implementation should migrate to these alternatives.
+>
+> See the [End of Life](https://zcash.github.io/zcash/user/end-of-life.html)
+> page for the full timeline of the zcashd wind-down and migration guidance.
 
 What is Zcash?
 --------------
@@ -27,19 +30,19 @@ transactions. More technical details are available in our
 
 ## The `zcashd` Full Node
 
-This repository hosts the `zcashd` software, a Zcash consensus node
-implementation. It downloads and stores the entire history of Zcash
-transactions. Depending on the speed of your computer and network
-connection, the synchronization process could take several days.
+This repository was the home of the original `zcashd` software, a Zcash
+consensus node implementation.
 
 <p align="center">
   <img src="doc/imgs/zcashd_screen.gif" height="500">
 </p>
 
-The `zcashd` code is derived from a source fork of
+The `zcashd` code was derived from a source fork of
 [Bitcoin Core](https://github.com/bitcoin/bitcoin). The code was forked
-initially from Bitcoin Core v0.11.2, and the two codebases have diverged
+initially from Bitcoin Core v0.11.2, and the two codebases diverged
 substantially.
+
+
 
 #### :lock: Security Warnings
 
