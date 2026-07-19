@@ -90,7 +90,9 @@ CalcZIP317Fee(
             vout,
             std::max(sproutInputCount, sproutOutputCount),
             saplingInputCount,
-            PadCount(saplingOutputCount),
+            // A Sapling bundle with spends but no real outputs still gets padded
+            // with dummy outputs, so pad after combining spends and outputs.
+            PadCount(std::max(saplingInputCount, saplingOutputCount)),
             PadCount(std::max(orchardInputCount, orchardOutputCount)));
 
     return CalculateConventionalFee(logicalActionCount);
