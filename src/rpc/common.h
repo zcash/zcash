@@ -159,6 +159,7 @@ static const CRPCConvertTable rpcCvtTable =
     { "resendwallettransactions",    {{}, {}} },
     { "listunspent",                 {{}, {o, o, o, o, o, o}} },
     { "z_listunspent",               {{}, {o, o, o, o, o}} },
+    { "z_listutxos",                 {{o}, {o, o, o, o}} },
     { "fundrawtransaction",          {{s}, {o}} },
     { "zcsamplejoinsplit",           {{}, {}} },
     { "zcbenchmark",                 {{s, o}, {o}} },
