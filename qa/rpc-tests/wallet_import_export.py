@@ -5,7 +5,7 @@
 
 from test_framework.authproxy import JSONRPCException
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal, assert_true, start_nodes
+from test_framework.util import assert_equal, assert_raises_message, assert_true, start_nodes
 
 class WalletImportExportTest (BitcoinTestFramework):
     def setup_network(self, split=False):
@@ -23,16 +23,17 @@ class WalletImportExportTest (BitcoinTestFramework):
         self.nodes[0].z_importkey(privkey2)
 
         # test walletconfirmbackup
-        try:
-            self.nodes[0].getnewaddress()
-        except JSONRPCException as e:
-            errorString = e.error['message']
-        assert_equal("Error: Please acknowledge that you have backed up" in errorString, True)
-        try:
-            self.nodes[0].z_getnewaddress('sapling')
-        except JSONRPCException as e:
-            errorString = e.error['message']
-        assert_equal("Error: Please acknowledge that you have backed up" in errorString, True)
+        assert_raises_message(
+            JSONRPCException,
+            "Error: Please acknowledge that you have backed up",
+            self.nodes[0].getnewaddress,
+        )
+        assert_raises_message(
+            JSONRPCException,
+            "Error: Please acknowledge that you have backed up",
+            self.nodes[0].z_getnewaddress,
+            'sapling',
+        )
         dump_path0 = self.nodes[0].z_exportwallet('walletdumpmnem')
         (mnemonic, _, _, _) = parse_wallet_file(dump_path0)
         self.nodes[0].walletconfirmbackup(mnemonic)
