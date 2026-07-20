@@ -90,7 +90,7 @@ Note that if the git repository contains a workspace of interconnected crates
 (for example, https://github.com/zcash/librustzcash), you will need to provide
 patches for each of the dependencies that reference the same git revision.
 
-You also need to update `.cargo/config.offline` to add a replacement definition
+You also need to update `.cargo/config.toml.offline` to add a replacement definition
 for each `(git, rev)` pair. Run `./test/lint/lint-cargo-patches.sh` to get the
 lines that need to be present.
 
