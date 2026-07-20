@@ -1,0 +1,84 @@
+---
+version: '3.3'
+
+services:
+  zcashd:
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 4000M
+#    command: ["-reindex"]
+    image: electriccoinco/zcashd:latest
+#    image: localhost:5000/electriccoinco/zcashd:v5.0.0
+    volumes:
+      - $ZCASHD_DATADIR:/srv/zcashd/.zcash
+      - $ZCASHD_PARMDIR:/srv/zcashd/.zcash-params
+    env_file:
+      - .env
+    ports:
+      - "$ZCASHD_RPCPORT:$ZCASHD_RPCPORT"
+      - "$ZCASHD_PROMETHEUSPORT:$ZCASHD_PROMETHEUSPORT"
+    logging:
+      driver: loki
+      options:
+        loki-url: 'http://localhost:3100/api/prom/push'
+
+  ecc_zcashd_exporter:
+    build: .
+    env_file:
+      - .env
+    ports:
+      - "9200:9200"
+    logging:
+      driver: loki
+      options:
+        loki-url: 'http://localhost:3100/api/prom/push'
+
+  node_exporter:
+    image: prom/node-exporter:latest
+    container_name: mon_node_exporter
+    restart: unless-stopped
+    expose:
+      - 9100
+
+  grafana:
+    #image: grafana/grafana:8.3.7
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    volumes:
+      - ./docker/grafana/provisioning/:/etc/grafana/provisioning/
+    logging:
+      driver: loki
+      options:
+        loki-url: 'http://localhost:3100/api/prom/push'
+
+  prometheus:
+    #image: prom/prometheus:v2.30.3
+    image: prom/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/prometheus/config.yml:/etc/prometheus/prometheus.yml
+      - promethus_data:/promethus_data
+    logging:
+      driver: loki
+      options:
+        loki-url: 'http://localhost:3100/api/prom/push'
+
+  loki:
+    #image: grafana/loki:main-517ba7c
+    image: grafana/loki
+    ports:
+      - '3100:3100'
+    command: -config.file=/etc/loki/local-config.yaml
+    logging:
+      driver: loki
+      options:
+        loki-url: 'http://localhost:3100/api/prom/push'
+
+volumes:
+  promethus_data:
